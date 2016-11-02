@@ -1,0 +1,25 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(softgun_controller_tcc8k C)
+
+ADD_LIBRARY(${PROJECT_NAME} OBJECT
+    ckc_tcc8k.c
+    dramc_tcc8k.c
+    gpio_tcc8k.c
+    gpiopk_tcc8k.c
+    nfc_tcc8k.c
+    pic_tcc8k.c
+    pmgpio_tcc8k.c
+    rtc_tcc8k.c
+    sysco_tcc8k.c
+    timer_tcc8k.c
+    uart_tcc8k.c
+    udc_tcc8k.c
+    vmmu_tcc8k.c
+    )
+
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/core")
+#TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/busdevices")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/arm")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/devices/sdcard")

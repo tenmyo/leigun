@@ -1,0 +1,27 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(softgun_m16c C)
+
+ADD_LIBRARY(${PROJECT_NAME}
+    can_r8c23.c
+    idecode_m16c.c
+    instructions_m16c.c
+    irq_m16c65.c
+    irq_r8c23.c
+    m16c65_sio34.c
+    m16c65_timerAB.c
+    m16c_can.c
+    m16c_cpu.c
+    m16c_flash.c
+    pio_m16c65.c
+    pio_r8c23.c
+    r8c23_timerAB.c
+    uart_m16c.c
+    uart_r8c.c
+    watchdog_r8c.c
+    )
+
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/core")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/devices/phy")
+

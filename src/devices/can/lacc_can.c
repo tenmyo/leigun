@@ -38,7 +38,6 @@
 #include "bus.h"
 #include "sja1000.h"
 #include "lacc_can.h"
-#include "ns9750_timer.h"	/* Unclean, interrupts should be done with signals */
 #include "sgstring.h"
 
 #define NR_SJAS (2)

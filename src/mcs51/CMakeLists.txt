@@ -1,0 +1,20 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(softgun_mcs51 C)
+
+ADD_LIBRARY(${PROJECT_NAME}
+    can_at89c51cc03.c
+    cpu_mcs51.c
+    exmem_at89c51.c
+    idecode_mcs51.c
+    instructions_mcs51.c
+    ints_at89c51.c
+    pio_at89c51.c
+    timer01_mcs51.c
+    timer2_mcs51.c
+    uart_at89c51.c
+    )
+
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/core")
+

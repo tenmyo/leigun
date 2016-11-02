@@ -40,7 +40,6 @@
 #include <string.h>
 #include "bus.h"
 #include "at91_mc.h"
-#include "arm9cpu.h"
 #include "sgstring.h"
 
 #define MC_RCR(base)	((base)+0x00)

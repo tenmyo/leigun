@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include "bus.h"
 #include "sja1000.h"
-#include "ns9750_timer.h"	// should be removed with interrupt ops pointer
 #include "socket_can.h"
 #include "signode.h"
 #include "sgstring.h"

@@ -1,0 +1,30 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(softgun_controller_imx21 C)
+
+ADD_LIBRARY(${PROJECT_NAME} OBJECT
+    imx21_crm.c
+    imx21_cspi.c
+    imx21_dmac.c
+    imx21_eim.c
+    imx21_gpio.c
+    imx21_i2c.c
+    imx21_lcdc.c
+    imx21_max.c
+    imx21_otg.c
+    imx21_pcmcia.c
+    imx21_pwm.c
+    imx21_rtc.c
+    imx21_sdhc.c
+    imx21_sdrc.c
+    imx21_uart.c
+    imx21_wdog.c
+    )
+
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/core")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/busdevices")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/arm")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/devices/i2c")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/devices/sdcard")
+

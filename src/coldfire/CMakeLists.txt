@@ -1,0 +1,23 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(softgun_coldfire C)
+
+ADD_LIBRARY(${PROJECT_NAME}
+    cfm.c
+    cpu_cf.c
+    idecode_cf.c
+    instructions_cf.c
+    mcf5282_ccm.c
+    mcf5282_dtim.c
+    mcf5282_fec.c
+    mcf5282_flexcan.c
+    mcf5282_i2c.c
+    mcf5282_pit.c
+    mcf5282_scm.c
+    mcf5282_uart.c
+    )
+
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/core")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/devices/phy")
+
