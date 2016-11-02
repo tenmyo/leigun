@@ -1,0 +1,50 @@
+[global]
+board: Uzebox 
+imagedir: /home/user/emulator/uzebox
+cpu_clock: 28636360 
+libpath: 
+libs: 
+
+[avr]
+variant: ATMega644
+
+[regions]
+flash: 0
+
+#[usart0]
+#file: stdin
+
+[cli]
+host: 127.0.0.1 
+port: 4712
+
+
+[display0]
+backend: rfbserver
+host: 127.0.0.1 
+port: 5901
+width: 268 
+height: 224
+start: vncviewer -encodings zrle -bgr233 localhost:5901
+#start: realvncviewer -AutoSelect=0 -LowColourLevel=2 localhost:5901
+
+[sound0]
+backend: alsa
+#backend: null 
+
+[snes0]
+mouse: 1
+
+[snes1]
+mouse: 1
+
+[card0]
+type: Canon32M 
+
+[spi0]
+zerodelay: 1
+parallel: 1
+
+[gdebug]
+host: 127.0.0.1
+port: 4711

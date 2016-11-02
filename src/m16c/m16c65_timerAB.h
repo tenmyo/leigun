@@ -1,0 +1,14 @@
+#include "bus.h"
+#define M16C65_REGSET_TIMERA0	(0)
+#define M16C65_REGSET_TIMERA1	(1)
+#define M16C65_REGSET_TIMERA2	(2)
+#define M16C65_REGSET_TIMERA3	(3)
+#define M16C65_REGSET_TIMERA4	(4)
+#define M16C65_REGSET_TIMERB0	(5)
+#define M16C65_REGSET_TIMERB1	(6)
+#define M16C65_REGSET_TIMERB2	(7)
+#define M16C65_REGSET_TIMERB3	(8)
+#define M16C65_REGSET_TIMERB4	(9)
+#define M16C65_REGSET_TIMERB5	(10)
+
+BusDevice * M16C65_TimerABNew(const char *name,unsigned int regset);

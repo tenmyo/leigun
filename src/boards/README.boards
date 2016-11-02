@@ -1,0 +1,19 @@
+Adding new boards to softgun
+----------------------------
+
+1) create a new C-file with the name of your board
+   and ".c" as suffix. 
+
+2) Write a function which composes a Board.
+
+3) Provide the information about your board in a
+   board structure (include board.h for this).
+   Optionally add a compiled in 
+   default configuration (Memory size, flash type ...)
+
+4) export your Board structure in a headerfile with the
+   name of your board and the suffix ".h"
+
+5) Register your board in the Boards_Init function in boards.c
+
+A simple example is the Fantasy ARM Controller board (facc.c, facc.h)
