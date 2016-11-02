@@ -6,6 +6,6 @@
  *******************************************************************************
  */
 
-#include <i2c.h>
-I2C_Slave * PCA9548_New(char *name);
+#include "i2c.h"
+I2C_Slave *PCA9548_New(char *name);
 typedef struct PCA9548 PCA9548;

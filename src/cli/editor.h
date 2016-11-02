@@ -6,7 +6,7 @@ typedef struct Editor Editor;
  * 	write its echo of chars and control sequences.
  *********************************************************************
  */
-typedef void Ed_EchoProc(void *clientData,void *buf,int len);
+typedef void Ed_EchoProc(void *clientData, void *buf, int len);
 /*
  **************************************************************
  * Ed_LineSink
@@ -15,7 +15,7 @@ typedef void Ed_EchoProc(void *clientData,void *buf,int len);
  * 	pressing enter.
  **************************************************************
  */
-typedef void Ed_LineSink(void *clientData,void *buf,int len);
+typedef void Ed_LineSink(void *clientData, void *buf, int len);
 
 /*
  ********************************************************************
@@ -24,14 +24,14 @@ typedef void Ed_LineSink(void *clientData,void *buf,int len);
  *	destination for completed lines is required.
  ********************************************************************
  */
-Editor *Editor_New(Ed_EchoProc *,Ed_LineSink *,void *clientData);
+Editor *Editor_New(Ed_EchoProc *, Ed_LineSink *, void *clientData);
 /*
  *****************************************************************
  * Editor_Del
  *	The destructor of an editor
  *****************************************************************
  */
-void Editor_Del(Editor *ed);
+void Editor_Del(Editor * ed);
 /*
  *********************************************************************
  * Editor_Feed
@@ -39,4 +39,4 @@ void Editor_Del(Editor *ed);
  *	(For example a telnetd or a terminal can feed the editor)
  *********************************************************************
  */
-int Editor_Feed(Editor *ed,char c); 
+int Editor_Feed(Editor * ed, char c);

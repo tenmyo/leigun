@@ -30,11 +30,11 @@
 #define NS9750_ETH_HT2		(0xa0600508)
 
 #define NS9750_ETH_TR64		(0xa0600680)
-#define	NS9750_ETH_TR127	(0xa0600084)	
-#define	NS9750_ETH_TR255	(0xa0600088)	
-#define	NS9750_ETH_TR511	(0xa060008c)	
-#define	NS9750_ETH_TR1K		(0xa0600090)	
-#define	NS9750_ETH_TRMAX	(0xa0600094)	
+#define	NS9750_ETH_TR127	(0xa0600084)
+#define	NS9750_ETH_TR255	(0xa0600088)
+#define	NS9750_ETH_TR511	(0xa060008c)
+#define	NS9750_ETH_TR1K		(0xa0600090)
+#define	NS9750_ETH_TRMAX	(0xa0600094)
 #define	NS9750_ETH_TRMGV	(0xa0600098)
 #define NS9750_ETH_RBYT		(0xa060069c)
 #define NS9750_ETH_RPKT		(0xa06006a0)
@@ -176,4 +176,4 @@
 #define NS9750_IRQ_ETH_PHY             6
 
 BusDevice *NS9750_EthInit(const char *devname);
-int NS9750_EthRegisterPhy(BusDevice *dev,PHY_Device *phy,unsigned int phy_addr);
+int NS9750_EthRegisterPhy(BusDevice * dev, PHY_Device * phy, unsigned int phy_addr);

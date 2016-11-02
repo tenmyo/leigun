@@ -59,59 +59,59 @@ typedef struct CCM {
 } CCM;
 
 static uint32_t
-ccr_read(void *clientData,uint32_t address,int rqlen)
+ccr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCR not implented\n");
-        return 0;
+	fprintf(stderr, "CCR not implented\n");
+	return 0;
 }
 
 static void
-ccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCR not implented\n");
+	fprintf(stderr, "CCR not implented\n");
 }
 
 static uint32_t
-lpcr_read(void *clientData,uint32_t address,int rqlen)
+lpcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCR not implented\n");
-        return 0;
+	fprintf(stderr, "CCR not implented\n");
+	return 0;
 }
 
 static void
-lpcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lpcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCR not implented\n");
+	fprintf(stderr, "CCR not implented\n");
 }
 
 static uint32_t
-rcon_read(void *clientData,uint32_t address,int rqlen)
+rcon_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCM-RCON not implented\n");
-        return 0;
+	fprintf(stderr, "CCM-RCON not implented\n");
+	return 0;
 }
 
 static void
-rcon_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rcon_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCM-RCON not implented\n");
+	fprintf(stderr, "CCM-RCON not implented\n");
 }
 
 static uint32_t
-cir_read(void *clientData,uint32_t address,int rqlen)
+cir_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Read CCM-CIR Chip identification register\n");
-        return 0x2000;
+	fprintf(stderr, "Read CCM-CIR Chip identification register\n");
+	return 0x2000;
 }
 
 static void
-cir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CCM-CIR not implented\n");
+	fprintf(stderr, "CCM-CIR not implented\n");
 }
 
 static void
-CCM_Unmap(void *owner,uint32_t base,uint32_t mask)
+CCM_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete16(CCM_CCR(base));
 	IOH_Delete16(CCM_LPCR(base));
@@ -120,24 +120,23 @@ CCM_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-CCM_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+CCM_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	CCM *ccm = (CCM *) owner;
-	IOH_New16(CCM_CCR(base),ccr_read,ccr_write,ccm);
-	IOH_New16(CCM_LPCR(base),lpcr_read,lpcr_write,ccm);
-	IOH_New16(CCM_RCON(base),rcon_read,rcon_write,ccm);
-	IOH_New16(CCM_CIR(base),cir_read,cir_write,ccm);
+	IOH_New16(CCM_CCR(base), ccr_read, ccr_write, ccm);
+	IOH_New16(CCM_LPCR(base), lpcr_read, lpcr_write, ccm);
+	IOH_New16(CCM_RCON(base), rcon_read, rcon_write, ccm);
+	IOH_New16(CCM_CIR(base), cir_read, cir_write, ccm);
 }
 
 BusDevice *
 MFC5282_CCMNew(const char *name)
 {
-        CCM *ccm = sg_calloc(sizeof(CCM));
-        ccm->bdev.first_mapping=NULL;
-        ccm->bdev.Map=CCM_Map;
-        ccm->bdev.UnMap=CCM_Unmap;
-        ccm->bdev.owner=ccm;
-        ccm->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &ccm->bdev;
+	CCM *ccm = sg_calloc(sizeof(CCM));
+	ccm->bdev.first_mapping = NULL;
+	ccm->bdev.Map = CCM_Map;
+	ccm->bdev.UnMap = CCM_Unmap;
+	ccm->bdev.owner = ccm;
+	ccm->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &ccm->bdev;
 }
-

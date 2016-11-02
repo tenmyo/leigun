@@ -92,7 +92,7 @@ typedef struct AT91St {
 	uint32_t sr;
 	uint32_t imr;
 	uint32_t rtar;
-	uint32_t crtv; /* rt_count */
+	uint32_t crtv;		/* rt_count */
 	CycleCounter_t last_ptr_update;
 	CycleCounter_t ptr_saved_cpucycles;
 	CycleCounter_t last_wdg_update;
@@ -107,96 +107,97 @@ typedef struct AT91St {
 } AT91St;
 
 static void
-update_interrupt(AT91St *st)
+update_interrupt(AT91St * st)
 {
 	/* Positive level internal interrupt source wired or with mc dbgu st rtc and pmc */
-	if(st->sr & st->imr) {
-		SigNode_Set(st->irqNode,SIG_HIGH);
+	if (st->sr & st->imr) {
+		SigNode_Set(st->irqNode, SIG_HIGH);
 	} else {
-		SigNode_Set(st->irqNode,SIG_PULLDOWN);
+		SigNode_Set(st->irqNode, SIG_PULLDOWN);
 	}
 }
 
 static void
-actualize_rt(AT91St *st) 
+actualize_rt(AT91St * st)
 {
-	uint64_t diff,cycles,cyclelen = 1;
+	uint64_t diff, cycles, cyclelen = 1;
 	uint32_t rtpres = st->rtmr & 0xffff;
-	if(rtpres == 0) {
+	if (rtpres == 0) {
 		rtpres = 0x10000;
 	}
 	diff = CycleCounter_Get() - st->last_rt_update;
 	st->last_rt_update = CycleCounter_Get();
 	st->rt_saved_cpucycles += diff;
-	if(Clock_Freq(st->slck)) {
-		cyclelen = ((uint64_t)rtpres * CycleTimerRate_Get() / Clock_Freq(st->slck));
+	if (Clock_Freq(st->slck)) {
+		cyclelen = ((uint64_t) rtpres * CycleTimerRate_Get() / Clock_Freq(st->slck));
 	}
-	if(cyclelen) {
+	if (cyclelen) {
 		cycles = st->rt_saved_cpucycles / cyclelen;
 	} else {
 		cycles = 0;
 	}
 	st->rt_saved_cpucycles -= cycles * cyclelen;
-	if((st->crtv < st->rtar) && ((cycles + st->crtv) >= st->rtar)) {
-		if(!(st->sr  & SR_ALMS)) {
+	if ((st->crtv < st->rtar) && ((cycles + st->crtv) >= st->rtar)) {
+		if (!(st->sr & SR_ALMS)) {
 			st->sr |= SR_ALMS;
 			update_interrupt(st);
 		}
 	}
-	if(cycles) {
+	if (cycles) {
 		st->crtv = (st->crtv + cycles) & 0xfffff;
-		if(!(st->sr & SR_RTTINC)) {
+		if (!(st->sr & SR_RTTINC)) {
 			st->sr |= SR_RTTINC;
 			update_interrupt(st);
 		}
-	}	
+	}
 }
+
 static void
-update_rt_event(AT91St *st) 
+update_rt_event(AT91St * st)
 {
-	if(st->imr & SR_RTTINC) {
-		fprintf(stderr,"AT91St: RTTINC interrupt not implemented\n");
+	if (st->imr & SR_RTTINC) {
+		fprintf(stderr, "AT91St: RTTINC interrupt not implemented\n");
 	} else {
 		CycleTimer_Remove(&st->alarm_timer);
 	}
-	if(st->imr & SR_ALMS) {
-		fprintf(stderr,"Alarm interrupt not implemented\n");
+	if (st->imr & SR_ALMS) {
+		fprintf(stderr, "Alarm interrupt not implemented\n");
 	} else {
 		CycleTimer_Remove(&st->alarm_timer);
 	}
 }
 
-static void 
-alarm_event(void *clientData) 
+static void
+alarm_event(void *clientData)
 {
-	AT91St *st = (AT91St *)clientData;
-	actualize_rt(st);	
+	AT91St *st = (AT91St *) clientData;
+	actualize_rt(st);
 	update_rt_event(st);
 }
 
 static void
-actualize_ptr(AT91St *st) 
+actualize_ptr(AT91St * st)
 {
 	int reload_val = st->pimr & 0xffff;
 	uint64_t diff;
 	uint64_t cyclelen = 1;
 	uint64_t decrement;
-	if(reload_val == 0) {
+	if (reload_val == 0) {
 		reload_val = 0x10000;
 	}
 	diff = CycleCounter_Get() - st->last_ptr_update;
 	st->last_ptr_update = CycleCounter_Get();
 	st->ptr_saved_cpucycles += diff;
-	if(Clock_Freq(st->slck)) {
+	if (Clock_Freq(st->slck)) {
 		cyclelen = CycleTimerRate_Get() / Clock_Freq(st->slck);
-	} 
-	if(cyclelen) {
+	}
+	if (cyclelen) {
 		decrement = st->ptr_saved_cpucycles / cyclelen;
 	} else {
 		decrement = 0;
 	}
 	st->ptr_saved_cpucycles -= decrement * cyclelen;
-	if(decrement >= st->ptr_count) {
+	if (decrement >= st->ptr_count) {
 		uint64_t newcount;
 		decrement -= st->ptr_count;
 		newcount = decrement % reload_val;
@@ -209,59 +210,58 @@ actualize_ptr(AT91St *st)
 }
 
 static void
-update_ptr_event(AT91St *st) 
+update_ptr_event(AT91St * st)
 {
 	uint64_t cyclelen;
 	CycleCounter_t timeout;
 	cyclelen = CycleTimerRate_Get() / Clock_Freq(st->slck);
-	timeout = cyclelen * st->ptr_count - st->ptr_saved_cpucycles;	 
-	CycleTimer_Mod(&st->ptr_timer,timeout);
+	timeout = cyclelen * st->ptr_count - st->ptr_saved_cpucycles;
+	CycleTimer_Mod(&st->ptr_timer, timeout);
 }
 
-static void 
-ptr_event(void *clientData) 
+static void
+ptr_event(void *clientData)
 {
-	AT91St *st = (AT91St *)clientData;
-	actualize_ptr(st);	
-	if(st->ptr_count > 0) {
+	AT91St *st = (AT91St *) clientData;
+	actualize_ptr(st);
+	if (st->ptr_count > 0) {
 		update_ptr_event(st);
 	} else {
-		fprintf(stderr,"AT91St: too much events from ptimer\n");
+		fprintf(stderr, "AT91St: too much events from ptimer\n");
 	}
 }
 
-
 static void
-actualize_wdg(AT91St *st) 
+actualize_wdg(AT91St * st)
 {
 	uint64_t diff;
-	uint64_t cyclelen,cycles;
+	uint64_t cyclelen, cycles;
 	uint64_t freq;
 	uint32_t reload_value = st->wdmr & 0xffff;
-	if(reload_value == 0) {
+	if (reload_value == 0) {
 		reload_value = 0x10000;
 	}
 	diff = CycleCounter_Get() - st->last_wdg_update;
 	st->last_wdg_update = CycleCounter_Get();
-	freq = Clock_Freq(st->slck) / 128;  
-	if(!freq)
+	freq = Clock_Freq(st->slck) / 128;
+	if (!freq)
 		return;
 	cyclelen = CycleTimerRate_Get() / freq;
-	if(!cyclelen) {
+	if (!cyclelen) {
 		return;
 	}
 	st->wdg_saved_cpucycles += diff;
 	cycles = st->wdg_saved_cpucycles / cyclelen;
-	st->wdg_saved_cpucycles -= cycles *cyclelen;
-	if(cycles >= st->wdg_count) {
+	st->wdg_saved_cpucycles -= cycles * cyclelen;
+	if (cycles >= st->wdg_count) {
 		uint32_t newcount;
 		cycles -= st->wdg_count;
 		newcount = cycles % reload_value;
-		st->wdg_count = reload_value - newcount;	
+		st->wdg_count = reload_value - newcount;
 		st->sr |= SR_WDOVF;
 		update_interrupt(st);
-		if(st->wdmr & WDMR_RSTEN) {
-			fprintf(stderr,"watchdog reset\n");
+		if (st->wdmr & WDMR_RSTEN) {
+			fprintf(stderr, "watchdog reset\n");
 			exit(0);
 		}
 	} else {
@@ -269,89 +269,89 @@ actualize_wdg(AT91St *st)
 	}
 }
 
-static void update_wdg_event(AT91St *st);
+static void update_wdg_event(AT91St * st);
 
-static void 
-wdg_timeout(void *clientData) 
+static void
+wdg_timeout(void *clientData)
 {
-	AT91St *st = (AT91St *)clientData;
-	actualize_wdg(st);	
-	if(st->wdg_count > 0) {
+	AT91St *st = (AT91St *) clientData;
+	actualize_wdg(st);
+	if (st->wdg_count > 0) {
 		update_wdg_event(st);
 	} else {
-		fprintf(stderr,"At91St: too much events from watchdog\n");
+		fprintf(stderr, "At91St: too much events from watchdog\n");
 	}
 }
 
 static void
-update_wdg_event(AT91St *st) 
+update_wdg_event(AT91St * st)
 {
 	uint64_t freq;
 	uint64_t cyclelen;
 	CycleCounter_t timeout;
-	freq = Clock_Freq(st->slck) / 128;  
-	if(freq) {
+	freq = Clock_Freq(st->slck) / 128;
+	if (freq) {
 		cyclelen = CycleTimerRate_Get() / freq;
-		timeout = cyclelen * st->wdg_count - st->wdg_saved_cpucycles;	
-		CycleTimer_Mod(&st->wdg_timer,timeout);
+		timeout = cyclelen * st->wdg_count - st->wdg_saved_cpucycles;
+		CycleTimer_Mod(&st->wdg_timer, timeout);
 	}
 }
 
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91St: CR register is writeonly\n");
-        return 0;
+	fprintf(stderr, "AT91St: CR register is writeonly\n");
+	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91St *st = (AT91St*) clientData;
+	AT91St *st = (AT91St *) clientData;
 	int reload_value;
-	if(value & CR_WDRST) {
+	if (value & CR_WDRST) {
 		reload_value = st->wdmr & 0xffff;
-		if(reload_value == 0) {
+		if (reload_value == 0) {
 			reload_value = 0x10000;
 		}
 		actualize_wdg(st);
-		st->wdg_count = reload_value; 
+		st->wdg_count = reload_value;
 		update_wdg_event(st);
 	}
 }
 
 static uint32_t
-pimr_read(void *clientData,uint32_t address,int rqlen)
+pimr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
-        return st->pimr;
+	return st->pimr;
 }
 
 static void
-pimr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pimr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91St *st = (AT91St*) clientData;
+	AT91St *st = (AT91St *) clientData;
 	actualize_ptr(st);
 	int reload_val = value & 0xffff;
-	if(reload_val == 0) {
+	if (reload_val == 0) {
 		reload_val = 0x10000;
 	}
-	st->pimr = value;	
+	st->pimr = value;
 	st->ptr_count = reload_val;
 	update_ptr_event(st);
-        dbgprintf("AT91St: Periodic timer reload val %d\n",reload_val);
+	dbgprintf("AT91St: Periodic timer reload val %d\n", reload_val);
 }
 
 static uint32_t
-wdmr_read(void *clientData,uint32_t address,int rqlen)
+wdmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
 	actualize_wdg(st);
-        return st->wdmr;
+	return st->wdmr;
 }
 
 static void
-wdmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wdmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
 	st->wdmr = value;
@@ -359,10 +359,10 @@ wdmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-rtmr_read(void *clientData,uint32_t address,int rqlen)
+rtmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
-        return st->rtmr;
+	return st->rtmr;
 }
 
 /*
@@ -370,7 +370,7 @@ rtmr_read(void *clientData,uint32_t address,int rqlen)
  * 20 Bit counter to 0
  */
 static void
-rtmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rtmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
 	actualize_rt(st);
@@ -380,73 +380,73 @@ rtmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91St *st = (AT91St *)clientData;
+	AT91St *st = (AT91St *) clientData;
 	uint32_t retval = st->sr;
 	st->sr = 0;
 	update_interrupt(st);
-        return retval;
+	return retval;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91St: SR register is writeonly\n");
+	fprintf(stderr, "AT91St: SR register is writeonly\n");
 }
 
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91St: IER register is write only\n");
-        return 0;
+	fprintf(stderr, "AT91St: IER register is write only\n");
+	return 0;
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91St *st = (AT91St *)clientData;
+	AT91St *st = (AT91St *) clientData;
 	st->imr |= (value & 0xf);
 	update_interrupt(st);
 }
 
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91St: IDR regsiter is writeonly\n");
-        return 0;
+	fprintf(stderr, "AT91St: IDR regsiter is writeonly\n");
+	return 0;
 }
 
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91St *st = (AT91St *)clientData;
+	AT91St *st = (AT91St *) clientData;
 	st->imr &= ~(value & 0xf);
 	update_interrupt(st);
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91St *st = (AT91St *)clientData;
-        return st->imr;
+	AT91St *st = (AT91St *) clientData;
+	return st->imr;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91St: IMR register is readonly\n");
+	fprintf(stderr, "AT91St: IMR register is readonly\n");
 }
 
 static uint32_t
-rtar_read(void *clientData,uint32_t address,int rqlen)
+rtar_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
-        return st->rtar;
+	return st->rtar;
 }
 
 static void
-rtar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rtar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
 	actualize_rt(st);
@@ -455,49 +455,49 @@ rtar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-crtr_read(void *clientData,uint32_t address,int rqlen)
+crtr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91St *st = (AT91St *) clientData;
 	actualize_rt(st);
-        return st->crtv;
+	return st->crtv;
 }
 
 static void
-crtr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crtr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91St: CRTR is a readonly register\n");
+	fprintf(stderr, "AT91St: CRTR is a readonly register\n");
 }
 
 static void
-AT91St_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91St_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91St *st = (AT91St*) owner;
-        IOH_New32(ST_CR(base),cr_read,cr_write,st);
-        IOH_New32(ST_PIMR(base),pimr_read,pimr_write,st);
-        IOH_New32(ST_WDMR(base),wdmr_read,wdmr_write,st);
-        IOH_New32(ST_RTMR(base),rtmr_read,rtmr_write,st);
-        IOH_New32(ST_SR(base),sr_read,sr_write,st);
-        IOH_New32(ST_IER(base),ier_read,ier_write,st);
-        IOH_New32(ST_IDR(base),idr_read,idr_write,st);
-        IOH_New32(ST_IMR(base),imr_read,imr_write,st);
-        IOH_New32(ST_RTAR(base),rtar_read,rtar_write,st);
-        IOH_New32(ST_CRTR(base),crtr_read,crtr_write,st);
+	AT91St *st = (AT91St *) owner;
+	IOH_New32(ST_CR(base), cr_read, cr_write, st);
+	IOH_New32(ST_PIMR(base), pimr_read, pimr_write, st);
+	IOH_New32(ST_WDMR(base), wdmr_read, wdmr_write, st);
+	IOH_New32(ST_RTMR(base), rtmr_read, rtmr_write, st);
+	IOH_New32(ST_SR(base), sr_read, sr_write, st);
+	IOH_New32(ST_IER(base), ier_read, ier_write, st);
+	IOH_New32(ST_IDR(base), idr_read, idr_write, st);
+	IOH_New32(ST_IMR(base), imr_read, imr_write, st);
+	IOH_New32(ST_RTAR(base), rtar_read, rtar_write, st);
+	IOH_New32(ST_CRTR(base), crtr_read, crtr_write, st);
 //        IOH_New32(base+0x2c,debug_read,debug_write,st);
 }
 
 static void
-AT91St_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91St_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete32(ST_CR(base));
-        IOH_Delete32(ST_PIMR(base));
-        IOH_Delete32(ST_WDMR(base));
-        IOH_Delete32(ST_RTMR(base));
-        IOH_Delete32(ST_SR(base));
-        IOH_Delete32(ST_IER(base));
-        IOH_Delete32(ST_IDR(base));
-        IOH_Delete32(ST_IMR(base));
-        IOH_Delete32(ST_RTAR(base));
-        IOH_Delete32(ST_CRTR(base));
+	IOH_Delete32(ST_CR(base));
+	IOH_Delete32(ST_PIMR(base));
+	IOH_Delete32(ST_WDMR(base));
+	IOH_Delete32(ST_RTMR(base));
+	IOH_Delete32(ST_SR(base));
+	IOH_Delete32(ST_IER(base));
+	IOH_Delete32(ST_IDR(base));
+	IOH_Delete32(ST_IMR(base));
+	IOH_Delete32(ST_RTAR(base));
+	IOH_Delete32(ST_CRTR(base));
 
 }
 
@@ -505,26 +505,26 @@ BusDevice *
 AT91St_New(const char *name)
 {
 	AT91St *st = sg_new(AT91St);
-	st->slck = Clock_New("%s.slck",name);
-	if(!st->slck) {
-		fprintf(stderr,"Can not create input clock of AT91St \"%s\"\n",name);
+	st->slck = Clock_New("%s.slck", name);
+	if (!st->slck) {
+		fprintf(stderr, "Can not create input clock of AT91St \"%s\"\n", name);
 		exit(1);
 	}
 	st->last_wdg_update = CycleCounter_Get();
-	st->wdmr = 0x00020000; /* EXTEN */ 
+	st->wdmr = 0x00020000;	/* EXTEN */
 	st->wdg_count = 0x10000;
 	st->rtmr = 0x8000;
-	st->rtar = 0; 		/* Maximum value = 2^20 seconds */
-	st->irqNode = SigNode_New("%s.irq",name);
-	SigNode_Set(st->irqNode,SIG_PULLDOWN);
-	CycleTimer_Init(&st->wdg_timer,wdg_timeout,st);
-	CycleTimer_Init(&st->ptr_timer,ptr_event,st);
-	CycleTimer_Init(&st->alarm_timer,alarm_event,st);
-	st->bdev.first_mapping=NULL;
-        st->bdev.Map=AT91St_Map;
-        st->bdev.UnMap=AT91St_UnMap;
-        st->bdev.owner=st;
-        st->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	st->rtar = 0;		/* Maximum value = 2^20 seconds */
+	st->irqNode = SigNode_New("%s.irq", name);
+	SigNode_Set(st->irqNode, SIG_PULLDOWN);
+	CycleTimer_Init(&st->wdg_timer, wdg_timeout, st);
+	CycleTimer_Init(&st->ptr_timer, ptr_event, st);
+	CycleTimer_Init(&st->alarm_timer, alarm_event, st);
+	st->bdev.first_mapping = NULL;
+	st->bdev.Map = AT91St_Map;
+	st->bdev.UnMap = AT91St_UnMap;
+	st->bdev.owner = st;
+	st->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	update_interrupt(st);
 	return &st->bdev;
 }

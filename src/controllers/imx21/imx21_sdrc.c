@@ -52,7 +52,7 @@
 #define		SDCTL_SMODE(x)	(((x)>>28) & 7)
 #define		SDCTL_SP		(1<<27)
 #define		SDCTL_ROW_MASK		(3<<24)
-#define		SDCTL_ROW_SHIFT		(24)	
+#define		SDCTL_ROW_SHIFT		(24)
 #define		SDCTL_ROW(x)	(((x)>>24) & 3)
 #define		SDCTL_COL_MASK		(3<<20)
 #define		SDCTL_COL_SHIFT		(20)
@@ -96,104 +96,104 @@ typedef struct IMX21Sdrc {
 } IMX21Sdrc;
 
 static uint32_t
-sdctl_read(void *clientData,uint32_t address,int rqlen)
+sdctl_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX21Sdrc *sdrc = (IMX21Sdrc*) clientData;
+	IMX21Sdrc *sdrc = (IMX21Sdrc *) clientData;
 	int index = (address & 4) >> 2;
-	
-        fprintf(stderr,"SDRC: SDCTL%d register read\n",index);
-        return sdrc->sdctl[index];
+
+	fprintf(stderr, "SDRC: SDCTL%d register read\n", index);
+	return sdrc->sdctl[index];
 }
 
 static void
-sdctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMX21Sdrc *sdrc = (IMX21Sdrc*) clientData;
+	IMX21Sdrc *sdrc = (IMX21Sdrc *) clientData;
 	int index = (address & 4) >> 2;
 	int cl;
 	int dump = 0;
 	//BusDevice *dram = sdrc->dram[index];
 	cl = SDCTL_SCL(value);
-        fprintf(stderr,"SDRC: SDCTL%d register write %08x: CL%d\n",index,value,cl);
-	if(dump) {
-		fprintf(stderr,"SDE: %d\n",!!(value & SDCTL_SDE)); 
-		fprintf(stderr,"SMODE: %d\n",(value & SDCTL_SMODE_MASK) >> SDCTL_SMODE_SHIFT); 
-		fprintf(stderr,"SP: %d\n",!!(value & SDCTL_SP)); 
-		fprintf(stderr,"ROW: %d\n",(value & SDCTL_ROW_MASK) >> SDCTL_ROW_SHIFT); 
-		fprintf(stderr,"COL: %d\n",(value & SDCTL_COL_MASK) >> SDCTL_COL_SHIFT); 
-		fprintf(stderr,"IAM: %d\n",!!(value & SDCTL_IAM)); 
-		fprintf(stderr,"DSIZ: %d\n",(value & SDCTL_DSIZ_MASK) >> SDCTL_DSIZ_SHIFT); 
-		fprintf(stderr,"SREFR: %d\n",(value & SDCTL_SREFR_MASK) >> SDCTL_SREFR_SHIFT); 
-		fprintf(stderr,"PWDT: %d\n",(value & SDCTL_PWDT_MASK) >> SDCTL_PWDT_SHIFT); 
-		fprintf(stderr,"CI: %d\n",(value & SDCTL_CI_MASK) >> SDCTL_CI_SHIFT); 
-		fprintf(stderr,"SCL: %d\n",(value & SDCTL_SCL_MASK) >> SDCTL_SCL_SHIFT); 
-		fprintf(stderr,"SRP: %d\n",!!(value & SDCTL_SRP)); 
-		fprintf(stderr,"SRCD: %d\n",(value & SDCTL_SRCD_MASK) >> SDCTL_SRCD_SHIFT); 
-		fprintf(stderr,"SRC: %d\n",(value & SDCTL_SRC_MASK) >> SDCTL_SRC_SHIFT); 
+	fprintf(stderr, "SDRC: SDCTL%d register write %08x: CL%d\n", index, value, cl);
+	if (dump) {
+		fprintf(stderr, "SDE: %d\n", !!(value & SDCTL_SDE));
+		fprintf(stderr, "SMODE: %d\n", (value & SDCTL_SMODE_MASK) >> SDCTL_SMODE_SHIFT);
+		fprintf(stderr, "SP: %d\n", !!(value & SDCTL_SP));
+		fprintf(stderr, "ROW: %d\n", (value & SDCTL_ROW_MASK) >> SDCTL_ROW_SHIFT);
+		fprintf(stderr, "COL: %d\n", (value & SDCTL_COL_MASK) >> SDCTL_COL_SHIFT);
+		fprintf(stderr, "IAM: %d\n", !!(value & SDCTL_IAM));
+		fprintf(stderr, "DSIZ: %d\n", (value & SDCTL_DSIZ_MASK) >> SDCTL_DSIZ_SHIFT);
+		fprintf(stderr, "SREFR: %d\n", (value & SDCTL_SREFR_MASK) >> SDCTL_SREFR_SHIFT);
+		fprintf(stderr, "PWDT: %d\n", (value & SDCTL_PWDT_MASK) >> SDCTL_PWDT_SHIFT);
+		fprintf(stderr, "CI: %d\n", (value & SDCTL_CI_MASK) >> SDCTL_CI_SHIFT);
+		fprintf(stderr, "SCL: %d\n", (value & SDCTL_SCL_MASK) >> SDCTL_SCL_SHIFT);
+		fprintf(stderr, "SRP: %d\n", !!(value & SDCTL_SRP));
+		fprintf(stderr, "SRCD: %d\n", (value & SDCTL_SRCD_MASK) >> SDCTL_SRCD_SHIFT);
+		fprintf(stderr, "SRC: %d\n", (value & SDCTL_SRC_MASK) >> SDCTL_SRC_SHIFT);
 	}
-	sdrc->sdctl[index] = value & 0xfb3fff7f;	
+	sdrc->sdctl[index] = value & 0xfb3fff7f;
 }
 
 static uint32_t
-sdrst_read(void *clientData,uint32_t address,int rqlen)
+sdrst_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SDRC: SDRST register read not implemented\n");
-        return 0;
+	fprintf(stderr, "SDRC: SDRST register read not implemented\n");
+	return 0;
 }
 
 static void
-sdrst_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdrst_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SDRC: SDRST register write not implemented\n");
+	fprintf(stderr, "SDRC: SDRST register write not implemented\n");
 }
+
 static uint32_t
-misc_read(void *clientData,uint32_t address,int rqlen)
+misc_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SDRC: MISC register read not implemented\n");
-        return 0;
+	fprintf(stderr, "SDRC: MISC register read not implemented\n");
+	return 0;
 }
 
 static void
-misc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+misc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SDRC: MISC register write not implemented\n");
+	fprintf(stderr, "SDRC: MISC register write not implemented\n");
 }
 
 static void
-IMXSdrc_Unmap(void *owner,uint32_t base,uint32_t mask)
+IMXSdrc_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete32(SDRC_SDCTL0(base));
-        IOH_Delete32(SDRC_SDCTL1(base));
-        IOH_Delete32(SDRC_SDRST(base));
-        IOH_Delete32(SDRC_MISC(base));
+	IOH_Delete32(SDRC_SDCTL0(base));
+	IOH_Delete32(SDRC_SDCTL1(base));
+	IOH_Delete32(SDRC_SDRST(base));
+	IOH_Delete32(SDRC_MISC(base));
 }
 
 static void
-IMXSdrc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+IMXSdrc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 
-        IMX21Sdrc *sdrc = (IMX21Sdrc *) owner;
-        IOH_New32(SDRC_SDCTL0(base),sdctl_read,sdctl_write,sdrc);
-	IOH_New32(SDRC_SDCTL1(base),sdctl_read,sdctl_write,sdrc);
-	IOH_New32(SDRC_SDRST(base),sdrst_read,sdrst_write,sdrc);
-	IOH_New32(SDRC_MISC(base),misc_read,misc_write,sdrc);
+	IMX21Sdrc *sdrc = (IMX21Sdrc *) owner;
+	IOH_New32(SDRC_SDCTL0(base), sdctl_read, sdctl_write, sdrc);
+	IOH_New32(SDRC_SDCTL1(base), sdctl_read, sdctl_write, sdrc);
+	IOH_New32(SDRC_SDRST(base), sdrst_read, sdrst_write, sdrc);
+	IOH_New32(SDRC_MISC(base), misc_read, misc_write, sdrc);
 }
 
 BusDevice *
-IMX21_SdrcNew(const char *name,BusDevice *dram0,BusDevice *dram1)
+IMX21_SdrcNew(const char *name, BusDevice * dram0, BusDevice * dram1)
 {
-        IMX21Sdrc *sdrc;
-        sdrc = sg_new(IMX21Sdrc);
+	IMX21Sdrc *sdrc;
+	sdrc = sg_new(IMX21Sdrc);
 	sdrc->dram[0] = dram0;
 	sdrc->dram[1] = dram1;
 	sdrc->sdctl[0] = 0x01000300;
 	sdrc->sdctl[1] = 0x01060300;
-        sdrc->bdev.first_mapping=NULL;
-        sdrc->bdev.Map=IMXSdrc_Map;
-        sdrc->bdev.UnMap=IMXSdrc_Unmap;
-        sdrc->bdev.owner=sdrc;
-        sdrc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"i.MX21 SDRAM controller (SDRC) created\n");
-        return &sdrc->bdev;
+	sdrc->bdev.first_mapping = NULL;
+	sdrc->bdev.Map = IMXSdrc_Map;
+	sdrc->bdev.UnMap = IMXSdrc_Unmap;
+	sdrc->bdev.owner = sdrc;
+	sdrc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "i.MX21 SDRAM controller (SDRC) created\n");
+	return &sdrc->bdev;
 }
-

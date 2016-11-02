@@ -2,6 +2,7 @@
 #define	__FBDISPLAY
 #include "keyboard.h"
 #include "sound.h"
+#include "mouse.h"
 
 typedef struct FbUpdateRequest {
 	unsigned int offset;	/* Start address relative to framebuffer start */
@@ -16,10 +17,9 @@ typedef struct FbFormat {
 	int red_shift;
 	int green_shift;
 	int blue_shift;
-	int bits_per_pixel; /* This is the layout in memory 	      */
-	int depth;	    /* This is the number of really used bits */
+	int bits_per_pixel;	/* This is the layout in memory           */
+	int depth;		/* This is the number of really used bits */
 } FbFormat;
-
 
 typedef struct FbCtrlMsg {
 	int msg;
@@ -33,9 +33,9 @@ typedef struct FbCtrlMsg {
  */
 typedef struct FbDisplay {
 	void *owner;
-	void (*setFbFormat)(struct FbDisplay *,FbFormat *);	
-	int (*fbUpdateRequest)(struct FbDisplay *,FbUpdateRequest *);
-	int (*fbCtrlMsg)(struct FbDisplay *,FbCtrlMsg *);
+	void (*setFbFormat) (struct FbDisplay *, FbFormat *);
+	int (*fbUpdateRequest) (struct FbDisplay *, FbUpdateRequest *);
+	int (*fbCtrlMsg) (struct FbDisplay *, FbCtrlMsg *);
 	char *name;
 	uint32_t width;
 	uint32_t height;
@@ -47,20 +47,22 @@ typedef struct FbDisplay {
  ***********************************************************
  */
 static inline uint32_t
-FbDisplay_Width(FbDisplay *disp) 
+FbDisplay_Width(FbDisplay * disp)
 {
 	return disp->width;
 }
+
 /*
  ***********************************************************
  * Get the height of the display
  ***********************************************************
  */
 static inline uint32_t
-FbDisplay_Height(FbDisplay *disp) 
+FbDisplay_Height(FbDisplay * disp)
 {
 	return disp->height;
 }
+
 /*
  ***********************************************************
  * Get the name of a display
@@ -68,10 +70,11 @@ FbDisplay_Height(FbDisplay *disp)
  ***********************************************************
  */
 static inline char *
-FbDisplay_Name(FbDisplay *disp) 
+FbDisplay_Name(FbDisplay * disp)
 {
 	return disp->name;
 }
+
 /*
  * --------------------------------------------------------------------
  * FB_Display constructor needs to be called with information about 
@@ -81,37 +84,39 @@ FbDisplay_Name(FbDisplay *disp)
  * --------------------------------------------------------------------
  */
 
-static inline int 
-FbDisplay_UpdateRequest(FbDisplay *disp,FbUpdateRequest *req) 
+static inline int
+FbDisplay_UpdateRequest(FbDisplay * disp, FbUpdateRequest * req)
 {
-	if(disp && disp->fbUpdateRequest) {
-		return disp->fbUpdateRequest(disp,req);
+	if (disp && disp->fbUpdateRequest) {
+		return disp->fbUpdateRequest(disp, req);
 	} else {
-		fprintf(stderr,"Display does not handle updates\n");
+		fprintf(stderr, "Display does not handle updates\n");
 		return -1;
 	}
 }
-static inline void 
-FbDisplay_SetFbFormat(FbDisplay *disp,FbFormat *fbf) 
+
+static inline void
+FbDisplay_SetFbFormat(FbDisplay * disp, FbFormat * fbf)
 {
-	if(disp && disp->setFbFormat) {
-		return disp->setFbFormat(disp,fbf);
+	if (disp && disp->setFbFormat) {
+		return disp->setFbFormat(disp, fbf);
 	} else {
-		fprintf(stderr,"Display does not take framebuffer info\n");
+		fprintf(stderr, "Display does not take framebuffer info\n");
 		return;
 	}
 }
 
 static inline int
-FbDisplay_ControlMessage(FbDisplay *disp,FbCtrlMsg *msg) 
+FbDisplay_ControlMessage(FbDisplay * disp, FbCtrlMsg * msg)
 {
-	if(disp && disp->fbCtrlMsg) {
-		return disp->fbCtrlMsg(disp,msg);
+	if (disp && disp->fbCtrlMsg) {
+		return disp->fbCtrlMsg(disp, msg);
 	} else {
 		return -1;
 	}
 }
 
-void FbDisplay_New(const char *name,FbDisplay **display,Keyboard **keyboard,void **mouse,SoundDevice **sdev);
+void FbDisplay_New(const char *name, FbDisplay ** display, Keyboard ** keyboard, Mouse **mouse,
+		   SoundDevice ** sdev);
 
-#endif /* __FBSIDPLAY */
+#endif				/* __FBSIDPLAY */

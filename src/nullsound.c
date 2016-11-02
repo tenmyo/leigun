@@ -35,36 +35,35 @@
  *************************************************************************************************
  */
 
-
 #include <stdio.h>
 #include "sound.h"
 #include "sgstring.h"
 #include "signode.h"
 
-static int 
-NullDev_SetSoundFormat(SoundDevice *dev,SoundFormat *format) 
+static int
+NullDev_SetSoundFormat(SoundDevice * dev, SoundFormat * format)
 {
 	return 0;
 }
 
-static int 
-NullDev_PlaySamples(SoundDevice *dev,void *data,uint32_t len)
+static int
+NullDev_PlaySamples(SoundDevice * dev, void *data, uint32_t len)
 {
 	return len;
 }
 
 SoundDevice *
-NullSound_New(const char *name) 
+NullSound_New(const char *name)
 {
-	SoundDevice *sdev = sg_new(SoundDevice);	
+	SoundDevice *sdev = sg_new(SoundDevice);
 	sdev->setSoundFormat = NullDev_SetSoundFormat;
 	sdev->playSamples = NullDev_PlaySamples;
-	sdev->speedUp = SigNode_New("%s.speed_up",name);
-	sdev->speedDown = SigNode_New("%s.speed_down",name);
-	if(!sdev->speedUp || ! sdev->speedDown) {
-		fprintf(stderr,"Can not create sound speed control lines\n");
+	sdev->speedUp = SigNode_New("%s.speedUp", name);
+	sdev->speedDown = SigNode_New("%s.speedDown", name);
+	if (!sdev->speedUp || !sdev->speedDown) {
+		fprintf(stderr, "Can not create sound speed control lines\n");
 		exit(1);
 	}
-	fprintf(stderr,"Created Null sound device \"%s\" for eating up sound\n",name);
+	fprintf(stderr, "Created Null sound device \"%s\" for eating up sound\n", name);
 	return sdev;
 }

@@ -82,8 +82,7 @@ void NS9750_TimerInit(const char *name);
 #define SYS_ICFG_IT_MASK                (1<<5)
 #define SYS_ICFG_IE_BIT                 (7)
 #define SYS_ICFG_IE_MASK                (1<<7)
-#define SYS_ICFG_ISD_MASK               (0x1f<<0) 
-
+#define SYS_ICFG_ISD_MASK               (0x1f<<0)
 
 #define SYS_TCR_REN                     (1UL<<0)
 #define SYS_TCR_TSZ                     (1UL<<1)
@@ -134,4 +133,3 @@ void NS9750_TimerInit(const char *name);
 #define IRQ_EXTERNAL_1          29
 #define IRQ_EXTERNAL_2          30
 #define IRQ_EXTERNAL_3          31
-

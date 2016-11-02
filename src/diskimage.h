@@ -21,8 +21,6 @@
 #define O_LARGEFILE 0
 #endif
 
-
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -52,17 +50,17 @@ typedef struct DiskImage {
 } DiskImage;
 
 typedef struct DiskOps {
-	void (*close)(DiskImage *di);		
-	void *(*mmap)(DiskImage *di);
-	int  (*read)(DiskImage *di,off_t ofs,uint8_t *buf,int count);	
-	int  (*write)(DiskImage *di,off_t ofs,const uint8_t *buf,int count);	
+	void (*close) (DiskImage * di);
+	void *(*mmap) (DiskImage * di);
+	int (*read) (DiskImage * di, off_t ofs, uint8_t * buf, int count);
+	int (*write) (DiskImage * di, off_t ofs, const uint8_t * buf, int count);
 } DiskOps;
 
-void DiskImage_Close(DiskImage *di);
-DiskImage * DiskImage_Open(const char *name,uint64_t size,int flags);
-void * DiskImage_Mmap(DiskImage *di); 
+void DiskImage_Close(DiskImage * di);
+DiskImage *DiskImage_Open(const char *name, uint64_t size, int flags);
+void *DiskImage_Mmap(DiskImage * di);
 
-int DiskImage_Read(DiskImage *di,off_t ofs,uint8_t *buf,int count);
-int DiskImage_Write(DiskImage *di,off_t ofs,const uint8_t *buf,int count);
+int DiskImage_Read(DiskImage * di, off_t ofs, uint8_t * buf, int count);
+int DiskImage_Write(DiskImage * di, off_t ofs, const uint8_t * buf, int count);
 
 #endif

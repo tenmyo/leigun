@@ -13,19 +13,19 @@
 #define CPU_MPC866P 	(2)
 #define CPU_MPC8260 	(3)
 
-typedef uint32_t SPR_ReadProc(int spr,void *cd);
-typedef void SPR_WriteProc(uint32_t value,int spr,void *cd);
+typedef uint32_t SPR_ReadProc(int spr, void *cd);
+typedef void SPR_WriteProc(uint32_t value, int spr, void *cd);
 
 typedef struct PpcCpu {
-	Clock_t  *cpuclk;
-	uint32_t 	msr;
-	uint32_t	msr_ee; // external interrupts enable
-	uint32_t 	msr_pr; // Privilege level
-	uint32_t 	msr_me; // Machine Check Exceptions enable
-	uint32_t	msr_fe; // floating point exception mode
-	uint32_t 	msr_ip; // exception prefix	
-	uint32_t 	msr_ir;	 // translate instruction
-	uint32_t 	msr_dr;	 // translate data
+	Clock_t *cpuclk;
+	uint32_t msr;
+	uint32_t msr_ee;	// external interrupts enable
+	uint32_t msr_pr;	// Privilege level
+	uint32_t msr_me;	// Machine Check Exceptions enable
+	uint32_t msr_fe;	// floating point exception mode
+	uint32_t msr_ip;	// exception prefix     
+	uint32_t msr_ir;	// translate instruction
+	uint32_t msr_dr;	// translate data
 
 	uint32_t pvr;
 	uint32_t pir;
@@ -58,26 +58,26 @@ typedef struct PpcCpu {
 	uint32_t dsisr;
 	uint32_t srr0;
 	uint32_t srr1;
-	Clock_t  *tmbclk;
+	Clock_t *tmbclk;
 	CycleCounter_t last_tb_update;
 	CycleCounter_t tb_saved_cycles;
 	uint32_t tbl;
 	uint32_t tbu;
 	uint32_t dec;
 	uint32_t dabr;
-	uint32_t ear;	
+	uint32_t ear;
 	uint32_t cr;
 	uint32_t fpecr;
 	uint32_t xer;
 	uint32_t lr;
-	uint32_t ctr; 
+	uint32_t ctr;
 
-	uint32_t 	*spr[1024];
-	SPR_ReadProc 	*spr_read[1024];
-	SPR_WriteProc 	*spr_write[1024];
-	void 		*spr_clientData[1024];
+	uint32_t *spr[1024];
+	SPR_ReadProc *spr_read[1024];
+	SPR_WriteProc *spr_write[1024];
+	void *spr_clientData[1024];
 
-	uint32_t gpr[0];	
+	uint32_t gpr[0];
 	uint32_t gpr0;
 	uint32_t gpr1;
 	uint32_t gpr2;
@@ -116,17 +116,16 @@ typedef struct PpcCpu {
 	uint32_t nia;
 	uint32_t reservation;
 	int reservation_valid;
-        struct timeval starttime;
+	struct timeval starttime;
 
 	uint32_t signals;
-        jmp_buf abort_jump;
+	jmp_buf abort_jump;
 } PpcCpu;
 
 extern PpcCpu gppc;
 
-
 #define NIA (gppc.nia)
-#define CIA (gppc.nia-4) 	/* This is a hack */
+#define CIA (gppc.nia-4)	/* This is a hack */
 #define LR (gppc.lr)
 #define GPR(index) (gppc.gpr[(index)])
 #define FPR(index) (gppc.fpr[(index)])
@@ -150,7 +149,7 @@ extern PpcCpu gppc;
 #define CR (gppc.cr)
 
 #define CR_LT	(1<<31)
-#define CR_GT	(1<<30) 
+#define CR_GT	(1<<30)
 #define CR_EQ	(1<<29)
 #define CR_SO	(1<<28)
 
@@ -215,7 +214,7 @@ extern PpcCpu gppc;
 #define XER_SO (1<<31)
 
 /*  Exceptions */
-#define EX_SRI		(0x100)	
+#define EX_SRI		(0x100)
 #define EX_MCI		(0x200)
 #define EX_DSI		(0x300)
 #define EX_ISI		(0x400)
@@ -235,7 +234,8 @@ extern PpcCpu gppc;
 #define EX_PBKPT	(0x1e00)
 #define EX_NMSKDEVPRT	(0x1f00)
 
-PpcCpu * PpcCpu_New(int cpu_type,uint32_t initial_msr);
+PpcCpu *PpcCpu_New(int cpu_type, uint32_t initial_msr);
 void PpcCpu_Run(void);
 void PpcSetMsr(uint32_t value);
-void Ppc_RegisterSprHandler(PpcCpu *cpu,unsigned int spr,SPR_ReadProc *rproc,SPR_WriteProc *wproc, void *cd);
+void Ppc_RegisterSprHandler(PpcCpu * cpu, unsigned int spr, SPR_ReadProc * rproc,
+			    SPR_WriteProc * wproc, void *cd);

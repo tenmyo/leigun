@@ -51,13 +51,12 @@
 #include "time.h"
 #include "sgstring.h"
 
-typedef struct SenslessMonitor 
-{
+typedef struct SenslessMonitor {
 	CycleCounter_t last_senseless;
 	CycleCounter_t saved_cycles;
 	uint32_t nonsense_threshold;
 	uint32_t jump_width;
-	int64_t overjumped_nanoseconds; 
+	int64_t overjumped_nanoseconds;
 	uint32_t sensivity;
 } SenselessMonitor;
 
@@ -71,33 +70,34 @@ static SenselessMonitor *smon;
  *	then sleep and subtract the time from the account
  * --------------------------------------------------------------------
  */
-static void 
-jump(SenselessMonitor *smon)
+static void
+jump(SenselessMonitor * smon)
 {
-	struct timespec tvv,tvn;
-	uint32_t jump_width = smon->jump_width;	
-	CycleCounter_t cnow = CycleCounter_Get(); 
-	if((cnow + jump_width) >= firstCycleTimerTimeout) {
+	struct timespec tvv, tvn;
+	uint32_t jump_width = smon->jump_width;
+	CycleCounter_t cnow = CycleCounter_Get();
+	if ((cnow + jump_width) >= firstCycleTimerTimeout) {
 		jump_width = firstCycleTimerTimeout - cnow;
-		CycleCounter = firstCycleTimerTimeout;	
+		CycleCounter = firstCycleTimerTimeout;
 	} else {
-		CycleCounter += jump_width;	
+		CycleCounter += jump_width;
 	}
 	/* fprintf(stderr,"jump\n"); */
 	smon->overjumped_nanoseconds += CyclesToNanoseconds(jump_width);
 	smon->saved_cycles -= jump_width;
-	while(smon->overjumped_nanoseconds > 11000000) {
+	while (smon->overjumped_nanoseconds > 11000000) {
 		struct timespec tout;
 		uint64_t nsecs;
-		tout.tv_nsec=10000000; /* 10 ms */
-                tout.tv_sec=0;
-		clock_gettime(CLOCK_MONOTONIC,&tvv);
+		tout.tv_nsec = 10000000;	/* 10 ms */
+		tout.tv_sec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &tvv);
 		FIO_WaitEventTimeout(&tout);
-		clock_gettime(CLOCK_MONOTONIC,&tvn);
-		nsecs=tvn.tv_nsec-tvv.tv_nsec + (int64_t)1000000000*(tvn.tv_sec - tvv.tv_sec);	
-		smon->overjumped_nanoseconds -= nsecs*1.1;
+		clock_gettime(CLOCK_MONOTONIC, &tvn);
+		nsecs = tvn.tv_nsec - tvv.tv_nsec + (int64_t) 1000000000 *(tvn.tv_sec - tvv.tv_sec);
+		smon->overjumped_nanoseconds -= nsecs * 1.1;
 	}
 }
+
 /*
  * ---------------------------------------------------------------------
  * Report a possibly senseless poll operation. A high
@@ -106,35 +106,35 @@ jump(SenselessMonitor *smon)
  * ---------------------------------------------------------------------
  */
 void
-Senseless_Report(int weight) 
+Senseless_Report(int weight)
 {
 	uint64_t diffcycles = CycleCounter_Get() - smon->last_senseless;
-	uint64_t consumed_cycles = 2 * diffcycles; 
+	uint64_t consumed_cycles = 2 * diffcycles;
 	smon->last_senseless = CycleCounter_Get();
-	smon->saved_cycles += NanosecondsToCycles(smon->sensivity*weight);
-	if(consumed_cycles > smon->saved_cycles) {
+	smon->saved_cycles += NanosecondsToCycles(smon->sensivity * weight);
+	if (consumed_cycles > smon->saved_cycles) {
 		smon->saved_cycles = 0;
 		return;
 	}
 	smon->saved_cycles -= consumed_cycles;
-	if(smon->saved_cycles > smon->nonsense_threshold) {
+	if (smon->saved_cycles > smon->nonsense_threshold) {
 		jump(smon);
-		if(smon->saved_cycles >  (smon->nonsense_threshold << 1)) {
+		if (smon->saved_cycles > (smon->nonsense_threshold << 1)) {
 			smon->saved_cycles = 0;
 		}
 	}
 }
 
 void
-Senseless_Init() 
+Senseless_Init()
 {
-	smon = sg_new(SenselessMonitor); 
-	smon->nonsense_threshold = CycleTimerRate_Get()/1000;
-	smon->jump_width = smon->nonsense_threshold = CycleTimerRate_Get()/20000;
+	smon = sg_new(SenselessMonitor);
+	smon->nonsense_threshold = CycleTimerRate_Get() / 1000;
+	smon->jump_width = smon->nonsense_threshold = CycleTimerRate_Get() / 20000;
 	smon->sensivity = 10;
-	Config_ReadUInt32(&smon->sensivity,"poll_detector","sensivity");
-	Config_ReadUInt32(&smon->jump_width,"poll_detector","jump_width");
-	Config_ReadUInt32(&smon->nonsense_threshold,"poll_detector","threshold");
-	fprintf(stderr,"Poll detector Sensivity %d jump_width %d, jump threshold %d\n",smon->sensivity,smon->jump_width,smon->nonsense_threshold);
+	Config_ReadUInt32(&smon->sensivity, "poll_detector", "sensivity");
+	Config_ReadUInt32(&smon->jump_width, "poll_detector", "jump_width");
+	Config_ReadUInt32(&smon->nonsense_threshold, "poll_detector", "threshold");
+	fprintf(stderr, "Poll detector Sensivity %d jump_width %d, jump threshold %d\n",
+		smon->sensivity, smon->jump_width, smon->nonsense_threshold);
 }
-

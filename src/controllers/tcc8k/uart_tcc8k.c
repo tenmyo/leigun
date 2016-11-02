@@ -8,7 +8,7 @@
 #include "cycletimer.h"
 #include "clock.h"
 
-#if 0 
+#if 0
 #define dbgprintf(x...) { fprintf(stderr,x); }
 #else
 #define dbgprintf(x...)
@@ -99,28 +99,26 @@
 #define UART_STC(base)		((base) + 0x64)
 #define UART_IRCFG(base)	((base) + 0x80)
 
-#define TXFIFO_SIZE 16 
+#define TXFIFO_SIZE 16
 #define TXFIFO_LVL(uart) (uint32_t)((uart)->txfifo_wp - (uart)->txfifo_rp)
 #define TXFIFO_WP(uart) ((uart)->txfifo_wp % TXFIFO_SIZE)
 #define TXFIFO_RP(uart) ((uart)->txfifo_rp % TXFIFO_SIZE)
 #define TXFIFO_ROOM(ser) (TXFIFO_SIZE - TXFIFO_LVL(ser))
 
-#define RXFIFO_SIZE 16 
+#define RXFIFO_SIZE 16
 #define RXFIFO_LVL(uart) (uint32_t)((uart)->rxfifo_wp - (uart)->rxfifo_rp)
 #define RXFIFO_WP(uart) ((uart)->rxfifo_wp % RXFIFO_SIZE)
 #define RXFIFO_RP(uart) ((uart)->rxfifo_rp % RXFIFO_SIZE)
 #define RXFIFO_ROOM(ser) (RXFIFO_SIZE - RXFIFO_LVL(ser))
 
-
 #define DLAB(tcc) ((tcc)->regLcr & LCR_DLAB)
-
 
 typedef struct TCC_Uart {
 	BusDevice bdev;
 	UartPort *backend;
-        CycleTimer tx_baud_timer;
-        CycleTimer rx_baud_timer;
-        CycleCounter_t byte_time;
+	CycleTimer tx_baud_timer;
+	CycleTimer rx_baud_timer;
+	CycleCounter_t byte_time;
 	Clock_t *clk_in;
 	Clock_t *clk_baud;
 	SigNode *sigIrq;
@@ -135,174 +133,177 @@ typedef struct TCC_Uart {
 	int txfifo_size;
 
 	uint8_t regLcr;
-        uint8_t regMcr;
-        uint8_t regLsr;
-        uint8_t regMsr;
-        uint8_t regDll;
+	uint8_t regMcr;
+	uint8_t regLsr;
+	uint8_t regMsr;
+	uint8_t regDll;
 	uint8_t regDlm;
-        uint8_t regIer;
-        uint8_t regIir;
-        uint8_t regFcr;
-        uint8_t regScr;
+	uint8_t regIer;
+	uint8_t regIir;
+	uint8_t regFcr;
+	uint8_t regScr;
 } TCC_Uart;
 
 static void
-update_interrupts(TCC_Uart *uart)
+update_interrupts(TCC_Uart * uart)
 {
-        /* do Priority encoding */
-        int interrupt;
-        uint8_t ier = uart->regIer;
-        uint8_t int_id = 0;
-        if((ier & IER_ELSI) &&
-           (uart->regLsr & (LSR_OE | LSR_PE | LSR_FE | LSR_BI)) ) {
+	/* do Priority encoding */
+	int interrupt;
+	uint8_t ier = uart->regIer;
+	uint8_t int_id = 0;
+	if ((ier & IER_ELSI) && (uart->regLsr & (LSR_OE | LSR_PE | LSR_FE | LSR_BI))) {
 
-                int_id = IIR_TYPE_RLS;
-                interrupt = 1;
+		int_id = IIR_TYPE_RLS;
+		interrupt = 1;
 
-        } else if((ier & IER_ERXI) && (uart->regLsr & LSR_DR)) {
-                // Fifo trigger level should be checked here also
+	} else if ((ier & IER_ERXI) && (uart->regLsr & LSR_DR)) {
+		// Fifo trigger level should be checked here also
 
-                int_id = IIR_TYPE_RDA;
-                interrupt = 1;
-        /* 
-         * Character Timeout indication (IIR_TYPE_CTI) ommited here because 
-         * trigger level IRQ mode is  not implemented 
-         */
-        } else if((ier & IER_ETXI) && (uart->regLsr & LSR_THRE)) {
+		int_id = IIR_TYPE_RDA;
+		interrupt = 1;
+		/* 
+		 * Character Timeout indication (IIR_TYPE_CTI) ommited here because 
+		 * trigger level IRQ mode is  not implemented 
+		 */
+	} else if ((ier & IER_ETXI) && (uart->regLsr & LSR_THRE)) {
 
-                int_id = IIR_TYPE_THRE;
-                interrupt = 1;
+		int_id = IIR_TYPE_THRE;
+		interrupt = 1;
 
-        } else if((ier & IER_EMSI) &&
-                uart->regMsr & (MSR_DCTS))  {
-                int_id = IIR_TYPE_MST;
-                interrupt = 1;
+	} else if ((ier & IER_EMSI) && uart->regMsr & (MSR_DCTS)) {
+		int_id = IIR_TYPE_MST;
+		interrupt = 1;
 
-        } else {
-                int_id = 0;
-                interrupt = 0;
-        }
-        uart->regIir = (uart->regIir & ~IIR_INTID_MASK) | int_id;
-//	fprintf(stderr,"IIR: %08x lsr %08x, ier %08x\n",uart->regIir,uart->regLsr,uart->regIer);
-        if(interrupt) {
-                uart->regIir &= ~IIR_NPENDING;
-                if(!uart->interrupt_posted) {
-                        SigNode_Set(uart->sigIrq,SIG_HIGH);
-                        uart->interrupt_posted=1;
-                }
-        } else {
-                uart->regIir |= IIR_NPENDING;
-                if(uart->interrupt_posted) {
-                        SigNode_Set(uart->sigIrq,SIG_LOW);
-                        uart->interrupt_posted=0;
-                }
-        }
+	} else {
+		int_id = 0;
+		interrupt = 0;
+	}
+	uart->regIir = (uart->regIir & ~IIR_INTID_MASK) | int_id;
+//      fprintf(stderr,"IIR: %08x lsr %08x, ier %08x\n",uart->regIir,uart->regLsr,uart->regIer);
+	if (interrupt) {
+		uart->regIir &= ~IIR_NPENDING;
+		if (!uart->interrupt_posted) {
+			SigNode_Set(uart->sigIrq, SIG_HIGH);
+			uart->interrupt_posted = 1;
+		}
+	} else {
+		uart->regIir |= IIR_NPENDING;
+		if (uart->interrupt_posted) {
+			SigNode_Set(uart->sigIrq, SIG_LOW);
+			uart->interrupt_posted = 0;
+		}
+	}
 
 }
 
 static void
-update_clock(TCC_Uart *uart) {
-        uint32_t divisor;
-        divisor = uart->regDll + (uart->regDlm << 8);
-	divisor  <<= 4;
-        if(divisor) {
-                Clock_MakeDerived(uart->clk_baud,uart->clk_in,1,divisor);
-        } else {
-                Clock_MakeDerived(uart->clk_baud,uart->clk_in,0,1);
-        }
+update_clock(TCC_Uart * uart)
+{
+	uint32_t divisor;
+	divisor = uart->regDll + (uart->regDlm << 8);
+	divisor <<= 4;
+	if (divisor) {
+		Clock_MakeDerived(uart->clk_baud, uart->clk_in, 1, divisor);
+	} else {
+		Clock_MakeDerived(uart->clk_baud, uart->clk_in, 0, 1);
+	}
 }
 
 static void
-update_serconfig(TCC_Uart *uart)
+update_serconfig(TCC_Uart * uart)
 {
-        UartCmd cmd;
-        tcflag_t bits;
-        tcflag_t parodd;
-        tcflag_t parenb;
-        tcflag_t crtscts;
-        /* Does 16550 really have no automatic rtscts handshaking ? */
-        crtscts=0;
-        if(uart->regLcr & LCR_EPS) {
-                parodd=0;
-        } else {
-                parodd=1;
-        }
-        if(uart->regLcr & LCR_PEN) {
-                parenb=1;
-        } else {
-                parenb=0;
-        }
-        switch(uart->regLcr & LCR_WLS_MASK) {
-                case LCR_WLS_5:
-                        bits=5; break;
-                case LCR_WLS_6:
-                        bits=6; break;
-                case LCR_WLS_7:
-                        bits=7; break;
-                case LCR_WLS_8:
-                        bits=8; break;
-                /* Can not be reached */
-                default:
-                        bits=8; break;
-        }
+	UartCmd cmd;
+	tcflag_t bits;
+	tcflag_t parodd;
+	tcflag_t parenb;
+	tcflag_t crtscts;
+	/* Does 16550 really have no automatic rtscts handshaking ? */
+	crtscts = 0;
+	if (uart->regLcr & LCR_EPS) {
+		parodd = 0;
+	} else {
+		parodd = 1;
+	}
+	if (uart->regLcr & LCR_PEN) {
+		parenb = 1;
+	} else {
+		parenb = 0;
+	}
+	switch (uart->regLcr & LCR_WLS_MASK) {
+	    case LCR_WLS_5:
+		    bits = 5;
+		    break;
+	    case LCR_WLS_6:
+		    bits = 6;
+		    break;
+	    case LCR_WLS_7:
+		    bits = 7;
+		    break;
+	    case LCR_WLS_8:
+		    bits = 8;
+		    break;
+		    /* Can not be reached */
+	    default:
+		    bits = 8;
+		    break;
+	}
 
-        if(crtscts) {
-                cmd.opcode = UART_OPC_CRTSCTS;
-                cmd.arg = 1;
-                SerialDevice_Cmd(uart->backend,&cmd);
-        } else {
-                cmd.opcode = UART_OPC_CRTSCTS;
-                cmd.arg = 0;
-                SerialDevice_Cmd(uart->backend,&cmd);
+	if (crtscts) {
+		cmd.opcode = UART_OPC_CRTSCTS;
+		cmd.arg = 1;
+		SerialDevice_Cmd(uart->backend, &cmd);
+	} else {
+		cmd.opcode = UART_OPC_CRTSCTS;
+		cmd.arg = 0;
+		SerialDevice_Cmd(uart->backend, &cmd);
 
-                cmd.opcode = UART_OPC_SET_RTS;
-                /* Set the initial state of RTS */
+		cmd.opcode = UART_OPC_SET_RTS;
+		/* Set the initial state of RTS */
 #if 0
-                if(iuart->ucr2 & UCR2_CTS) {
-                        cmd.arg = UART_RTS_ACT;
-                } else {
-                        cmd.arg = UART_RTS_INACT;
-                }
-                SerialDevice_Cmd(uart->backend,&cmd);
+		if (iuart->ucr2 & UCR2_CTS) {
+			cmd.arg = UART_RTS_ACT;
+		} else {
+			cmd.arg = UART_RTS_INACT;
+		}
+		SerialDevice_Cmd(uart->backend, &cmd);
 #endif
-        }
-        cmd.opcode = UART_OPC_PAREN;
-        cmd.arg = parenb;
-        SerialDevice_Cmd(uart->backend,&cmd);
+	}
+	cmd.opcode = UART_OPC_PAREN;
+	cmd.arg = parenb;
+	SerialDevice_Cmd(uart->backend, &cmd);
 
-        cmd.opcode = UART_OPC_PARODD;
-        cmd.arg = parodd;
-        SerialDevice_Cmd(uart->backend,&cmd);
+	cmd.opcode = UART_OPC_PARODD;
+	cmd.arg = parodd;
+	SerialDevice_Cmd(uart->backend, &cmd);
 
-        cmd.opcode = UART_OPC_SET_CSIZE;
-        cmd.arg = bits;
-        SerialDevice_Cmd(uart->backend,&cmd);
+	cmd.opcode = UART_OPC_SET_CSIZE;
+	cmd.arg = bits;
+	SerialDevice_Cmd(uart->backend, &cmd);
 
 }
 
 static void
-reset_rx_fifo(TCC_Uart *uart)
+reset_rx_fifo(TCC_Uart * uart)
 {
-        uart->rxfifo_rp = uart->rxfifo_wp = 0;
-        uart->regLsr &= ~LSR_DR;
-        update_interrupts(uart);
+	uart->rxfifo_rp = uart->rxfifo_wp = 0;
+	uart->regLsr &= ~LSR_DR;
+	update_interrupts(uart);
 }
 
 static void
-reset_tx_fifo(TCC_Uart *uart)
+reset_tx_fifo(TCC_Uart * uart)
 {
-        uart->txfifo_rp = uart->txfifo_wp = 0;
-        uart->regLsr |= LSR_THRE;
-        /* 
-         ****************************************************
-         * TEMT is not really emptied by reset but 
-         * a separeate shift register is not implemented
-         ****************************************************
-         */
-        uart->regLsr |= LSR_TEMT;
-        update_interrupts(uart);
+	uart->txfifo_rp = uart->txfifo_wp = 0;
+	uart->regLsr |= LSR_THRE;
+	/* 
+	 ****************************************************
+	 * TEMT is not really emptied by reset but 
+	 * a separeate shift register is not implemented
+	 ****************************************************
+	 */
+	uart->regLsr |= LSR_TEMT;
+	update_interrupts(uart);
 }
-
 
 /*
  ***************************************************************
@@ -310,28 +311,27 @@ reset_tx_fifo(TCC_Uart *uart)
  *      Write chars from TX-Fifo to backend. 
  ***************************************************************
  */
-static void
-serial_output(void *cd) {
-        TCC_Uart *uart = cd;
-        if(TXFIFO_LVL(uart) > 0) {
-                int count;
-		UartChar c = uart->txfifo[TXFIFO_RP(uart)];
-                count=SerialDevice_Write(uart->backend,&c,1);
-                if(count > 0) {
-                        uart->txfifo_rp++;
-                }
-        }
-	SerialDevice_StopTx(uart->backend);
-        if(TXFIFO_LVL(uart) == 0) {
-                uart->regLsr |= LSR_TEMT;
-        } else {
-		CycleTimer_Mod(&uart->tx_baud_timer,uart->byte_time);
+static bool
+serial_output(void *cd, UartChar * c)
+{
+	TCC_Uart *uart = cd;
+	if (TXFIFO_LVL(uart) > 0) {
+		*c = uart->txfifo[TXFIFO_RP(uart)];
+		uart->txfifo_rp++;
+	} else {
+		fprintf(stderr, "Bug in %s %s\n", __FILE__, __func__);
 	}
-	if(TXFIFO_ROOM(uart) > 0) {
-                uart->regLsr |= LSR_THRE; 
-        }
-        update_interrupts(uart);
-        return;
+	SerialDevice_StopTx(uart->backend);
+	if (TXFIFO_LVL(uart) == 0) {
+		uart->regLsr |= LSR_TEMT;
+	} else {
+		CycleTimer_Mod(&uart->tx_baud_timer, uart->byte_time);
+	}
+	if (TXFIFO_ROOM(uart) > 0) {
+		uart->regLsr |= LSR_THRE;
+	}
+	update_interrupts(uart);
+	return true;
 }
 
 /*
@@ -340,23 +340,24 @@ serial_output(void *cd) {
  ************************************************************
  */
 static inline int
-serial_put_rx_fifo(TCC_Uart *uart,UartChar c) {
-        int room = RXFIFO_ROOM(uart);
-        if(room < 1) {
-                return -1;
-        }
-        uart->rxfifo[RXFIFO_WP(uart)] = c;
-        uart->rxfifo_wp++;
+serial_put_rx_fifo(TCC_Uart * uart, UartChar c)
+{
+	int room = RXFIFO_ROOM(uart);
+	if (room < 1) {
+		return -1;
+	}
+	uart->rxfifo[RXFIFO_WP(uart)] = c;
+	uart->rxfifo_wp++;
 	/* We do not stop on fifo overflow */
 #if 0
-        if(room==1) {
-		if(CycleTimer_IsActive(&uart->rx_baud_timer)) {
-                	CycleTimer_Remove(&uart->rx_baud_timer);
+	if (room == 1) {
+		if (CycleTimer_IsActive(&uart->rx_baud_timer)) {
+			CycleTimer_Remove(&uart->rx_baud_timer);
 		}
-                return 0;
-        }
+		return 0;
+	}
 #endif
-        return 1;
+	return 1;
 }
 
 /**
@@ -365,29 +366,25 @@ serial_put_rx_fifo(TCC_Uart *uart,UartChar c) {
  **************************************************************************************************
  */
 static void
-serial_input(void *cd) {
-        TCC_Uart *uart = cd;
-        int fifocount;
-	UartChar c;
-	int count = SerialDevice_Read(uart->backend,&c,1);
-	if(count == 1) {
-		//fprintf(stderr,"Serial input \"%c\"\n",c);
-		if(RXFIFO_LVL(uart) < RXFIFO_SIZE) {
-			uart->rxfifo[RXFIFO_WP(uart)] = c;
-			uart->rxfifo_wp++;
-		} else {
-			fprintf(stderr,"Fifo full\"%c\"\n",c);
-		}
-                SerialDevice_StopRx(uart->backend);
-                CycleTimer_Mod(&uart->rx_baud_timer, uart->byte_time);
-        }
-        fifocount = RXFIFO_LVL(uart);
-        if(fifocount) {
-                uart->regLsr |= LSR_DR;
-                update_interrupts(uart);
-        }
+serial_input(void *cd, UartChar c)
+{
+	TCC_Uart *uart = cd;
+	int fifocount;
+	//fprintf(stderr,"Serial input \"%c\"\n",c);
+	if (RXFIFO_LVL(uart) < RXFIFO_SIZE) {
+		uart->rxfifo[RXFIFO_WP(uart)] = c;
+		uart->rxfifo_wp++;
+	} else {
+		fprintf(stderr, "Fifo full\"%c\"\n", c);
+	}
+	SerialDevice_StopRx(uart->backend);
+	CycleTimer_Mod(&uart->rx_baud_timer, uart->byte_time);
+	fifocount = RXFIFO_LVL(uart);
+	if (fifocount) {
+		uart->regLsr |= LSR_DR;
+		update_interrupts(uart);
+	}
 }
-
 
 /**
  *****************************************************************************************
@@ -396,14 +393,15 @@ serial_input(void *cd) {
  */
 #include "arm9cpu.h"
 static uint32_t
-rbr_read(void *clientData,uint32_t address,int rqlen)
+rbr_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	uint8_t value;
-	dbgprintf("RBR read start at %08x, iir %08x, lsr 0x%02x\n",ARM_GET_CIA,uart->regIir,uart->regLsr);
-	if(RXFIFO_LVL(uart) == 0) {
-		if(uart->regLsr & LSR_DR) {
-			fprintf(stderr,"Bug: DR with no bytes in fifo\n");
+	dbgprintf("RBR read start at %08x, iir %08x, lsr 0x%02x\n", ARM_GET_CIA, uart->regIir,
+		  uart->regLsr);
+	if (RXFIFO_LVL(uart) == 0) {
+		if (uart->regLsr & LSR_DR) {
+			fprintf(stderr, "Bug: DR with no bytes in fifo\n");
 			uart->regLsr &= ~LSR_DR;
 			update_interrupts(uart);
 		}
@@ -411,50 +409,50 @@ rbr_read(void *clientData,uint32_t address,int rqlen)
 	}
 	value = uart->rxfifo[RXFIFO_RP(uart)];
 	uart->rxfifo_rp++;
-	dbgprintf("RBR read %02x\n",value);
-	if(RXFIFO_LVL(uart) == 0) {
+	dbgprintf("RBR read %02x\n", value);
+	if (RXFIFO_LVL(uart) == 0) {
 		uart->regLsr &= ~LSR_DR;
 		update_interrupts(uart);
 	}
 	return value;
 }
+
 static void
-rbr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rbr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"RBR is not writable\n");
+	fprintf(stderr, "RBR is not writable\n");
 }
 
-
-static uint32_t 
-thr_read(void *clientData,uint32_t address,int rqlen)
+static uint32_t
+thr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"THR is not readable\n");
+	fprintf(stderr, "THR is not readable\n");
 	return 0;
 }
 
 static void
-thr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+thr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	unsigned int room;
-	if(TXFIFO_LVL(uart) >= TXFIFO_SIZE) {
-		fprintf(stderr,"Fifo overflow, LSR %08x\n",uart->regLsr);
+	if (TXFIFO_LVL(uart) >= TXFIFO_SIZE) {
+		fprintf(stderr, "Fifo overflow, LSR %08x\n", uart->regLsr);
 		return;
 	}
 	uart->txfifo[TXFIFO_WP(uart)] = value;
 	uart->txfifo_wp++;
 	uart->regLsr &= ~LSR_TEMT;
-        room = TXFIFO_ROOM(uart);
-        if(room > 0) {
-                uart->regLsr |= LSR_THRE;
-        } else {
-                uart->regLsr &= ~LSR_THRE;
-        }
-	update_interrupts(uart);
-	if(!CycleTimer_IsActive(&uart->tx_baud_timer)) {
-		CycleTimer_Mod(&uart->tx_baud_timer,uart->byte_time);
+	room = TXFIFO_ROOM(uart);
+	if (room > 0) {
+		uart->regLsr |= LSR_THRE;
+	} else {
+		uart->regLsr &= ~LSR_THRE;
 	}
-//	fprintf(stderr,"%c %08x ",value,ARM_NIA);
+	update_interrupts(uart);
+	if (!CycleTimer_IsActive(&uart->tx_baud_timer)) {
+		CycleTimer_Mod(&uart->tx_baud_timer, uart->byte_time);
+	}
+//      fprintf(stderr,"%c %08x ",value,ARM_NIA);
 }
 
 /**
@@ -463,60 +461,59 @@ thr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *******************************************************************
  */
 static uint32_t
-dll_read(void *clientData,uint32_t address,int rqlen)
+dll_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	return uart->regDll;
 }
 
 static void
-dll_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dll_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
-	uart->regDll=value;
-	dbgprintf("dll 0x%08x\n",value);
-        update_clock(uart);
+	uart->regDll = value;
+	dbgprintf("dll 0x%08x\n", value);
+	update_clock(uart);
 }
 
-
 static uint32_t
-reg0_read(void *clientData,uint32_t address,int rqlen)
+reg0_read(void *clientData, uint32_t address, int rqlen)
 {
-        TCC_Uart *tcc = clientData;
-        if(DLAB(tcc)) {
-                return dll_read(tcc,address,rqlen);
-        } else {
-                return rbr_read(tcc,address,rqlen);
-        }
+	TCC_Uart *tcc = clientData;
+	if (DLAB(tcc)) {
+		return dll_read(tcc, address, rqlen);
+	} else {
+		return rbr_read(tcc, address, rqlen);
+	}
 }
 
 static void
-reg0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+reg0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        TCC_Uart *tcc = clientData;
-        if(DLAB(tcc)) {
-                dll_write(tcc,value,address,rqlen);
-        } else {
-                thr_write(tcc,value,address,rqlen);
-        }
+	TCC_Uart *tcc = clientData;
+	if (DLAB(tcc)) {
+		dll_write(tcc, value, address, rqlen);
+	} else {
+		thr_write(tcc, value, address, rqlen);
+	}
 }
 
 /**
  */
 static uint32_t
-dlm_read(void *clientData,uint32_t address,int rqlen)
+dlm_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	return uart->regDlm;
 }
 
 static void
-dlm_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dlm_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
-	uart->regDlm=value;
-	dbgprintf("dlm 0x%08x\n",value);
-        update_clock(uart);
+	uart->regDlm = value;
+	dbgprintf("dlm 0x%08x\n", value);
+	update_clock(uart);
 }
 
 /**
@@ -525,7 +522,7 @@ dlm_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************
  */
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	//fprintf(stderr,"IER read %08x\n",uart->regIer);
@@ -533,37 +530,37 @@ ier_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	uart->regIer = value;
 	//fprintf(stderr,"IER write %08x\n",value);
-        update_interrupts(uart);
-        return;
+	update_interrupts(uart);
+	return;
 }
 
 static uint32_t
-reg1_read(void *clientData,uint32_t address,int rqlen)
+reg1_read(void *clientData, uint32_t address, int rqlen)
 {
-        TCC_Uart *tcc = clientData;
-        if(DLAB(tcc)) {
-                return dlm_read(tcc,address,rqlen); /* Divisor latch most significant */
-        } else {
-                return ier_read(tcc,address,rqlen);
-        }
-        return 0;
+	TCC_Uart *tcc = clientData;
+	if (DLAB(tcc)) {
+		return dlm_read(tcc, address, rqlen);	/* Divisor latch most significant */
+	} else {
+		return ier_read(tcc, address, rqlen);
+	}
+	return 0;
 }
 
 static void
-reg1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+reg1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        TCC_Uart *tcc = clientData;
-        if(DLAB(tcc)) {
-                dlm_write(tcc,value,address,rqlen);
-        } else {
-                ier_write(tcc,value,address,rqlen);
-        }
-        return;
+	TCC_Uart *tcc = clientData;
+	if (DLAB(tcc)) {
+		dlm_write(tcc, value, address, rqlen);
+	} else {
+		ier_write(tcc, value, address, rqlen);
+	}
+	return;
 }
 
 /**
@@ -573,22 +570,21 @@ reg1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-iir_read(void *clientData,uint32_t address,int rqlen)
+iir_read(void *clientData, uint32_t address, int rqlen)
 {
-        TCC_Uart *uart = clientData;
+	TCC_Uart *uart = clientData;
 	uint32_t retval;
-       	dbgprintf("TCC8K UART: %s: IIR is: %02x\n",__func__,uart->regIir);
-//       	fprintf(stderr,"TCC8K UART: %s: IIR is: %02x\n",__func__,uart->regIir);
-	if(uart->interrupt_posted && ((uart->regIir & IIR_INTID_MASK) == 0)) {
-        	fprintf(stderr,"TCC8K UART: %s: Bug: %02x\n",__func__,uart->regIir);
+	dbgprintf("TCC8K UART: %s: IIR is: %02x\n", __func__, uart->regIir);
+//              fprintf(stderr,"TCC8K UART: %s: IIR is: %02x\n",__func__,uart->regIir);
+	if (uart->interrupt_posted && ((uart->regIir & IIR_INTID_MASK) == 0)) {
+		fprintf(stderr, "TCC8K UART: %s: Bug: %02x\n", __func__, uart->regIir);
 	}
-	if(uart->regIir & (IIR_INTID_MASK == IIR_TYPE_THRE)) {
-//		uart->regIir &= ~IIR_INTID_MASK;
+	if (uart->regIir & (IIR_INTID_MASK == IIR_TYPE_THRE)) {
+//              uart->regIir &= ~IIR_INTID_MASK;
 	}
 	retval = uart->regIir;
 	return retval;
 }
-
 
 /**
  *****************************************************************************
@@ -597,41 +593,41 @@ iir_read(void *clientData,uint32_t address,int rqlen)
  */
 
 static void
-fcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
-	TCC_Uart *uart = (TCC_Uart*) clientData;
-        uint8_t diff = value ^ uart->regFcr;
-        if(diff & FCR_FE) {
-                reset_rx_fifo(uart);
-                reset_tx_fifo(uart);
-                if(value & FCR_FE) {
-                        uart->txfifo_size = 16;
-                        uart->rxfifo_size = 16;
-                } else {
-                        uart->txfifo_size = 1;
-                        uart->rxfifo_size = 1;
-                }
-        }
-        /* If fifo enable not 1 the other bits will not be programmed */
-        if(!(value & FCR_FE)) {
-                return;
-        }
-        if(value & FCR_RXFR) {
-                uart->rxfifo_wp = uart->rxfifo_rp = 0;
-        } else if(value & FCR_TXFR) {
-                uart->txfifo_wp = uart->txfifo_rp = 0;
-        }
-        uart->regFcr = value;
-        return;
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
+	TCC_Uart *uart = (TCC_Uart *) clientData;
+	uint8_t diff = value ^ uart->regFcr;
+	if (diff & FCR_FE) {
+		reset_rx_fifo(uart);
+		reset_tx_fifo(uart);
+		if (value & FCR_FE) {
+			uart->txfifo_size = 16;
+			uart->rxfifo_size = 16;
+		} else {
+			uart->txfifo_size = 1;
+			uart->rxfifo_size = 1;
+		}
+	}
+	/* If fifo enable not 1 the other bits will not be programmed */
+	if (!(value & FCR_FE)) {
+		return;
+	}
+	if (value & FCR_RXFR) {
+		uart->rxfifo_wp = uart->rxfifo_rp = 0;
+	} else if (value & FCR_TXFR) {
+		uart->txfifo_wp = uart->txfifo_rp = 0;
+	}
+	uart->regFcr = value;
+	return;
 
 }
 
 static uint32_t
-lcr_read(void *clientData,uint32_t address,int rqlen)
+lcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
-        return uart->regLcr;
+	return uart->regLcr;
 }
 
 /**
@@ -640,12 +636,12 @@ lcr_read(void *clientData,uint32_t address,int rqlen)
  ******************************************************************************
  */
 static void
-lcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        TCC_Uart *uart = clientData;
-        uart->regLcr = value;
-        update_serconfig(uart);
-        return;
+	TCC_Uart *uart = clientData;
+	uart->regLcr = value;
+	update_serconfig(uart);
+	return;
 }
 
 /**
@@ -654,32 +650,32 @@ lcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *********************************************************************************
  */
 static uint32_t
-mcr_read(void *clientData,uint32_t address,int rqlen)
+mcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 	return 0;
 }
 
 static void
-mcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
-        uint8_t diff = uart->regMcr ^ value;
-        UartCmd cmd;
+	uint8_t diff = uart->regMcr ^ value;
+	UartCmd cmd;
 
-        if(diff & (MCR_RTS)) {
+	if (diff & (MCR_RTS)) {
 
-                cmd.opcode = UART_OPC_SET_RTS;
-                if(value & MCR_RTS) {
-                        cmd.arg = 1;
-                } else {
-                        cmd.arg = 0;
-                }
-                SerialDevice_Cmd(uart->backend,&cmd);
+		cmd.opcode = UART_OPC_SET_RTS;
+		if (value & MCR_RTS) {
+			cmd.arg = 1;
+		} else {
+			cmd.arg = 0;
+		}
+		SerialDevice_Cmd(uart->backend, &cmd);
 
-        }
+	}
 	uart->regMcr = value;
-        return;
+	return;
 }
 
 /**
@@ -688,18 +684,18 @@ mcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************************
  */
 static uint32_t
-lsr_read(void *clientData,uint32_t address,int rqlen)
+lsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
-        //fprintf(stderr,"TCC8K UART: %s: 0x%08x\n",__func__,uart->regLsr);
+	//fprintf(stderr,"TCC8K UART: %s: 0x%08x\n",__func__,uart->regLsr);
 	//usleep(10000);
 	return uart->regLsr;
 }
 
 static void
-lsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not writable ?\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not writable ?\n", __func__);
 }
 
 /*
@@ -708,39 +704,39 @@ lsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************************
  */
 static uint32_t
-msr_read(void *clientData,uint32_t address,int rqlen)
+msr_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
-        uint8_t msr;
-        UartCmd cmd;
-        msr = uart->regMsr;
-        msr = msr & ~(MSR_CTS);
+	uint8_t msr;
+	UartCmd cmd;
+	msr = uart->regMsr;
+	msr = msr & ~(MSR_CTS);
 
-        /* Ask the backend */
+	/* Ask the backend */
 
-        cmd.opcode = UART_OPC_GET_CTS;
-        SerialDevice_Cmd(uart->backend,&cmd);
-        if(cmd.retval) {
-                msr |= MSR_CTS;
-        }
+	cmd.opcode = UART_OPC_GET_CTS;
+	SerialDevice_Cmd(uart->backend, &cmd);
+	if (cmd.retval) {
+		msr |= MSR_CTS;
+	}
 
-        /* Now determine the deltas */
-        if((uart->regMsr ^ msr) & MSR_CTS) {
-                msr |= MSR_DCTS;
-        }
-        uart->regMsr = msr & ~(MSR_DCTS);
+	/* Now determine the deltas */
+	if ((uart->regMsr ^ msr) & MSR_CTS) {
+		msr |= MSR_DCTS;
+	}
+	uart->regMsr = msr & ~(MSR_DCTS);
 #if 0
-        if((uart->regIer & IER_EMSI) && (uart->regMsr != msr)) {
-                update_interrupts(uart);
-        }
+	if ((uart->regIer & IER_EMSI) && (uart->regMsr != msr)) {
+		update_interrupts(uart);
+	}
 #endif
-        return msr;
+	return msr;
 }
 
 static void
-msr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+msr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not writable ?\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not writable ?\n", __func__);
 }
 
 /**
@@ -749,14 +745,14 @@ msr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ********************************************************************************
  */
 static uint32_t
-scr_read(void *clientData,uint32_t address,int rqlen)
+scr_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	return uart->regScr;
 }
 
 static void
-scr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+scr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Uart *uart = clientData;
 	uart->regScr = value;
@@ -768,16 +764,16 @@ scr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-aft_read(void *clientData,uint32_t address,int rqlen)
+aft_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 	return 0;
 }
 
 static void
-aft_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+aft_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -786,16 +782,16 @@ aft_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************************
  */
 static uint32_t
-ucr_read(void *clientData,uint32_t address,int rqlen)
+ucr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 	return 0;
 }
 
 static void
-ucr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ucr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -804,16 +800,16 @@ ucr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************************
  */
 static uint32_t
-sccr_read(void *clientData,uint32_t address,int rqlen)
+sccr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 	return 0;
 }
 
 static void
-sccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -822,16 +818,16 @@ sccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************************************
  */
 static uint32_t
-stc_read(void *clientData,uint32_t address,int rqlen)
+stc_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 	return 0;
 }
 
 static void
-stc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+stc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -840,62 +836,61 @@ stc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************
  */
 static uint32_t
-ircfg_read(void *clientData,uint32_t address,int rqlen)
+ircfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 	return 0;
 }
 
 static void
-ircfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ircfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K UART: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K UART: %s: Register not implemented\n", __func__);
 }
 
 static void
-tx_next(void *cd) 
+tx_next(void *cd)
 {
-	TCC_Uart *uart = (TCC_Uart *)cd;
+	TCC_Uart *uart = (TCC_Uart *) cd;
 	//fprintf(stderr,"NextTx");
 	SerialDevice_StartTx(uart->backend);
 }
+
 static void
 rx_next(void *clientData)
 {
-        TCC_Uart *uart = (TCC_Uart *)clientData;
+	TCC_Uart *uart = (TCC_Uart *) clientData;
 	SerialDevice_StartRx(uart->backend);
 }
 
-
-
 static void
-TUart_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+TUart_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        TCC_Uart *uart = owner;
-	IOH_New32(UART_RBR(base),reg0_read,reg0_write,uart);
-	IOH_New32(UART_DLM(base),reg1_read,reg1_write,uart);
-	IOH_New32(UART_IIR(base),iir_read,fcr_write,uart);
-	IOH_New32(UART_LCR(base),lcr_read,lcr_write,uart);
-	IOH_New32(UART_MCR(base),mcr_read,mcr_write,uart);
-	IOH_New32(UART_LSR(base),lsr_read,lsr_write,uart);
-	IOH_New32(UART_MSR(base),msr_read,msr_write,uart);
-	IOH_New32(UART_SCR(base),scr_read,scr_write,uart);
-	IOH_New32(UART_AFT(base),aft_read,aft_write,uart);
-	IOH_New32(UART_UCR(base),ucr_read,ucr_write,uart);
-	IOH_New32(UART_SRBR(base),rbr_read,rbr_write,uart);
-	IOH_New32(UART_STHR(base),thr_read,thr_write,uart);
-	IOH_New32(UART_SDLL(base),dll_read,dll_write,uart);
-	IOH_New32(UART_SDLM(base),dlm_read,dlm_write,uart);
-	IOH_New32(UART_SIER(base),ier_read,ier_write,uart);
-	IOH_New32(UART_SCCR(base),sccr_read,sccr_write,uart);
-	IOH_New32(UART_STC(base),stc_read,stc_write,uart);
-	IOH_New32(UART_IRCFG(base),ircfg_read,ircfg_write,uart);
+	TCC_Uart *uart = owner;
+	IOH_New32(UART_RBR(base), reg0_read, reg0_write, uart);
+	IOH_New32(UART_DLM(base), reg1_read, reg1_write, uart);
+	IOH_New32(UART_IIR(base), iir_read, fcr_write, uart);
+	IOH_New32(UART_LCR(base), lcr_read, lcr_write, uart);
+	IOH_New32(UART_MCR(base), mcr_read, mcr_write, uart);
+	IOH_New32(UART_LSR(base), lsr_read, lsr_write, uart);
+	IOH_New32(UART_MSR(base), msr_read, msr_write, uart);
+	IOH_New32(UART_SCR(base), scr_read, scr_write, uart);
+	IOH_New32(UART_AFT(base), aft_read, aft_write, uart);
+	IOH_New32(UART_UCR(base), ucr_read, ucr_write, uart);
+	IOH_New32(UART_SRBR(base), rbr_read, rbr_write, uart);
+	IOH_New32(UART_STHR(base), thr_read, thr_write, uart);
+	IOH_New32(UART_SDLL(base), dll_read, dll_write, uart);
+	IOH_New32(UART_SDLM(base), dlm_read, dlm_write, uart);
+	IOH_New32(UART_SIER(base), ier_read, ier_write, uart);
+	IOH_New32(UART_SCCR(base), sccr_read, sccr_write, uart);
+	IOH_New32(UART_STC(base), stc_read, stc_write, uart);
+	IOH_New32(UART_IRCFG(base), ircfg_read, ircfg_write, uart);
 }
 
 static void
-TUart_UnMap(void *owner,uint32_t base,uint32_t mask)
+TUart_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-	
+
 	IOH_Delete32(UART_RBR(base));
 	IOH_Delete32(UART_DLM(base));
 	IOH_Delete32(UART_IIR(base));
@@ -919,36 +914,35 @@ TUart_UnMap(void *owner,uint32_t base,uint32_t mask)
 BusDevice *
 TCC8K_UartNew(const char *name)
 {
-        TCC_Uart *uart = sg_new(TCC_Uart);
-        uart->bdev.first_mapping = NULL;
-        uart->bdev.Map = TUart_Map;
-        uart->bdev.UnMap = TUart_UnMap;
-        uart->bdev.owner = uart;
-        uart->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
-	uart->backend = Uart_New(name,serial_input,serial_output,NULL,uart);
-	uart->byte_time = MicrosecondsToCycles(10) >> 1; 
+	TCC_Uart *uart = sg_new(TCC_Uart);
+	uart->bdev.first_mapping = NULL;
+	uart->bdev.Map = TUart_Map;
+	uart->bdev.UnMap = TUart_UnMap;
+	uart->bdev.owner = uart;
+	uart->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	uart->backend = Uart_New(name, serial_input, serial_output, NULL, uart);
+	uart->byte_time = MicrosecondsToCycles(10) >> 1;
 	uart->rxfifo_size = 1;
 	uart->txfifo_size = 1;
 
-        //uart->backend = CanSocketInterface_New(&canOps,name,can);
-        uart->sigIrq = SigNode_New("%s.irq",name);
-        if(!uart->sigIrq) {
-                fprintf(stderr,"Can not create interrupt line for %s\n",name);
-                exit(1);
-        }
-	uart->clk_in = Clock_New("%s.clk",name);
-	uart->clk_baud = Clock_New("%s.baudrate",name);
-	if(!uart->clk_in || !uart->clk_baud) {
-		fprintf(stderr,"Can not create Uart clocks for \"%s\"\n",name);
+	//uart->backend = CanSocketInterface_New(&canOps,name,can);
+	uart->sigIrq = SigNode_New("%s.irq", name);
+	if (!uart->sigIrq) {
+		fprintf(stderr, "Can not create interrupt line for %s\n", name);
+		exit(1);
+	}
+	uart->clk_in = Clock_New("%s.clk", name);
+	uart->clk_baud = Clock_New("%s.baudrate", name);
+	if (!uart->clk_in || !uart->clk_baud) {
+		fprintf(stderr, "Can not create Uart clocks for \"%s\"\n", name);
 		exit(1);
 	}
 	update_clock(uart);
-	CycleTimer_Init(&uart->tx_baud_timer,tx_next,uart);
-        CycleTimer_Init(&uart->rx_baud_timer,rx_next,uart);
-	reset_tx_fifo(uart); /* may be this should be removed */
+	CycleTimer_Init(&uart->tx_baud_timer, tx_next, uart);
+	CycleTimer_Init(&uart->rx_baud_timer, rx_next, uart);
+	reset_tx_fifo(uart);	/* may be this should be removed */
 	reset_rx_fifo(uart);
 	SerialDevice_StartRx(uart->backend);
-	fprintf(stderr,"TCC8000 Uart \"%s\" created\n",name);
-        return &uart->bdev;
+	fprintf(stderr, "TCC8000 Uart \"%s\" created\n", name);
+	return &uart->bdev;
 }
-

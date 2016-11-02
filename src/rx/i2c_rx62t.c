@@ -132,15 +132,15 @@
 #define T_BUF(riic)      ((riic)->timing.t_buf)
 
 typedef struct I2C_Timing {
-        int speed;
-        uint32_t t_hdsta;
-        uint32_t t_low;
-        uint32_t t_high;
-        uint32_t t_susta;
-        uint32_t t_hddat_max;
-        uint32_t t_sudat;
-        uint32_t t_susto;
-        uint32_t t_buf;
+	int speed;
+	uint32_t t_hdsta;
+	uint32_t t_low;
+	uint32_t t_high;
+	uint32_t t_susta;
+	uint32_t t_hddat_max;
+	uint32_t t_sudat;
+	uint32_t t_susto;
+	uint32_t t_buf;
 } I2C_Timing;
 
 //define MSTR_ACK     (1)
@@ -173,13 +173,13 @@ typedef struct RxI2c {
 
 	I2C_Timing timing;
 	/* The programmable I2C state machine */
-        SigTrace *mstr_sclStretchTrace;
-        //CycleTimer mstr_delay_timer;
-        //CycleTimer mstr_scl_timer;
-        //CycleTimer slv_release_scl_timer;
-        uint16_t mstr_ip; /* The Instruction pointer in codemem */
-        uint32_t mstr_code[CODE_MEM_SIZE];
-        uint32_t mstr_icount;  /* The number of instructions in code memory */
+	SigTrace *mstr_sclStretchTrace;
+	//CycleTimer mstr_delay_timer;
+	//CycleTimer mstr_scl_timer;
+	//CycleTimer slv_release_scl_timer;
+	uint16_t mstr_ip;	/* The Instruction pointer in codemem */
+	uint32_t mstr_code[CODE_MEM_SIZE];
+	uint32_t mstr_icount;	/* The number of instructions in code memory */
 } RxI2c;
 
 /**
@@ -187,35 +187,36 @@ typedef struct RxI2c {
  */
 #if 0
 static void
-assemble_script_start(RxI2c *ri,int startmode) {
-        /* For repeated start do not assume SDA and SCL state */
-        ADD_CODE(ri,INSTR_MSTR_STATE /* | TWIM_STATE_START */);
-        if(startmode == STARTMODE_REPSTART) {
-                ADD_CODE(ri,INSTR_SDA_H);
-                ADD_CODE(ri,INSTR_NDELAY | (T_LOW(ri)-T_HDDAT(ri)));
+assemble_script_start(RxI2c * ri, int startmode)
+{
+	/* For repeated start do not assume SDA and SCL state */
+	ADD_CODE(ri, INSTR_MSTR_STATE /* | TWIM_STATE_START */ );
+	if (startmode == STARTMODE_REPSTART) {
+		ADD_CODE(ri, INSTR_SDA_H);
+		ADD_CODE(ri, INSTR_NDELAY | (T_LOW(ri) - T_HDDAT(ri)));
 
-                ADD_CODE(ri,INSTR_SCL_H);
-                ADD_CODE(ri,INSTR_SYNC);
-                ADD_CODE(ri,INSTR_NDELAY | T_HIGH(ri));
-        } else {
-                ADD_CODE(ri,INSTR_NDELAY | T_BUF(ri));
-        }
+		ADD_CODE(ri, INSTR_SCL_H);
+		ADD_CODE(ri, INSTR_SYNC);
+		ADD_CODE(ri, INSTR_NDELAY | T_HIGH(ri));
+	} else {
+		ADD_CODE(ri, INSTR_NDELAY | T_BUF(ri));
+	}
 
-        /* Generate a start condition */
-        /* Try again if bus not free somehow ???????????????? */
-        if(startmode == STARTMODE_START) {
-                ADD_CODE(ri,INSTR_CHECK_BUSFREE /* | TWISL_STATE_ADDR */);
-        }
-        ADD_CODE(ri,INSTR_SDA_L);
-        ADD_CODE(ri,INSTR_NDELAY | T_HDSTA(ri));
-        /* Enter the interrupt with clock low and T_HDDAT waited */
-        ADD_CODE(ri,INSTR_SCL_L);
-        ADD_CODE(ri,INSTR_NDELAY | T_HDDAT(ri));
-        if(startmode == STARTMODE_REPSTART) {
-                ADD_CODE(ri,INSTR_INTERRUPT /* | TW_REP_START */);
-        } else {
-                ADD_CODE(ri,INSTR_INTERRUPT /* | TW_START */);
-        }
+	/* Generate a start condition */
+	/* Try again if bus not free somehow ???????????????? */
+	if (startmode == STARTMODE_START) {
+		ADD_CODE(ri, INSTR_CHECK_BUSFREE /* | TWISL_STATE_ADDR */ );
+	}
+	ADD_CODE(ri, INSTR_SDA_L);
+	ADD_CODE(ri, INSTR_NDELAY | T_HDSTA(ri));
+	/* Enter the interrupt with clock low and T_HDDAT waited */
+	ADD_CODE(ri, INSTR_SCL_L);
+	ADD_CODE(ri, INSTR_NDELAY | T_HDDAT(ri));
+	if (startmode == STARTMODE_REPSTART) {
+		ADD_CODE(ri, INSTR_INTERRUPT /* | TW_REP_START */ );
+	} else {
+		ADD_CODE(ri, INSTR_INTERRUPT /* | TW_START */ );
+	}
 }
 #endif
 
@@ -233,28 +234,27 @@ assemble_script_start(RxI2c *ri,int startmode) {
  ******************************************************************
 */
 static uint32_t
-iccr1_read(void *clientData,uint32_t address,int rqlen)
+iccr1_read(void *clientData, uint32_t address, int rqlen)
 {
-	RxI2c *ri = (RxI2c *)clientData;
-	ri->regICCR1 &=  ~(ICCR1_SDAI | ICCR1_SCLI | \
-				ICCR1_SDAO | ICCR1_SCLO);
-	if(SigNode_Val(ri->sigSda) == SIG_HIGH) {
+	RxI2c *ri = (RxI2c *) clientData;
+	ri->regICCR1 &= ~(ICCR1_SDAI | ICCR1_SCLI | ICCR1_SDAO | ICCR1_SCLO);
+	if (SigNode_Val(ri->sigSda) == SIG_HIGH) {
 		ri->regICCR1 |= ICCR1_SDAI;
-	} 
-	if(SigNode_Val(ri->sigScl) == SIG_HIGH) {
+	}
+	if (SigNode_Val(ri->sigScl) == SIG_HIGH) {
 		ri->regICCR1 |= ICCR1_SCLI;
-	} 
-	if(SigNode_State(ri->sigSda) != SIG_LOW) {
+	}
+	if (SigNode_State(ri->sigSda) != SIG_LOW) {
 		ri->regICCR1 |= ICCR1_SDAO;
-	} 
-	if(SigNode_State(ri->sigScl) != SIG_LOW) {
+	}
+	if (SigNode_State(ri->sigScl) != SIG_LOW) {
 		ri->regICCR1 |= ICCR1_SCLO;
-	} 
+	}
 	return ri->regICCR1 | ICCR1_SOWP;
 }
 
 static void
-iccr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+iccr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	//RxI2c *ri = clientData;
 	//if(ri->)
@@ -273,14 +273,14 @@ iccr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************************
  */
 static uint32_t
-iccr2_read(void *clientData,uint32_t address,int rqlen)
+iccr2_read(void *clientData, uint32_t address, int rqlen)
 {
 	RxI2c *ri = clientData;
 	return ri->regICCR2;
 }
 
 static void
-iccr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+iccr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
@@ -294,13 +294,13 @@ iccr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************
  */
 static uint32_t
-icmr1_read(void *clientData,uint32_t address,int rqlen)
+icmr1_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icmr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icmr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
@@ -314,13 +314,13 @@ icmr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************
  */
 static uint32_t
-icmr2_read(void *clientData,uint32_t address,int rqlen)
+icmr2_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icmr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icmr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
@@ -337,13 +337,13 @@ icmr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-icmr3_read(void *clientData,uint32_t address,int rqlen)
+icmr3_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icmr3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icmr3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
@@ -360,13 +360,13 @@ icmr3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *********************************************************************
  */
 static uint32_t
-icfer_read(void *clientData,uint32_t address,int rqlen)
+icfer_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icfer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icfer_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
@@ -376,162 +376,161 @@ icfer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************
  */
 static uint32_t
-icser_read(void *clientData,uint32_t address,int rqlen)
+icser_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icser_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icser_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icier_read(void *clientData,uint32_t address,int rqlen)
+icier_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icsr1_read(void *clientData,uint32_t address,int rqlen)
+icsr1_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icsr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icsr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icsr2_read(void *clientData,uint32_t address,int rqlen)
+icsr2_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icsr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icsr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-sarl0_read(void *clientData,uint32_t address,int rqlen)
+sarl0_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-sarl0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sarl0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-saru0_read(void *clientData,uint32_t address,int rqlen)
+saru0_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-saru0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+saru0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-sarl1_read(void *clientData,uint32_t address,int rqlen)
+sarl1_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-sarl1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sarl1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-saru1_read(void *clientData,uint32_t address,int rqlen)
+saru1_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-saru1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+saru1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-sarl2_read(void *clientData,uint32_t address,int rqlen)
+sarl2_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-sarl2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sarl2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-saru2_read(void *clientData,uint32_t address,int rqlen)
+saru2_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-saru2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+saru2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icbrl_read(void *clientData,uint32_t address,int rqlen)
+icbrl_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icbrl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icbrl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icbrh_read(void *clientData,uint32_t address,int rqlen)
+icbrh_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icbrh_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icbrh_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icdrt_read(void *clientData,uint32_t address,int rqlen)
+icdrt_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icdrt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icdrt_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-icdrr_read(void *clientData,uint32_t address,int rqlen)
+icdrr_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-icdrr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icdrr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
-
 static void
-RxI2c_UnMap(void *owner,uint32_t base,uint32_t mapsize)
+RxI2c_UnMap(void *owner, uint32_t base, uint32_t mapsize)
 {
 	IOH_Delete8(REG_ICCR1(base));
 	IOH_Delete8(REG_ICCR2(base));
@@ -556,46 +555,46 @@ RxI2c_UnMap(void *owner,uint32_t base,uint32_t mapsize)
 }
 
 static void
-RxI2c_Map(void *owner,uint32_t base,uint32_t mapsize,uint32_t flags)
+RxI2c_Map(void *owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
 	RxI2c *ri = owner;
-	IOH_New8(REG_ICCR1(base),iccr1_read,iccr1_write,ri);
-	IOH_New8(REG_ICCR2(base),iccr2_read,iccr2_write,ri);
-	IOH_New8(REG_ICMR1(base),icmr1_read,icmr1_write,ri);
-	IOH_New8(REG_ICMR2(base),icmr2_read,icmr2_write,ri);
-	IOH_New8(REG_ICMR3(base),icmr3_read,icmr3_write,ri);
-	IOH_New8(REG_ICFER(base),icfer_read,icfer_write,ri);
-	IOH_New8(REG_ICSER(base),icser_read,icser_write,ri);
-	IOH_New8(REG_ICIER(base),icier_read,icier_write,ri);
-	IOH_New8(REG_ICSR1(base),icsr1_read,icsr1_write,ri);
-	IOH_New8(REG_ICSR2(base),icsr2_read,icsr2_write,ri);
-	IOH_New8(REG_SARL0(base),sarl0_read,sarl0_write,ri);
-	IOH_New8(REG_SARU0(base),saru0_read,saru0_write,ri);
-	IOH_New8(REG_SARL1(base),sarl1_read,sarl1_write,ri);
-	IOH_New8(REG_SARU1(base),saru1_read,saru1_write,ri);
-	IOH_New8(REG_SARL2(base),sarl2_read,sarl2_write,ri);
-	IOH_New8(REG_SARU2(base),saru2_read,saru2_write,ri);
-	IOH_New8(REG_ICBRL(base),icbrl_read,icbrl_write,ri);
-	IOH_New8(REG_ICBRH(base),icbrh_read,icbrh_write,ri);
-	IOH_New8(REG_ICDRT(base),icdrt_read,icdrt_write,ri);
-	IOH_New8(REG_ICDRR(base),icdrr_read,icdrr_write,ri);
+	IOH_New8(REG_ICCR1(base), iccr1_read, iccr1_write, ri);
+	IOH_New8(REG_ICCR2(base), iccr2_read, iccr2_write, ri);
+	IOH_New8(REG_ICMR1(base), icmr1_read, icmr1_write, ri);
+	IOH_New8(REG_ICMR2(base), icmr2_read, icmr2_write, ri);
+	IOH_New8(REG_ICMR3(base), icmr3_read, icmr3_write, ri);
+	IOH_New8(REG_ICFER(base), icfer_read, icfer_write, ri);
+	IOH_New8(REG_ICSER(base), icser_read, icser_write, ri);
+	IOH_New8(REG_ICIER(base), icier_read, icier_write, ri);
+	IOH_New8(REG_ICSR1(base), icsr1_read, icsr1_write, ri);
+	IOH_New8(REG_ICSR2(base), icsr2_read, icsr2_write, ri);
+	IOH_New8(REG_SARL0(base), sarl0_read, sarl0_write, ri);
+	IOH_New8(REG_SARU0(base), saru0_read, saru0_write, ri);
+	IOH_New8(REG_SARL1(base), sarl1_read, sarl1_write, ri);
+	IOH_New8(REG_SARU1(base), saru1_read, saru1_write, ri);
+	IOH_New8(REG_SARL2(base), sarl2_read, sarl2_write, ri);
+	IOH_New8(REG_SARU2(base), saru2_read, saru2_write, ri);
+	IOH_New8(REG_ICBRL(base), icbrl_read, icbrl_write, ri);
+	IOH_New8(REG_ICBRH(base), icbrh_read, icbrh_write, ri);
+	IOH_New8(REG_ICDRT(base), icdrt_read, icdrt_write, ri);
+	IOH_New8(REG_ICDRR(base), icdrr_read, icdrr_write, ri);
 }
 
 BusDevice *
 RX62T_I2CNew(const char *name)
 {
 	RxI2c *ri = sg_new(RxI2c);
-	ri->sigSda = SigNode_New("%s.sda",name);
-	ri->sigScl = SigNode_New("%s.scl",name);
-	if(!ri->sigSda || !ri->sigScl) {
-		fprintf(stderr,"Can not create RX-I2C signal lines\n");
+	ri->sigSda = SigNode_New("%s.sda", name);
+	ri->sigScl = SigNode_New("%s.scl", name);
+	if (!ri->sigSda || !ri->sigScl) {
+		fprintf(stderr, "Can not create RX-I2C signal lines\n");
 		exit(1);
 	}
 	ri->bdev.first_mapping = NULL;
-        ri->bdev.Map = RxI2c_Map;
-        ri->bdev.UnMap= RxI2c_UnMap;
-        ri->bdev.owner = ri;
-        ri->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"RX62t I2C Controller created\n");
+	ri->bdev.Map = RxI2c_Map;
+	ri->bdev.UnMap = RxI2c_UnMap;
+	ri->bdev.owner = ri;
+	ri->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "RX62t I2C Controller created\n");
 	return &ri->bdev;
 }

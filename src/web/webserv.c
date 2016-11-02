@@ -40,9 +40,11 @@
 #include <netinet/tcp.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include "sgstring.h"
 #include "configfile.h"
 #include "fio.h"
@@ -51,6 +53,15 @@
 
 #define MAX_CONNECTIONS	20
 
+#if 0
+typedef void HttpRequestProc(HttpCon * htc, void *eventData);
+#endif
+
+typedef struct HttpRequestHandler {
+	char *path;		/* Uri striped by name of the registered component */
+	void *eventData;
+} HttpRequestHandler;
+
 typedef struct WebServ {
 	FIO_TcpServer tcpserv;
 	uint32_t nr_connections;
@@ -58,16 +69,20 @@ typedef struct WebServ {
 	SHashTable uriHash;
 } WebServ;
 
+#define MAX_URI_ARGC	(5)
+
 typedef struct WebCon {
 	WebServ *webserv;
 	struct WebCon *next;
 	FIO_FileHandler rfh;
 	FIO_FileHandler wfh;
 	int sockfd;
-	uint8_t uri[52];
+	char *argv[MAX_URI_ARGC];
+	unsigned int argc;
+	char uri[128];
 	uint8_t buf[512];
 	uint16_t uri_len;
-	uint16_t rqhfieldlen;
+	uint16_t rqhdrfieldlen;
 	uint32_t buf_wp;
 	uint32_t buf_rp;
 	uint8_t method;
@@ -136,96 +151,192 @@ typedef struct WebCon {
 #define WC_STATE_SPC2	(10)
 #define WC_STATE_HTTP		(11)
 #define WC_STATE_LF		(12)
-#define WC_STATE_RQHFIELD	(13)
-#define WC_STATE_LF2	(14)
-#define WC_STATE_ERROR	(0xff)
-static void
-WebCon_FeedSM(WebCon *wc,uint8_t c) 
+#define WC_STATE_RQHDRFIELD	(13)
+#define WC_STATE_LF2		(14)
+#define WC_STATE_ERROR		(0xff)
+
+/*
+ ********************************************************************
+ * Separate arguments from URI.
+ * Input example: "bla.cgi?x=5&z=7&hello"
+ ********************************************************************
+ */
+static int
+split_args(char *line, int maxargc, char *argv[])
 {
-	switch(wc->state) {
-		case WC_STATE_IDLE:
-			if(c == 'G') {
-				wc->state = WC_STATE_G;
-			} else if(c == 'P') {
-				wc->state = WC_STATE_P;
-			} else {
-				wc->state = WC_STATE_ERROR;
+	int i, argc = 1;
+	argv[0] = line;
+	for (i = 0; line[i]; i++) {
+		if ((line[i] == ' ')) {
+			line[i] = 0;
+			return argc;
+		}
+		if ((argc == 1) && (line[i] == '?')) {
+			line[i] = 0;
+			argv[argc] = line + i + 1;
+			argc++;
+		} else if ((argc > 1) && (line[i] == '&')) {
+			line[i] = 0;
+			if (argc < maxargc) {
+				argv[argc] = line + i + 1;
+				argc++;
 			}
-			break;
-		case WC_STATE_G:
-			if(c == 'E') {
-				wc->state = WC_STATE_E;
-			} else {
-				wc->state = WC_STATE_ERROR;
-			}
-			break;
+		}
+	}
+	return argc;
+}
 
-		case WC_STATE_E:
-			if(c == 'T') {
-				wc->state = WC_STATE_T;
-			} else {
-				wc->state = WC_STATE_ERROR;
-			}
-			break;
+/**
+ ****************************************************
+ * Find a request handler identified by the URI 
+ ****************************************************
+ */
+static HttpRequestHandler *
+FindRequestHandler(WebServ * ws, char *uri, size_t uribuflen)
+{
+	SHashEntry *hashEntry;
+	size_t urilen;
+	unsigned int i;
 
-		case WC_STATE_T:
-			if(c == ' ') {
-				wc->method = METHOD_GET;
-				wc->state = WC_STATE_URI;
-			} else {
-				wc->state = WC_STATE_ERROR;
-			}
-			break;
-
-		case WC_STATE_URI:
-			if(c == ' ') {
-				wc->uri[wc->uri_len] = 0;	
-				wc->state = WC_STATE_HTTP;
-				fprintf(stderr,"URI is %s\n",wc->uri);
-			} else if((wc->uri_len + 1) < array_size(wc->uri)) {
-				wc->uri[wc->uri_len++] = c;
-			} else {
-				fprintf(stderr,"URI to long\n");
-				wc->state = WC_STATE_ERROR;
-			}
-			break;
-
-		case WC_STATE_HTTP:
-			if(c == '\r') {
-				wc->state = WC_STATE_LF;
-			}
-			break;
-
-		case WC_STATE_LF:
-			if(c == '\n') {
-				wc->state = WC_STATE_RQHFIELD;
-				wc->rqhfieldlen = 0;
-			} else {
-				wc->state = WC_STATE_ERROR;
-			} 
-			break;
-
-		case WC_STATE_RQHFIELD:
-			if(c == '\r') {
-				if(wc->rqhfieldlen == 0) {
-					wc->state = WC_STATE_LF2;
-				} else {
-					wc->state = WC_STATE_LF;
-				}
-			} else {
-				wc->rqhfieldlen++;
-			}
-			break;
-
-		case WC_STATE_LF2:
-			if(c == '\n') {
-				wc->state = WC_STATE_IDLE;
-				fprintf(stderr,"Got request for URI %s\n",wc->uri);
-				wc->rqhfieldlen = 0;
-			} 
+	HttpRequestHandler *rqh;
+	hashEntry = SHash_FindEntry(&ws->uriHash, uri);
+	if (hashEntry) {
+		rqh = SHash_GetValue(hashEntry);
+		rqh->path = uri;
+		return rqh;
+	}
+	urilen = strlen(uri);
+	for (i = 0; i < urilen; i++) {
+		if (isalnum((int)uri[i])) {
+			continue;
+		}
+		if ((uri[i] == '/') && (uri[i + 1] != '/')) {
+			continue;
+		}
+		if ((uri[i] == '.') && (uri[i + 1] != '.')) {
+			continue;
+		}
 		break;
 	}
-	fprintf(stderr,"State %u c \"%c\"\n",wc->state,c);
+	if (i != urilen) {
+		fprintf(stderr, "URI security check failed: \"%s\"\n", uri);
+		return NULL;
+	}
+	for (i = urilen; i > 0; i--) {
+		if (uri[i] == '/') {
+			char tmp = uri[i + 1];
+			uri[i + 1] = 0;
+			hashEntry = SHash_FindEntry(&ws->uriHash, uri);
+			uri[i + 1] = tmp;
+			uri[i] = 0;
+			if (hashEntry) {
+				rqh = SHash_GetValue(hashEntry);
+				if (rqh) {
+					rqh->path = uri + i + 1;
+				}
+				return rqh;
+			}
+		}
+	}
+}
+
+#if 0
+static void
+WebServ_RegisterHttpRequestProc(WebServ * ws, char *uri, HttpRequestProc * proc, void *cbData)
+{
+
+}
+#endif
+
+static void
+WebCon_FeedSM(WebCon * wc, uint8_t c)
+{
+	switch (wc->state) {
+	    case WC_STATE_IDLE:
+		    if (c == 'G') {
+			    wc->state = WC_STATE_G;
+		    } else if (c == 'P') {
+			    wc->state = WC_STATE_P;
+		    } else {
+			    wc->state = WC_STATE_ERROR;
+		    }
+		    break;
+	    case WC_STATE_G:
+		    if (c == 'E') {
+			    wc->state = WC_STATE_E;
+		    } else {
+			    wc->state = WC_STATE_ERROR;
+		    }
+		    break;
+
+	    case WC_STATE_E:
+		    if (c == 'T') {
+			    wc->state = WC_STATE_T;
+		    } else {
+			    wc->state = WC_STATE_ERROR;
+		    }
+		    break;
+
+	    case WC_STATE_T:
+		    if (c == ' ') {
+			    wc->method = METHOD_GET;
+			    wc->state = WC_STATE_URI;
+		    } else {
+			    wc->state = WC_STATE_ERROR;
+		    }
+		    break;
+
+	    case WC_STATE_URI:
+		    if (c == ' ') {
+			    wc->uri[wc->uri_len] = 0;
+			    wc->state = WC_STATE_HTTP;
+			    fprintf(stderr, "URI is %s\n", wc->uri);
+		    } else if ((wc->uri_len + 1) < array_size(wc->uri)) {
+			    wc->uri[wc->uri_len++] = c;
+		    } else {
+			    fprintf(stderr, "URI to long\n");
+			    wc->state = WC_STATE_ERROR;
+		    }
+		    break;
+
+	    case WC_STATE_HTTP:
+		    if (c == '\r') {
+			    wc->state = WC_STATE_LF;
+		    }
+		    break;
+
+	    case WC_STATE_LF:
+		    if (c == '\n') {
+			    wc->state = WC_STATE_RQHDRFIELD;
+			    wc->rqhdrfieldlen = 0;
+		    } else {
+			    wc->state = WC_STATE_ERROR;
+		    }
+		    break;
+
+	    case WC_STATE_RQHDRFIELD:
+		    if (c == '\r') {
+			    if (wc->rqhdrfieldlen == 0) {
+				    wc->state = WC_STATE_LF2;
+			    } else {
+				    wc->state = WC_STATE_LF;
+			    }
+		    } else {
+			    wc->rqhdrfieldlen++;
+		    }
+		    break;
+
+	    case WC_STATE_LF2:
+		    if (c == '\n') {
+			    wc->state = WC_STATE_IDLE;
+			    fprintf(stderr, "Got request for URI %s\n", wc->uri);
+			    split_args(wc->uri, MAX_URI_ARGC, wc->argv);
+			    fprintf(stderr, "split %s\n", wc->argv[0]);
+			    wc->rqhdrfieldlen = 0;
+		    }
+		    break;
+	}
+	fprintf(stderr, "State %u c \"%c\"\n", wc->state, c);
 }
 
 /**
@@ -242,8 +353,8 @@ WebCon_Sink(void *eventData, int mask)
 	uint8_t i;
 	int cnt;
 	while ((cnt = read(wc->sockfd, &data, sizeof(data))) > 0) {
-		for(i = 0; i < cnt; i++) {
-			WebCon_FeedSM(wc,data[i]);
+		for (i = 0; i < cnt; i++) {
+			WebCon_FeedSM(wc, data[i]);
 		}
 	}
 	return;
@@ -297,7 +408,7 @@ WebServ_New(const char *name)
 		fprintf(stderr, "Can not create TCP server for Web Server \"%s\"\n", name);
 		exit(1);
 	}
-	SHash_InitTable(&ws->uriHash); 
-	fprintf(stderr,"WebServ Listening on \"%s:%u\"\n",host,port);
+	SHash_InitTable(&ws->uriHash);
+	fprintf(stderr, "WebServ Listening on \"%s:%u\"\n", host, port);
 	return;
 }

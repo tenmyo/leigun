@@ -115,15 +115,15 @@ the default types/sizes.
 
 Loading Motorola S-Records
 ---------------------------
-The filename must have the ending .srec
+The filename should have the ending .mot
 Start Addresses (S7, S8 and S9 records) found in S-Record file 
 are currently ignored. Example:
 
-softgun programm.srec
+softgun programm.mot
 
 Loading Intel Hex Records
 ---------------------------
-The filename must have the ending .hex
+The filename should have the ending .hex
 Start Addresses found in Hex-Record file are currently ignored 
 Segmented address records are not implemented
 Example:

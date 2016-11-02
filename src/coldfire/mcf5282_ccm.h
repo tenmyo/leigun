@@ -1,1 +1,1 @@
-BusDevice * MFC5282_CCMNew(const char *name);
+BusDevice *MFC5282_CCMNew(const char *name);

@@ -43,53 +43,183 @@
 #include "configfile.h"
 #include "sglib.h"
 #include "compiler_extensions.h"
+#include "cleanup.h"
 
-#define RXBUF_SIZE 128 
+#define RXBUF_SIZE 128
 
 #define RXBUF_RP(pua) ((pua)->rxbuf_rp % RXBUF_SIZE)
 #define RXBUF_WP(pua) ((pua)->rxbuf_wp % RXBUF_SIZE)
 #define RXBUF_LVL(pua) ((pua)->rxbuf_wp - (pua)->rxbuf_rp)
 #define RXBUF_ROOM(pua) (RXBUF_SIZE - RXBUF_LVL(pua))
 
-#define TXBUF_SIZE 128 
+#define TXBUF_SIZE 256
 #define TXBUF_RP(pua) ((pua)->txbuf_rp % TXBUF_SIZE)
 #define TXBUF_WP(pua) ((pua)->txbuf_wp % TXBUF_SIZE)
 #define TXBUF_LVL(pua) ((pua)->txbuf_wp - (pua)->txbuf_rp)
 #define TXBUF_ROOM(pua) (TXBUF_SIZE - TXBUF_LVL(pua))
 
 typedef struct PtmxUart {
-        SerialDevice serdev;
-	Utf8ToUnicodeCtxt utf8ToUnicodeCtxt;
-	int fd;
-	char *linkname;
-        int tx_enabled;
-        int rx_enabled;
+    SerialDevice serdev;
+    Utf8ToUnicodeCtxt utf8ToUnicodeCtxt;
+    const char *group;
+    const char *owner;
+    const char *mode;
+    int fd;
+    char *linkname;
+    int tx_enabled;
+    int rx_enabled;
 
-	FIO_FileHandler rfh;
-        int rfh_active;
-        FIO_FileHandler wfh;
-        int wfh_active;
+    FIO_FileHandler rfh;
+    int rfh_active;
+    FIO_FileHandler wfh;
+    int wfh_active;
 
-        UartChar rxChar;
-        int rxchar_present;
-	uint8_t charsize;
-        uint8_t rxbuf[RXBUF_SIZE];
-	uint32_t force_utf8;
+    UartChar rxChar;
+    int rxchar_present;
+    uint8_t charsize;
+    uint8_t rxbuf[RXBUF_SIZE];
+    uint32_t force_utf8;
+    /* MDB Translator */
+    uint32_t force_mdbtrans;
+    uint16_t mdbTransAssBuf;
+    uint16_t mdbRxBytes;
+    uint8_t mdbPktChksum;
 
-        unsigned int rxbuf_wp;
-        unsigned int rxbuf_rp;
+    unsigned int rxbuf_wp;
+    unsigned int rxbuf_rp;
 
-        uint8_t txbuf[TXBUF_SIZE]; /* UTF8 format if charsize > 8 */
-        unsigned int txbuf_wp;
-        unsigned int txbuf_rp;
+    uint8_t txbuf[TXBUF_SIZE];  /* UTF8 format if charsize > 8 */
+    unsigned int txbuf_wp;
+    unsigned int txbuf_rp;
 
-        CycleTimer rxBaudTimer;
-        CycleTimer txBaudTimer;
-	int txchar_present;
-        uint32_t usecs_per_char;
+    CycleTimer rxBaudTimer;
+//      int txchar_present;
+    uint32_t usecs_per_char;
 } PtmxUart;
 
-static void Ptmx_Reopen(PtmxUart *pua); 
+static void Ptmx_Reopen(PtmxUart * pua);
+static void Ptmx_RefillRxChar(PtmxUart * pua);
+static void Ptmx_Writehandler(void *eventData, int flags);
+
+/**
+ **********************************************************************
+ * Write to the internal (RX-Buffer) 
+ **********************************************************************
+ */
+static void
+MdbWriteToRxBuf(PtmxUart * pua, uint8_t * pc2x8, int cnt)
+{
+    int i;
+    for (i = 0; i < cnt; i++) {
+        pua->rxbuf[RXBUF_WP(pua)] = pc2x8[i];
+        pua->rxbuf_wp++;
+    }
+    if (!pua->rxchar_present) {
+        Ptmx_RefillRxChar(pua);
+    }
+}
+
+/**
+ * static void PCCmd(PtmxUart *pua, uint16_t cmd); 
+ */
+static void
+PCCmd(PtmxUart * pua, uint16_t cmd)
+{
+    char *str = "WeichGewehr " __DATE__ " " __TIME__;
+    int i;
+    fprintf(stderr, "Got cmd %04x\n", cmd);
+    switch (cmd) {
+        case 0xc301:
+            pua->txbuf[TXBUF_WP(pua)] = cmd >> 8;
+            pua->txbuf_wp++;
+            pua->txbuf[TXBUF_WP(pua)] = 0x40;
+            pua->txbuf_wp++;
+            for (i = 0; i < strlen(str) + 1; i++) {
+                pua->txbuf[TXBUF_WP(pua)] = str[i];
+                pua->txbuf_wp++;
+            }
+            if (!pua->wfh_active) {
+                FIO_AddFileHandler(&pua->wfh, pua->fd, FIO_WRITABLE, Ptmx_Writehandler, pua);
+                pua->wfh_active = 1;
+            }
+            break;
+
+        case 0xcb00:           // CMD_MDB_BUS_RESET:
+            pua->txbuf[TXBUF_WP(pua)] = cmd >> 8;
+            pua->txbuf_wp++;
+            pua->txbuf[TXBUF_WP(pua)] = 0x40;
+            pua->txbuf_wp++;
+            if (!pua->wfh_active) {
+                FIO_AddFileHandler(&pua->wfh, pua->fd, FIO_WRITABLE, Ptmx_Writehandler, pua);
+                pua->wfh_active = 1;
+            }
+            break;
+
+        default:
+            break;
+    }
+}
+
+/**
+ *******************************************************
+ * MDB: Translate 9 bit words to 2x8 bits
+ ******************************************************
+ */
+static int
+mdb9_to_pc2x8(PtmxUart * pua, uint16_t mdb9, uint8_t * pc2x8)
+{
+    pc2x8[0] = ((mdb9 >> 4) & 0x1f) | 0x80;
+    pc2x8[1] = mdb9 & 0xf;
+    fprintf(stderr, "T -> 0x%04x\n", mdb9);
+    pua->rxbuf_wp = pua->rxbuf_rp = 0;
+    pua->mdbRxBytes++;
+    if (mdb9 & 0x100) {
+        if (pua->mdbRxBytes == 1) {
+            //fprintf(stderr,"Don't ack ack\n");
+            /* Do not ack an ack/nak only */
+        } else if (pua->mdbPktChksum == (mdb9 & 0xff)) {
+            uint8_t data[2] = { 0x80, 0 };
+            MdbWriteToRxBuf(pua, data, 2);
+        } else {
+            uint8_t data[2] = { 0x9f, 0xf };
+            MdbWriteToRxBuf(pua, data, 2);
+        }
+        pua->mdbRxBytes = 0;
+        pua->mdbPktChksum = 0;
+    } else {
+        pua->mdbPktChksum += (mdb9 & 0xff);
+    }
+    return 2;
+}
+
+/**
+ *******************************************************
+ * MDB: Translate 2x8 bit to 9 Bit words
+ ******************************************************
+ */
+static int
+pc2x8_to_mdb9(PtmxUart * pua, uint32_t * mdbWord, uint8_t pcbyte)
+{
+    //fprintf(stderr,"PCByte 0x%02x\n", pcbyte);
+    if (pcbyte & 0x80) {
+        pua->mdbTransAssBuf = (uint16_t) pcbyte << 8;
+        return 0;
+    } else {
+        uint16_t w;
+        pua->mdbTransAssBuf |= pcbyte;
+        w = pua->mdbTransAssBuf;
+        if ((w & 0xc000) == 0xc000) {
+            /* Do not output commands on MDB */
+            PCCmd(pua, w);
+            return 0;
+        }
+        *mdbWord = ((w & 0x1f00) >> 4) | (w & 0xf);
+        pua->mdbPktChksum = 0;
+        pua->txbuf_wp = pua->txbuf_rp = 0;
+//        fprintf(stderr,"R <- %04x\n", *mdbWord);
+        return 1;
+    }
+}
 
 /**
  ****************************************************************
@@ -97,61 +227,90 @@ static void Ptmx_Reopen(PtmxUart *pua);
  ****************************************************************
  */
 
-static void
-Ptmx_RefillRxChar(PtmxUart *pua) {
-	if(pua->rxchar_present) {
-		return;
-	}
-	if((pua->charsize > 8) || pua->force_utf8) {
-		while(RXBUF_LVL(pua) > 0) {
-			uint32_t rxWord;
-			int cnt;
-			cnt = utf8_to_unicode(&pua->utf8ToUnicodeCtxt,&rxWord,pua->rxbuf[RXBUF_RP(pua)]);
-			pua->rxbuf_rp++;
-			if(cnt) {
-				pua->rxChar = rxWord;
-				pua->rxchar_present = 1;
-				if(pua->rx_enabled) {
-					Uart_RxEvent(&pua->serdev);
-				}
-				break;
-			}
-		}
-	} else {
-		pua->rxChar = pua->rxbuf[RXBUF_RP(pua)];
-		pua->rxbuf_rp++;
-		pua->rxchar_present = 1;
-		if(pua->rx_enabled) {
-			Uart_RxEvent(&pua->serdev);
-		}
-	}
-}
-
 /**
  *******************************************************************************
  * Event handler for reading from the ptmx device 
  *******************************************************************************
  */
-static void 
-Ptmx_Input(void *eventData,int mask) {
-	PtmxUart *pua = eventData;
-	int max_bytes = RXBUF_SIZE - RXBUF_WP(pua);	
-	int result;
-	if(max_bytes == 0) {
-		fprintf(stderr,"Bug in %s\n",__func__);
-		exit(1);
-	}
-	result = read(pua->fd,pua->rxbuf + RXBUF_WP(pua),max_bytes);
-	if((result < 0) && (errno != EAGAIN)) {
-		Ptmx_Reopen(pua);			
-		return;
-	} else if(result > 0) {
-		pua->rxbuf_wp += result;
-		if(!pua->rxchar_present) {
-			Ptmx_RefillRxChar(pua);
-		}
-	}
-	return;
+static void
+Ptmx_Input(void *eventData, int mask)
+{
+    PtmxUart *pua = eventData;
+    int max_bytes = RXBUF_SIZE - RXBUF_WP(pua);
+    int read_size;
+    int result;
+    if (max_bytes == 0) {
+        fprintf(stderr, "Bug in %s\n", __func__);
+        exit(1);
+    }
+    read_size = RXBUF_ROOM(pua);
+    if (read_size == 0) {
+        if (pua->rfh_active) {
+            FIO_RemoveFileHandler(&pua->rfh);
+            pua->rfh_active = 0;
+        }
+        return;
+    }
+    if (read_size > max_bytes) {
+        read_size = max_bytes;
+    }
+    result = read(pua->fd, pua->rxbuf + RXBUF_WP(pua), read_size);
+    //fprintf(stderr, "Read %u: %02x, wp %u, rp %u\n", result, *(pua->rxbuf + RXBUF_WP(pua)), pua->rxbuf_wp, pua->rxbuf_rp);
+    if ((result == 0)) {
+        fprintf(stderr, "Reopen EOF\n");
+        Ptmx_Reopen(pua);
+    } else if ((result < 0) && (errno != EAGAIN)) {
+        fprintf(stderr, "Reopen error\n");
+        Ptmx_Reopen(pua);
+        return;
+    } else if (result > 0) {
+        pua->rxbuf_wp += result;
+        if (!CycleTimer_IsActive(&pua->rxBaudTimer)) {
+            /* First char is immediate, delay is after the last char ! */
+            CycleTimer_Mod(&pua->rxBaudTimer, 0);
+        }
+    }
+    return;
+}
+
+static void
+Ptmx_RefillRxChar(PtmxUart * pua)
+{
+    if (pua->rxchar_present) {
+        return;
+    }
+    if ((pua->charsize > 8) || pua->force_utf8 || pua->force_mdbtrans) {
+        while (RXBUF_LVL(pua) > 0) {
+            uint32_t rxWord;
+            int cnt;
+            if (pua->force_mdbtrans) {
+                cnt = pc2x8_to_mdb9(pua, &rxWord, pua->rxbuf[RXBUF_RP(pua)]);
+            } else {
+                cnt = utf8_to_unicode(&pua->utf8ToUnicodeCtxt, &rxWord, pua->rxbuf[RXBUF_RP(pua)]);
+            }
+            pua->rxbuf_rp++;
+            if (cnt) {
+                pua->rxChar = rxWord;
+                pua->rxchar_present = 1;
+                if (pua->rx_enabled) {
+                    Uart_RxEvent(&pua->serdev);
+                }
+                break;
+            }
+        }
+    } else {
+        pua->rxChar = pua->rxbuf[RXBUF_RP(pua)];
+        pua->rxbuf_rp++;
+        pua->rxchar_present = 1;
+        if (pua->rx_enabled) {
+            Uart_RxEvent(&pua->serdev);
+        }
+    }
+    if (pua->rfh_active == 0) {
+        FIO_AddFileHandler(&pua->rfh, pua->fd, FIO_READABLE, Ptmx_Input, pua);
+        pua->rfh_active = 1;
+    }
+    //fprintf(stderr,"Refilled with %02x at %llu\n", pua->rxChar,CycleCounter_Get());
 }
 
 /**
@@ -161,44 +320,17 @@ Ptmx_Input(void *eventData,int mask) {
  ******************************************************************************
  */
 static int
-Ptmx_Read(SerialDevice *sd,UartChar *buf,int maxlen)
+Ptmx_Read(SerialDevice * sd, UartChar * buf, int maxlen)
 {
-	PtmxUart *pua = sd->owner;
-        if(maxlen > 0) {
-                if(pua->rxchar_present) {
-                        buf[0] = pua->rxChar;
-                        pua->rxchar_present = 0;
-                        return 1;
-		}
+    PtmxUart *pua = sd->owner;
+    if (maxlen > 0) {
+        if (pua->rxchar_present) {
+            buf[0] = pua->rxChar;
+            pua->rxchar_present = 0;
+            return 1;
         }
-        return 0;
-}
-
-/**
- ********************************************************************************
- * \fn static void Ptxm_StopTx(SerialDevice *sd)
- ********************************************************************************
- */
-static void
-Ptmx_StopTx(SerialDevice *sd)
-{
-        PtmxUart *pua = sd->owner;
-        pua->tx_enabled = 0;
-}
-
-/**
- *******************************************************************************
- * \fn static void Ptxm_StartTx(SerialDevice *sd)
- *******************************************************************************
- */
-static void
-Ptmx_StartTx(SerialDevice *sd)
-{
-        PtmxUart *pua = sd->owner;
-        pua->tx_enabled = 1;
-	if(!CycleTimer_IsActive(&pua->txBaudTimer)) {
-		CycleTimer_Mod(&pua->txBaudTimer,MicrosecondsToCycles(pua->usecs_per_char));
-	}
+    }
+    return 0;
 }
 
 /**
@@ -207,43 +339,44 @@ Ptmx_StartTx(SerialDevice *sd)
  ****************************************************************************
  */
 static void
-Ptmx_StartRx(SerialDevice *sd)
+Ptmx_StartRx(SerialDevice * sd)
 {
-        PtmxUart *pua = sd->owner;
-        pua->rx_enabled = 1;
-        if(pua->rxchar_present) {
-                Uart_RxEvent(&pua->serdev);
+    PtmxUart *pua = sd->owner;
+    pua->rx_enabled = 1;
+    if (pua->rxchar_present) {
+        Uart_RxEvent(&pua->serdev);
+    }
+    if (RXBUF_LVL(pua) > 0) {
+        if (!CycleTimer_IsActive(&pua->rxBaudTimer)) {
+            CycleTimer_Mod(&pua->rxBaudTimer, MicrosecondsToCycles(pua->usecs_per_char));
         }
-        if(RXBUF_LVL(pua) > 0) {
-                if(!CycleTimer_IsActive(&pua->rxBaudTimer)) {
-                        CycleTimer_Mod(&pua->rxBaudTimer,MicrosecondsToCycles(pua->usecs_per_char));
-                }
-        }
+    }
 }
 
 static void
-Ptmx_StopRx(SerialDevice *sd) {
-        PtmxUart *pua = sd->owner;
-        pua->rx_enabled = 0;
+Ptmx_StopRx(SerialDevice * sd)
+{
+    PtmxUart *pua = sd->owner;
+    pua->rx_enabled = 0;
 }
 
 static int
-Ptmx_SerialCmd(SerialDevice *sd,UartCmd *cmd)
+Ptmx_SerialCmd(SerialDevice * sd, UartCmd * cmd)
 {
-	PtmxUart *pua = sd->owner;
-	switch(cmd->opcode) {
-                case UART_OPC_SET_BAUDRATE:
-			if(cmd->arg) {
-				pua->usecs_per_char = 100000 / cmd->arg;
-				fprintf(stdout,"%d usecs per char\n",pua->usecs_per_char);
-			}
-                        break;
-		case UART_OPC_SET_CSIZE:
-			pua->charsize = cmd->arg;	
-			break;
+    PtmxUart *pua = sd->owner;
+    switch (cmd->opcode) {
+        case UART_OPC_SET_BAUDRATE:
+            if (cmd->arg) {
+                pua->usecs_per_char = (1000000 * 10) / cmd->arg;
+                fprintf(stderr, "%d usecs per char, baud %u\n", pua->usecs_per_char, cmd->arg);
+            }
+            break;
+        case UART_OPC_SET_CSIZE:
+            pua->charsize = cmd->arg;
+            break;
 
-	}
-        return 0;
+    }
+    return 0;
 }
 
 /**
@@ -252,61 +385,71 @@ Ptmx_SerialCmd(SerialDevice *sd,UartCmd *cmd)
  * Event handler called when ptmx device is ready for writing
  *****************************************************************
  */
-static void 
-Ptmx_Writehandler(void *eventData,int flags)
+static void
+Ptmx_Writehandler(void *eventData, int flags)
 {
-        int count;
-        PtmxUart *pua = eventData;
-        while(pua->txbuf_rp != pua->txbuf_wp) {
-                count = write(pua->fd,&pua->txbuf[TXBUF_RP(pua)],1);
-                if(count < 0) {
-                        if(errno == EAGAIN) {
-                                return;
-                        } else {
-                                Ptmx_Reopen(pua);
-                                return;
-                        }
-                } else if(count == 0) {
-                        fprintf(stderr,"EOF on pty\n");
-                } else {
-			//fprintf(stderr,"Write was\n");
-                        pua->txbuf_rp++;
-                }
+    int count;
+    PtmxUart *pua = eventData;
+    while (pua->txbuf_rp != pua->txbuf_wp) {
+        unsigned int cnt = TXBUF_LVL(pua);
+        if ((TXBUF_RP(pua) + cnt) > TXBUF_SIZE) {
+            cnt = TXBUF_SIZE - TXBUF_RP(pua);
         }
-        FIO_RemoveFileHandler(&pua->wfh);
-        pua->wfh_active = 0;
-        return;
+        count = write(pua->fd, &pua->txbuf[TXBUF_RP(pua)], cnt);
+        if (count < 0) {
+            if (errno == EAGAIN) {
+                return;
+            } else {
+                Ptmx_Reopen(pua);
+                return;
+            }
+        } else if (count == 0) {
+            fprintf(stderr, "Write of %u bytes to pty failed\n", cnt);
+            pua->txbuf_rp = pua->txbuf_wp;
+        } else {
+            //fprintf(stderr,"Write %u\n", cnt);
+            pua->txbuf_rp += cnt;
+        }
+    }
+    FIO_RemoveFileHandler(&pua->wfh);
+    pua->wfh_active = 0;
+    return;
 }
 
 static int
-Ptmx_Write(SerialDevice *sd,const UartChar *buf,int count)
+Ptmx_Write(SerialDevice * sd, const UartChar * buf, int count)
 {
-        PtmxUart *pua = sd->owner;
-        if((count == 0) || (pua->txchar_present == 0)) {
-                return 0;
+    PtmxUart *pua = sd->owner;
+    if (count == 0) {
+        return 0;
+    }
+    //pua->txchar_present = 0;
+    if (TXBUF_ROOM(pua) < 3) {
+        return 0;
+    }
+    /* Force UTF 8 for > 8 bit */
+    if ((pua->charsize > 8) || pua->force_utf8 || pua->force_mdbtrans) {
+        uint8_t data[3];
+        int cnt;
+        int i;
+        if (pua->force_mdbtrans) {
+            cnt = mdb9_to_pc2x8(pua, (uint16_t) buf[0], data);
+        } else {
+            cnt = unicode_to_utf8((uint16_t) buf[0], data);
         }
-       	pua->txchar_present = 0;
-	if(TXBUF_ROOM(pua) < 3) {
-		return 0;
-	}
-	/* Force UTF 8 for > 8 bit */
-	if((pua->charsize > 8) || pua->force_utf8) {
-		uint8_t data[3];
-		int cnt = unicode_to_utf8((uint16_t)buf[0],data);	
-		int i;
-		for(i = 0; i < cnt; i++) {
-			pua->txbuf[TXBUF_WP(pua)] = data[i];
-			pua->txbuf_wp++;
-		}
-	} else {
-		pua->txbuf[TXBUF_WP(pua)] = buf[0];
-		pua->txbuf_wp++;
-	}
-	if(!pua->wfh_active) {
-		FIO_AddFileHandler(&pua->wfh,pua->fd,FIO_WRITABLE,Ptmx_Writehandler,pua);
-                pua->wfh_active = 1;
-	}
-	return 1;
+        for (i = 0; i < cnt; i++) {
+            pua->txbuf[TXBUF_WP(pua)] = data[i];
+            pua->txbuf_wp++;
+        }
+    } else {
+        pua->txbuf[TXBUF_WP(pua)] = buf[0];
+        pua->txbuf_wp++;
+    }
+    if (!pua->wfh_active) {
+        FIO_AddFileHandler(&pua->wfh, pua->fd, FIO_WRITABLE, Ptmx_Writehandler, pua);
+        pua->wfh_active = 1;
+    }
+    return 1;
 }
 
 /**
@@ -317,72 +460,98 @@ Ptmx_Write(SerialDevice *sd,const UartChar *buf,int count)
 static void
 Ptmx_RxChar(void *clientData)
 {
-        PtmxUart *pua = (PtmxUart *) clientData;
-        if(RXBUF_LVL(pua) > 0) {
-		Ptmx_RefillRxChar(pua);
-                if(pua->rx_enabled) {
-                        Uart_RxEvent(&pua->serdev);
-                	CycleTimer_Mod(&pua->rxBaudTimer,MicrosecondsToCycles(pua->usecs_per_char));
-                }
+    PtmxUart *pua = (PtmxUart *) clientData;
+    if (RXBUF_LVL(pua) > 0) {
+        Ptmx_RefillRxChar(pua);
+        if (pua->rx_enabled) {
+            Uart_RxEvent(&pua->serdev);
+            CycleTimer_Mod(&pua->rxBaudTimer, MicrosecondsToCycles(pua->usecs_per_char));
         }
+    }
 }
 
 /**
- **********************************************************************************
- * Uart Tx = Ptmx Rx
- **********************************************************************************
+ ********************************************************************
+ * \fn static void Ptmx_CleanupLink(void *eventData); 
+ ********************************************************************
  */
 static void
-Ptmx_TxChar(void *clientData)
+Ptmx_CleanupLink(void *eventData)
 {
-	PtmxUart *pua = clientData;
-	pua->txchar_present = 1;
-	if(pua->tx_enabled) {
-		CycleTimer_Mod(&pua->txBaudTimer,MicrosecondsToCycles(pua->usecs_per_char));
-		Uart_TxEvent(&pua->serdev);
-	} else {
-	}
+    PtmxUart *pua = eventData;
+    unlink(pua->linkname);
 }
 
 static void
-Ptmx_Reopen(PtmxUart *pua) {
-	struct termios termios;
-        if(pua->rfh_active) {
-                FIO_RemoveFileHandler(&pua->rfh);
-                pua->rfh_active = 0;
+Ptmx_Reopen(PtmxUart * pua)
+{
+    struct termios termios;
+    if (pua->rfh_active) {
+        FIO_RemoveFileHandler(&pua->rfh);
+        pua->rfh_active = 0;
+    }
+    if (pua->wfh_active) {
+        FIO_RemoveFileHandler(&pua->wfh);
+        pua->wfh_active = 0;
+    }
+    if (pua->fd >= 0) {
+        close(pua->fd);
+    }
+    pua->fd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
+    if (pua->fd < 0) {
+        perror("Failed to open ptmx");
+        return;
+    }
+    unlockpt(pua->fd);
+    //fprintf(stdout,"ptsname: %s\n",ptsname(pua->fd));
+    if (pua->linkname) {
+        ExitHandler_Unregister(Ptmx_CleanupLink, pua);
+        unlink(pua->linkname);
+        if (symlink(ptsname(pua->fd), pua->linkname) < 0) {
+            perror("can not create symbolic link to ptmx device");
+        } else {
+            ExitHandler_Register(Ptmx_CleanupLink, pua);
         }
-        if(pua->wfh_active) {
-                FIO_RemoveFileHandler(&pua->wfh);
-                pua->wfh_active = 0;
+    }
+    if (pua->group) {
+        char *cmd = alloca(strlen(pua->group) + 500);
+        sprintf(cmd, "chgrp %s %s", pua->group, ptsname(pua->fd));
+        if (system(cmd) != 0) {
+            fprintf(stderr, "Changing group of \"%s\" to \"%s\" failed\n",
+                    ptsname(pua->fd), pua->group);
+            sleep(1);
         }
-        if(pua->fd >= 0) {
-                close(pua->fd);
+    }
+    if (pua->owner) {
+        char *cmd = alloca(strlen(pua->owner) + 500);
+        sprintf(cmd, "chown %s %s", pua->owner, ptsname(pua->fd));
+        if (system(cmd) != 0) {
+            fprintf(stderr, "Changing owner of \"%s\" to \"%s\" failed\n",
+                    ptsname(pua->fd), pua->owner);
+            sleep(1);
         }
-        pua->fd = open("/dev/ptmx",O_RDWR | O_NOCTTY);
-        if(pua->fd < 0) {
-                perror("Failed to open ptmx");
-		return;
+    }
+    if (pua->mode) {
+        char *cmd = alloca(strlen(pua->mode) + 500);
+        sprintf(cmd, "chmod %s %s", pua->mode, ptsname(pua->fd));
+        if (system(cmd) != 0) {
+            fprintf(stderr, "Changing mode of \"%s\" to \"%s\"failed\n",
+                    ptsname(pua->fd), pua->mode);
+            sleep(1);
         }
-        unlockpt(pua->fd);
-        //fprintf(stdout,"ptsname: %s\n",ptsname(pua->fd));
-	if(pua->linkname) {
-        	unlink(pua->linkname);
-		if(symlink(ptsname(pua->fd),pua->linkname) < 0) {
-			perror("can not create symbolic link to ptmx device");
-		}
-	}
-	if(tcgetattr(pua->fd,&termios)<0) {
-                fprintf(stderr,"Can not  get terminal attributes\n");
-                return;
-        }
-        cfmakeraw(&termios);
-        if(tcsetattr(pua->fd,TCSAFLUSH,&termios)<0) {
-                perror("can't set terminal settings");
-                return;
-        }
-        fcntl(pua->fd,F_SETFL,O_NONBLOCK);
-        FIO_AddFileHandler(&pua->rfh,pua->fd,FIO_READABLE,Ptmx_Input,pua);
-        pua->rfh_active = 1;
+    }
+    if (tcgetattr(pua->fd, &termios) < 0) {
+        fprintf(stderr, "Can not  get terminal attributes\n");
+        return;
+    }
+    cfmakeraw(&termios);
+    if (tcsetattr(pua->fd, TCSAFLUSH, &termios) < 0) {
+        perror("can't set terminal settings");
+        return;
+    }
+    fcntl(pua->fd, F_SETFL, O_NONBLOCK);
+    FIO_AddFileHandler(&pua->rfh, pua->fd, FIO_READABLE, Ptmx_Input, pua);
+    pua->rfh_active = 1;
 }
 
 /**
@@ -394,31 +563,38 @@ Ptmx_Reopen(PtmxUart *pua) {
 static SerialDevice *
 PtmxUart_New(const char *name)
 {
-        PtmxUart *pua = sg_new(PtmxUart);
-        SerialDevice *sd = &pua->serdev;
-        sd->owner = pua;
-        sd->uart_cmd = Ptmx_SerialCmd;
-        sd->stop_tx = Ptmx_StopTx;
-        sd->start_tx = Ptmx_StartTx;
-        sd->stop_rx = Ptmx_StopRx;
-        sd->start_rx = Ptmx_StartRx;
-        sd->write = Ptmx_Write;
-        sd->read =  Ptmx_Read;
-	pua->fd = -1; 
-	pua->charsize = 8;
-	pua->force_utf8 = 0;
-	Config_ReadUInt32(&pua->force_utf8,name,"utf8");
-	pua->linkname = Config_ReadVar(name,"link");
-	if(!pua->linkname) {
-		pua->linkname = alloca(strlen(name) + 20); 
-		sprintf(pua->linkname,"/tmp/pty_%s",name);
-	}
-        pua->usecs_per_char = 330;
-        CycleTimer_Init(&pua->rxBaudTimer,Ptmx_RxChar,pua);
-        CycleTimer_Init(&pua->txBaudTimer,Ptmx_TxChar,pua);
-	fprintf(stderr,"PTMX pseudo Terminal Uart backend for \"%s\" at \"%s\"\n",name,pua->linkname);
-	Ptmx_Reopen(pua); 
-        return sd;
+    PtmxUart *pua = sg_new(PtmxUart);
+    SerialDevice *sd = &pua->serdev;
+    sd->owner = pua;
+    sd->uart_cmd = Ptmx_SerialCmd;
+    sd->stop_rx = Ptmx_StopRx;
+    sd->start_rx = Ptmx_StartRx;
+    sd->write = Ptmx_Write;
+    sd->read = Ptmx_Read;
+    pua->fd = -1;
+    pua->charsize = 8;
+    pua->force_utf8 = 0;
+    Config_ReadUInt32(&pua->force_utf8, name, "utf8");
+    Config_ReadUInt32(&pua->force_mdbtrans, name, "mdbtranslator");
+    if (pua->force_utf8 && pua->force_mdbtrans) {
+        fprintf(stderr, "PTMX: mdbtranslator mode and UTF-8 mode can not be enabled both\n");
+        sleep(1);
+        exit(1);
+    }
+    pua->linkname = Config_ReadVar(name, "link");
+    if (!pua->linkname) {
+        pua->linkname = alloca(strlen(name) + 20);
+        sprintf(pua->linkname, "/tmp/pty_%s", name);
+    }
+    pua->group = Config_ReadVar(name, "group");
+    pua->owner = Config_ReadVar(name, "owner");
+    pua->mode = Config_ReadVar(name, "mode");
+    pua->usecs_per_char = 330;
+    CycleTimer_Init(&pua->rxBaudTimer, Ptmx_RxChar, pua);
+    fprintf(stderr, "PTMX pseudo Terminal Uart backend for \"%s\" at \"%s\"\n", name,
+            pua->linkname);
+    Ptmx_Reopen(pua);
+    return sd;
 }
 
 /*
@@ -430,6 +606,6 @@ PtmxUart_New(const char *name)
 __CONSTRUCTOR__ static void
 Ptmx_Init(void)
 {
-        SerialModule_Register("ptmx",PtmxUart_New);
-        fprintf(stderr,"Registered /dev/ptmx UART Emulator module\n");
+    SerialModule_Register("ptmx", PtmxUart_New);
+    fprintf(stderr, "Registered /dev/ptmx UART Emulator module\n");
 }

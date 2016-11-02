@@ -19,13 +19,13 @@ SHAREDCFLAGS=-fPIC -nostdlib  -D_SHARED_
 SHAREDLDFLAGS=-nostdlib -shared
 CYGWIN=$(findstring CYGWIN,$(shell uname))
 ifeq ($(shell uname),Linux)
-LDFLAGS=-lpthread -lrt -lm -lz -lasound 
+LDLIBS=-lpthread -lrt -lm -lz -lasound -ldl
 else
  ifeq ($(shell uname),FreeBSD)
- LDFLAGS=-lpthread -lm -lz -lSDL
+ LDLIBS=-lpthread -lm -lz -lSDL
  else
   ifeq ($(CYGWIN),CYGWIN)
-   LDFLAGS=-lpthread -lrt -lm -lz
+   LDLIBS=-lpthread -lrt -lm -lz
   else
    $(error "Unknown architecture $(shell uname)")
   endif

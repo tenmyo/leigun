@@ -1,1 +1,1 @@
-BusDevice * Rx62nIoPorts_New(const char *name);
+BusDevice *Rx62nIoPorts_New(const char *name);

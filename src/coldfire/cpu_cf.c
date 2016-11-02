@@ -49,202 +49,205 @@
 CFCpu g_CFCpu;
 
 void
-CF_SetRegCR(uint32_t value,int reg) 
+CF_SetRegCR(uint32_t value, int reg)
 {
-	switch(reg) {
-		case CR_REG_CACR:
-			g_CFCpu.reg_CACR = value;
-			break;
-		case CR_REG_ASID:
-			g_CFCpu.reg_ASID = value;
-			break;
-		case CR_REG_ACR0:
-			g_CFCpu.reg_ACR[0] = value;
-			break;
-		case CR_REG_ACR1:
-			g_CFCpu.reg_ACR[1] = value;
-			break;
-		case CR_REG_ACR2:
-			g_CFCpu.reg_ACR[2] = value;
-			break;
-		case CR_REG_ACR3:
-			g_CFCpu.reg_ACR[3] = value;
-			break;
-		case CR_REG_MMUBAR:
-			g_CFCpu.reg_MMUBAR = value;
-			break;
-			
-		case CR_REG_VBR:
-			g_CFCpu.reg_VBR = value;
-			break;
+	switch (reg) {
+	    case CR_REG_CACR:
+		    g_CFCpu.reg_CACR = value;
+		    break;
+	    case CR_REG_ASID:
+		    g_CFCpu.reg_ASID = value;
+		    break;
+	    case CR_REG_ACR0:
+		    g_CFCpu.reg_ACR[0] = value;
+		    break;
+	    case CR_REG_ACR1:
+		    g_CFCpu.reg_ACR[1] = value;
+		    break;
+	    case CR_REG_ACR2:
+		    g_CFCpu.reg_ACR[2] = value;
+		    break;
+	    case CR_REG_ACR3:
+		    g_CFCpu.reg_ACR[3] = value;
+		    break;
+	    case CR_REG_MMUBAR:
+		    g_CFCpu.reg_MMUBAR = value;
+		    break;
 
-		case CR_REG_PC:
-			//  ? 
-			fprintf(stderr,"Control register 0x%02x not implemented\n",reg);
-			break;
+	    case CR_REG_VBR:
+		    g_CFCpu.reg_VBR = value;
+		    break;
 
-		case CR_REG_FLASHBAR:
-			fprintf(stderr,"CPU FLASHBAR 0x%08x\n",value);
-			g_CFCpu.reg_FLASHBAR = value;
-			break;
+	    case CR_REG_PC:
+		    //  ? 
+		    fprintf(stderr, "Control register 0x%02x not implemented\n", reg);
+		    break;
 
-		/* MCF5282 implements RAMBAR1 (0xc05) */
-		case CR_REG_RAMBAR:
-			fprintf(stderr,"CPU RAMBAR 0x%08x\n",value);
-			g_CFCpu.reg_RAMBAR = value;
-			break;
+	    case CR_REG_FLASHBAR:
+		    fprintf(stderr, "CPU FLASHBAR 0x%08x\n", value);
+		    g_CFCpu.reg_FLASHBAR = value;
+		    break;
 
-		case CR_REG_MPCR:
-		case CR_REG_EDRAMBAR:
-		case CR_REG_SECMBAR:
-			fprintf(stderr,"Control register 0x%02x not implemented\n",reg);
-			break;
+		    /* MCF5282 implements RAMBAR1 (0xc05) */
+	    case CR_REG_RAMBAR:
+		    fprintf(stderr, "CPU RAMBAR 0x%08x\n", value);
+		    g_CFCpu.reg_RAMBAR = value;
+		    break;
 
-		case CR_REG_MBAR:
-			g_CFCpu.reg_MBAR = value;
-			break;
+	    case CR_REG_MPCR:
+	    case CR_REG_EDRAMBAR:
+	    case CR_REG_SECMBAR:
+		    fprintf(stderr, "Control register 0x%02x not implemented\n", reg);
+		    break;
 
-		case CR_REG_PCR1U0:
-		case CR_REG_PCR1L0:
-		case CR_REG_PCR2U0:
-		case CR_REG_PCR2L0:
-		case CR_REG_PCR3U0:
-		case CR_REG_PCR3L0:
-		case CR_REG_PCR1U1:
-		case CR_REG_PCR1L1:
-		case CR_REG_PCR2U1:
-		case CR_REG_PCR2L1:
-		case CR_REG_PCR3U1:
-		case CR_REG_PCR3L1:
-		default:
-			fprintf(stderr,"Control register 0x%02x not implemented\n",reg);
-			break;
+	    case CR_REG_MBAR:
+		    g_CFCpu.reg_MBAR = value;
+		    break;
+
+	    case CR_REG_PCR1U0:
+	    case CR_REG_PCR1L0:
+	    case CR_REG_PCR2U0:
+	    case CR_REG_PCR2L0:
+	    case CR_REG_PCR3U0:
+	    case CR_REG_PCR3L0:
+	    case CR_REG_PCR1U1:
+	    case CR_REG_PCR1L1:
+	    case CR_REG_PCR2U1:
+	    case CR_REG_PCR2L1:
+	    case CR_REG_PCR3U1:
+	    case CR_REG_PCR3L1:
+	    default:
+		    fprintf(stderr, "Control register 0x%02x not implemented\n", reg);
+		    break;
 	}
 }
 
 uint32_t
-CF_GetRegCR(int reg) 
+CF_GetRegCR(int reg)
 {
 	uint32_t value = 0;
-	switch(reg) {
-		case CR_REG_CACR:
-			value = g_CFCpu.reg_CACR;
-			break;
+	switch (reg) {
+	    case CR_REG_CACR:
+		    value = g_CFCpu.reg_CACR;
+		    break;
 
-		case CR_REG_ASID:
-			value = g_CFCpu.reg_ASID;
-			break;
+	    case CR_REG_ASID:
+		    value = g_CFCpu.reg_ASID;
+		    break;
 
-		case CR_REG_ACR0:
-			value = g_CFCpu.reg_ACR[0];
-			break;
+	    case CR_REG_ACR0:
+		    value = g_CFCpu.reg_ACR[0];
+		    break;
 
-		case CR_REG_ACR1:
-			value = g_CFCpu.reg_ACR[1];
-			break;
+	    case CR_REG_ACR1:
+		    value = g_CFCpu.reg_ACR[1];
+		    break;
 
-		case CR_REG_ACR2:
-			value = g_CFCpu.reg_ACR[2];
-			break;
+	    case CR_REG_ACR2:
+		    value = g_CFCpu.reg_ACR[2];
+		    break;
 
-		case CR_REG_ACR3:
-			value = g_CFCpu.reg_ACR[3];
-			break;
+	    case CR_REG_ACR3:
+		    value = g_CFCpu.reg_ACR[3];
+		    break;
 
-		case CR_REG_MMUBAR:
-			value = g_CFCpu.reg_MMUBAR;
-			break;
-			
-		case CR_REG_VBR:
-			value = g_CFCpu.reg_VBR;
-			break;
+	    case CR_REG_MMUBAR:
+		    value = g_CFCpu.reg_MMUBAR;
+		    break;
 
-		case CR_REG_PC:
-			//  ? 
-			fprintf(stderr,"Control register 0x%02x not implemented\n",reg);
-			break;
+	    case CR_REG_VBR:
+		    value = g_CFCpu.reg_VBR;
+		    break;
 
-		case CR_REG_FLASHBAR:
-			value = g_CFCpu.reg_RAMBAR;
-			break;
+	    case CR_REG_PC:
+		    //  ? 
+		    fprintf(stderr, "Control register 0x%02x not implemented\n", reg);
+		    break;
 
-		case CR_REG_RAMBAR:
-			value = g_CFCpu.reg_RAMBAR;
-			break;
+	    case CR_REG_FLASHBAR:
+		    value = g_CFCpu.reg_RAMBAR;
+		    break;
 
-		case CR_REG_MPCR:
-		case CR_REG_EDRAMBAR:
-		case CR_REG_SECMBAR:
-			fprintf(stderr,"Control register 0x%02x not implemented\n",reg);
-			break;
+	    case CR_REG_RAMBAR:
+		    value = g_CFCpu.reg_RAMBAR;
+		    break;
 
-		case CR_REG_MBAR:
-			value = g_CFCpu.reg_MBAR;
-			break;
+	    case CR_REG_MPCR:
+	    case CR_REG_EDRAMBAR:
+	    case CR_REG_SECMBAR:
+		    fprintf(stderr, "Control register 0x%02x not implemented\n", reg);
+		    break;
 
-		case CR_REG_PCR1U0:
-		case CR_REG_PCR1L0:
-		case CR_REG_PCR2U0:
-		case CR_REG_PCR2L0:
-		case CR_REG_PCR3U0:
-		case CR_REG_PCR3L0:
-		case CR_REG_PCR1U1:
-		case CR_REG_PCR1L1:
-		case CR_REG_PCR2U1:
-		case CR_REG_PCR2L1:
-		case CR_REG_PCR3U1:
-		case CR_REG_PCR3L1:
-		default:
-			fprintf(stderr,"Control register 0x%02x not implemented\n",reg);
-			break;
+	    case CR_REG_MBAR:
+		    value = g_CFCpu.reg_MBAR;
+		    break;
+
+	    case CR_REG_PCR1U0:
+	    case CR_REG_PCR1L0:
+	    case CR_REG_PCR2U0:
+	    case CR_REG_PCR2L0:
+	    case CR_REG_PCR3U0:
+	    case CR_REG_PCR3L0:
+	    case CR_REG_PCR1U1:
+	    case CR_REG_PCR1L1:
+	    case CR_REG_PCR2U1:
+	    case CR_REG_PCR2L1:
+	    case CR_REG_PCR3U1:
+	    case CR_REG_PCR3L1:
+	    default:
+		    fprintf(stderr, "Control register 0x%02x not implemented\n", reg);
+		    break;
 	}
 	return value;
 }
 
 void
-CF_CpuInit(void) 
+CF_CpuInit(void)
 {
-	int32_t cpu_clock=66000000;
+	int32_t cpu_clock = 66000000;
 	const char *instancename = "coldfire";
 	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
 	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
-        Config_ReadInt32(&cpu_clock,"global","cpu_clock");
+	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");
 	CF_IDecoderNew();
 	cf_init_condition_tab();
-	CycleTimers_Init(instancename,cpu_clock);
-        fprintf(stderr,"Initialized Coldfire CPU with %d HZ\n",cpu_clock);
+	CycleTimers_Init(instancename, cpu_clock);
+	fprintf(stderr, "Initialized Coldfire CPU with %d HZ\n", cpu_clock);
 	CF_SetRegPC(0);
-	CF_SetRegD(HWCONFIG_D0_MFC5282,0);
-	CF_SetRegD(HWCONFIG_D1_MFC5282,1);
-	CF_REG_CCR = 0x2700; /* CFPRM 1.5.1 */
+	CF_SetRegD(HWCONFIG_D0_MFC5282, 0);
+	CF_SetRegD(HWCONFIG_D1_MFC5282, 1);
+	CF_REG_CCR = 0x2700;	/* CFPRM 1.5.1 */
 
 }
 
 static inline void
-CheckSignals() {
-        if(unlikely(mainloop_event_pending)) {
-                mainloop_event_pending = 0;
-                if(mainloop_event_io) {
-                        FIO_HandleInput();
-                }
+CheckSignals()
+{
+	if (unlikely(mainloop_event_pending)) {
+		mainloop_event_pending = 0;
+		if (mainloop_event_io) {
+			FIO_HandleInput();
+		}
 #if 0
-                if(g_CFCpu.signals) {
-                        if(likely(g_CFCpu.signals & CF_SIG_IRQ)) {
-                                CF_Exception();
-                        }
+		if (g_CFCpu.signals) {
+			if (likely(g_CFCpu.signals & CF_SIG_IRQ)) {
+				CF_Exception();
+			}
 		}
 #endif
 	}
 }
 
 static void
-dump_instruction() {
+dump_instruction()
+{
 	Instruction *instr = CF_InstructionFind(ICODE);
-	fprintf(stderr,"%08x: %04x %s d0 %08x\n",CF_GetRegPC(),ICODE,instr->name,CF_GetRegD(0));
+	fprintf(stderr, "%08x: %04x %s d0 %08x\n", CF_GetRegPC(), ICODE, instr->name,
+		CF_GetRegD(0));
 }
 
 void
-CF_Exception(uint32_t vecnum,uint8_t fault_status) 
+CF_Exception(uint32_t vecnum, uint8_t fault_status)
 {
 	uint32_t formvec = (4 << 28) | (vecnum << 18);
 	uint32_t pc = CF_GetRegPC();
@@ -257,7 +260,10 @@ CF_Exception(uint32_t vecnum,uint8_t fault_status)
 	CF_SetRegSR(sr);
 	sp = CF_GetRegA(7);
 	misalignment = ((sp + 3) & ~4) - sp;
-	sp -= misalignment;
+	if (misalignment) {
+		sp -= misalignment;
+		CF_SetRegA(sp, 7);
+	}
 	formvec |= (misalignment << 28);
 	formvec |= (fault_status & 3) << 16;
 	formvec |= (fault_status & 0xc) << 24;
@@ -266,7 +272,7 @@ CF_Exception(uint32_t vecnum,uint8_t fault_status)
 }
 
 void
-CF_Interrupt(uint32_t vecnum,uint8_t fault_status,int priority) 
+CF_Interrupt(uint32_t vecnum, uint8_t fault_status, int priority)
 {
 	uint32_t formvec = (4 << 28) | (vecnum << 18);
 	uint32_t pc = CF_GetRegPC();
@@ -276,7 +282,7 @@ CF_Interrupt(uint32_t vecnum,uint8_t fault_status,int priority)
 	formvec |= sr;
 	sr |= CCRS_S;
 	sr &= ~(CCRS_T | CCRS_M);
-	sr |= (priority & 7) << 8;  
+	sr |= (priority & 7) << 8;
 	CF_SetRegSR(sr);
 	sp = CF_GetRegA(7);
 	misalignment = ((sp + 3) & ~4) - sp;
@@ -292,21 +298,21 @@ void
 CF_CpuRun(void)
 {
 	InstructionProc *iproc;
-	uint32_t pc,sp;
+	uint32_t pc, sp;
 	sp = CF_MemRead32(0);
 	pc = CF_MemRead32(4);
-	CF_SetRegA(sp,7);
-	CF_SetRegPC(pc);	
-	fprintf(stderr,"Starting Coldfire CPU at 0x%08x\n",pc);
-	while(1) {
+	CF_SetRegA(sp, 7);
+	CF_SetRegPC(pc);
+	fprintf(stderr, "Starting Coldfire CPU at 0x%08x\n", pc);
+	while (1) {
 		pc = CF_GetRegPC();
-		ICODE = CF_MemRead16(pc); 
-		iproc = InststructionProcFind(ICODE); 	
+		ICODE = CF_MemRead16(pc);
+		iproc = InststructionProcFind(ICODE);
 		dump_instruction();
-		CF_SetRegPC(pc+2);
+		CF_SetRegPC(pc + 2);
 		iproc();
-		CycleCounter+=2; /* Should be moved to iprocs */
-                CycleTimers_Check();
-                CheckSignals();
-	}	
+		CycleCounter += 2;	/* Should be moved to iprocs */
+		CycleTimers_Check();
+		CheckSignals();
+	}
 }

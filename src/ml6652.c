@@ -68,58 +68,61 @@ typedef struct ML6652 {
 	uint16_t ctrl31;
 } ML6652;
 
-
 static int
-ml6652_write(PHY_Device *phy,uint16_t value,int reg) {
+ml6652_write(PHY_Device * phy, uint16_t value, int reg)
+{
 	//ML6652 *ml = phy->owner;
-	switch(reg) {
-		default:
-			fprintf(stderr,"ML66562: Write ignored %d\n",reg);
-			return -1;
+	switch (reg) {
+	    default:
+		    fprintf(stderr, "ML66562: Write ignored %d\n", reg);
+		    return -1;
 	}
 	return 0;
 }
+
 static int
-ml6652_read(PHY_Device *phy,uint16_t *value,int reg) {
+ml6652_read(PHY_Device * phy, uint16_t * value, int reg)
+{
 	ML6652 *ml = phy->owner;
-	switch(reg) {
-		case ML6652_PHY_ID1:
-			*value = ml->phy_id1;
-			break;
-		case ML6652_PHY_ID2:
-			*value = ml->phy_id2;
-			break;
-		case ML6652_CTRL25:
-			*value = 0;
-			break;
-		case ML6652_CTRL26:
-			*value = 0x4000;
-			break;
-		case ML6652_CTRL27:
-			*value = 0xd810;
-			break;
-		case ML6652_CTRL28:
-			*value = 0x0002;
-			break;
-		case ML6652_CTRL29:
-			*value = 0x007f;
-			break;
-		case ML6652_CTRL30:
-			*value = 0x0082;
-			break;
-		case ML6652_CTRL31:
-			*value = 0x0000;
-			break;
-		default:
-			*value = 0xffff;
-			//fprintf(stderr,"ML6652: Read from nonexisting register %d\n",reg);
-			return -1;
+	switch (reg) {
+	    case ML6652_PHY_ID1:
+		    *value = ml->phy_id1;
+		    break;
+	    case ML6652_PHY_ID2:
+		    *value = ml->phy_id2;
+		    break;
+	    case ML6652_CTRL25:
+		    *value = 0;
+		    break;
+	    case ML6652_CTRL26:
+		    *value = 0x4000;
+		    break;
+	    case ML6652_CTRL27:
+		    *value = 0xd810;
+		    break;
+	    case ML6652_CTRL28:
+		    *value = 0x0002;
+		    break;
+	    case ML6652_CTRL29:
+		    *value = 0x007f;
+		    break;
+	    case ML6652_CTRL30:
+		    *value = 0x0082;
+		    break;
+	    case ML6652_CTRL31:
+		    *value = 0x0000;
+		    break;
+	    default:
+		    *value = 0xffff;
+		    //fprintf(stderr,"ML6652: Read from nonexisting register %d\n",reg);
+		    return -1;
 	}
 	return 0;
 }
 
 PHY_Device *
-ML6652_New() {
+ML6652_New()
+{
 	ML6652 *ml = sg_new(ML6652);
 	ml->phy_id1 = 0x0004;
 	ml->phy_id2 = 0x3820;

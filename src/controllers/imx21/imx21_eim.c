@@ -110,48 +110,48 @@ typedef struct IMX21Eim {
 	uint32_t cnf;
 
 	/* The connected devices */
-	BusDevice *devices[6]; 
+	BusDevice *devices[6];
 } IMX21Eim;
 
 static void
-dump_csu(IMX21Eim *eim,int idx) 
+dump_csu(IMX21Eim * eim, int idx)
 {
 	uint32_t val = eim->csx_u[idx];
-	fprintf(stderr,"cs%du is %08x\n",idx,val);
-	fprintf(stderr,"CSU%d_SP %01x\n",idx,!!(val & CSxU_SP));
-	fprintf(stderr,"CSU%d_WP %01x\n",idx,!!(val & CSxU_WP));
-	fprintf(stderr,"CSU%d_BCDDCT %01x\n",idx,(val & CSxU_BCDDCT_MASK) >> CSxU_BCDDCT_SHIFT);
-	fprintf(stderr,"CSU%d_BCSRWA %01x\n",idx,(val & CSxU_BCSRWA_MASK) >> CSxU_BCSRWA_SHIFT);
-	fprintf(stderr,"CSU%d_PSZ %01x\n",idx,(val & CSxU_PSZ_MASK) >> CSxU_PSZ_SHIFT);
-	fprintf(stderr,"CSU%d_PME %01x\n",idx,!!(val & CSxU_PME));
-	fprintf(stderr,"CSU%d_SYNC %01x\n",idx,!!(val & CSxU_SYNC));
-	fprintf(stderr,"CSU%d_DOLRWN %01x\n",idx,(val & CSxU_DOLRWN_MASK) >> CSxU_DOLRWN_SHIFT);
-	fprintf(stderr,"CSU%d_CNC %01x\n",idx,(val & CSxU_CNC_MASK) >> CSxU_CNC_SHIFT);
-	fprintf(stderr,"CSU%d_WSC %02x\n",idx,(val & CSxU_WSC_MASK) >> CSxU_WSC_SHIFT);
-	fprintf(stderr,"CSU%d_EW %01x\n",idx,!!(val & CSxU_EW));
-	fprintf(stderr,"CSU%d_WWS %01x\n",idx,(val & CSxU_WWS_MASK) >> CSxU_WWS_SHIFT);
-	fprintf(stderr,"CSU%d_EDC %01x\n",idx,(val & CSxU_EDC_MASK) >> CSxU_EDC_SHIFT);
-	
+	fprintf(stderr, "cs%du is %08x\n", idx, val);
+	fprintf(stderr, "CSU%d_SP %01x\n", idx, !!(val & CSxU_SP));
+	fprintf(stderr, "CSU%d_WP %01x\n", idx, !!(val & CSxU_WP));
+	fprintf(stderr, "CSU%d_BCDDCT %01x\n", idx, (val & CSxU_BCDDCT_MASK) >> CSxU_BCDDCT_SHIFT);
+	fprintf(stderr, "CSU%d_BCSRWA %01x\n", idx, (val & CSxU_BCSRWA_MASK) >> CSxU_BCSRWA_SHIFT);
+	fprintf(stderr, "CSU%d_PSZ %01x\n", idx, (val & CSxU_PSZ_MASK) >> CSxU_PSZ_SHIFT);
+	fprintf(stderr, "CSU%d_PME %01x\n", idx, !!(val & CSxU_PME));
+	fprintf(stderr, "CSU%d_SYNC %01x\n", idx, !!(val & CSxU_SYNC));
+	fprintf(stderr, "CSU%d_DOLRWN %01x\n", idx, (val & CSxU_DOLRWN_MASK) >> CSxU_DOLRWN_SHIFT);
+	fprintf(stderr, "CSU%d_CNC %01x\n", idx, (val & CSxU_CNC_MASK) >> CSxU_CNC_SHIFT);
+	fprintf(stderr, "CSU%d_WSC %02x\n", idx, (val & CSxU_WSC_MASK) >> CSxU_WSC_SHIFT);
+	fprintf(stderr, "CSU%d_EW %01x\n", idx, !!(val & CSxU_EW));
+	fprintf(stderr, "CSU%d_WWS %01x\n", idx, (val & CSxU_WWS_MASK) >> CSxU_WWS_SHIFT);
+	fprintf(stderr, "CSU%d_EDC %01x\n", idx, (val & CSxU_EDC_MASK) >> CSxU_EDC_SHIFT);
+
 }
 
 static void
-dump_csl(IMX21Eim *eim,int idx) 
+dump_csl(IMX21Eim * eim, int idx)
 {
 	uint32_t val = eim->csx_l[idx];
-	fprintf(stderr,"cs%dl is %08x\n",idx,val);
-	fprintf(stderr,"CSL%d_OEA %01x\n",idx,(val & CSxL_OEA_MASK) >> CSxL_OEA_SHIFT);
-	fprintf(stderr,"CSL%d_OEN %01x\n",idx,(val & CSxL_OEN_MASK) >> CSxL_OEN_SHIFT);
-	fprintf(stderr,"CSL%d_WEA %01x\n",idx,(val & CSxL_WEA_MASK) >> CSxL_WEA_SHIFT);
-	fprintf(stderr,"CSL%d_WEN %01x\n",idx,(val & CSxL_WEN_MASK) >> CSxL_WEN_SHIFT);
-	fprintf(stderr,"CSL%d_CSA %01x\n",idx,(val & CSxL_CSA_MASK) >> CSxL_CSA_SHIFT);
-	fprintf(stderr,"CSL%d_EBC %01x\n",idx,!!(val & CSxL_EBC));
-	fprintf(stderr,"CSL%d_DSZ %01x\n",idx,(val & CSxL_DSZ_MASK) >> CSxL_DSZ_SHIFT);
-	fprintf(stderr,"CSL%d_CSN %01x\n",idx,(val & CSxL_CSN_MASK) >> CSxL_CSN_SHIFT);
-	fprintf(stderr,"CSL%d_PSR %01x\n",idx,!!(val & CSxL_PSR));
-	fprintf(stderr,"CSL%d_CRE %01x\n",idx,!!(val & CSxL_CRE));
-	fprintf(stderr,"CSL%d_WRAP %01x\n",idx,!!(val & CSxL_WRAP));
-	fprintf(stderr,"CSL%d_CSEN %01x\n",idx,!!(val & CSxL_CSEN));
-	
+	fprintf(stderr, "cs%dl is %08x\n", idx, val);
+	fprintf(stderr, "CSL%d_OEA %01x\n", idx, (val & CSxL_OEA_MASK) >> CSxL_OEA_SHIFT);
+	fprintf(stderr, "CSL%d_OEN %01x\n", idx, (val & CSxL_OEN_MASK) >> CSxL_OEN_SHIFT);
+	fprintf(stderr, "CSL%d_WEA %01x\n", idx, (val & CSxL_WEA_MASK) >> CSxL_WEA_SHIFT);
+	fprintf(stderr, "CSL%d_WEN %01x\n", idx, (val & CSxL_WEN_MASK) >> CSxL_WEN_SHIFT);
+	fprintf(stderr, "CSL%d_CSA %01x\n", idx, (val & CSxL_CSA_MASK) >> CSxL_CSA_SHIFT);
+	fprintf(stderr, "CSL%d_EBC %01x\n", idx, !!(val & CSxL_EBC));
+	fprintf(stderr, "CSL%d_DSZ %01x\n", idx, (val & CSxL_DSZ_MASK) >> CSxL_DSZ_SHIFT);
+	fprintf(stderr, "CSL%d_CSN %01x\n", idx, (val & CSxL_CSN_MASK) >> CSxL_CSN_SHIFT);
+	fprintf(stderr, "CSL%d_PSR %01x\n", idx, !!(val & CSxL_PSR));
+	fprintf(stderr, "CSL%d_CRE %01x\n", idx, !!(val & CSxL_CRE));
+	fprintf(stderr, "CSL%d_WRAP %01x\n", idx, !!(val & CSxL_WRAP));
+	fprintf(stderr, "CSL%d_CSEN %01x\n", idx, !!(val & CSxL_CSEN));
+
 }
 
 /* 
@@ -161,246 +161,243 @@ dump_csl(IMX21Eim *eim,int idx)
  * -------------------------------------------------------------
  */
 static uint32_t
-eim_cs0u_read(void *clientData,uint32_t address,int rqlen)
+eim_cs0u_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs0u_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs0u_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs0l_read(void *clientData,uint32_t address,int rqlen)
+eim_cs0l_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs0l_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs0l_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs1u_read(void *clientData,uint32_t address,int rqlen)
+eim_cs1u_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs1u_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs1u_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMX21Eim *eim = (IMX21Eim*) clientData;
-	if(0) {
-		dump_csu(eim,1);
+	IMX21Eim *eim = (IMX21Eim *) clientData;
+	if (0) {
+		dump_csu(eim, 1);
 	}
 	eim->csx_u[1] = value;
 }
 
 static uint32_t
-eim_cs1l_read(void *clientData,uint32_t address,int rqlen)
+eim_cs1l_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs1l_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs1l_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMX21Eim *eim = (IMX21Eim*) clientData;
+	IMX21Eim *eim = (IMX21Eim *) clientData;
 	eim->csx_l[1] = value;
-	if(0) {
-		dump_csl(eim,1);
+	if (0) {
+		dump_csl(eim, 1);
 	}
 }
 
 static uint32_t
-eim_cs2u_read(void *clientData,uint32_t address,int rqlen)
+eim_cs2u_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs2u_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs2u_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs2l_read(void *clientData,uint32_t address,int rqlen)
+eim_cs2l_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs2l_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs2l_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs3u_read(void *clientData,uint32_t address,int rqlen)
+eim_cs3u_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs3u_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs3u_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs3l_read(void *clientData,uint32_t address,int rqlen)
+eim_cs3l_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs3l_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs3l_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs4u_read(void *clientData,uint32_t address,int rqlen)
+eim_cs4u_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs4u_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs4u_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs4l_read(void *clientData,uint32_t address,int rqlen)
+eim_cs4l_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs4l_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs4l_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs5u_read(void *clientData,uint32_t address,int rqlen)
+eim_cs5u_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs5u_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs5u_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-eim_cs5l_read(void *clientData,uint32_t address,int rqlen)
+eim_cs5l_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cs5l_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cs5l_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
-
 
 static uint32_t
-eim_cnf_read(void *clientData,uint32_t address,int rqlen)
+eim_cnf_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-eim_cnf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eim_cnf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"EIM register 0x%08x not implemented\n",address);
-}
-
-
-static void
-IMXEim_Unmap(void *owner,uint32_t base,uint32_t mask)
-{
-        IOH_Delete32(EIM_CS0U(base));
-        IOH_Delete32(EIM_CS0L(base));
-        IOH_Delete32(EIM_CS1U(base));
-        IOH_Delete32(EIM_CS1L(base));
-        IOH_Delete32(EIM_CS2U(base));
-        IOH_Delete32(EIM_CS2L(base));
-        IOH_Delete32(EIM_CS3U(base));
-        IOH_Delete32(EIM_CS3L(base));
-        IOH_Delete32(EIM_CS4U(base));
-        IOH_Delete32(EIM_CS4L(base));
-        IOH_Delete32(EIM_CS5U(base));
-        IOH_Delete32(EIM_CS5L(base));
-        IOH_Delete32(EIM_CNF(base));
-
+	fprintf(stderr, "EIM register 0x%08x not implemented\n", address);
 }
 
 static void
-IMXEim_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+IMXEim_Unmap(void *owner, uint32_t base, uint32_t mask)
+{
+	IOH_Delete32(EIM_CS0U(base));
+	IOH_Delete32(EIM_CS0L(base));
+	IOH_Delete32(EIM_CS1U(base));
+	IOH_Delete32(EIM_CS1L(base));
+	IOH_Delete32(EIM_CS2U(base));
+	IOH_Delete32(EIM_CS2L(base));
+	IOH_Delete32(EIM_CS3U(base));
+	IOH_Delete32(EIM_CS3L(base));
+	IOH_Delete32(EIM_CS4U(base));
+	IOH_Delete32(EIM_CS4L(base));
+	IOH_Delete32(EIM_CS5U(base));
+	IOH_Delete32(EIM_CS5L(base));
+	IOH_Delete32(EIM_CNF(base));
+
+}
+
+static void
+IMXEim_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 
 	IMX21Eim *eim = (IMX21Eim *) owner;
-        IOH_New32(EIM_CS0U(base),eim_cs0u_read,eim_cs0u_write,eim);
-        IOH_New32(EIM_CS0L(base),eim_cs0l_read,eim_cs0l_write,eim);
-        IOH_New32(EIM_CS1U(base),eim_cs1u_read,eim_cs1u_write,eim);
-        IOH_New32(EIM_CS1L(base),eim_cs1l_read,eim_cs1l_write,eim);
-        IOH_New32(EIM_CS2U(base),eim_cs2u_read,eim_cs2u_write,eim);
-        IOH_New32(EIM_CS2L(base),eim_cs2l_read,eim_cs2l_write,eim);
-        IOH_New32(EIM_CS3U(base),eim_cs3u_read,eim_cs3u_write,eim);
-        IOH_New32(EIM_CS3L(base),eim_cs3l_read,eim_cs3l_write,eim);
-        IOH_New32(EIM_CS4U(base),eim_cs4u_read,eim_cs4u_write,eim);
-        IOH_New32(EIM_CS4L(base),eim_cs4l_read,eim_cs4l_write,eim);
-        IOH_New32(EIM_CS5U(base),eim_cs5u_read,eim_cs5u_write,eim);
-        IOH_New32(EIM_CS5L(base),eim_cs5l_read,eim_cs5l_write,eim);
-        IOH_New32(EIM_CNF(base),eim_cnf_read,eim_cnf_write,eim);
+	IOH_New32(EIM_CS0U(base), eim_cs0u_read, eim_cs0u_write, eim);
+	IOH_New32(EIM_CS0L(base), eim_cs0l_read, eim_cs0l_write, eim);
+	IOH_New32(EIM_CS1U(base), eim_cs1u_read, eim_cs1u_write, eim);
+	IOH_New32(EIM_CS1L(base), eim_cs1l_read, eim_cs1l_write, eim);
+	IOH_New32(EIM_CS2U(base), eim_cs2u_read, eim_cs2u_write, eim);
+	IOH_New32(EIM_CS2L(base), eim_cs2l_read, eim_cs2l_write, eim);
+	IOH_New32(EIM_CS3U(base), eim_cs3u_read, eim_cs3u_write, eim);
+	IOH_New32(EIM_CS3L(base), eim_cs3l_read, eim_cs3l_write, eim);
+	IOH_New32(EIM_CS4U(base), eim_cs4u_read, eim_cs4u_write, eim);
+	IOH_New32(EIM_CS4L(base), eim_cs4l_read, eim_cs4l_write, eim);
+	IOH_New32(EIM_CS5U(base), eim_cs5u_read, eim_cs5u_write, eim);
+	IOH_New32(EIM_CS5L(base), eim_cs5l_read, eim_cs5l_write, eim);
+	IOH_New32(EIM_CNF(base), eim_cnf_read, eim_cnf_write, eim);
 }
 
 #if 0
-IMX21_EimRegisterDevice(eimdev,CSX,dev)
+IMX21_EimRegisterDevice(eimdev, CSX, dev)
 #endif
-BusDevice * 
-IMX21_EimNew(const char *name) 
+BusDevice *
+IMX21_EimNew(const char *name)
 {
 	IMX21Eim *eim;
 	int i;
 	eim = sg_new(IMX21Eim);
-	eim->bdev.first_mapping=NULL;
-        eim->bdev.Map=IMXEim_Map;
-        eim->bdev.UnMap=IMXEim_Unmap;
-        eim->bdev.owner=eim;
-        eim->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	eim->bdev.first_mapping = NULL;
+	eim->bdev.Map = IMXEim_Map;
+	eim->bdev.UnMap = IMXEim_Unmap;
+	eim->bdev.owner = eim;
+	eim->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	/* Should check boot config pins here to set device size (DSZ) */
 	eim->csx_u[0] = 0x00003e00;
 	eim->csx_l[0] = 0x20000801;
-	for(i=1;i<6;i++) {
+	for (i = 1; i < 6; i++) {
 		eim->csx_u[i] = 0x00000000;
 		eim->csx_l[i] = 0x00000800;
 	}
 	eim->cnf = 0;
-	fprintf(stderr,"External memory interface module (EIM) created\n");
+	fprintf(stderr, "External memory interface module (EIM) created\n");
 	return &eim->bdev;
 }
-

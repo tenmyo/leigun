@@ -1,6 +1,7 @@
 #ifndef ARM9CPU_H
 #define ARM9CPU_H
 #include <stdint.h>
+#include <stdbool.h>
 #include <setjmp.h>
 #include <coprocessor.h>
 #include <idecode_arm.h>
@@ -34,14 +35,13 @@ typedef struct ARM9_RegPointerSet {
 	uint32_t *r12;
 	uint32_t *r13;
 	uint32_t *r14;
-	uint32_t *pc;	
+	uint32_t *pc;
 	uint32_t *spsr;
 } ARM9_RegPointerSet;
 
 extern uint64_t cpu_cyclecounter;
 extern uint32_t mmu_vector_base;
 extern uint32_t do_alignment_check;
-
 
 #define MODE_USER 	(0x10)
 #define MODE_FIQ  	(0x11)
@@ -60,13 +60,13 @@ extern uint32_t do_alignment_check;
  ***********************************************************************************************
  */
 typedef enum ARM_ExceptionID {
-	EX_RESET =	(MODE_SVC | 0),
-	EX_UNDEFINED =	(MODE_UNDEFINED | (0x00000004 << 8)),
-	EX_SWI =	(MODE_SVC | (0x00000008 << 8)),
-	EX_PABT =	(MODE_ABORT|(0x0000000c << 8)),
-	EX_DABT =	(MODE_ABORT|(0x00000010 << 8)),
-	EX_IRQ =	(MODE_IRQ | (0x00000018 << 8)),
-	EX_FIQ =	(MODE_FIQ | (0x0000001c << 8)),
+	EX_RESET = (MODE_SVC | 0),
+	EX_UNDEFINED = (MODE_UNDEFINED | (0x00000004 << 8)),
+	EX_SWI = (MODE_SVC | (0x00000008 << 8)),
+	EX_PABT = (MODE_ABORT | (0x0000000c << 8)),
+	EX_DABT = (MODE_ABORT | (0x00000010 << 8)),
+	EX_IRQ = (MODE_IRQ | (0x00000018 << 8)),
+	EX_FIQ = (MODE_FIQ | (0x0000001c << 8)),
 } ARM_ExceptionID;
 
 #define EX_TO_MODE(ex) ((ex)&0x1f)
@@ -102,24 +102,24 @@ typedef enum ARM_ExceptionID {
 typedef struct ARM9 {
 	/* Scratch registers for avoiding arguments to functions  */
 	uint32_t icode;
-	uint32_t am_scratch1, am_scratch2,am_scratch3;
+	uint32_t am_scratch1, am_scratch2, am_scratch3;
 
 	uint32_t registers[17];
- 	uint32_t reg_cpsr;
-	uint32_t reg_bank; /* duplicate of lower 5 Bits of cpsr for fast access */
-	uint32_t signaling_mode; /* most time the same like bits 0-4 of cpsr */ 
+	uint32_t reg_cpsr;
+	uint32_t reg_bank;	/* duplicate of lower 5 Bits of cpsr for fast access */
+	uint32_t signaling_mode;	/* most time the same like bits 0-4 of cpsr */
 	/* 
 	 *  The Values of the following registers are only valid
-         *  if they are not in the current active register set
- 	 *  because registers[] contains the valid copy of 
-         *  the active registers
+	 *  if they are not in the current active register set
+	 *  because registers[] contains the valid copy of 
+	 *  the active registers
 	 */
-	uint32_t r0, r1, r2, r3, r4, r5, r6, r7; /* never valid */
+	uint32_t r0, r1, r2, r3, r4, r5, r6, r7;	/* never valid */
 	uint32_t r8, r9, r10, r11, r12, r13, r14;
 	uint32_t r13_svc, r14_svc;
-	uint32_t r8_fiq, r9_fiq, r10_fiq, r11_fiq, r12_fiq;	
+	uint32_t r8_fiq, r9_fiq, r10_fiq, r11_fiq, r12_fiq;
 	uint32_t r13_fiq, r14_fiq;
-	uint32_t r13_abt, r14_abt; 
+	uint32_t r13_abt, r14_abt;
 	uint32_t r13_irq, r14_irq;
 	uint32_t r13_und, r14_und;
 	uint32_t r13_mon, r14_mon;
@@ -129,12 +129,12 @@ typedef struct ARM9 {
 	ARM9_RegPointerSet regSet[32];
 
 	/* 
-         * --------------------------------------------------------------
-         * signaling_mode:
-         *   The mode which is used for permission checking.
- 	 *     
-  	 * -------------------------------------------------------------
-	 */  
+	 * --------------------------------------------------------------
+	 * signaling_mode:
+	 *   The mode which is used for permission checking.
+	 *     
+	 * -------------------------------------------------------------
+	 */
 
 	/* Signals from outside (IRQ, FIQ) */
 	uint32_t signals_raw;
@@ -151,7 +151,7 @@ typedef struct ARM9 {
 	struct timeval starttime;
 	jmp_buf abort_jump;
 	jmp_buf restart_idec_jump;
-	
+
 	/* The GDB Operations */
 	int dbg_state;
 	int dbg_steps;
@@ -159,10 +159,10 @@ typedef struct ARM9 {
 	DebugBackendOps dbgops;
 
 	/* Throttling cpu to real speed */
-        struct timespec tv_last_throttle;
-        CycleCounter_t last_throttle_cycles;
-        CycleTimer throttle_timer;
-        int64_t cycles_ahead; /* Number of cycles ahead of real cpu */
+	struct timespec tv_last_throttle;
+	CycleCounter_t last_throttle_cycles;
+	CycleTimer throttle_timer;
+	int64_t cycles_ahead;	/* Number of cycles ahead of real cpu */
 
 	uint32_t cpuArchitecture;
 } ARM9;
@@ -181,13 +181,13 @@ extern ARM9 gcpu;
 /*
  * Bit in field cpu_signals
  */
-#define ARM_SIG_IRQ		(1<<0)  /* Normal Interrupt */
-#define ARM_SIG_FIQ		(1<<1)  /* Fast Interrupt */
-#define ARM_SIG_RESTART_IDEC	(1<<2)  /* Something changed in CPU or debugmode */
+#define ARM_SIG_IRQ		(1<<0)	/* Normal Interrupt */
+#define ARM_SIG_FIQ		(1<<1)	/* Fast Interrupt */
+#define ARM_SIG_RESTART_IDEC	(1<<2)	/* Something changed in CPU or debugmode */
 #define ARM_SIG_DEBUGMODE	(1<<3)
 #define CPU_REGS (gcpu.regSet)
 
-void ARM_set_reg_cpsr(uint32_t val); 
+void ARM_set_reg_cpsr(uint32_t val);
 
 #define PC_OFFSET (4)
 #define THUMB_PC_OFFSET (2)
@@ -207,7 +207,7 @@ void ARM_set_reg_cpsr(uint32_t val);
 #define ARM_SET_NIA(val)	({gcpu.registers[15]=(val);})
 #define REG_CPSR      (gcpu.reg_cpsr)
 
-#define SET_REG_CPSR(val) ARM_set_reg_cpsr(val); 
+#define SET_REG_CPSR(val) ARM_set_reg_cpsr(val);
 #define ARM_BANK     	(gcpu.reg_bank)
 #define ARM_SIGNALING_MODE     	(gcpu.signaling_mode)
 #define REG_SPSR	 (gcpu.registers[16])
@@ -219,38 +219,42 @@ void ARM_set_reg_cpsr(uint32_t val);
 #define AM3_UPDATE_RN (gcpu.am_scratch3)
 #define ICODE (gcpu.icode)
 
-static inline void 
-ARM9_RegisterCoprocessor(ArmCoprocessor *copro,unsigned int nr) {
-	if(nr>15) {
+static inline void
+ARM9_RegisterCoprocessor(ArmCoprocessor * copro, unsigned int nr)
+{
+	if (nr > 15) {
 		exit(2);
-	} else { 
-		gcpu.copro[nr]=copro;
+	} else {
+		gcpu.copro[nr] = copro;
 	}
 }
 
-ARM9* ARM9_New();
+ARM9 *ARM9_New();
 void ARM9_Run();
 
 static inline uint32_t
-Thumb_ReadReg(int nr) {
-        if(likely(nr!=15)) {
-                return gcpu.registers[nr];
-        } else {
-                return gcpu.registers[15]+THUMB_PC_OFFSET;
-        }
+Thumb_ReadReg(int nr)
+{
+	if (likely(nr != 15)) {
+		return gcpu.registers[nr];
+	} else {
+		return gcpu.registers[15] + THUMB_PC_OFFSET;
+	}
 }
 
 static inline uint32_t
-Thumb_ReadHighReg(int nr) {
-        if(likely(nr!=15)) {
-                return gcpu.registers[nr];
-        } else {
-                return gcpu.registers[15]+THUMB_PC_OFFSET;
-        }
+Thumb_ReadHighReg(int nr)
+{
+	if (likely(nr != 15)) {
+		return gcpu.registers[nr];
+	} else {
+		return gcpu.registers[15] + THUMB_PC_OFFSET;
+	}
 }
 
-static inline void 
-Thumb_WriteReg(uint32_t val,int nr) {
+static inline void
+Thumb_WriteReg(uint32_t val, int nr)
+{
 	gcpu.registers[nr] = val;
 }
 
@@ -260,21 +264,25 @@ Thumb_WriteReg(uint32_t val,int nr) {
  * which use the currently active register set
  * ------------------------------------------------------
  */
-static inline uint32_t 
-ARM9_ReadReg(int nr) {
-        if(likely(nr!=15)) {
-                return gcpu.registers[nr];
-        } else {
-                return gcpu.registers[15]+PC_OFFSET;
-        }
+static inline uint32_t
+ARM9_ReadReg(int nr)
+{
+	if (likely(nr != 15)) {
+		return gcpu.registers[nr];
+	} else {
+		return gcpu.registers[15] + PC_OFFSET;
+	}
 }
-static inline uint32_t 
-ARM9_ReadRegNot15(int nr) {
+
+static inline uint32_t
+ARM9_ReadRegNot15(int nr)
+{
 	return gcpu.registers[nr];
 }
 
-static inline void 
-ARM9_WriteReg(uint32_t val,int nr) {
+static inline void
+ARM9_WriteReg(uint32_t val, int nr)
+{
 	gcpu.registers[nr] = val;
 }
 
@@ -287,15 +295,15 @@ ARM9_WriteReg(uint32_t val,int nr) {
  * ------------------------------------------------------
  */
 static inline uint32_t
-ARM9_ReadRegBank(int nr,int bank) 
+ARM9_ReadRegBank(int nr, int bank)
 {
-        uint32_t **regpp;
-	regpp=(&CPU_REGS[bank].r0+nr);
-	if(*regpp == *(&CPU_REGS[gcpu.reg_bank].r0+nr)) {
+	uint32_t **regpp;
+	regpp = (&CPU_REGS[bank].r0 + nr);
+	if (*regpp == *(&CPU_REGS[gcpu.reg_bank].r0 + nr)) {
 		return ARM9_ReadReg(nr);
 	} else {
-		if(unlikely(nr==15)) {
-			return **regpp+PC_OFFSET;
+		if (unlikely(nr == 15)) {
+			return **regpp + PC_OFFSET;
 		} else {
 			return **regpp;
 		}
@@ -303,14 +311,14 @@ ARM9_ReadRegBank(int nr,int bank)
 }
 
 static inline void
-ARM9_WriteRegBank(uint32_t val,int nr,int bank) 
+ARM9_WriteRegBank(uint32_t val, int nr, int bank)
 {
-        uint32_t **regpp;
-	regpp=(&CPU_REGS[bank].r0+nr);
-	if(*regpp == *(&CPU_REGS[gcpu.reg_bank].r0+nr)) {
-		return ARM9_WriteReg(val,nr);
+	uint32_t **regpp;
+	regpp = (&CPU_REGS[bank].r0 + nr);
+	if (*regpp == *(&CPU_REGS[gcpu.reg_bank].r0 + nr)) {
+		return ARM9_WriteReg(val, nr);
 	} else {
-		**regpp=val;
+		**regpp = val;
 	}
 }
 
@@ -319,66 +327,74 @@ ARM9_WriteRegBank(uint32_t val,int nr,int bank)
  * Interrupt handling 
  * -------------------------------------
  */
-static inline void 
-ARM_PostIrq() {
-	gcpu.signals_raw |= ARM_SIG_IRQ;	
+static inline void
+ARM_PostIrq()
+{
+	gcpu.signals_raw |= ARM_SIG_IRQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if(gcpu.signals)
+	if (gcpu.signals)
 		mainloop_event_pending = 1;
 }
 
-static inline void 
-ARM_UnPostIrq() {
-	gcpu.signals_raw &= ~ARM_SIG_IRQ;	
+static inline void
+ARM_UnPostIrq()
+{
+	gcpu.signals_raw &= ~ARM_SIG_IRQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
-static inline void 
-ARM_PostFiq() {
-	gcpu.signals_raw |= ARM_SIG_FIQ;	
+static inline void
+ARM_PostFiq()
+{
+	gcpu.signals_raw |= ARM_SIG_FIQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if(gcpu.signals)
+	if (gcpu.signals)
 		mainloop_event_pending = 1;
 }
-static inline void 
-ARM_UnPostFiq() {
-	gcpu.signals_raw &= ~ARM_SIG_FIQ;	
+
+static inline void
+ARM_UnPostFiq()
+{
+	gcpu.signals_raw &= ~ARM_SIG_FIQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
-
-static inline void 
-ARM_PostRestartIdecoder() {
+static inline void
+ARM_PostRestartIdecoder()
+{
 	gcpu.signals_raw |= ARM_SIG_RESTART_IDEC;
-        gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if(gcpu.signals)
+	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
+	if (gcpu.signals)
 		mainloop_event_pending = 1;
 }
 
-static inline void 
-ARM_SigDebugMode(value) {
-	if(value) {
+static inline void
+ARM_SigDebugMode(bool value)
+{
+	if (value) {
 		gcpu.signals_raw |= ARM_SIG_DEBUGMODE;
 	} else {
 		gcpu.signals_raw &= ~ARM_SIG_DEBUGMODE;
 	}
-        gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if(gcpu.signals)
+	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
+	if (gcpu.signals)
 		mainloop_event_pending = 1;
 }
 
-static inline void 
-ARM_Break() {
+static inline void
+ARM_Break()
+{
 	gcpu.dbg_state = DBG_STATE_BREAK;
-	ARM_SigDebugMode(1); 
-	ARM_PostRestartIdecoder(); 
+	ARM_SigDebugMode(true);
+	ARM_PostRestartIdecoder();
 }
 
-void ARM_Exception(ARM_ExceptionID exception,int nia_offset);
+void ARM_Exception(ARM_ExceptionID exception, int nia_offset);
 
 static inline void
-ARM_RestartIdecoder() {
-	longjmp(gcpu.restart_idec_jump,1);
+ARM_RestartIdecoder()
+{
+	longjmp(gcpu.restart_idec_jump, 1);
 }
 
 #endif

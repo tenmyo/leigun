@@ -82,270 +82,270 @@ typedef struct STIntC {
  *********************************************************************************
  */
 static uint32_t
-icr_read(void *clientData,uint32_t address,int rqlen)
+icr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-icr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-ipra_read(void *clientData,uint32_t address,int rqlen)
+ipra_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-ipra_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ipra_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-iprb_read(void *clientData,uint32_t address,int rqlen)
+iprb_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-iprb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+iprb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-iprc_read(void *clientData,uint32_t address,int rqlen)
+iprc_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-iprc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+iprc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-iprd_read(void *clientData,uint32_t address,int rqlen)
+iprd_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-iprd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+iprd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intprio00_read(void *clientData,uint32_t address,int rqlen)
+intprio00_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intprio00_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intprio00_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intprio04_read(void *clientData,uint32_t address,int rqlen)
+intprio04_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intprio04_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intprio04_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intprio08_read(void *clientData,uint32_t address,int rqlen)
+intprio08_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intprio08_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intprio08_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intreq00_read(void *clientData,uint32_t address,int rqlen)
+intreq00_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intreq00_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intreq00_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intreq04_read(void *clientData,uint32_t address,int rqlen)
+intreq04_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intreq04_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intreq04_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intreq08_read(void *clientData,uint32_t address,int rqlen)
+intreq08_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intreq08_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intreq08_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intmsk00_read(void *clientData,uint32_t address,int rqlen)
+intmsk00_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intmsk00_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intmsk00_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intmsk04_read(void *clientData,uint32_t address,int rqlen)
+intmsk04_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intmsk04_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intmsk04_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intmsk08_read(void *clientData,uint32_t address,int rqlen)
+intmsk08_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intmsk08_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intmsk08_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intmskclr00_read(void *clientData,uint32_t address,int rqlen)
+intmskclr00_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
+
 static void
-intmskclr00_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intmskclr00_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intmskclr04_read(void *clientData,uint32_t address,int rqlen)
+intmskclr04_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intmskclr04_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intmskclr04_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
-}
-
-
-static uint32_t
-intmskclr08_read(void *clientData,uint32_t address,int rqlen)
-{
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
-	return 0;
-}
-
-static void
-intmskclr08_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 }
 
 static uint32_t
-intc2mode_read(void *clientData,uint32_t address,int rqlen)
+intmskclr08_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
 	return 0;
 }
 
 static void
-intc2mode_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intmskclr08_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"%s: %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
+}
+
+static uint32_t
+intc2mode_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
+	return 0;
 }
 
 static void
-StIntC_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+intc2mode_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "%s: %s not implemented\n", __FILE__, __func__);
+}
+
+static void
+StIntC_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	STIntC *ic = (STIntC *) owner;
-	IOH_New32(INTC_ICR(base),icr_read,icr_write,ic);
-	IOH_New32(INTC_IPRA(base),ipra_read,ipra_write,ic);
-	IOH_New32(INTC_IPRB(base),iprb_read,iprb_write,ic);
-	IOH_New32(INTC_IPRC(base),iprc_read,iprc_write,ic);
-	IOH_New32(INTC_IPRD(base),iprd_read,iprd_write,ic);
+	IOH_New32(INTC_ICR(base), icr_read, icr_write, ic);
+	IOH_New32(INTC_IPRA(base), ipra_read, ipra_write, ic);
+	IOH_New32(INTC_IPRB(base), iprb_read, iprb_write, ic);
+	IOH_New32(INTC_IPRC(base), iprc_read, iprc_write, ic);
+	IOH_New32(INTC_IPRD(base), iprd_read, iprd_write, ic);
 
-	IOH_New32(INTC2_INTPRIOn(0,base),intprio00_read,intprio00_write,ic);
-	IOH_New32(INTC2_INTPRIOn(4,base),intprio04_read,intprio04_write,ic);
-	IOH_New32(INTC2_INTPRIOn(8,base),intprio08_read,intprio08_write,ic);
+	IOH_New32(INTC2_INTPRIOn(0, base), intprio00_read, intprio00_write, ic);
+	IOH_New32(INTC2_INTPRIOn(4, base), intprio04_read, intprio04_write, ic);
+	IOH_New32(INTC2_INTPRIOn(8, base), intprio08_read, intprio08_write, ic);
 
-	IOH_New32(INTC2_INTREQn(0,base),intreq00_read,intreq00_write,ic);
-	IOH_New32(INTC2_INTREQn(4,base),intreq04_read,intreq04_write,ic);
-	IOH_New32(INTC2_INTREQn(8,base),intreq08_read,intreq08_write,ic);
+	IOH_New32(INTC2_INTREQn(0, base), intreq00_read, intreq00_write, ic);
+	IOH_New32(INTC2_INTREQn(4, base), intreq04_read, intreq04_write, ic);
+	IOH_New32(INTC2_INTREQn(8, base), intreq08_read, intreq08_write, ic);
 
-	IOH_New32(INTC2_INTMSKn(0,base),intmsk00_read,intmsk00_write,ic);
-	IOH_New32(INTC2_INTMSKn(4,base),intmsk04_read,intmsk04_write,ic);
-	IOH_New32(INTC2_INTMSKn(8,base),intmsk08_read,intmsk08_write,ic);
+	IOH_New32(INTC2_INTMSKn(0, base), intmsk00_read, intmsk00_write, ic);
+	IOH_New32(INTC2_INTMSKn(4, base), intmsk04_read, intmsk04_write, ic);
+	IOH_New32(INTC2_INTMSKn(8, base), intmsk08_read, intmsk08_write, ic);
 
-	IOH_New32(INTC2_INTMSKCLRn(0,base),intmskclr00_read,intmskclr00_write,ic);
-	IOH_New32(INTC2_INTMSKCLRn(4,base),intmskclr04_read,intmskclr04_write,ic);
-	IOH_New32(INTC2_INTMSKCLRn(8,base),intmskclr08_read,intmskclr08_write,ic);
+	IOH_New32(INTC2_INTMSKCLRn(0, base), intmskclr00_read, intmskclr00_write, ic);
+	IOH_New32(INTC2_INTMSKCLRn(4, base), intmskclr04_read, intmskclr04_write, ic);
+	IOH_New32(INTC2_INTMSKCLRn(8, base), intmskclr08_read, intmskclr08_write, ic);
 
-	IOH_New32(INTC2_INTC2MODE(base),intc2mode_read,intc2mode_write,ic);
+	IOH_New32(INTC2_INTC2MODE(base), intc2mode_read, intc2mode_write, ic);
 }
 
 static void
-StIntC_UnMap(void *owner,uint32_t base,uint32_t mask)
+StIntC_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
 	IOH_Delete32(INTC_ICR(base));
@@ -353,11 +353,11 @@ StIntC_UnMap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(INTC_IPRB(base));
 	IOH_Delete32(INTC_IPRC(base));
 	IOH_Delete32(INTC_IPRD(base));
-	for(i=0; i < 12; i+=4) {
-		IOH_Delete32(INTC2_INTPRIOn(0,base));
-		IOH_Delete32(INTC2_INTREQn(0,base));
-		IOH_Delete32(INTC2_INTMSKn(0,base));
-		IOH_Delete32(INTC2_INTMSKCLRn(0,base));
+	for (i = 0; i < 12; i += 4) {
+		IOH_Delete32(INTC2_INTPRIOn(0, base));
+		IOH_Delete32(INTC2_INTREQn(0, base));
+		IOH_Delete32(INTC2_INTMSKn(0, base));
+		IOH_Delete32(INTC2_INTMSKCLRn(0, base));
 	}
 	IOH_Delete32(INTC2_INTC2MODE(base));
 }
@@ -367,9 +367,9 @@ StIntc_New(const char *devname)
 {
 	STIntC *ic = sg_new(STIntC);
 	ic->bdev.first_mapping = NULL;
-        ic->bdev.Map = StIntC_Map;
-        ic->bdev.UnMap = StIntC_UnMap;
-        ic->bdev.owner= ic;
-        ic->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	return &ic->bdev;		
+	ic->bdev.Map = StIntC_Map;
+	ic->bdev.UnMap = StIntC_UnMap;
+	ic->bdev.owner = ic;
+	ic->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &ic->bdev;
 }

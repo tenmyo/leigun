@@ -62,7 +62,6 @@
 #define 	ADCSRB_ADTS1   (1 << 1)
 #define 	ADCSRB_ADTS0   (1 << 0)
 
-
 #define REG_ADMUX(Base)		((base) + 0x04)
 #define 	ADMUX_REFS1   (1 << 7)
 #define 	ADMUX_REFS0   (1 << 6)
@@ -74,7 +73,7 @@
 #define 	ADMUX_MUX0    (1 << 0)
 #define		REFS_AREF	(0)
 #define		REFS_AVCC	(1)
-#define		REFS_1100	(2)	
+#define		REFS_1100	(2)
 #define		REFS_2560	(3)
 
 #define REG_DIDR0   		((base) + 0x7E)
@@ -87,7 +86,6 @@
 #define 	DIDR0_ADC1D   (1 << 1)
 #define 	DIDR0_ADC0D   (1 << 0)
 
-
 struct AVR8_Adc {
 	uint16_t reg_adc;
 	uint8_t reg_adcsra;
@@ -99,104 +97,104 @@ struct AVR8_Adc {
 	CycleTimer shTimer;
 	Clock_t *in_clk;
 	Clock_t *adc_clk;
-	uint32_t (*adcReadProc[8])(void *clientData);
+	 uint32_t(*adcReadProc[8]) (void *clientData);
 	void *readProcClientData[8];
 };
 
 static void
-update_interrupt(AVR8_Adc *adc)
+update_interrupt(AVR8_Adc * adc)
 {
-	if((adc->reg_adcsra & ADCSRA_ADIE) && (adc->reg_adcsra & ADCSRA_ADIF)) {
-		SigNode_Set(adc->irqNode,SIG_LOW);
+	if ((adc->reg_adcsra & ADCSRA_ADIE) && (adc->reg_adcsra & ADCSRA_ADIF)) {
+		SigNode_Set(adc->irqNode, SIG_LOW);
 	} else {
-		SigNode_Set(adc->irqNode,SIG_OPEN);
+		SigNode_Set(adc->irqNode, SIG_OPEN);
 	}
 }
 
 static void
-update_clock(AVR8_Adc *adc) 
+update_clock(AVR8_Adc * adc)
 {
 	uint8_t divider;
-	uint8_t adps = adc->reg_adcsra 
-		& (ADCSRA_ADPS0 | ADCSRA_ADPS1 | ADCSRA_ADPS2); 
-	if(adps == 0) {
+	uint8_t adps = adc->reg_adcsra & (ADCSRA_ADPS0 | ADCSRA_ADPS1 | ADCSRA_ADPS2);
+	if (adps == 0) {
 		divider = 2;
 	} else {
 		divider = 1 << adps;
 	}
-	Clock_MakeDerived(adc->adc_clk,adc->in_clk,1,divider);
+	Clock_MakeDerived(adc->adc_clk, adc->in_clk, 1, divider);
 }
+
 /*
  ************************************************
  * adc_measure
  * 	Do the meassurement
  ************************************************
  */
-static void 
+static void
 adc_sample_hold(void *clientData)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	/* differential is missing here */
-	int chan = adc->reg_admux & 0x1f; 
+	int chan = adc->reg_admux & 0x1f;
 	int refs = (adc->reg_admux >> 6) & 3;
 	uint32_t uvolt = 0;
 	uint32_t refvolt = ~0;
 	uint32_t tmp;
-	if(chan < 7) {
-		if(adc->adcReadProc[chan]) {
-			uvolt = adc->adcReadProc[chan](adc->readProcClientData[chan]);
+	if (chan < 7) {
+		if (adc->adcReadProc[chan]) {
+			uvolt = adc->adcReadProc[chan] (adc->readProcClientData[chan]);
 		} else {
 			uvolt = 0;
 		}
 	}
-	switch(refs) {
-		case REFS_AREF:
-			/* Me having external 2.50 volt reference */
-			refvolt = 2500000;
-			break;
-		case REFS_AVCC:
-			refvolt = 5000000;
-			break;
-		case REFS_1100:
-			refvolt = 1100000;	
-			break;
-		case REFS_2560:
-			refvolt = 2560000;
-			break;
+	switch (refs) {
+	    case REFS_AREF:
+		    /* Me having external 2.50 volt reference */
+		    refvolt = 2500000;
+		    break;
+	    case REFS_AVCC:
+		    refvolt = 5000000;
+		    break;
+	    case REFS_1100:
+		    refvolt = 1100000;
+		    break;
+	    case REFS_2560:
+		    refvolt = 2560000;
+		    break;
 	}
 	tmp = (512 * uvolt) / (refvolt / 2);
-	if(tmp > 1023) {
+	if (tmp > 1023) {
 		tmp = 1023;
 	}
-	if(adc->reg_admux & ADMUX_ADLAR) {
+	if (adc->reg_admux & ADMUX_ADLAR) {
 		adc->reg_adc = tmp << 6;
 	} else {
-		adc->reg_adc = tmp; 
+		adc->reg_adc = tmp;
 	}
 }
 
 static uint8_t
-adcl_read(void *clientData,uint32_t address)
+adcl_read(void *clientData, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	return adc->reg_adc & 0xff;
 }
 
 static void
-adcl_write(void *clientData,uint8_t value,uint32_t address)
+adcl_write(void *clientData, uint8_t value, uint32_t address)
 {
 
 }
 
 static uint8_t
-adch_read(void *clientData,uint32_t address)
+adch_read(void *clientData, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	return (adc->reg_adc >> 8) & 0xff;
 }
 
 static void
-adch_write(void *clientData,uint8_t value,uint32_t address)
+adch_write(void *clientData, uint8_t value, uint32_t address)
 {
 
 }
@@ -213,37 +211,37 @@ adch_write(void *clientData,uint8_t value,uint32_t address)
  *********************************************************************
  */
 static uint8_t
-adcsra_read(void *clientData,uint32_t address)
+adcsra_read(void *clientData, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	return adc->reg_adcsra;
 }
 
 static void
-adcsra_write(void *clientData,uint8_t value,uint32_t address)
+adcsra_write(void *clientData, uint8_t value, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	uint8_t clear = (value & ADCSRA_ADIF);
 	uint8_t diff = adc->reg_adcsra ^ value;
 	adc->reg_adcsra = value;
 	update_clock(adc);
-	if(clear) {
+	if (clear) {
 		adc->reg_adcsra &= ~clear;
 		update_interrupt(adc);
 	}
-	if(value & ADCSRA_ADEN) {
-		if(value & ADCSRA_ADSC & diff) {
+	if (value & ADCSRA_ADEN) {
+		if (value & ADCSRA_ADSC & diff) {
 			CycleCounter_t shold_delay;
 			uint32_t freq = Clock_Freq(adc->adc_clk);
-			if(freq > 0) {
+			if (freq > 0) {
 				shold_delay = 1.5 * CycleTimerRate_Get() / freq;
-				CycleTimer_Mod(&adc->shTimer,shold_delay);
-				CycleTimer_Mod(&adc->convTimer,13 * CycleTimerRate_Get() / freq); 
+				CycleTimer_Mod(&adc->shTimer, shold_delay);
+				CycleTimer_Mod(&adc->convTimer, 13 * CycleTimerRate_Get() / freq);
 			}
-		}			
+		}
 	} else {
 		adc->reg_adcsra &= ~ADCSRA_ADSC;
-	} 
+	}
 }
 
 /*
@@ -255,29 +253,29 @@ adcsra_write(void *clientData,uint8_t value,uint32_t address)
  ******************************************************************
  */
 static uint8_t
-adcsrb_read(void *clientData,uint32_t address)
+adcsrb_read(void *clientData, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	return adc->reg_adcsrb;
 }
 
 static void
-adcsrb_write(void *clientData,uint8_t value,uint32_t address)
+adcsrb_write(void *clientData, uint8_t value, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	adc->reg_adcsrb = value;
-	fprintf(stderr,"ADCSRB write not implemented\n");
+	fprintf(stderr, "ADCSRB write not implemented\n");
 }
 
 static uint8_t
-admux_read(void *clientData,uint32_t address)
+admux_read(void *clientData, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	return adc->reg_admux;
 }
 
 static void
-admux_write(void *clientData,uint8_t value,uint32_t address)
+admux_write(void *clientData, uint8_t value, uint32_t address)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
 	adc->reg_admux = value;
@@ -303,21 +301,22 @@ adc_conversion_done(void *clientData)
  * Auto acknowledge when CPU executes Interrupt
  *************************************************************
  */
-static void 
-adc_irq_ack(SigNode *node,int value,void *clientData)
+static void
+adc_irq_ack(SigNode * node, int value, void *clientData)
 {
 	AVR8_Adc *adc = (AVR8_Adc *) clientData;
-	if(value == SIG_LOW) {
+	if (value == SIG_LOW) {
 		adc->reg_adcsra &= ~ADCSRA_ADIF;
 		update_interrupt(adc);
 	}
 }
 
 void
-AVR8_AdcRegisterSource(AVR8_Adc *adc,unsigned int channel,AVR8_AdcReadProc *proc,void *clientData) 
+AVR8_AdcRegisterSource(AVR8_Adc * adc, unsigned int channel, AVR8_AdcReadProc * proc,
+		       void *clientData)
 {
-	if(channel > 8) {
-		fprintf(stderr,"Illegal channel\n");
+	if (channel > 8) {
+		fprintf(stderr, "Illegal channel\n");
 		return;
 	}
 	adc->adcReadProc[channel] = proc;
@@ -325,28 +324,27 @@ AVR8_AdcRegisterSource(AVR8_Adc *adc,unsigned int channel,AVR8_AdcReadProc *proc
 }
 
 AVR8_Adc *
-AVR8_AdcNew(const char *name,uint16_t base)
+AVR8_AdcNew(const char *name, uint16_t base)
 {
-        AVR8_Adc *adc = sg_new(AVR8_Adc);
-	AVR8_RegisterIOHandler(REG_ADCL(base),adcl_read,adcl_write,adc);
-	AVR8_RegisterIOHandler(REG_ADCH(base),adch_read,adch_write,adc);
-	AVR8_RegisterIOHandler(REG_ADCSRA(base),adcsra_read,adcsra_write,adc);
-	AVR8_RegisterIOHandler(REG_ADCSRB(base),adcsrb_read,adcsrb_write,adc);
-	AVR8_RegisterIOHandler(REG_ADMUX(base),admux_read,admux_write,adc);
-	adc->irqNode = SigNode_New("%s.irq",name);
-	adc->in_clk = Clock_New("%s.clk",name);
-	adc->adc_clk = Clock_New("%s.adc_clk",name);
-	adc->irqAckNode = SigNode_New("%s.irqAck",name);
+	AVR8_Adc *adc = sg_new(AVR8_Adc);
+	AVR8_RegisterIOHandler(REG_ADCL(base), adcl_read, adcl_write, adc);
+	AVR8_RegisterIOHandler(REG_ADCH(base), adch_read, adch_write, adc);
+	AVR8_RegisterIOHandler(REG_ADCSRA(base), adcsra_read, adcsra_write, adc);
+	AVR8_RegisterIOHandler(REG_ADCSRB(base), adcsrb_read, adcsrb_write, adc);
+	AVR8_RegisterIOHandler(REG_ADMUX(base), admux_read, admux_write, adc);
+	adc->irqNode = SigNode_New("%s.irq", name);
+	adc->in_clk = Clock_New("%s.clk", name);
+	adc->adc_clk = Clock_New("%s.adc_clk", name);
+	adc->irqAckNode = SigNode_New("%s.irqAck", name);
 	adc->reg_adcsra = 0;
-	if(!adc->irqNode || !adc->irqAckNode) {
-		fprintf(stderr,"Can not create irq line for \"%s\"\n",name);
+	if (!adc->irqNode || !adc->irqAckNode) {
+		fprintf(stderr, "Can not create irq line for \"%s\"\n", name);
 		exit(1);
 	}
-	SigNode_Trace(adc->irqAckNode,adc_irq_ack,adc);
-	CycleTimer_Init(&adc->convTimer,adc_conversion_done,adc);
-	CycleTimer_Init(&adc->shTimer,adc_sample_hold,adc);
+	SigNode_Trace(adc->irqAckNode, adc_irq_ack, adc);
+	CycleTimer_Init(&adc->convTimer, adc_conversion_done, adc);
+	CycleTimer_Init(&adc->shTimer, adc_sample_hold, adc);
 	update_clock(adc);
-	fprintf(stderr,"Created AVR A/D converter \"%s\"\n",name);
+	fprintf(stderr, "Created AVR A/D converter \"%s\"\n", name);
 	return adc;
 }
-

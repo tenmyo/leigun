@@ -10,4 +10,4 @@
  */
 
 #include <bus.h>
-BusDevice * IMX21_WdogNew(const char *name);
+BusDevice *IMX21_WdogNew(const char *name);

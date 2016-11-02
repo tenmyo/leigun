@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 typedef enum Dbg_TargetStat {
- 	/* Start with definitions stolen from GDB */ 
+	/* Start with definitions stolen from GDB */
 	DbgStat_SIGNAL0 = 0,
 	DbgStat_SIGHUP = 1,
 	DbgStat_SIGINT = 2,
@@ -39,8 +39,8 @@ typedef enum Dbg_TargetStat {
 	DbgStat_GDBEND = 31,
 	/* Now non-gdb definitions */
 	DbgStat_RUNNING = 256,
-	DbgStat_OK      = 257,
-} Dbg_TargetStat; 
+	DbgStat_OK = 257,
+} Dbg_TargetStat;
 
 /*
  * -------------------------------------------------------
@@ -49,26 +49,27 @@ typedef enum Dbg_TargetStat {
  * -------------------------------------------------------
  */
 typedef struct DebugBackendOps {
-        Dbg_TargetStat (*get_status)(void *clientData);        /* For gdb "?" query */
-        int (*step) (void *clientData,uint64_t addr,int use_addr);
-        int (*stop)(void *clientData);
-        int (*cont)(void *clientData);
-        int (*getreg) (void * clientData,uint8_t *val,uint32_t index,int maxlen);
-        void (*setreg) (void *clientData,const uint8_t *val,uint32_t index,int len);
-        ssize_t (*getmem)(void *clientData,uint8_t *data,uint64_t addr,uint32_t len);
-        ssize_t (*setmem)(void *clientData,const uint8_t *data,uint64_t addr,uint32_t len);
-	void (*get_bkpt_ins)(void *clientData,uint8_t *ins,uint64_t addr,int len);
+	Dbg_TargetStat(*get_status) (void *clientData);	/* For gdb "?" query */
+	int (*step) (void *clientData, uint64_t addr, int use_addr);
+	int (*stop) (void *clientData);
+	int (*cont) (void *clientData);
+	int (*getreg) (void *clientData, uint8_t * val, uint32_t index, int maxlen);
+	void (*setreg) (void *clientData, const uint8_t * val, uint32_t index, int len);
+	 ssize_t(*getmem) (void *clientData, uint8_t * data, uint64_t addr, uint32_t len);
+	 ssize_t(*setmem) (void *clientData, const uint8_t * data, uint64_t addr, uint32_t len);
+	void (*get_bkpt_ins) (void *clientData, uint8_t * ins, uint64_t addr, int len);
 } DebugBackendOps;
 
 typedef struct Debugger {
 	void *implementor;
-	int (*notifyStatus) (void *implementor,Dbg_TargetStat);
+	int (*notifyStatus) (void *implementor, Dbg_TargetStat);
 } Debugger;
 
-Debugger *Debugger_New(DebugBackendOps *ops,void *backend);
+Debugger *Debugger_New(DebugBackendOps * ops, void *backend);
 
-static inline int 
-Debugger_Notify(Debugger *dbg,Dbg_TargetStat status) {
-	return dbg->notifyStatus(dbg->implementor,status);
+static inline int
+Debugger_Notify(Debugger * dbg, Dbg_TargetStat status)
+{
+	return dbg->notifyStatus(dbg->implementor, status);
 }
 #endif

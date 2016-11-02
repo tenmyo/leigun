@@ -80,7 +80,7 @@
 #define UBRRH(base)	((base) + 5)
 #define UDR(base)	((base) + 6)
 
-#define TXFIFO_SIZE 32 
+#define TXFIFO_SIZE 32
 #define TXFIFO_WP(usart) ((usart->txfifo_wp) & (TXFIFO_SIZE - 1))
 #define TXFIFO_RP(usart) ((usart->txfifo_rp) & (TXFIFO_SIZE - 1))
 
@@ -103,7 +103,7 @@ typedef struct ATM644_Usart {
 	uint8_t udr_out;
 	Clock_t *clk_baud;
 	Clock_t *clk_in;
-	UartChar txfifo[TXFIFO_SIZE]; /* This Not the fifo of the chip */
+	UartChar txfifo[TXFIFO_SIZE];	/* This Not the fifo of the chip */
 	uint64_t txfifo_wp;
 	uint64_t txfifo_rp;
 	CycleTimer tx_baud_timer;
@@ -112,31 +112,32 @@ typedef struct ATM644_Usart {
 } ATM644_Usart;
 
 static void
-update_interrupts(ATM644_Usart *usart)
+update_interrupts(ATM644_Usart * usart)
 {
-	if(usart->ucsra & usart->ucsrb & UCSRB_RXCIE) {
+	if (usart->ucsra & usart->ucsrb & UCSRB_RXCIE) {
 		//fprintf(stderr,"Post Rx int\n");
-		SigNode_Set(usart->rxIrqNode,SIG_LOW);
+		SigNode_Set(usart->rxIrqNode, SIG_LOW);
 	} else {
 		//fprintf(stderr,"unPost Rx int\n");
-		SigNode_Set(usart->rxIrqNode,SIG_OPEN);
+		SigNode_Set(usart->rxIrqNode, SIG_OPEN);
 	}
-	if(usart->ucsra & usart->ucsrb & UCSRB_TXCIE) {
-		SigNode_Set(usart->txIrqNode,SIG_LOW);
+	if (usart->ucsra & usart->ucsrb & UCSRB_TXCIE) {
+		SigNode_Set(usart->txIrqNode, SIG_LOW);
 	} else {
-		SigNode_Set(usart->txIrqNode,SIG_OPEN);
+		SigNode_Set(usart->txIrqNode, SIG_OPEN);
 	}
-	if(usart->ucsra & usart->ucsrb & UCSRB_UDRIE) {
-		SigNode_Set(usart->udreIrqNode,SIG_LOW);
+	if (usart->ucsra & usart->ucsrb & UCSRB_UDRIE) {
+		SigNode_Set(usart->udreIrqNode, SIG_LOW);
 	} else {
-		SigNode_Set(usart->udreIrqNode,SIG_OPEN);
+		SigNode_Set(usart->udreIrqNode, SIG_OPEN);
 	}
 }
+
 static void
-update_baudrate(Clock_t *clock,void *clientData)
+update_baudrate(Clock_t * clock, void *clientData)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-	if(Clock_Freq(clock) > 0) {
+	if (Clock_Freq(clock) > 0) {
 		usart->byte_time = 10 * CycleTimerRate_Get() / Clock_Freq(clock);
 	} else {
 		usart->byte_time = 5;
@@ -144,72 +145,72 @@ update_baudrate(Clock_t *clock,void *clientData)
 }
 
 static void
-update_clockdivider(ATM644_Usart *usart)
+update_clockdivider(ATM644_Usart * usart)
 {
 	uint8_t u2x = !!(usart->ucsra & UCSRA_U2X);
 	uint32_t div;
-	if(u2x == 0) {
-		div = 16;	
+	if (u2x == 0) {
+		div = 16;
 	} else {
 		div = 8;
 	}
-	div = div * ((((uint32_t)usart->ubrrl + (((uint32_t)usart->ubrrh) << 8))) + 1);
-	Clock_MakeDerived(usart->clk_baud,usart->clk_in,1,div);
+	div = div * ((((uint32_t) usart->ubrrl + (((uint32_t) usart->ubrrh) << 8))) + 1);
+	Clock_MakeDerived(usart->clk_baud, usart->clk_in, 1, div);
 }
 
-static void 
-tx_irq_ack(SigNode *node,int value,void *clientData)
+static void
+tx_irq_ack(SigNode * node, int value, void *clientData)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-	if(value == SIG_LOW) {
+	if (value == SIG_LOW) {
 		usart->ucsra &= ~UCSRA_TXC;
 		update_interrupts(usart);
 	}
 }
 
 static uint8_t
-ucsra_read(void *clientData,uint32_t address)
+ucsra_read(void *clientData, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        return usart->ucsra;
+	return usart->ucsra;
 }
 
 static void
-ucsra_write(void *clientData,uint8_t value,uint32_t address)
+ucsra_write(void *clientData, uint8_t value, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
 	uint8_t diff = usart->ucsra ^ value;
 	uint8_t clear = (value & (UCSRA_RXC | UCSRA_TXC | UCSRA_UDRE));
-        usart->ucsra = value & ~clear;
+	usart->ucsra = value & ~clear;
 	update_interrupts(usart);
-	if(diff & UCSRA_U2X) {
+	if (diff & UCSRA_U2X) {
 		update_clockdivider(usart);
 	}
 }
 
 static uint8_t
-ucsrb_read(void *clientData,uint32_t address)
+ucsrb_read(void *clientData, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        return usart->ucsrb;
+	return usart->ucsrb;
 }
 
 static void
-ucsrb_write(void *clientData,uint8_t value,uint32_t address)
+ucsrb_write(void *clientData, uint8_t value, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
 	uint8_t diff = usart->ucsrb ^ value;
-        usart->ucsrb = value;
-	if((value & UCSRB_TXEN) && (diff & UCSRB_TXEN)) {
+	usart->ucsrb = value;
+	if ((value & UCSRB_TXEN) && (diff & UCSRB_TXEN)) {
 		usart->ucsra |= UCSRA_UDRE;
 		update_interrupts(usart);
 	}
-	if((value & UCSRB_RXEN)) {
-		if(diff & UCSRB_RXEN) {
+	if ((value & UCSRB_RXEN)) {
+		if (diff & UCSRB_RXEN) {
 			SerialDevice_StartRx(usart->port);
 		}
 	} else {
-		if(diff & UCSRB_RXEN) {
+		if (diff & UCSRB_RXEN) {
 			SerialDevice_StopRx(usart->port);
 		}
 	}
@@ -217,115 +218,112 @@ ucsrb_write(void *clientData,uint8_t value,uint32_t address)
 }
 
 static uint8_t
-ucsrc_read(void *clientData,uint32_t address)
+ucsrc_read(void *clientData, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        return usart->ucsrc;
+	return usart->ucsrc;
 }
 
 static void
-ucsrc_write(void *clientData,uint8_t value,uint32_t address)
+ucsrc_write(void *clientData, uint8_t value, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        usart->ucsrc = value;
+	usart->ucsrc = value;
 }
 
 static uint8_t
-ubrrl_read(void *clientData,uint32_t address)
+ubrrl_read(void *clientData, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        return usart->ubrrl;
+	return usart->ubrrl;
 }
 
 static void
-ubrrl_write(void *clientData,uint8_t value,uint32_t address)
+ubrrl_write(void *clientData, uint8_t value, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        usart->ubrrl = value;
+	usart->ubrrl = value;
 	update_clockdivider(usart);
 }
 
 static uint8_t
-ubrrh_read(void *clientData,uint32_t address)
+ubrrh_read(void *clientData, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        return usart->ubrrh;
+	return usart->ubrrh;
 }
 
 static void
-ubrrh_write(void *clientData,uint8_t value,uint32_t address)
+ubrrh_write(void *clientData, uint8_t value, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-        usart->ubrrh = value;
+	usart->ubrrh = value;
 	update_clockdivider(usart);
 }
+
 static uint8_t
-udr_read(void *clientData,uint32_t address)
+udr_read(void *clientData, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
 	uint8_t result = usart->udr_in;
 	usart->ucsra &= ~UCSRA_RXC;
-	if(usart->ucsrb & UCSRB_RXEN) {
+	if (usart->ucsrb & UCSRB_RXEN) {
 		SerialDevice_StartRx(usart->port);
 	}
 	update_interrupts(usart);
-        return result;
+	return result;
 }
 
 static void
-udr_write(void *clientData,uint8_t value,uint32_t address)
+udr_write(void *clientData, uint8_t value, uint32_t address)
 {
 	ATM644_Usart *usart = (ATM644_Usart *) clientData;
-	if(!(usart->ucsra & UCSRA_UDRE)) {
+	if (!(usart->ucsra & UCSRA_UDRE)) {
 		return;
 	}
 	usart->ucsra &= ~UCSRA_TXC;
 	usart->ucsra &= ~UCSRA_UDRE;
-//	usart->tx_start = CycleCounter_Get();
-        SerialDevice_StartTx(usart->port);
+//      usart->tx_start = CycleCounter_Get();
+	SerialDevice_StartTx(usart->port);
 	usart->txfifo[TXFIFO_WP(usart)] = value;
 	usart->txfifo_wp++;
-        update_interrupts(usart);
-        usart->udr_out = value;
-	CycleTimer_Mod(&usart->tx_baud_timer,usart->byte_time); 
+	update_interrupts(usart);
+	usart->udr_out = value;
+	CycleTimer_Mod(&usart->tx_baud_timer, usart->byte_time);
 }
 
 static void
 rx_next(void *clientData)
 {
-        ATM644_Usart *usart = (ATM644_Usart *)clientData;
-	if(usart->ucsrb & UCSRB_RXEN) {
+	ATM644_Usart *usart = (ATM644_Usart *) clientData;
+	if (usart->ucsrb & UCSRB_RXEN) {
 		SerialDevice_StartRx(usart->port);
 	}
 }
 
 static void
-serial_input(void *cd)
+serial_input(void *cd, UartChar c)
 {
-        ATM644_Usart *usart = cd;
-        UartChar b;
-        int count=SerialDevice_Read(usart->port,&b,1);
-        if(count > 0) {
-		if(usart->ucsra & UCSRA_RXC) {
-			fprintf(stderr,"Usart RX Overrun\n");
-			usart->ucsra |= UCSRA_DOR;
-		} else {
-			usart->udr_in = b;
-			usart->ucsra |= UCSRA_RXC;
-			update_interrupts(usart);
-		}
-		CycleTimer_Mod(&usart->rx_baud_timer, usart->byte_time); 
-		SerialDevice_StopRx(usart->port);
-        }
+	ATM644_Usart *usart = cd;
+	if (usart->ucsra & UCSRA_RXC) {
+		fprintf(stderr, "Usart RX Overrun\n");
+		usart->ucsra |= UCSRA_DOR;
+	} else {
+		usart->udr_in = c;
+		usart->ucsra |= UCSRA_RXC;
+		update_interrupts(usart);
+	}
+	CycleTimer_Mod(&usart->rx_baud_timer, usart->byte_time);
+	SerialDevice_StopRx(usart->port);
 }
 
 static void
 tx_done(void *clientData)
 {
-        ATM644_Usart *usart = (ATM644_Usart *)clientData;
+	ATM644_Usart *usart = (ATM644_Usart *) clientData;
 	/* Force the emulator not to be faster than the output channel */
-	if((usart->txfifo_wp - usart->txfifo_rp) == TXFIFO_SIZE) {
-		CycleTimer_Mod(&usart->tx_baud_timer,0); 
+	if ((usart->txfifo_wp - usart->txfifo_rp) == TXFIFO_SIZE) {
+		CycleTimer_Mod(&usart->tx_baud_timer, 0);
 		return;
 	}
 	usart->ucsra |= UCSRA_UDRE;
@@ -333,56 +331,80 @@ tx_done(void *clientData)
 	update_interrupts(usart);
 }
 
-
-static void
-serial_output(void *cd) {
-        ATM644_Usart *usart = cd;
-	int count;
-        UartChar data;
-	while(usart->txfifo_rp < usart->txfifo_wp) {
-		data = usart->txfifo[TXFIFO_RP(usart)];
-		count=SerialDevice_Write(usart->port,&data,1);
-		if(count == 0) {
-			return;
-		}
+static bool
+serial_output(void *cd, UartChar * c)
+{
+	ATM644_Usart *usart = cd;
+	if (usart->txfifo_rp < usart->txfifo_wp) {
+		*c = usart->txfifo[TXFIFO_RP(usart)];
 		usart->txfifo_rp++;
+	} else {
+		fprintf(stderr, "Bug in %s %s\n", __FILE__, __func__);
 	}
-	SerialDevice_StopTx(usart->port);
-	return;
+	if (usart->txfifo_rp == usart->txfifo_wp) {
+		SerialDevice_StopTx(usart->port);
+	}
+	return true;
 }
 
 void
-ATM644_UsartNew(const char *name,uint32_t base)
+ATM644_UsartNew(const char *name, ATMUsartRegisterMap *regMap)
 {
-	ATM644_Usart *usart = sg_calloc(sizeof(ATM644_Usart));	
+	ATM644_Usart *usart = sg_calloc(sizeof(ATM644_Usart));
+	uint32_t base;
+	ATMUsartRegisterMap defaultRegMap = {
+                .addrUCSRA = 0,
+                .addrUCSRB = 1,
+                .addrUCSRC = 2,
+                .addrUBRRL = 4,
+                .addrUBRRH = 5,
+                .addrUDR = 6,
+        };
+	if(!regMap) {
+		regMap = &defaultRegMap;
+	}
+	base = regMap->addrBase;
+
 	usart->udr_in = 0;
 	usart->ucsra = 0;
 	usart->ucsrb = 0;
 	usart->ucsrc = 6;
 	usart->ubrrl = 0;
 	usart->ubrrh = 0;
-	AVR8_RegisterIOHandler(UCSRA(base),ucsra_read,ucsra_write,usart);
-	AVR8_RegisterIOHandler(UCSRB(base),ucsrb_read,ucsrb_write,usart);
-	AVR8_RegisterIOHandler(UCSRC(base),ucsrc_read,ucsrc_write,usart);
-	AVR8_RegisterIOHandler(UBRRL(base),ubrrl_read,ubrrl_write,usart);
-	AVR8_RegisterIOHandler(UBRRH(base),ubrrh_read,ubrrh_write,usart);
-	AVR8_RegisterIOHandler(UDR(base),udr_read,udr_write,usart);
-	usart->port = Uart_New(name,serial_input,serial_output,NULL,usart);
+	if(regMap->addrUCSRA >= 0) {
+		AVR8_RegisterIOHandler(base + regMap->addrUCSRA, ucsra_read, ucsra_write, usart);
+	}
+	if(regMap->addrUCSRB >= 0) {
+		AVR8_RegisterIOHandler(base + regMap->addrUCSRB, ucsrb_read, ucsrb_write, usart);
+	}
+	if(regMap->addrUCSRC >= 0) {
+		AVR8_RegisterIOHandler(base + regMap->addrUCSRC, ucsrc_read, ucsrc_write, usart);
+	}
+	if(regMap->addrUBRRL >= 0) {
+		AVR8_RegisterIOHandler(base + regMap->addrUBRRL, ubrrl_read, ubrrl_write, usart);
+	}
+	if(regMap->addrUBRRH >= 0) {
+		AVR8_RegisterIOHandler(base + regMap->addrUBRRH, ubrrh_read, ubrrh_write, usart);
+	}
+	if(regMap->addrUDR >= 0) {
+		AVR8_RegisterIOHandler(base + regMap->addrUDR, udr_read, udr_write, usart);
+	}
+	usart->port = Uart_New(name, serial_input, serial_output, NULL, usart);
 
-	usart->udreIrqNode = SigNode_New("%s.udreIrq",name);
-	usart->txIrqNode = SigNode_New("%s.txIrq",name); 
-	usart->txIrqAckNode = SigNode_New("%s.txIrqAck",name); 
-	usart->rxIrqNode = SigNode_New("%s.rxIrq",name);
-	if(!usart->udreIrqNode || !usart->txIrqNode || !usart->rxIrqNode || !usart->txIrqAckNode) {
-		fprintf(stderr,"Can not create IRQ lines for USART\n");
+	usart->udreIrqNode = SigNode_New("%s.udreIrq", name);
+	usart->txIrqNode = SigNode_New("%s.txIrq", name);
+	usart->txIrqAckNode = SigNode_New("%s.txIrqAck", name);
+	usart->rxIrqNode = SigNode_New("%s.rxIrq", name);
+	if (!usart->udreIrqNode || !usart->txIrqNode || !usart->rxIrqNode || !usart->txIrqAckNode) {
+		fprintf(stderr, "Can not create IRQ lines for USART\n");
 		exit(1);
 	}
-	SigNode_Trace(usart->txIrqAckNode,tx_irq_ack,usart);	
-	usart->clk_baud = Clock_New("%s.clk_baud",name);
-	usart->clk_in = Clock_New("%s.clk",name);
-	Clock_Trace(usart->clk_baud,update_baudrate,usart);
+	SigNode_Trace(usart->txIrqAckNode, tx_irq_ack, usart);
+	usart->clk_baud = Clock_New("%s.clk_baud", name);
+	usart->clk_in = Clock_New("%s.clk", name);
+	Clock_Trace(usart->clk_baud, update_baudrate, usart);
 	update_clockdivider(usart);
-	CycleTimer_Init(&usart->tx_baud_timer,tx_done,usart);
-	CycleTimer_Init(&usart->rx_baud_timer,rx_next,usart);
-	fprintf(stderr,"Created ATMegaXX4 USART \"%s\"\n",name);
+	CycleTimer_Init(&usart->tx_baud_timer, tx_done, usart);
+	CycleTimer_Init(&usart->rx_baud_timer, rx_next, usart);
+	fprintf(stderr, "Created ATMegaXX4 USART \"%s\"\n", name);
 }

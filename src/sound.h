@@ -34,23 +34,23 @@ typedef struct SoundFormat {
  */
 typedef struct SoundDevice {
 	void *owner;
-	int (*setSoundFormat)(struct SoundDevice *,SoundFormat *);
-        int (*playSamples)(struct SoundDevice *,void *data,uint32_t len);
+	int (*setSoundFormat) (struct SoundDevice *, SoundFormat *);
+	int (*playSamples) (struct SoundDevice *, void *data, uint32_t len);
 	SoundFormat soundFormat;
 	SigNode *speedUp;
 	SigNode *speedDown;
-} SoundDevice; 
+} SoundDevice;
 
-static inline int 
-Sound_PlaySamples(SoundDevice *dev,void *data,uint32_t len)
+static inline int
+Sound_PlaySamples(SoundDevice * dev, void *data, uint32_t len)
 {
-	return dev->playSamples(dev,data,len);
+	return dev->playSamples(dev, data, len);
 }
 
-static inline int 
-Sound_SetFormat(SoundDevice *dev,SoundFormat *sf)
+static inline int
+Sound_SetFormat(SoundDevice * dev, SoundFormat * sf)
 {
-	return dev->setSoundFormat(dev,sf);
+	return dev->setSoundFormat(dev, sf);
 }
 
 /*
@@ -59,15 +59,14 @@ Sound_SetFormat(SoundDevice *dev,SoundFormat *sf)
  *	The interface for the board creator
  ******************************************************
  */
-SoundDevice *
-SoundDevice_New(const char *name);
+SoundDevice *SoundDevice_New(const char *name);
 
 /*
  ******************************************************
  * The interface for registering new backends
  ******************************************************
  */
-typedef SoundDevice * SoundDevice_NewProc(const char *name);
-void Sound_BackendRegister(const char *name,SoundDevice_NewProc *);
+typedef SoundDevice *SoundDevice_NewProc(const char *name);
+void Sound_BackendRegister(const char *name, SoundDevice_NewProc *);
 
 #endif

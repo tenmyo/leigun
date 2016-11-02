@@ -60,7 +60,7 @@
 #define		WRSR_TOUT	(1<<2)
 #define		WRSR_SFTW	(1<<1)
 
-#define	WATCHDOG_CLOCK_HZ	(2) 
+#define	WATCHDOG_CLOCK_HZ	(2)
 typedef struct IMX21Wdog {
 	BusDevice bdev;
 	uint16_t wcr;
@@ -70,44 +70,43 @@ typedef struct IMX21Wdog {
 
 	int count;
 	SigNode *nWdog_Node;
-        CycleCounter_t last_timer_update;
-        CycleCounter_t saved_cpu_cycles;
-        CycleTimer event_timer;
+	CycleCounter_t last_timer_update;
+	CycleCounter_t saved_cpu_cycles;
+	CycleTimer event_timer;
 } IMX21Wdog;
 
-
 static void
-actualize_count(IMX21Wdog *wdog) 
+actualize_count(IMX21Wdog * wdog)
 {
 	int divider;
 	int count;
 	CycleCounter_t timeout;
-	if((wdog->wcr & WCR_WDE)
-		&& !(wdog->wcr & WCR_WDBG)) {
+	if ((wdog->wcr & WCR_WDE)
+	    && !(wdog->wcr & WCR_WDBG)) {
 		wdog->saved_cpu_cycles += CycleCounter_Get() - wdog->last_timer_update;
-		divider = CycleTimerRate_Get() / (32768/16384);
+		divider = CycleTimerRate_Get() / (32768 / 16384);
 		count = wdog->saved_cpu_cycles / divider;
 		wdog->saved_cpu_cycles -= count * divider;
 		wdog->count -= count;
 		/* timeout when when count reaches 0 */
-		if(wdog->count <= 0) {
-			if(wdog->wcr & WCR_WRE) {
-				SigNode_Set(wdog->nWdog_Node,SIG_LOW);
+		if (wdog->count <= 0) {
+			if (wdog->wcr & WCR_WRE) {
+				SigNode_Set(wdog->nWdog_Node, SIG_LOW);
 			} else {
-				fprintf(stderr,"Watchdog timeout\n");
+				fprintf(stderr, "Watchdog timeout\n");
 				exit(0);
 			}
 		} else {
-			timeout = wdog->count * divider - wdog->saved_cpu_cycles; 
-			CycleTimer_Mod(&wdog->event_timer,timeout);
+			timeout = wdog->count * divider - wdog->saved_cpu_cycles;
+			CycleTimer_Mod(&wdog->event_timer, timeout);
 		}
 	}
 }
 
 static void
-do_timeout(void *clientData) 
+do_timeout(void *clientData)
 {
-	IMX21Wdog *wdog = (IMX21Wdog*) clientData;
+	IMX21Wdog *wdog = (IMX21Wdog *) clientData;
 	actualize_count(wdog);
 }
 
@@ -126,37 +125,37 @@ do_timeout(void *clientData)
  * ---------------------------------------------------------------------------
  */
 static uint32_t
-wcr_read(void *clientData,uint32_t address,int rqlen)
+wcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Wdog *wdog = (IMX21Wdog *) clientData;
-        return wdog->wcr;
+	return wdog->wcr;
 }
 
 static void
-wcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Wdog *wdog = (IMX21Wdog *) clientData;
 	uint16_t diff;
 	actualize_count(wdog);
-	if(wdog->wcr_once_written) {
-		wdog->wcr = (value & 0xff34) |  (wdog->wcr & 0xf);	
+	if (wdog->wcr_once_written) {
+		wdog->wcr = (value & 0xff34) | (wdog->wcr & 0xf);
 	} else {
 		wdog->wcr_once_written = 1;
 		wdog->wcr = value & 0xff3f;
 	}
 	diff = wdog->wcr ^ value;
-	if(diff & WCR_WDE) {
+	if (diff & WCR_WDE) {
 		wdog->count = (wdog->wcr >> 8) & 0xff;
 	}
 	/* should be update_timeout only */
-	if(!(wdog->wcr & WCR_WRE) && ((wdog->wcr & WCR_WT_MASK) == 0)) {
-		fprintf(stderr,"\nWatchdog module: software reset\n");
+	if (!(wdog->wcr & WCR_WRE) && ((wdog->wcr & WCR_WT_MASK) == 0)) {
+		fprintf(stderr, "\nWatchdog module: software reset\n");
 		exit(0);
 	}
-	if(wdog->wcr & WCR_WDA) {
-		SigNode_Set(wdog->nWdog_Node,SIG_LOW);
+	if (wdog->wcr & WCR_WDA) {
+		SigNode_Set(wdog->nWdog_Node, SIG_LOW);
 	} else {
-		SigNode_Set(wdog->nWdog_Node,SIG_HIGH);
+		SigNode_Set(wdog->nWdog_Node, SIG_HIGH);
 	}
 	actualize_count(wdog);
 }
@@ -169,17 +168,17 @@ wcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------------
  */
 static uint32_t
-wsr_read(void *clientData,uint32_t address,int rqlen)
+wsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Wdog *wdog = (IMX21Wdog *) clientData;
-        return wdog->wsr;
+	return wdog->wsr;
 }
 
 static void
-wsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Wdog *wdog = (IMX21Wdog *) clientData;
-	if((value = 0xaaaa) && (wdog->wsr == 0x5555)) {
+	if ((value = 0xaaaa) && (wdog->wsr == 0x5555)) {
 		actualize_count(wdog);
 		wdog->count = (wdog->wcr >> 8) & 0xff;
 		// update_timeout() would be better
@@ -195,52 +194,52 @@ wsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------------
  */
 static uint32_t
-wrsr_read(void *clientData,uint32_t address,int rqlen)
+wrsr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Watchdog reset status register read not implemented\n");
-        return WRSR_PWR;
+	fprintf(stderr, "Watchdog reset status register read not implemented\n");
+	return WRSR_PWR;
 }
 
 static void
-wrsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wrsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Watchdog: WRSR register is readonly ! Bus error\n");
-}
-
-
-static void
-IMXWdog_Unmap(void *owner,uint32_t base,uint32_t mask)
-{
-        IOH_Delete16(WDOG_WCR(base));
-        IOH_Delete16(WDOG_WSR(base));
-        IOH_Delete16(WDOG_WRSR(base));
+	fprintf(stderr, "Watchdog: WRSR register is readonly ! Bus error\n");
 }
 
 static void
-IMXWdog_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+IMXWdog_Unmap(void *owner, uint32_t base, uint32_t mask)
+{
+	IOH_Delete16(WDOG_WCR(base));
+	IOH_Delete16(WDOG_WSR(base));
+	IOH_Delete16(WDOG_WRSR(base));
+}
+
+static void
+IMXWdog_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 
-        IMX21Wdog *wdog = (IMX21Wdog *) owner;
-        IOH_New16(WDOG_WCR(base),wcr_read,wcr_write,wdog);
-        IOH_New16(WDOG_WSR(base),wsr_read,wsr_write,wdog);
-        IOH_New16(WDOG_WRSR(base),wrsr_read,wrsr_write,wdog);
+	IMX21Wdog *wdog = (IMX21Wdog *) owner;
+	IOH_New16(WDOG_WCR(base), wcr_read, wcr_write, wdog);
+	IOH_New16(WDOG_WSR(base), wsr_read, wsr_write, wdog);
+	IOH_New16(WDOG_WRSR(base), wrsr_read, wrsr_write, wdog);
 }
-BusDevice * 
-IMX21_WdogNew(const char *name) 
+
+BusDevice *
+IMX21_WdogNew(const char *name)
 {
 	IMX21Wdog *wdog = sg_new(IMX21Wdog);
-	CycleTimer_Init(&wdog->event_timer,do_timeout,wdog);
-	wdog->nWdog_Node = SigNode_New("%s.nWDOG",name);
-	if(!wdog->nWdog_Node) {
-		fprintf(stderr,"Can not create watchdog signal node\n");
+	CycleTimer_Init(&wdog->event_timer, do_timeout, wdog);
+	wdog->nWdog_Node = SigNode_New("%s.nWDOG", name);
+	if (!wdog->nWdog_Node) {
+		fprintf(stderr, "Can not create watchdog signal node\n");
 		exit(1);
 	}
 	wdog->wcr = 0x0030;
-	wdog->bdev.first_mapping=NULL;
-        wdog->bdev.Map=IMXWdog_Map;
-        wdog->bdev.UnMap=IMXWdog_Unmap;
-        wdog->bdev.owner=wdog;
-        wdog->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	fprintf(stderr,"IMX21 Watchdog module created\n");
+	wdog->bdev.first_mapping = NULL;
+	wdog->bdev.Map = IMXWdog_Map;
+	wdog->bdev.UnMap = IMXWdog_Unmap;
+	wdog->bdev.owner = wdog;
+	wdog->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "IMX21 Watchdog module created\n");
 	return &wdog->bdev;
 }

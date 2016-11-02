@@ -97,152 +97,156 @@ struct MAX6651 {
  * MAX6651 Write state machine 
  * ------------------------------------
  */
-static int 
-max6651_write(void *dev,uint8_t data) {
+static int
+max6651_write(void *dev, uint8_t data)
+{
 	MAX6651 *max = dev;
-	if(max->state==MAX_STATE_ADDR) {
-		dbgprintf("MAX6651 Addr 0x%02x\n",data);
-		max->reg_addr= data;
+	if (max->state == MAX_STATE_ADDR) {
+		dbgprintf("MAX6651 Addr 0x%02x\n", data);
+		max->reg_addr = data;
 		max->state = MAX_STATE_DATA;
-	} else if(max->state==MAX_STATE_DATA) {
-		dbgprintf("MAX6651 Write 0x%02x to %04x\n",data,max->reg_addr);
-		switch(max->reg_addr) {
-			case REG_SPEED:
-				max->speed=data;
-				break;
-			case REG_CONFIG:
-				max->config = data;
-				break;
-			case REG_GPIO_DEF:
-				max->gpio_def = data;
-				break;
-			case REG_DAC:
-				max->dac = data;
-				break;
-			case REG_ALARM_ENA:
-				max->alarm_enable=data;
-				break;
-			case REG_COUNT:
-				max->count = data;
-				break;
-			default:
-				fprintf(stderr,"MAX6651 write to nonexisting register\n");
-				return I2C_NACK; /* does the real device the same thing ? */
-		} 
+	} else if (max->state == MAX_STATE_DATA) {
+		dbgprintf("MAX6651 Write 0x%02x to %04x\n", data, max->reg_addr);
+		switch (max->reg_addr) {
+		    case REG_SPEED:
+			    max->speed = data;
+			    break;
+		    case REG_CONFIG:
+			    max->config = data;
+			    break;
+		    case REG_GPIO_DEF:
+			    max->gpio_def = data;
+			    break;
+		    case REG_DAC:
+			    max->dac = data;
+			    break;
+		    case REG_ALARM_ENA:
+			    max->alarm_enable = data;
+			    break;
+		    case REG_COUNT:
+			    max->count = data;
+			    break;
+		    default:
+			    fprintf(stderr, "MAX6651 write to nonexisting register\n");
+			    return I2C_NACK;	/* does the real device the same thing ? */
+		}
 	}
 	return I2C_ACK;
 };
 
 static void
-update_fanspeed(MAX6651 *max,unsigned int fan) 
+update_fanspeed(MAX6651 * max, unsigned int fan)
 {
 	struct timeval tv;
-	if(fan>3) {
+	if (fan > 3) {
 		return;
 	}
-	gettimeofday(&tv,NULL);
-	max->tach[fan] = 170 + (tv.tv_usec & 0xf); 	
-	
+	gettimeofday(&tv, NULL);
+	max->tach[fan] = 170 + (tv.tv_usec & 0xf);
+
 }
-static int 
-max6651_read(void *dev,uint8_t *data) 
+
+static int
+max6651_read(void *dev, uint8_t * data)
 {
 	MAX6651 *max = dev;
-	switch(max->reg_addr) {
-			case REG_SPEED:
-				*data=max->speed;
-				break;
-			case REG_CONFIG:
-				*data=max->config;
-				break;
-			case REG_GPIO_DEF:
-				*data=max->gpio_def;
-				break;
-			case REG_DAC:
-				*data=max->dac;
-				break;
+	switch (max->reg_addr) {
+	    case REG_SPEED:
+		    *data = max->speed;
+		    break;
+	    case REG_CONFIG:
+		    *data = max->config;
+		    break;
+	    case REG_GPIO_DEF:
+		    *data = max->gpio_def;
+		    break;
+	    case REG_DAC:
+		    *data = max->dac;
+		    break;
 
-			case REG_ALARM_ENA:
-				*data=max->alarm_enable;
-				break;
+	    case REG_ALARM_ENA:
+		    *data = max->alarm_enable;
+		    break;
 
-			case REG_ALARM_STAT:
-				*data=max->alarm;
-				break;
+	    case REG_ALARM_STAT:
+		    *data = max->alarm;
+		    break;
 
-			case REG_TACH0:
-				update_fanspeed(max,0);
-				*data=(max->tach[0]<<1)>>(3-max->count);
-				break;
+	    case REG_TACH0:
+		    update_fanspeed(max, 0);
+		    *data = (max->tach[0] << 1) >> (3 - max->count);
+		    break;
 
-			case REG_TACH1:
-				update_fanspeed(max,1);
-				*data=(max->tach[1]<<1)>>(3-max->count);
-				break;
+	    case REG_TACH1:
+		    update_fanspeed(max, 1);
+		    *data = (max->tach[1] << 1) >> (3 - max->count);
+		    break;
 
-			case REG_TACH2:
-				update_fanspeed(max,2);
-				*data=(max->tach[2]<<1)>>(3-max->count);
-				break;
+	    case REG_TACH2:
+		    update_fanspeed(max, 2);
+		    *data = (max->tach[2] << 1) >> (3 - max->count);
+		    break;
 
-			case REG_TACH3:
-				update_fanspeed(max,3);
-				*data=(max->tach[3]<<1)>>(3-max->count);
-				break;
+	    case REG_TACH3:
+		    update_fanspeed(max, 3);
+		    *data = (max->tach[3] << 1) >> (3 - max->count);
+		    break;
 
-			case REG_GPIO_STAT:
-				*data=max->gpio_stat;
-				break;
+	    case REG_GPIO_STAT:
+		    *data = max->gpio_stat;
+		    break;
 
-			case REG_COUNT:
-				*data=max->count;
-				break;
-			default:
-				*data=0;
+	    case REG_COUNT:
+		    *data = max->count;
+		    break;
+	    default:
+		    *data = 0;
 	}
-	dbgprintf("MAX6651 read 0x%02x from %04x\n",*data,max->reg_addr);
+	dbgprintf("MAX6651 read 0x%02x from %04x\n", *data, max->reg_addr);
 	return I2C_DONE;
 };
 
 static int
-max6651_start(void *dev,int i2c_addr,int operation) {
+max6651_start(void *dev, int i2c_addr, int operation)
+{
 	MAX6651 *max = dev;
 	dbgprintf("MAX6651 start\n");
 	max->state = MAX_STATE_ADDR;
 	return I2C_ACK;
 }
 
-static void 
-max6651_stop(void *dev) {
+static void
+max6651_stop(void *dev)
+{
 	MAX6651 *max = dev;
 	dbgprintf("MAX6651 stop\n");
-	max->state =  MAX_STATE_ADDR; 
+	max->state = MAX_STATE_ADDR;
 }
-
 
 static I2C_SlaveOps max6651_ops = {
 	.start = max6651_start,
-	.stop =  max6651_stop,
-	.read =  max6651_read,	
-	.write = max6651_write	
+	.stop = max6651_stop,
+	.read = max6651_read,
+	.write = max6651_write
 };
 
 I2C_Slave *
-MAX6651_New(char *name) {
-	MAX6651 *max = sg_new(MAX6651); 
+MAX6651_New(char *name)
+{
+	MAX6651 *max = sg_new(MAX6651);
 	I2C_Slave *i2c_slave;
-	max->config=0xa;
-	max->gpio_def=0xff;
-	max->gpio_stat=0x1f;
-	max->tach[0]=0;
-	max->tach[1]=0;
-	max->tach[2]=0;
-	max->tach[3]=0;
-	max->count=0x02;
+	max->config = 0xa;
+	max->gpio_def = 0xff;
+	max->gpio_stat = 0x1f;
+	max->tach[0] = 0;
+	max->tach[1] = 0;
+	max->tach[2] = 0;
+	max->tach[3] = 0;
+	max->count = 0x02;
 	i2c_slave = &max->i2c_slave;
-	i2c_slave->devops = &max6651_ops; 
+	i2c_slave->devops = &max6651_ops;
 	i2c_slave->dev = max;
 	i2c_slave->speed = I2C_SPEED_FAST;
-	fprintf(stderr,"MAX6652 FAN-Controller \"%s\" created\n",name);
+	fprintf(stderr, "MAX6652 FAN-Controller \"%s\" created\n", name);
 	return i2c_slave;
 }

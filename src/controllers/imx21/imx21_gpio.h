@@ -7,4 +7,4 @@
  */
 
 #include <bus.h>
-BusDevice * IMX21_GpioNew(const char *name);
+BusDevice *IMX21_GpioNew(const char *name);

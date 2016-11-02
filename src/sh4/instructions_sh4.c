@@ -48,36 +48,37 @@
 #define ISNOTNEG(x) (!((x)&(1<<31)))
 
 static inline uint32_t
-add_carry(uint32_t op1,uint32_t op2,uint32_t result) {
-
-	if(((op1 + op2) < op1) || ((op1 + op2) > result)) {
-                return SR_T;
-        } else {
-                return 0;
-        }
-}
-
-static inline uint32_t
-add_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
-        return (((op1 & op2 & ~result) | (~op1 & ~op2 & result)) >> 31);
-}
-
-
-static inline uint32_t 
-sub_carry(uint32_t Rn,uint32_t Rm, uint32_t R)
+add_carry(uint32_t op1, uint32_t op2, uint32_t result)
 {
-	if((Rn < (Rn - Rm)) || ((Rn - Rm) < R)) {
+
+	if (((op1 + op2) < op1) || ((op1 + op2) > result)) {
 		return SR_T;
 	} else {
 		return 0;
-	}	
+	}
 }
 
 static inline uint32_t
-sub_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
-        return (((op1 & ~op2 & ~result) | (~op1 & op2 & result)) >> 31);
+add_overflow(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	return (((op1 & op2 & ~result) | (~op1 & ~op2 & result)) >> 31);
 }
 
+static inline uint32_t
+sub_carry(uint32_t Rn, uint32_t Rm, uint32_t R)
+{
+	if ((Rn < (Rn - Rm)) || ((Rn - Rm) < R)) {
+		return SR_T;
+	} else {
+		return 0;
+	}
+}
+
+static inline uint32_t
+sub_overflow(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	return (((op1 & ~op2 & ~result) | (~op1 & op2 & result)) >> 31);
+}
 
 /**
  ********************************************************
@@ -91,10 +92,10 @@ sh4_add(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
-	SH4_SetGpr(Rn + Rm,rn);
+	uint32_t Rm, Rn;
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
+	SH4_SetGpr(Rn + Rm, rn);
 }
 
 /**
@@ -111,8 +112,8 @@ sh4_add_imm(void)
 	int rn = (ICODE >> 8) & 0xf;
 	int32_t Rn;
 	int8_t imm = ICODE & 0xff;
-	Rn = SH4_GetGpr(rn);	
-	SH4_SetGpr(Rn + imm,rn);
+	Rn = SH4_GetGpr(rn);
+	SH4_SetGpr(Rn + imm, rn);
 }
 
 /**
@@ -127,17 +128,17 @@ sh4_addc(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rn,Rm;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
+	uint32_t Rn, Rm;
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
 	uint32_t result;
-	if(SH4_GetTrue()) {
+	if (SH4_GetTrue()) {
 		result = Rm + Rn + 1;
 	} else {
 		result = Rm + Rn;
 	}
-	SH4_SetGpr(result,rn);	
-	if(add_carry(Rn,Rm,result)) {
+	SH4_SetGpr(result, rn);
+	if (add_carry(Rn, Rm, result)) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -156,13 +157,13 @@ sh4_addv(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rn,Rm;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
+	uint32_t Rn, Rm;
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
 	uint32_t result;
 	result = Rm + Rn;
-	SH4_SetGpr(result,rn);
-	if(add_overflow(Rn,Rm,result)) {
+	SH4_SetGpr(result, rn);
+	if (add_overflow(Rn, Rm, result)) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -181,11 +182,11 @@ sh4_and(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rn,Rm;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
+	uint32_t Rn, Rm;
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
 	Rn = Rn & Rm;
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -198,10 +199,10 @@ void
 sh4_and_imm(void)
 {
 	uint32_t R0;
-	uint32_t imm = (ICODE & 0xff);	
+	uint32_t imm = (ICODE & 0xff);
 	R0 = SH4_GetGpr(0);
-	R0 = R0 & imm;	
-	SH4_SetGpr(R0,0);
+	R0 = R0 & imm;
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -215,11 +216,11 @@ void
 sh4_andb(void)
 {
 	uint32_t temp;
-	uint32_t imm = (ICODE & 0xff);	
+	uint32_t imm = (ICODE & 0xff);
 	uint32_t addr = SH4_GetGBR() + SH4_GetGpr(0);
 	temp = SH4_MMURead8(addr);
 	temp = temp & imm;
-	SH4_MMUWrite8(temp,addr);
+	SH4_MMUWrite8(temp, addr);
 }
 
 /*
@@ -232,10 +233,10 @@ sh4_andb(void)
 void
 sh4_bf(void)
 {
-	int32_t disp = (int32_t)(int8_t)(ICODE & 0xff);
-	int T = SH4_GetTrue();	
-	if(T == 0) {
-		SH4_SetRegPC(SH4_NNIA + (disp << 1)); 
+	int32_t disp = (int32_t) (int8_t) (ICODE & 0xff);
+	int T = SH4_GetTrue();
+	if (T == 0) {
+		SH4_SetRegPC(SH4_NNIA + (disp << 1));
 	}
 }
 
@@ -249,13 +250,13 @@ sh4_bf(void)
 void
 sh4_bfs(void)
 {
-	int32_t disp = (int32_t)(int8_t)(ICODE & 0xff);
-	int T = SH4_GetTrue();	
-	if(T == 0) {
+	int32_t disp = (int32_t) (int8_t) (ICODE & 0xff);
+	int T = SH4_GetTrue();
+	if (T == 0) {
 		SH4_ExecuteDelaySlot();
-		SH4_SetRegPC(SH4_NNIA + (disp << 1)); 
+		SH4_SetRegPC(SH4_NNIA + (disp << 1));
 	}
-	
+
 }
 
 /**
@@ -269,9 +270,9 @@ void
 sh4_bra(void)
 {
 	int32_t disp;
-	disp = ((int32_t)(ICODE << 20)) >> 19;
+	disp = ((int32_t) (ICODE << 20)) >> 19;
 	SH4_ExecuteDelaySlot();
-	SH4_SetRegPC(SH4_NNIA + disp); 
+	SH4_SetRegPC(SH4_NNIA + disp);
 }
 
 /**
@@ -288,7 +289,7 @@ sh4_braf(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Rn = SH4_GetGpr(rn);
 	SH4_ExecuteDelaySlot();
-	SH4_SetRegPC((SH4_NNIA + Rn) & ~UINT32_C(1)); 
+	SH4_SetRegPC((SH4_NNIA + Rn) & ~UINT32_C(1));
 }
 
 /**
@@ -300,7 +301,7 @@ sh4_braf(void)
 void
 sh4_brk(void)
 {
-	fprintf(stderr,"sh4_brk not implemented\n");
+	fprintf(stderr, "sh4_brk not implemented\n");
 	SH4_Break();
 }
 
@@ -314,7 +315,7 @@ sh4_brk(void)
 void
 sh4_bsr(void)
 {
-	int32_t disp = ((int32_t)(ICODE << 20)) >> 19;
+	int32_t disp = ((int32_t) (ICODE << 20)) >> 19;
 	SH4_SetPR(SH4_NNIA);
 	SH4_ExecuteDelaySlot();
 	SH4_SetRegPC(SH4_NNIA + disp);
@@ -335,7 +336,7 @@ sh4_bsrf(void)
 	uint32_t Rn = SH4_GetGpr(rn);
 	SH4_SetPR(SH4_NNIA);
 	SH4_ExecuteDelaySlot();
-	SH4_SetRegPC((SH4_NNIA + Rn) & ~UINT32_C(1)); 
+	SH4_SetRegPC((SH4_NNIA + Rn) & ~UINT32_C(1));
 }
 
 /**
@@ -347,10 +348,10 @@ sh4_bsrf(void)
 void
 sh4_bt(void)
 {
-	int32_t disp = (int32_t)(int8_t)(ICODE & 0xff);
-	int T = SH4_GetTrue();	
-	if(T != 0) {
-		SH4_SetRegPC(SH4_NNIA + (disp << 1)); 
+	int32_t disp = (int32_t) (int8_t) (ICODE & 0xff);
+	int T = SH4_GetTrue();
+	if (T != 0) {
+		SH4_SetRegPC(SH4_NNIA + (disp << 1));
 	}
 }
 
@@ -364,11 +365,11 @@ sh4_bt(void)
 void
 sh4_bts(void)
 {
-	int32_t disp = (int32_t)(int8_t)(ICODE & 0xff);
-	int T = SH4_GetTrue();	
-	if(T != 0) {
+	int32_t disp = (int32_t) (int8_t) (ICODE & 0xff);
+	int T = SH4_GetTrue();
+	if (T != 0) {
 		SH4_ExecuteDelaySlot();
-		SH4_SetRegPC(SH4_NNIA + (disp << 1)); /* does not return */
+		SH4_SetRegPC(SH4_NNIA + (disp << 1));	/* does not return */
 	}
 }
 
@@ -426,7 +427,7 @@ sh4_cmpeq(void)
 	int rm = (ICODE >> 4) & 0xf;
 	uint32_t Rn = SH4_GetGpr(rn);
 	uint32_t Rm = SH4_GetGpr(rm);
-	if(Rm == Rn) {
+	if (Rm == Rn) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -447,7 +448,7 @@ sh4_cmpge(void)
 	int rm = (ICODE >> 4) & 0xf;
 	int32_t Rn = SH4_GetGpr(rn);
 	int32_t Rm = SH4_GetGpr(rm);
-	if(Rn >= Rm) {
+	if (Rn >= Rm) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -468,7 +469,7 @@ sh4_cmpgt(void)
 	int rm = (ICODE >> 4) & 0xf;
 	int32_t Rn = SH4_GetGpr(rn);
 	int32_t Rm = SH4_GetGpr(rm);
-	if(Rn > Rm) {
+	if (Rn > Rm) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -488,7 +489,7 @@ sh4_cmphi(void)
 	int rm = (ICODE >> 4) & 0xf;
 	uint32_t Rn = SH4_GetGpr(rn);
 	uint32_t Rm = SH4_GetGpr(rm);
-	if(Rn > Rm) {
+	if (Rn > Rm) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -508,7 +509,7 @@ sh4_cmphs(void)
 	int rm = (ICODE >> 4) & 0xf;
 	uint32_t Rn = SH4_GetGpr(rn);
 	uint32_t Rm = SH4_GetGpr(rm);
-	if(Rn >= Rm) {
+	if (Rn >= Rm) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -527,7 +528,7 @@ sh4_cmppl(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int32_t Rn = SH4_GetGpr(rn);
-	if(Rn > 0) {
+	if (Rn > 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -546,12 +547,12 @@ sh4_cmppz(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int32_t Rn = SH4_GetGpr(rn);
-	if(Rn >= 0) {
+	if (Rn >= 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
 	}
-	
+
 }
 
 /**
@@ -567,8 +568,8 @@ sh4_cmpstr(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rn,Rm,temp;
-	uint32_t hh,hl,lh,ll;
+	uint32_t Rn, Rm, temp;
+	uint32_t hh, hl, lh, ll;
 	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
 	temp = Rn ^ Rm;
@@ -577,11 +578,11 @@ sh4_cmpstr(void)
 	lh = (temp >> 8) & 0xff;
 	ll = temp & 0xff;
 	hh = hh && hl && lh && ll;
-	if(hh == 0) {
+	if (hh == 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
-	}	
+	}
 }
 
 /**
@@ -594,10 +595,10 @@ sh4_cmpstr(void)
 void
 sh4_cmpeq_imm_r0(void)
 {
-	int32_t R0; 
-	int32_t imm = (int8_t)(ICODE & 0xff);
+	int32_t R0;
+	int32_t imm = (int8_t) (ICODE & 0xff);
 	R0 = SH4_GetGpr(0);
-	if(R0 == imm) {
+	if (R0 == imm) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -616,23 +617,23 @@ sh4_div0s(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	int32_t Rn,Rm;
-	int Q,M;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
-	if(Rn >= 0) {
-		Q = 0;
-	}  else {
+	uint32_t Rn, Rm;
+	int Q, M;
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
+	if (ISNEG(Rn)) {
 		Q = 1;
-	}
-	if(Rm >= 0) {
-		M = 0;
 	} else {
-		M = 1;
+		Q = 0;
 	}
-	SH4_ModSRFlags(Q,SR_Q);
-	SH4_ModSRFlags(M,SR_M);
-	SH4_ModSRFlags(M ^ Q,SR_T);
+	if (ISNEG(Rm)) {
+		M = 1;
+	} else {
+		M = 0;
+	}
+	SH4_ModSRFlags(Q, SR_Q);
+	SH4_ModSRFlags(M, SR_M);
+	SH4_ModSRFlags(M ^ Q, SR_T);
 }
 
 /**
@@ -645,7 +646,7 @@ sh4_div0s(void)
 void
 sh4_div0u(void)
 {
-	SH4_ModSRFlags(0,SR_Q | SR_M | SR_T);
+	SH4_ModSRFlags(0, SR_Q | SR_M | SR_T);
 }
 
 /**
@@ -661,69 +662,69 @@ void
 sh4_div1(void)
 {
 	int old_q;
-	int Q,M,T;
+	int Q, M, T;
 	//uint32_t tmp0;
-	uint32_t tmp0,tmp1,tmp2;
+	uint32_t tmp0, tmp1, tmp2;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rn,Rm;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
-	old_q = SH4_GetSRFlag(SR_Q);	
+	uint32_t Rn, Rm;
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
+	old_q = SH4_GetSRFlag(SR_Q);
 	Q = ((Rn & (1 << 31)) != 0);
 	tmp2 = Rm;
 	Rn <<= 1;
 	Rn |= SH4_GetTrue();
 	M = SH4_GetSRFlag(SR_M);
 	tmp0 = Rn;
-	switch(old_q) {
-		case 0:
-		    if(M == 0) {
-			Rn -= tmp2;
-			tmp1 = (Rn > tmp0);
-			if(Q == 0) {
-				Q = !!tmp1;
-				break;
-			} else {
-				Q = !tmp1;
-			}
+	switch (old_q) {
+	    case 0:
+		    if (M == 0) {
+			    Rn -= tmp2;
+			    tmp1 = (Rn > tmp0);
+			    if (Q == 0) {
+				    Q = !!tmp1;
+				    break;
+			    } else {
+				    Q = !tmp1;
+			    }
 
 		    } else {
-			Rn += tmp2;
-			tmp1 = (Rn < tmp0);
-			if(Q == 0) {
-				Q = !tmp1;
-			} else {
-				Q = !!tmp1;
-			}
+			    Rn += tmp2;
+			    tmp1 = (Rn < tmp0);
+			    if (Q == 0) {
+				    Q = !tmp1;
+			    } else {
+				    Q = !!tmp1;
+			    }
 
 		    }
 		    break;
-		case 1:
-		    if(M == 0) {
-			Rn += tmp2;
-			tmp1 = (Rn < tmp0);
-			if(Q == 0) {
-				Q = !!tmp1;
-			} else {
-				Q = !tmp1;
-			}
+	    case 1:
+		    if (M == 0) {
+			    Rn += tmp2;
+			    tmp1 = (Rn < tmp0);
+			    if (Q == 0) {
+				    Q = !!tmp1;
+			    } else {
+				    Q = !tmp1;
+			    }
 		    } else {
-			Rn -= tmp2;
-			tmp1 = (Rn > tmp0);
-			if(Q == 0) {
-				Q = !tmp1;
-			} else {
-				Q = !!tmp1;
-			}
+			    Rn -= tmp2;
+			    tmp1 = (Rn > tmp0);
+			    if (Q == 0) {
+				    Q = !tmp1;
+			    } else {
+				    Q = !!tmp1;
+			    }
 		    }
-			break;
+		    break;
 	}
-	SH4_SetGpr(Rn,rn);
-	SH4_ModSRFlags(Q,SR_Q);
+	SH4_SetGpr(Rn, rn);
+	SH4_ModSRFlags(Q, SR_Q);
 	T = (Q == M);
-	SH4_ModSRFlags(T,SR_T);
-	fprintf(stderr,"sh4_div1 not tested\n");
+	SH4_ModSRFlags(T, SR_T);
+	fprintf(stderr, "sh4_div1 not tested\n");
 }
 
 /**
@@ -736,15 +737,15 @@ sh4_div1(void)
 void
 sh4_dmulsl(void)
 {
-	int32_t Rn,Rm;
+	int32_t Rn, Rm;
 	int64_t result;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
-	result = (int64_t)Rn * (int64_t)Rm;
-	SH4_SetMacH(result >> 32); 
-	SH4_SetMacL(result); 
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
+	result = (int64_t) Rn *(int64_t) Rm;
+	SH4_SetMacH(result >> 32);
+	SH4_SetMacL(result);
 }
 
 /**
@@ -757,15 +758,15 @@ sh4_dmulsl(void)
 void
 sh4_dmulul(void)
 {
-	uint32_t Rn,Rm;
+	uint32_t Rn, Rm;
 	uint64_t result;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
-	result = (uint64_t)Rn * (uint64_t)Rm;
-	SH4_SetMacH(result >> 32); 
-	SH4_SetMacL(result); 
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
+	result = (uint64_t) Rn *(uint64_t) Rm;
+	SH4_SetMacH(result >> 32);
+	SH4_SetMacL(result);
 }
 
 /**
@@ -779,10 +780,10 @@ void
 sh4_dt(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
-	uint32_t Rn = SH4_GetGpr(rn);	
-	Rn--;	
-	SH4_SetGpr(Rn,rn);
-	if(Rn == 0) {
+	uint32_t Rn = SH4_GetGpr(rn);
+	Rn--;
+	SH4_SetGpr(Rn, rn);
+	if (Rn == 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -802,8 +803,8 @@ sh4_extsb(void)
 	int32_t Rn;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	Rn = (int32_t)(int8_t)SH4_GetGpr(rm);	
-	SH4_SetGpr(Rn,rn);
+	Rn = (int32_t) (int8_t) SH4_GetGpr(rm);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -819,8 +820,8 @@ sh4_extsw(void)
 	int32_t Rn;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	Rn = (int32_t)(int16_t)SH4_GetGpr(rm);	
-	SH4_SetGpr(Rn,rn);
+	Rn = (int32_t) (int16_t) SH4_GetGpr(rm);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -836,8 +837,8 @@ sh4_extub(void)
 	uint32_t Rn;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	Rn = (uint32_t)(uint8_t)SH4_GetGpr(rm);	
-	SH4_SetGpr(Rn,rn);
+	Rn = (uint32_t) (uint8_t) SH4_GetGpr(rm);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -853,8 +854,8 @@ sh4_extuw(void)
 	uint32_t Rn;
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	Rn = (uint32_t)(uint16_t)SH4_GetGpr(rm);	
-	SH4_SetGpr(Rn,rn);
+	Rn = (uint32_t) (uint16_t) SH4_GetGpr(rm);
+	SH4_SetGpr(Rn, rn);
 }
 
 void
@@ -862,25 +863,25 @@ sh4_fabs_frdr(void)
 {
 	uint32_t sr = SH4_GetSR();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
-		/* 32 Bit FRn version */ 
+	if ((fpscr & FPSCR_PR) == 0) {
+		/* 32 Bit FRn version */
 		int rn = (ICODE >> 8) & 0xf;
 		Float32_t Frn;
 		Frn = SH4_GetFpr(rn);
 		Frn &= ~(UINT32_C(1) << 31);
-		SH4_SetFpr(Frn,rn);
-	}  else if((fpscr & FPSCR_SZ) == 0) {
-		/* 64 Bit version */	
+		SH4_SetFpr(Frn, rn);
+	} else if ((fpscr & FPSCR_SZ) == 0) {
+		/* 64 Bit version */
 		int rn = (ICODE >> 9) & 0x7;
 		Float64_t Drn;
 		Drn = SH4_GetDpr(rn);
 		Drn &= ~(UINT64_C(1) << 63);
-		SH4_SetDpr(Drn,rn);
+		SH4_SetDpr(Drn, rn);
 	} else {
-		fprintf(stderr,"sh4_fabs_fr illegal configuration register value\n");
+		fprintf(stderr, "sh4_fabs_fr illegal configuration register value\n");
 	}
 }
 
@@ -890,29 +891,29 @@ sh4_fadd_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
-		/* 32 Bit FRn version */ 
+	if ((fpscr & FPSCR_PR) == 0) {
+		/* 32 Bit FRn version */
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
-		Float32_t Frn,Frm,result;
+		Float32_t Frn, Frm, result;
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		result = Float32_Add(sf,Frn,Frm);
-		SH4_SetFpr(result,frn);
-	}  else if((fpscr & FPSCR_SZ) == 0) {
-		/* 64 Bit version */	
+		result = Float32_Add(sf, Frn, Frm);
+		SH4_SetFpr(result, frn);
+	} else if ((fpscr & FPSCR_SZ) == 0) {
+		/* 64 Bit version */
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
-		Float64_t Drn,Drm,result;
+		Float64_t Drn, Drm, result;
 		Drn = SH4_GetDpr(drn);
 		Drm = SH4_GetDpr(drm);
-		result = Float64_Add(sf,Drn,Drm);
-		SH4_SetDpr(result,drn);
+		result = Float64_Add(sf, Drn, Drm);
+		SH4_SetDpr(result, drn);
 	} else {
-		fprintf(stderr,"sh4_fabs_fr illegal configuration register value\n");
+		fprintf(stderr, "sh4_fabs_fr illegal configuration register value\n");
 	}
 }
 
@@ -922,34 +923,34 @@ sh4_fcmpeq_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
-		Float32_t Frn,Frm;
+		Float32_t Frn, Frm;
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		if(Float32_Cmp(sf,Frn,Frm) == SFC_EQUAL) {
+		if (Float32_Cmp(sf, Frn, Frm) == SFC_EQUAL) {
 			SH4_SetTrue(1);
 		} else {
 			SH4_SetTrue(0);
 		}
 
-	}  else {
+	} else {
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
-		Float64_t Drn,Drm;
+		Float64_t Drn, Drm;
 		Drn = SH4_GetDpr(drn);
 		Drm = SH4_GetDpr(drm);
-		if(Float64_Cmp(sf,Drn,Drm) == SFC_EQUAL) {
+		if (Float64_Cmp(sf, Drn, Drm) == SFC_EQUAL) {
 			SH4_SetTrue(1);
 		} else {
 			SH4_SetTrue(0);
 		}
 	}
-	fprintf(stderr,"sh4_fcmpeq_fr not tested\n");
+	fprintf(stderr, "sh4_fcmpeq_fr not tested\n");
 }
 
 void
@@ -958,33 +959,33 @@ sh4_fcmpgt_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
-		Float32_t Frn,Frm;
+		Float32_t Frn, Frm;
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		if(Float32_Cmp(sf,Frn,Frm) == SFC_GREATER) {
+		if (Float32_Cmp(sf, Frn, Frm) == SFC_GREATER) {
 			SH4_SetTrue(1);
 		} else {
 			SH4_SetTrue(0);
 		}
-	}  else {
+	} else {
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
-		Float64_t Drn,Drm;
+		Float64_t Drn, Drm;
 		Drn = SH4_GetDpr(drn);
 		Drm = SH4_GetDpr(drm);
-		if(Float64_Cmp(sf,Drn,Drm) == SFC_GREATER) {
+		if (Float64_Cmp(sf, Drn, Drm) == SFC_GREATER) {
 			SH4_SetTrue(1);
 		} else {
 			SH4_SetTrue(0);
 		}
 	}
-	fprintf(stderr,"sh4_fcmpgt_fr not tested\n");
+	fprintf(stderr, "sh4_fcmpgt_fr not tested\n");
 }
 
 /**
@@ -999,9 +1000,9 @@ sh4_fcnvds(void)
 	Float64_t Drm;
 	Float32_t fpul;
 	Drm = SH4_GetDpr(drm);
-	fpul = Float32_FromFloat64(sf,Drm);
+	fpul = Float32_FromFloat64(sf, Drm);
 	SH4_SetFPUL(fpul);
-	fprintf(stderr,"sh4_fcnvds not tested\n");
+	fprintf(stderr, "sh4_fcnvds not tested\n");
 }
 
 /**
@@ -1018,9 +1019,9 @@ sh4_fcnvsd(void)
 	Float64_t Drm;
 	Float32_t fpul;
 	fpul = SH4_GetFPUL();
-	Drm = Float64_FromFloat32(sf,fpul);
-	SH4_SetDpr(Drm,drm);
-	fprintf(stderr,"sh4_fcnvsd not tested\n");
+	Drm = Float64_FromFloat32(sf, fpul);
+	SH4_SetDpr(Drm, drm);
+	fprintf(stderr, "sh4_fcnvsd not tested\n");
 }
 
 void
@@ -1029,29 +1030,29 @@ sh4_fdiv_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
-		/* 32 Bit FRn version */ 
+	if ((fpscr & FPSCR_PR) == 0) {
+		/* 32 Bit FRn version */
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
-		Float32_t Frn,Frm,result;
+		Float32_t Frn, Frm, result;
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		result = Float32_Div(sf,Frn,Frm);
-		SH4_SetFpr(result,frn);
-	}  else  {
-		/* 64 Bit version */	
+		result = Float32_Div(sf, Frn, Frm);
+		SH4_SetFpr(result, frn);
+	} else {
+		/* 64 Bit version */
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
-		Float64_t Drn,Drm,result;
+		Float64_t Drn, Drm, result;
 		Drn = SH4_GetDpr(drn);
 		Drm = SH4_GetDpr(drm);
-		result = Float64_Div(sf,Drn,Drm);
-		SH4_SetDpr(result,drn);
-	} 
-	fprintf(stderr,"sh4_fdiv_fr not tested\n");
+		result = Float64_Div(sf, Drn, Drm);
+		SH4_SetDpr(result, drn);
+	}
+	fprintf(stderr, "sh4_fdiv_fr not tested\n");
 }
 
 /**
@@ -1069,33 +1070,33 @@ sh4_fipr(void)
 	int fvn = (ICODE >> 10) & 3;
 	int frn = fvn << 2;
 	int frm = fvm << 2;
-	Float32_t Frn,Frm;
+	Float32_t Frn, Frm;
 	Float32_t sum = 0;
 	Float32_t prod;
-	for(i=0;i<4;i++) {
+	for (i = 0; i < 4; i++) {
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		prod = Float32_Mul(sf,Frn,Frm);
-		sum = Float32_Add(sf,sum,prod);
+		prod = Float32_Mul(sf, Frn, Frm);
+		sum = Float32_Add(sf, sum, prod);
 	}
-	SH4_SetFpr(sum,fvn + 3);
-	fprintf(stderr,"sh4_fipr not tested\n");
+	SH4_SetFpr(sum, fvn + 3);
+	fprintf(stderr, "sh4_fipr not tested\n");
 }
 
 void
 sh4_fldi0(void)
 {
 	int frn = (ICODE >> 8) & 0xf;
-	SH4_SetFpr(0,frn);
-	fprintf(stderr,"sh4_fldi0 not tested\n");
+	SH4_SetFpr(0, frn);
+	fprintf(stderr, "sh4_fldi0 not tested\n");
 }
 
 void
 sh4_fldi1(void)
 {
 	int frn = (ICODE >> 8) & 0xf;
-	SH4_SetFpr(0x3f800000,frn);
-	fprintf(stderr,"sh4_fldi1 not tested\n");
+	SH4_SetFpr(0x3f800000, frn);
+	fprintf(stderr, "sh4_fldi1 not tested\n");
 }
 
 void
@@ -1105,7 +1106,7 @@ sh4_flds(void)
 	uint32_t Frn;
 	Frn = SH4_GetFpr(frn);
 	SH4_SetFPUL(Frn);
-	fprintf(stderr,"sh4_flds not tested\n");
+	fprintf(stderr, "sh4_flds not tested\n");
 }
 
 /**
@@ -1116,20 +1117,20 @@ sh4_float_fpul_frdr(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
 	SoftFloatContext *sf = SH4_GetSFloat();
-	if((fpscr & FPSCR_PR) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
 		int frn = (ICODE >> 8) & 0xf;
 		Float32_t Frn;
 		int32_t fpul = SH4_GetFPUL();
-		Frn = Float32_FromInt32(sf,fpul,SFM_ROUND_ZERO);
-		SH4_SetFpr(Frn,frn);
+		Frn = Float32_FromInt32(sf, fpul, SFM_ROUND_ZERO);
+		SH4_SetFpr(Frn, frn);
 	} else {
 		int drn = (ICODE >> 9) & 0x7;
 		Float64_t Drn;
 		int32_t fpul = SH4_GetFPUL();
-		Drn = Float64_FromInt32(sf,fpul);
-		SH4_SetDpr(Drn,drn);
+		Drn = Float64_FromInt32(sf, fpul);
+		SH4_SetDpr(Drn, drn);
 	}
-	fprintf(stderr,"sh4_fpul_frdr not tested\n");
+	fprintf(stderr, "sh4_fpul_frdr not tested\n");
 }
 
 /**
@@ -1145,16 +1146,16 @@ sh4_fmac(void)
 	int frn = (ICODE >> 8) & 0xf;
 	int frm = (ICODE >> 4) & 0xf;
 	uint32_t fpscr = SH4_GetFPSCR();
-	Float32_t Fr0,Frn,Frm,prod;
-	if((fpscr & FPSCR_PR) == 0) {
-		Fr0 = SH4_GetFpr(0);	
-		Frn = SH4_GetFpr(frn);	
-		Frm = SH4_GetFpr(frm);	
-		prod = Float32_Mul(sf,Fr0,Frm);
-		Frn = Float32_Add(sf,Frn,prod);
-		SH4_SetFpr(Frn,frn);
+	Float32_t Fr0, Frn, Frm, prod;
+	if ((fpscr & FPSCR_PR) == 0) {
+		Fr0 = SH4_GetFpr(0);
+		Frn = SH4_GetFpr(frn);
+		Frm = SH4_GetFpr(frm);
+		prod = Float32_Mul(sf, Fr0, Frm);
+		Frn = Float32_Add(sf, Frn, prod);
+		SH4_SetFpr(Frn, frn);
 	}
-	fprintf(stderr,"sh4_fmac not tested\n");
+	fprintf(stderr, "sh4_fmac not tested\n");
 }
 
 /**
@@ -1164,41 +1165,41 @@ void
 sh4_fmov_frdr(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_SZ) == 0) {
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
 		Float32_t Frm;
 		Frm = SH4_GetFpr(frm);
-		SH4_SetFpr(Frm,frn);
+		SH4_SetFpr(Frm, frn);
 	} else {
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
 		Float64_t Drm;
 		Drm = SH4_GetDpr(drm);
-		SH4_SetDpr(Drm,drn);
+		SH4_SetDpr(Drm, drn);
 	}
-	fprintf(stderr,"sh4_fmov_frdr not tested\n");
+	fprintf(stderr, "sh4_fmov_frdr not tested\n");
 }
 
 void
 sh4_fmovs_frdrarn(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
-		if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
+		if ((fpscr & FPSCR_SZ) == 0) {
 			int rn = (ICODE >> 8) & 0xf;
 			int frm = (ICODE >> 4) & 0xf;
-			uint32_t Frm,Rn;
+			uint32_t Frm, Rn;
 			Frm = SH4_GetFpr(frm);
 			Rn = SH4_GetGpr(rn);
-			SH4_MMUWrite32(Frm,Rn);
+			SH4_MMUWrite32(Frm, Rn);
 		} else {
 			int rn = (ICODE >> 8) & 0xf;
 			int drm = (ICODE >> 5) & 0x7;
-			uint32_t Drm,Rn;
+			uint32_t Drm, Rn;
 			Drm = SH4_GetDpr(drm);
 			Rn = SH4_GetGpr(rn);
-			SH4_MMUWrite64(Drm,Rn);
+			SH4_MMUWrite64(Drm, Rn);
 		}
 	} else {
 		int rn = (ICODE >> 8) & 0xf;
@@ -1206,30 +1207,30 @@ sh4_fmovs_frdrarn(void)
 		uint32_t Rn;
 		uint64_t Xdm = SH4_GetXD(xdm);
 		Rn = SH4_GetGpr(rn);
-		SH4_MMUWrite64(Xdm,Rn);
+		SH4_MMUWrite64(Xdm, Rn);
 	}
-	fprintf(stderr,"sh4_fmovs_frarn not tested\n");
+	fprintf(stderr, "sh4_fmovs_frarn not tested\n");
 }
 
 void
 sh4_fmovs_armfrdr(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
-		if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
+		if ((fpscr & FPSCR_SZ) == 0) {
 			int rm = (ICODE >> 4) & 0xf;
 			int frn = (ICODE >> 8) & 0xf;
-			uint32_t Frn,Rm;
+			uint32_t Frn, Rm;
 			Rm = SH4_GetGpr(rm);
 			Frn = SH4_MMURead32(Rm);
-			SH4_SetFpr(Frn,frn);
+			SH4_SetFpr(Frn, frn);
 		} else {
 			int rm = (ICODE >> 9) & 0x7;
 			int drn = (ICODE >> 4) & 0xf;
-			uint32_t Drn,Rm;
+			uint32_t Drn, Rm;
 			Rm = SH4_GetGpr(rm);
 			Drn = SH4_MMURead64(Rm);
-			SH4_SetDpr(Drn,drn);
+			SH4_SetDpr(Drn, drn);
 		}
 	} else {
 		int rm = (ICODE >> 4) & 0xf;
@@ -1238,34 +1239,34 @@ sh4_fmovs_armfrdr(void)
 		uint64_t Xdn;
 		Rm = SH4_GetGpr(rm);
 		Xdn = SH4_MMURead64(Rm);
-		SH4_SetXD(Xdn,xdn);
+		SH4_SetXD(Xdn, xdn);
 	}
-	fprintf(stderr,"sh4_fmovs_rmfr not tested\n");
+	fprintf(stderr, "sh4_fmovs_rmfr not tested\n");
 }
 
 void
 sh4_fmovs_armpfrdr(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
-		if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
+		if ((fpscr & FPSCR_SZ) == 0) {
 			int rm = (ICODE >> 4) & 0xf;
 			int frn = (ICODE >> 8) & 0xf;
-			uint32_t Frn,Rm;
+			uint32_t Frn, Rm;
 			Rm = SH4_GetGpr(rm);
 			Frn = SH4_MMURead32(Rm);
-			SH4_SetFpr(Frn,frn);
+			SH4_SetFpr(Frn, frn);
 			Rm += 4;
-			SH4_SetGpr(Rm,rm);
+			SH4_SetGpr(Rm, rm);
 		} else {
 			int rm = (ICODE >> 9) & 0x7;
 			int drn = (ICODE >> 4) & 0xf;
-			uint32_t Drn,Rm;
+			uint32_t Drn, Rm;
 			Rm = SH4_GetGpr(rm);
 			Drn = SH4_MMURead64(Rm);
-			SH4_SetDpr(Drn,drn);
+			SH4_SetDpr(Drn, drn);
 			Rm += 8;
-			SH4_SetGpr(Rm,rm);
+			SH4_SetGpr(Rm, rm);
 		}
 	} else {
 		int rm = (ICODE >> 4) & 0xf;
@@ -1274,36 +1275,36 @@ sh4_fmovs_armpfrdr(void)
 		uint64_t Xdn;
 		Rm = SH4_GetGpr(rm);
 		Xdn = SH4_MMURead64(Rm);
-		SH4_SetXD(Xdn,xdn);
+		SH4_SetXD(Xdn, xdn);
 		Rm += 8;
-		SH4_SetGpr(Rm,rm);
+		SH4_SetGpr(Rm, rm);
 	}
-	fprintf(stderr,"sh4_fmovs_rmpfr not implemented\n");
+	fprintf(stderr, "sh4_fmovs_rmpfr not implemented\n");
 }
 
 void
 sh4_fmov_frdramrn(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
-		if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
+		if ((fpscr & FPSCR_SZ) == 0) {
 			int rn = (ICODE >> 8) & 0xf;
 			int frm = (ICODE >> 4) & 0xf;
-			uint32_t Frm,Rn;
+			uint32_t Frm, Rn;
 			Frm = SH4_GetFpr(frm);
 			Rn = SH4_GetGpr(rn);
 			Rn -= 4;
-			SH4_MMUWrite32(Frm,Rn);
-			SH4_SetGpr(Rn,rn);
+			SH4_MMUWrite32(Frm, Rn);
+			SH4_SetGpr(Rn, rn);
 		} else {
 			int rn = (ICODE >> 8) & 0xf;
 			int drm = (ICODE >> 5) & 0x7;
-			uint32_t Drm,Rn;
+			uint32_t Drm, Rn;
 			Drm = SH4_GetDpr(drm);
 			Rn = SH4_GetGpr(rn);
 			Rn -= 8;
-			SH4_MMUWrite64(Drm,Rn);
-			SH4_SetGpr(Rn,rn);
+			SH4_MMUWrite64(Drm, Rn);
+			SH4_SetGpr(Rn, rn);
 		}
 	} else {
 		int rn = (ICODE >> 8) & 0xf;
@@ -1312,79 +1313,79 @@ sh4_fmov_frdramrn(void)
 		uint64_t Xdm = SH4_GetXD(xdm);
 		Rn = SH4_GetGpr(rn);
 		Rn -= 8;
-		SH4_MMUWrite64(Xdm,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite64(Xdm, Rn);
+		SH4_SetGpr(Rn, rn);
 	}
-	fprintf(stderr,"sh4_fmov_frmrn not tested\n");
+	fprintf(stderr, "sh4_fmov_frmrn not tested\n");
 }
 
 void
 sh4_fmovs_ar0rmfrdr(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
-		if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
+		if ((fpscr & FPSCR_SZ) == 0) {
 			int rm = (ICODE >> 4) & 0xf;
 			int frn = (ICODE >> 8) & 0xf;
-			uint32_t Frn,Rm,R0;
+			uint32_t Frn, Rm, R0;
 			Rm = SH4_GetGpr(rm);
 			R0 = SH4_GetGpr(0);
 			Frn = SH4_MMURead32(Rm + R0);
-			SH4_SetFpr(Frn,frn);
+			SH4_SetFpr(Frn, frn);
 		} else {
 			int rm = (ICODE >> 9) & 0x7;
 			int drn = (ICODE >> 4) & 0xf;
-			uint32_t Drn,Rm,R0;
+			uint32_t Drn, Rm, R0;
 			Rm = SH4_GetGpr(rm);
 			R0 = SH4_GetGpr(0);
 			Drn = SH4_MMURead64(Rm + R0);
-			SH4_SetDpr(Drn,drn);
+			SH4_SetDpr(Drn, drn);
 		}
 	} else {
 		int rm = (ICODE >> 4) & 0xf;
 		int xdn = (ICODE >> 9) & 7;
-		uint32_t Rm,R0;
+		uint32_t Rm, R0;
 		uint64_t Xdn;
 		Rm = SH4_GetGpr(rm);
 		R0 = SH4_GetGpr(0);
 		Xdn = SH4_MMURead64(Rm + R0);
-		SH4_SetXD(Xdn,xdn);
+		SH4_SetXD(Xdn, xdn);
 	}
-	fprintf(stderr,"sh4_fmovs_r0rmfr not tested\n");
+	fprintf(stderr, "sh4_fmovs_r0rmfr not tested\n");
 }
 
 void
 sh4_fmovs_frdrar0rn(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
-		if((fpscr & FPSCR_SZ) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
+		if ((fpscr & FPSCR_SZ) == 0) {
 			int rn = (ICODE >> 8) & 0xf;
 			int frm = (ICODE >> 4) & 0xf;
-			uint32_t Frm,Rn,R0;
+			uint32_t Frm, Rn, R0;
 			Frm = SH4_GetFpr(frm);
 			Rn = SH4_GetGpr(rn);
 			R0 = SH4_GetGpr(0);
-			SH4_MMUWrite32(Frm,Rn + R0);
+			SH4_MMUWrite32(Frm, Rn + R0);
 		} else {
 			int rn = (ICODE >> 8) & 0xf;
 			int drm = (ICODE >> 5) & 0x7;
-			uint32_t Drm,Rn,R0;
+			uint32_t Drm, Rn, R0;
 			Drm = SH4_GetDpr(drm);
 			Rn = SH4_GetGpr(rn);
 			R0 = SH4_GetGpr(0);
-			SH4_MMUWrite64(Drm,Rn + R0);
+			SH4_MMUWrite64(Drm, Rn + R0);
 		}
 	} else {
 		int rn = (ICODE >> 8) & 0xf;
 		int xdm = (ICODE >> 5) & 7;
-		uint32_t Rn,R0;
+		uint32_t Rn, R0;
 		uint64_t Xdm = SH4_GetXD(xdm);
 		Rn = SH4_GetGpr(rn);
 		R0 = SH4_GetGpr(0);
-		SH4_MMUWrite64(Xdm,Rn + R0);
+		SH4_MMUWrite64(Xdm, Rn + R0);
 	}
-	fprintf(stderr,"sh4_fmovs_frdrar0rn not tested\n");
+	fprintf(stderr, "sh4_fmovs_frdrar0rn not tested\n");
 }
 
 void
@@ -1393,29 +1394,29 @@ sh4_fmul_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
-		/* 32 Bit FRn version */ 
+	if ((fpscr & FPSCR_PR) == 0) {
+		/* 32 Bit FRn version */
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
-		Float32_t Frn,Frm,result;
+		Float32_t Frn, Frm, result;
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		result = Float32_Mul(sf,Frn,Frm);
-		SH4_SetFpr(result,frn);
-	}  else  {
-		/* 64 Bit version */	
+		result = Float32_Mul(sf, Frn, Frm);
+		SH4_SetFpr(result, frn);
+	} else {
+		/* 64 Bit version */
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
-		Float64_t Drn,Drm,result;
+		Float64_t Drn, Drm, result;
 		Drn = SH4_GetDpr(drn);
 		Drm = SH4_GetDpr(drm);
-		result = Float64_Mul(sf,Drn,Drm);
-		SH4_SetDpr(result,drn);
-	} 
-	fprintf(stderr,"sh4_fmul_frdr not tested\n");
+		result = Float64_Mul(sf, Drn, Drm);
+		SH4_SetDpr(result, drn);
+	}
+	fprintf(stderr, "sh4_fmul_frdr not tested\n");
 }
 
 void
@@ -1424,30 +1425,30 @@ sh4_fneg_frdr(void)
 	int frn = (ICODE >> 8) & 0xf;
 	Float32_t Frn = SH4_GetFpr(frn);
 	Frn ^= (UINT32_C(1) << 31);
-	SH4_SetFpr(Frn,frn);
-	fprintf(stderr,"sh4_fneg_fr not tested\n");
+	SH4_SetFpr(Frn, frn);
+	fprintf(stderr, "sh4_fneg_fr not tested\n");
 }
 
 void
 sh4_frchg(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
 		fpscr ^= FPSCR_FR;
 		SH4_SetFPSCR(fpscr);
 	}
-	fprintf(stderr,"sh4_frchg not tested\n");
+	fprintf(stderr, "sh4_frchg not tested\n");
 }
 
 void
 sh4_fschg(void)
 {
 	uint32_t fpscr = SH4_GetFPSCR();
-	if((fpscr & FPSCR_PR) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
 		fpscr ^= FPSCR_SZ;
 		SH4_SetFPSCR(fpscr);
 	}
-	fprintf(stderr,"sh4_fschg not tested\n");
+	fprintf(stderr, "sh4_fschg not tested\n");
 }
 
 void
@@ -1456,33 +1457,33 @@ sh4_fsqrt_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
-		/* 32 Bit FRn version */ 
+	if ((fpscr & FPSCR_PR) == 0) {
+		/* 32 Bit FRn version */
 		int frn = (ICODE >> 8) & 0xf;
-		Float32_t Frn,result;
+		Float32_t Frn, result;
 		Frn = SH4_GetFpr(frn);
-		result = Float32_Sqrt(sf,Frn);
-		SH4_SetFpr(result,frn);
-	}  else  {
-		/* 64 Bit version */	
+		result = Float32_Sqrt(sf, Frn);
+		SH4_SetFpr(result, frn);
+	} else {
+		/* 64 Bit version */
 		int drn = (ICODE >> 9) & 0x7;
-		Float64_t Drn,result;
+		Float64_t Drn, result;
 		Drn = SH4_GetDpr(drn);
-		result = Float64_Sqrt(sf,Drn);
-		SH4_SetDpr(result,drn);
-	} 
-	fprintf(stderr,"sh4_fsqrt_fr not tested\n");
+		result = Float64_Sqrt(sf, Drn);
+		SH4_SetDpr(result, drn);
+	}
+	fprintf(stderr, "sh4_fsqrt_fr not tested\n");
 }
 
 void
 sh4_fsts(void)
 {
 	int frn = (ICODE >> 8) & 0xf;
-	SH4_SetFpr(SH4_GetFPUL(),frn);
-	fprintf(stderr,"sh4_fsts not tested\n");
+	SH4_SetFpr(SH4_GetFPUL(), frn);
+	fprintf(stderr, "sh4_fsts not tested\n");
 }
 
 void
@@ -1491,29 +1492,29 @@ sh4_fsub_frdr(void)
 	uint32_t sr = SH4_GetSR();
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
-	if(unlikely(sr & SR_FD)) {
+	if (unlikely(sr & SR_FD)) {
 		SH4_Exception(EX_FPUDIS);
 	}
-	if((fpscr & FPSCR_PR) == 0) {
-		/* 32 Bit FRn version */ 
+	if ((fpscr & FPSCR_PR) == 0) {
+		/* 32 Bit FRn version */
 		int frn = (ICODE >> 8) & 0xf;
 		int frm = (ICODE >> 4) & 0xf;
-		Float32_t Frn,Frm,result;
+		Float32_t Frn, Frm, result;
 		Frn = SH4_GetFpr(frn);
 		Frm = SH4_GetFpr(frm);
-		result = Float32_Sub(sf,Frn,Frm);
-		SH4_SetFpr(result,frn);
-	}  else  {
-		/* 64 Bit version */	
+		result = Float32_Sub(sf, Frn, Frm);
+		SH4_SetFpr(result, frn);
+	} else {
+		/* 64 Bit version */
 		int drn = (ICODE >> 9) & 0x7;
 		int drm = (ICODE >> 5) & 0x7;
-		Float64_t Drn,Drm,result;
+		Float64_t Drn, Drm, result;
 		Drn = SH4_GetDpr(drn);
 		Drm = SH4_GetDpr(drm);
-		result = Float64_Sub(sf,Drn,Drm);
-		SH4_SetDpr(result,drn);
-	} 
-	fprintf(stderr,"sh4_fsub_frdr not tested\n");
+		result = Float64_Sub(sf, Drn, Drm);
+		SH4_SetDpr(result, drn);
+	}
+	fprintf(stderr, "sh4_fsub_frdr not tested\n");
 }
 
 /*
@@ -1525,24 +1526,24 @@ sh4_ftrc_frdr(void)
 	SoftFloatContext *sf = SH4_GetSFloat();
 	uint32_t fpscr = SH4_GetFPSCR();
 	int32_t fpul;
-	if((fpscr & FPSCR_PR) == 0) {
+	if ((fpscr & FPSCR_PR) == 0) {
 		int frm = (ICODE >> 8) & 0xf;
 		Float32_t Frm = SH4_GetFpr(frm);
-		fpul = Float32_ToInt32(sf,Frm,SFM_ROUND_ZERO);
+		fpul = Float32_ToInt32(sf, Frm, SFM_ROUND_ZERO);
 		SH4_SetFPUL(fpul);
 	} else {
 		int drm = (ICODE >> 9) & 0x7;
 		Float64_t Drm = SH4_GetDpr(drm);
-		fpul = Float64_ToInt32(sf,Drm,SFM_ROUND_ZERO);
+		fpul = Float64_ToInt32(sf, Drm, SFM_ROUND_ZERO);
 		SH4_SetFPUL(fpul);
 	}
-	fprintf(stderr,"sh4_ftrc_fr not tested\n");
+	fprintf(stderr, "sh4_ftrc_fr not tested\n");
 }
 
 void
 sh4_ftrv(void)
 {
-	fprintf(stderr,"sh4_ftrv not implemented\n");
+	fprintf(stderr, "sh4_ftrv not implemented\n");
 }
 
 /**
@@ -1557,11 +1558,11 @@ sh4_ftrv(void)
 void
 sh4_jmp(void)
 {
-	
+
 	int rn = (ICODE >> 8) & 0xf;
-	uint32_t Rn = SH4_GetGpr(rn);	
+	uint32_t Rn = SH4_GetGpr(rn);
 	SH4_ExecuteDelaySlot();
-	SH4_SetRegPC(Rn & ~UINT32_C(1)); 
+	SH4_SetRegPC(Rn & ~UINT32_C(1));
 }
 
 /**
@@ -1576,10 +1577,10 @@ void
 sh4_jsr(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
-	uint32_t Rn = SH4_GetGpr(rn);	
-	SH4_SetPR(SH4_NNIA);	
+	uint32_t Rn = SH4_GetGpr(rn);
+	SH4_SetPR(SH4_NNIA);
 	SH4_ExecuteDelaySlot();
-	SH4_SetRegPC(Rn & ~UINT32_C(1)); 
+	SH4_SetRegPC(Rn & ~UINT32_C(1));
 }
 
 /**
@@ -1594,7 +1595,7 @@ sh4_ldc_rmsr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
 	uint32_t Rm = SH4_GetGpr(rm);
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		SH4_SetSR(Rm);
 	} else {
 		SH4_Exception(EX_RESINST);
@@ -1627,9 +1628,9 @@ void
 sh4_ldc_rmvbr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	if(SH4_GetSR() & SR_MD) {
-		SH4_SetVBR(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	if (SH4_GetSR() & SR_MD) {
+		SH4_SetVBR(Rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1646,9 +1647,9 @@ void
 sh4_ldc_rmssr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	if(SH4_GetSR() & SR_MD) {
-		SH4_SetSSR(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	if (SH4_GetSR() & SR_MD) {
+		SH4_SetSSR(Rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1665,9 +1666,9 @@ void
 sh4_ldc_rmspc(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	if(SH4_GetSR() & SR_MD) {
-		SH4_SetSPC(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	if (SH4_GetSR() & SR_MD) {
+		SH4_SetSPC(Rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1683,9 +1684,9 @@ void
 sh4_ldc_rmdbr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	if(SH4_GetSR() & SR_MD) {
-		SH4_SetDBR(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	if (SH4_GetSR() & SR_MD) {
+		SH4_SetDBR(Rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1697,17 +1698,18 @@ sh4_ldc_rmdbr(void)
  * Load register Rb of other bank From Rm
  ********************************************************
  */
-void sh4_ldc_rmrb(void) 
+void
+sh4_ldc_rmrb(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
 	int rb = (ICODE >> 4) & 7;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	if(SH4_GetSR() & SR_MD) {
-		SH4_SetGprBank(Rm,rb);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	if (SH4_GetSR() & SR_MD) {
+		SH4_SetGprBank(Rm, rb);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
-	
+
 }
 
 /**
@@ -1721,13 +1723,13 @@ void
 sh4_ldcl_atrmpsr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		value = SH4_MMURead32(Rm);
-		SH4_SetSR(value);	
+		SH4_SetSR(value);
 		Rm += 4;
-		SH4_SetGpr(Rm,rm);	
+		SH4_SetGpr(Rm, rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1744,11 +1746,11 @@ void
 sh4_ldcl_atrmpgbr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value = SH4_MMURead32(Rm);
-	SH4_SetGBR(value);	
+	SH4_SetGBR(value);
 	Rm += 4;
-	SH4_SetGpr(Rm,rm);	
+	SH4_SetGpr(Rm, rm);
 }
 
 /**
@@ -1762,13 +1764,13 @@ void
 sh4_ldcl_atrmpvbr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		value = SH4_MMURead32(Rm);
-		SH4_SetVBR(value);	
+		SH4_SetVBR(value);
 		Rm += 4;
-		SH4_SetGpr(Rm,rm);	
+		SH4_SetGpr(Rm, rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1785,13 +1787,13 @@ void
 sh4_ldcl_atrmpssr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		value = SH4_MMURead32(Rm);
-		SH4_SetSSR(value);	
+		SH4_SetSSR(value);
 		Rm += 4;
-		SH4_SetGpr(Rm,rm);	
+		SH4_SetGpr(Rm, rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1808,13 +1810,13 @@ void
 sh4_ldcl_atrmpspc(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		value = SH4_MMURead32(Rm);
-		SH4_SetSPC(value);	
+		SH4_SetSPC(value);
 		Rm += 4;
-		SH4_SetGpr(Rm,rm);	
+		SH4_SetGpr(Rm, rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1831,13 +1833,13 @@ void
 sh4_ldcl_atrmpdbr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		value = SH4_MMURead32(Rm);
-		SH4_SetDBR(value);	
+		SH4_SetDBR(value);
 		Rm += 4;
-		SH4_SetGpr(Rm,rm);	
+		SH4_SetGpr(Rm, rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -1857,18 +1859,17 @@ sh4_ldcl_atrmprb(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
 	int rb = (ICODE >> 4) & 7;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		value = SH4_MMURead32(Rm);
-		SH4_SetGprBank(value,rb);	
+		SH4_SetGprBank(value, rb);
 		Rm += 4;
-		SH4_SetGpr(Rm,rm);	
+		SH4_SetGpr(Rm, rm);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
 }
-
 
 /*
  ******************************************
@@ -1881,7 +1882,7 @@ sh4_lds_rmfpul(void)
 	int rm = (ICODE >> 8) & 0xf;
 	uint32_t Rm = SH4_GetGpr(rm);
 	SH4_SetFPUL(Rm);
-	fprintf(stderr,"sh4_lds_rmfpul not tested\n");
+	fprintf(stderr, "sh4_lds_rmfpul not tested\n");
 }
 
 void
@@ -1891,8 +1892,8 @@ sh4_ldsl_armpfpul(void)
 	uint32_t Rm = SH4_GetGpr(rm);
 	SH4_SetFPUL(SH4_MMURead32(Rm));
 	Rm += 4;
-	SH4_SetGpr(Rm,rm);
-	fprintf(stderr,"sh4_ldsl_rmpfpul not tested\n");
+	SH4_SetGpr(Rm, rm);
+	fprintf(stderr, "sh4_ldsl_rmpfpul not tested\n");
 }
 
 void
@@ -1901,7 +1902,7 @@ sh4_lds_rmfpscr(void)
 	int rm = (ICODE >> 8) & 0xf;
 	uint32_t Rm = SH4_GetGpr(rm);
 	SH4_SetFPSCR(Rm);
-	fprintf(stderr,"sh4_lds_rmfpscr not tested\n");
+	fprintf(stderr, "sh4_lds_rmfpscr not tested\n");
 }
 
 void
@@ -1911,8 +1912,8 @@ sh4_lds_armpfpscr(void)
 	uint32_t Rm = SH4_GetGpr(rm);
 	SH4_SetFPSCR(SH4_MMURead32(Rm));
 	Rm += 4;
-	SH4_SetGpr(Rm,rm);
-	fprintf(stderr,"sh4_lds_rmpfpscr not tested\n");
+	SH4_SetGpr(Rm, rm);
+	fprintf(stderr, "sh4_lds_rmpfpscr not tested\n");
 }
 
 /**
@@ -1926,8 +1927,8 @@ void
 sh4_lds_rmmach(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	SH4_SetMacH(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	SH4_SetMacH(Rm);
 }
 
 /**
@@ -1941,8 +1942,8 @@ void
 sh4_lds_rmmacl(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	SH4_SetMacL(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	SH4_SetMacL(Rm);
 }
 
 /**
@@ -1956,8 +1957,8 @@ void
 sh4_lds_rmpr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
-	SH4_SetPR(Rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
+	SH4_SetPR(Rm);
 }
 
 /**
@@ -1972,11 +1973,11 @@ void
 sh4_lds_atrmpmach(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value = SH4_MMURead32(Rm);
-	SH4_SetMacH(value);	
+	SH4_SetMacH(value);
 	Rm += 4;
-	SH4_SetGpr(Rm,rm);	
+	SH4_SetGpr(Rm, rm);
 }
 
 /**
@@ -1991,11 +1992,11 @@ void
 sh4_lds_atrmpmacl(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value = SH4_MMURead32(Rm);
-	SH4_SetMacL(value);	
+	SH4_SetMacL(value);
 	Rm += 4;
-	SH4_SetGpr(Rm,rm);	
+	SH4_SetGpr(Rm, rm);
 }
 
 /**
@@ -2010,11 +2011,11 @@ void
 sh4_lds_atrmppr(void)
 {
 	int rm = (ICODE >> 8) & 0xf;
-	uint32_t Rm = SH4_GetGpr(rm);	
+	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t value = SH4_MMURead32(Rm);
-	SH4_SetPR(value);	
+	SH4_SetPR(value);
 	Rm += 4;
-	SH4_SetGpr(Rm,rm);	
+	SH4_SetGpr(Rm, rm);
 }
 
 /*
@@ -2025,12 +2026,12 @@ sh4_lds_atrmppr(void)
 void
 sh4_ldtlb(void)
 {
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
-	fprintf(stderr,"sh4_ldtlb not implemented\n");
+	fprintf(stderr, "sh4_ldtlb not implemented\n");
 }
 
 /*
@@ -2042,37 +2043,37 @@ sh4_ldtlb(void)
 void
 sh4_macl(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm;
-	int32_t M1,M2; 
+	int rn, rm;
+	uint32_t Rn, Rm;
+	int32_t M1, M2;
 	int64_t mac = SH4_GetMac();
 	int64_t plus;
 	int64_t result;
 	int S = SH4_GetS();
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
 	M1 = SH4_MMURead32(Rn);
 	M2 = SH4_MMURead32(Rm);
-	plus = (int64_t)M1 * (int64_t)M2;
-	if(S) {
+	plus = (int64_t) M1 *(int64_t) M2;
+	if (S) {
 		int64_t max = UINT64_C(0x00007fffFFFFffff);
-		int64_t min = UINT64_C(0xFFFF800000000000); 
-		if(mac < 0) {
+		int64_t min = UINT64_C(0xFFFF800000000000);
+		if (mac < 0) {
 			result = plus + (mac | min);
 		} else {
 			result = plus + (mac & max);
 		}
-		if(result < min) {
+		if (result < min) {
 			result = min;
-		} else if(result > max) {
+		} else if (result > max) {
 			result = max;
 		}
 	} else {
 		result = mac + plus;
 	}
-	SH4_SetMac(mac);
+	SH4_SetMac(result);
 }
 
 /**
@@ -2084,31 +2085,31 @@ sh4_macl(void)
 void
 sh4_macw(void)
 {
-	int rm,rn;
+	int rm, rn;
 	uint32_t S = SH4_GetS();
-	uint32_t Rn,Rm;
-	int16_t M1,M2; 
+	uint32_t Rn, Rm;
+	int16_t M1, M2;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
-	Rm = SH4_GetGpr(rm);	
+	Rn = SH4_GetGpr(rn);
+	Rm = SH4_GetGpr(rm);
 	M1 = SH4_MMURead16(Rn);
 	M2 = SH4_MMURead16(Rm);
-	SH4_SetGpr(Rn + 2, rn); 
-	SH4_SetGpr(Rm + 2, rm);	
-	if(S == 0) {
+	SH4_SetGpr(Rn + 2, rn);
+	SH4_SetGpr(Rm + 2, rm);
+	if (S == 0) {
 		int64_t mac = SH4_GetMac();
 		mac += M1 * M2;
 		SH4_SetMac(mac);
 	} else {
-		int64_t mac = (int64_t)(int32_t)SH4_GetMacL();
+		int64_t mac = (int64_t) (int32_t) SH4_GetMacL();
 		uint32_t mach;
-		mac += M1 * M2;	
-		if(mac > (int64_t)0x7FffFFff) {
+		mac += M1 * M2;
+		if (mac > (int64_t) 0x7FffFFff) {
 			mach = SH4_GetMacH();
 			SH4_SetMacH(mach | 1);
 			mac = 0x7FffFFff;
-		} else if (mac < (int64_t)(int32_t)0x80000000) {
+		} else if (mac < (int64_t) (int32_t) 0x80000000) {
 			mach = SH4_GetMacH();
 			SH4_SetMacH(mach | 1);
 			mac = 0x80000000;
@@ -2127,12 +2128,12 @@ sh4_macw(void)
 void
 sh4_mov_rmrn(void)
 {
-	int rm,rn;
+	int rm, rn;
 	uint32_t Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
-	SH4_SetGpr(Rm,rn);	
+	Rm = SH4_GetGpr(rm);
+	SH4_SetGpr(Rm, rn);
 }
 
 /**
@@ -2146,13 +2147,13 @@ sh4_mov_rmrn(void)
 void
 sh4_movb_rmarn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
+	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	SH4_MMUWrite8(Rm,Rn);
+	SH4_MMUWrite8(Rm, Rn);
 }
 
 /**
@@ -2166,13 +2167,13 @@ sh4_movb_rmarn(void)
 void
 sh4_movw_rmarn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
+	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	SH4_MMUWrite16(Rm,Rn);
+	SH4_MMUWrite16(Rm, Rn);
 }
 
 /**
@@ -2186,13 +2187,13 @@ sh4_movw_rmarn(void)
 void
 sh4_movl_rmarn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
+	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	SH4_MMUWrite32(Rm,Rn);
+	SH4_MMUWrite32(Rm, Rn);
 }
 
 /**
@@ -2205,12 +2206,12 @@ sh4_movl_rmarn(void)
 void
 sh4_movb_armrn(void)
 {
-	int rm,rn;
+	int rm, rn;
 	uint32_t Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
-	SH4_SetGpr((int32_t)(int8_t)SH4_MMURead8(Rm),rn);
+	Rm = SH4_GetGpr(rm);
+	SH4_SetGpr((int32_t) (int8_t) SH4_MMURead8(Rm), rn);
 }
 
 /**
@@ -2223,12 +2224,12 @@ sh4_movb_armrn(void)
 void
 sh4_movw_armrn(void)
 {
-	int rm,rn;
+	int rm, rn;
 	uint32_t Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
-	SH4_SetGpr((int32_t)(int16_t)SH4_MMURead16(Rm),rn);
+	Rm = SH4_GetGpr(rm);
+	SH4_SetGpr((int32_t) (int16_t) SH4_MMURead16(Rm), rn);
 }
 
 /**
@@ -2242,12 +2243,12 @@ sh4_movw_armrn(void)
 void
 sh4_movl_armrn(void)
 {
-	int rm,rn;
+	int rm, rn;
 	uint32_t Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rm = SH4_GetGpr(rm);	
-	SH4_SetGpr(SH4_MMURead32(Rm),rn);
+	Rm = SH4_GetGpr(rm);
+	SH4_SetGpr(SH4_MMURead32(Rm), rn);
 }
 
 /**
@@ -2261,19 +2262,19 @@ sh4_movl_armrn(void)
 void
 sh4_movb_rmamrn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
+	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
 	Rn--;
 	/*********************************************************** 
 	 * This order gives a base restored exception model.
 	 * I have not verified that real CPU uses base restored. 
 	 ***********************************************************/
-	SH4_MMUWrite8(Rm,Rn);
-	SH4_SetGpr(Rn,rn);	
+	SH4_MMUWrite8(Rm, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2287,19 +2288,19 @@ sh4_movb_rmamrn(void)
 void
 sh4_movw_rmamrn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
+	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
 	Rn -= 2;
 	/*********************************************************** 
 	 * This order gives a base restored exception model.
 	 * I have not verified that real CPU uses base restored. 
 	 ***********************************************************/
-	SH4_MMUWrite16(Rm,Rn);
-	SH4_SetGpr(Rn,rn);	
+	SH4_MMUWrite16(Rm, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2313,19 +2314,19 @@ sh4_movw_rmamrn(void)
 void
 sh4_movl_rmamrn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
-	Rn = SH4_GetGpr(rn);	
+	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
 	Rn -= 4;
 	/*********************************************************** 
 	 * This order gives a base restored exception model.
 	 * I have not verified that real CPU uses base restored. 
 	 ***********************************************************/
-	SH4_MMUWrite32(Rm,Rn);
-	SH4_SetGpr(Rn,rn);	
+	SH4_MMUWrite32(Rm, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2339,16 +2340,16 @@ sh4_movl_rmamrn(void)
 void
 sh4_movb_armprn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	/* I hope real cpu uses base restored exception model */
-	Rn = (int32_t)(int8_t)SH4_MMURead8(Rm); 
-	SH4_SetGpr(Rm + 1,rm);	
+	Rn = (int32_t) (int8_t) SH4_MMURead8(Rm);
+	SH4_SetGpr(Rm + 1, rm);
 	/* Write Rn past Rm because of possible rm == rn */
-	SH4_SetGpr(Rn,rn);	
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2362,16 +2363,16 @@ sh4_movb_armprn(void)
 void
 sh4_movw_armprn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	/* I hope real cpu uses base restored exception model */
-	Rn = (int32_t)(int16_t)SH4_MMURead16(Rm); 
-	SH4_SetGpr(Rm + 2,rm);	
+	Rn = (int32_t) (int16_t) SH4_MMURead16(Rm);
+	SH4_SetGpr(Rm + 2, rm);
 	/* Write Rn past Rm because of possible rm == rn */
-	SH4_SetGpr(Rn,rn);	
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2385,16 +2386,16 @@ sh4_movw_armprn(void)
 void
 sh4_movl_armprn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm;
+	int rm, rn;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	/* I hope real cpu uses base restored exception model */
-	Rn = SH4_MMURead32(Rm); 
-	SH4_SetGpr(Rm + 4,rm);	
+	Rn = SH4_MMURead32(Rm);
+	SH4_SetGpr(Rm + 4, rm);
 	/* Write Rn past Rm because of possible rm == rn */
-	SH4_SetGpr(Rn,rn);	
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2408,14 +2409,14 @@ sh4_movl_armprn(void)
 void
 sh4_movb_rmar0rn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm,R0;
+	int rm, rn;
+	uint32_t Rn, Rm, R0;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
-	Rn = SH4_GetGpr(rn); 
+	Rn = SH4_GetGpr(rn);
 	R0 = SH4_GetGpr(0);
-	SH4_MMUWrite8(Rm,R0 + Rn);
+	SH4_MMUWrite8(Rm, R0 + Rn);
 }
 
 /**
@@ -2429,14 +2430,14 @@ sh4_movb_rmar0rn(void)
 void
 sh4_movw_rmar0rn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm,R0;
+	int rm, rn;
+	uint32_t Rn, Rm, R0;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
-	Rn = SH4_GetGpr(rn); 
+	Rn = SH4_GetGpr(rn);
 	R0 = SH4_GetGpr(0);
-	SH4_MMUWrite16(Rm,R0 + Rn);
+	SH4_MMUWrite16(Rm, R0 + Rn);
 }
 
 /**
@@ -2450,14 +2451,14 @@ sh4_movw_rmar0rn(void)
 void
 sh4_movl_rmar0rn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm,R0;
+	int rm, rn;
+	uint32_t Rn, Rm, R0;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
-	Rn = SH4_GetGpr(rn); 
+	Rn = SH4_GetGpr(rn);
 	R0 = SH4_GetGpr(0);
-	SH4_MMUWrite32(Rm,R0 + Rn);
+	SH4_MMUWrite32(Rm, R0 + Rn);
 }
 
 /**
@@ -2471,14 +2472,14 @@ sh4_movl_rmar0rn(void)
 void
 sh4_movb_ar0rmrn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm,R0;
+	int rm, rn;
+	uint32_t Rn, Rm, R0;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	R0 = SH4_GetGpr(0);
-	Rn = (int32_t)(int8_t)SH4_MMURead8(R0 + Rm);
-	SH4_SetGpr(Rn,rn); 
+	Rn = (int32_t) (int8_t) SH4_MMURead8(R0 + Rm);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2492,14 +2493,14 @@ sh4_movb_ar0rmrn(void)
 void
 sh4_movw_ar0rmrn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm,R0;
+	int rm, rn;
+	uint32_t Rn, Rm, R0;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	R0 = SH4_GetGpr(0);
-	Rn = (int32_t)(int16_t)SH4_MMURead16(R0 + Rm);
-	SH4_SetGpr(Rn,rn); 
+	Rn = (int32_t) (int16_t) SH4_MMURead16(R0 + Rm);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2512,14 +2513,14 @@ sh4_movw_ar0rmrn(void)
 void
 sh4_movl_ar0rmrn(void)
 {
-	int rm,rn;
-	uint32_t Rn,Rm,R0;
+	int rm, rn;
+	uint32_t Rn, Rm, R0;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	R0 = SH4_GetGpr(0);
 	Rn = SH4_MMURead32(R0 + Rm);
-	SH4_SetGpr(Rn,rn); 
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2534,7 +2535,7 @@ sh4_mov_immrn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int8_t imm = ICODE & 0xff;
-	SH4_SetGpr((int32_t)(int8_t)imm,rn);
+	SH4_SetGpr((int32_t) (int8_t) imm, rn);
 }
 
 /**
@@ -2551,9 +2552,9 @@ sh4_movw_adisppcrn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t disp = ICODE & 0xff;
 	uint32_t addr = SH4_NNIA + (disp << 1);
-	uint32_t Rn = (int32_t)(int16_t)SH4_MMURead16(addr);
+	uint32_t Rn = (int32_t) (int16_t) SH4_MMURead16(addr);
 
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2570,10 +2571,10 @@ sh4_movl_adisppcrn(void)
 	uint32_t disp = ICODE & 0xff;
 	uint32_t addr = (SH4_NNIA & ~UINT32_C(3)) + (disp << 2);
 	uint32_t Rn = SH4_MMURead32(addr);
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 #if 0
-	fprintf(stderr,"movl_adisppcrn disp %02x,nnia %08x,addr %08x,Rn %08x\n",
-		disp,SH4_NNIA,addr,Rn);
+	fprintf(stderr, "movl_adisppcrn disp %02x,nnia %08x,addr %08x,Rn %08x\n",
+		disp, SH4_NNIA, addr, Rn);
 #endif
 }
 
@@ -2591,8 +2592,8 @@ sh4_movb_adispgbrr0(void)
 	uint32_t Gbr = SH4_GetGBR();
 	uint32_t disp = ICODE & 0xff;
 	uint32_t R0;
-	R0 = (int32_t)(int8_t)SH4_MMURead8(Gbr + disp);
-	SH4_SetGpr(R0,0);
+	R0 = (int32_t) (int8_t) SH4_MMURead8(Gbr + disp);
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -2610,8 +2611,8 @@ sh4_movw_adispgbrr0(void)
 	uint32_t Gbr = SH4_GetGBR();
 	uint32_t disp = ICODE & 0xff;
 	uint32_t R0;
-	R0 = (int32_t)(int16_t)SH4_MMURead16(Gbr + (disp << 1));
-	SH4_SetGpr(R0,0);
+	R0 = (int32_t) (int16_t) SH4_MMURead16(Gbr + (disp << 1));
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -2628,7 +2629,7 @@ sh4_movl_adispgbrr0(void)
 	uint32_t disp = ICODE & 0xff;
 	uint32_t R0;
 	R0 = SH4_MMURead32(Gbr + (disp << 2));
-	SH4_SetGpr(R0,0);
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -2644,7 +2645,7 @@ sh4_movb_r0adispgbr(void)
 	uint32_t Gbr = SH4_GetGBR();
 	uint32_t R0 = SH4_GetGpr(0);
 	uint32_t disp = ICODE & 0xff;
-	SH4_MMUWrite8(R0,Gbr + disp);
+	SH4_MMUWrite8(R0, Gbr + disp);
 }
 
 /**
@@ -2660,7 +2661,7 @@ sh4_movw_r0adispgbr(void)
 	uint32_t Gbr = SH4_GetGBR();
 	uint32_t R0 = SH4_GetGpr(0);
 	uint32_t disp = ICODE & 0xff;
-	SH4_MMUWrite16(R0,Gbr + (disp << 1));
+	SH4_MMUWrite16(R0, Gbr + (disp << 1));
 }
 
 /**
@@ -2677,7 +2678,7 @@ sh4_movl_r0adispgbr(void)
 	uint32_t Gbr = SH4_GetGBR();
 	uint32_t R0 = SH4_GetGpr(0);
 	uint32_t disp = ICODE & 0xff;
-	SH4_MMUWrite32(R0,Gbr + (disp << 2));
+	SH4_MMUWrite32(R0, Gbr + (disp << 2));
 }
 
 /**
@@ -2695,7 +2696,7 @@ sh4_movb_r0adisprn(void)
 	uint32_t disp = ICODE & 0xf;
 	int rn = (ICODE >> 4) & 0xf;
 	uint32_t Rn = SH4_GetGpr(rn);
-	SH4_MMUWrite8(R0,Rn + disp);	
+	SH4_MMUWrite8(R0, Rn + disp);
 }
 
 /*
@@ -2713,7 +2714,7 @@ sh4_movw_r0adisprn(void)
 	uint32_t disp = ICODE & 0xf;
 	int rn = (ICODE >> 4) & 0xf;
 	uint32_t Rn = SH4_GetGpr(rn);
-	SH4_MMUWrite16(R0,Rn + (disp << 1));	
+	SH4_MMUWrite16(R0, Rn + (disp << 1));
 }
 
 /**
@@ -2734,7 +2735,7 @@ sh4_movl_rmadisprn(void)
 	uint32_t Rm;
 	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
-	SH4_MMUWrite32(Rm,Rn + (disp << 2));	
+	SH4_MMUWrite32(Rm, Rn + (disp << 2));
 }
 
 /**
@@ -2753,8 +2754,8 @@ sh4_movb_adisprmr0(void)
 	int rm = (ICODE >> 4) & 0xf;
 	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t R0;
-	R0 = (int32_t)(int8_t)SH4_MMURead8(Rm + disp);
-	SH4_SetGpr(R0,0);	
+	R0 = (int32_t) (int8_t) SH4_MMURead8(Rm + disp);
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -2774,8 +2775,8 @@ sh4_movw_adisprmr0(void)
 	int rm = (ICODE >> 4) & 0xf;
 	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t R0;
-	R0 = (int32_t)(int16_t)SH4_MMURead16(Rm + (disp << 1));
-	SH4_SetGpr(R0,0);	
+	R0 = (int32_t) (int16_t) SH4_MMURead16(Rm + (disp << 1));
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -2795,7 +2796,7 @@ sh4_movl_adisprmrn(void)
 	uint32_t Rm = SH4_GetGpr(rm);
 	uint32_t Rn;
 	Rn = SH4_MMURead32(Rm + (disp << 2));
-	SH4_SetGpr(Rn,rn);	
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2809,10 +2810,10 @@ sh4_movl_adisprmrn(void)
 void
 sh4_mova_adisppcr0(void)
 {
-	uint32_t disp = ICODE & 0xff;	
+	uint32_t disp = ICODE & 0xff;
 	uint32_t addr;
 	addr = (SH4_NNIA & ~UINT32_C(3)) + (disp << 2);
-	SH4_SetGpr(addr,0);	
+	SH4_SetGpr(addr, 0);
 }
 
 /** 
@@ -2829,11 +2830,11 @@ void
 sh4_movcal(void)
 {
 	int rn;
-	uint32_t R0,Rn;
+	uint32_t R0, Rn;
 	rn = (ICODE >> 8) & 0xf;
 	R0 = SH4_GetGpr(0);
 	Rn = SH4_GetGpr(rn);
-	SH4_MMUWrite32(R0,Rn);
+	SH4_MMUWrite32(R0, Rn);
 }
 
 /**
@@ -2847,7 +2848,7 @@ void
 sh4_movt(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
-	SH4_SetGpr(SH4_GetTrue(),rn);
+	SH4_SetGpr(SH4_GetTrue(), rn);
 }
 
 /**
@@ -2862,12 +2863,12 @@ sh4_mull(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	uint32_t macl;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
 	macl = Rm * Rn;
-	SH4_SetMacL(macl);	
+	SH4_SetMacL(macl);
 }
 
 /**
@@ -2882,12 +2883,12 @@ sh4_mulsw(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	int32_t macl;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	macl = (int32_t)(int16_t)Rm * (int32_t)(int16_t)Rn;
-	SH4_SetMacL(macl);	
+	macl = (int32_t) (int16_t) Rm *(int32_t) (int16_t) Rn;
+	SH4_SetMacL(macl);
 }
 
 /**
@@ -2902,12 +2903,12 @@ sh4_muluw(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	uint32_t macl;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	macl = (uint32_t)(uint16_t)Rm * (uint32_t)(uint16_t)Rn;
-	SH4_SetMacL(macl);	
+	macl = (uint32_t) (uint16_t) Rm *(uint32_t) (uint16_t) Rn;
+	SH4_SetMacL(macl);
 }
 
 /**
@@ -2922,10 +2923,10 @@ sh4_neg(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	Rm = SH4_GetGpr(rm);
 	Rn = 0 - Rm;
-	SH4_SetGpr(Rn,rn);	
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2939,17 +2940,17 @@ sh4_negc(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	int32_t Rm,Rn;
+	int32_t Rm, Rn;
 	uint32_t temp;
 	Rm = SH4_GetGpr(rm);
 	temp = 0 - Rm;
 	Rn = temp - SH4_GetTrue();
-	if((temp > 0) || (temp < Rn)) {
+	if ((temp > 0) || (temp < Rn)) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
 	}
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -2958,7 +2959,7 @@ sh4_negc(void)
  * Eat up time.
  * v2
  ****************************************************
- */ 
+ */
 void
 sh4_nop(void)
 {
@@ -2977,10 +2978,10 @@ sh4_not(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	Rm = SH4_GetGpr(rm);
 	Rn = ~Rm;
-	SH4_SetGpr(Rn,rn);	
+	SH4_SetGpr(Rn, rn);
 }
 
 /*
@@ -2991,19 +2992,19 @@ sh4_not(void)
 void
 sh4_ocbi(void)
 {
-	fprintf(stderr,"sh4_ocbi not implemented\n");
+	fprintf(stderr, "sh4_ocbi not implemented\n");
 }
 
 void
 sh4_ocbp(void)
 {
-	fprintf(stderr,"sh4_ocbp not implemented\n");
+	fprintf(stderr, "sh4_ocbp not implemented\n");
 }
 
 void
 sh4_ocbwb(void)
 {
-	fprintf(stderr,"sh4_ocbwb not implemented\n");
+	fprintf(stderr, "sh4_ocbwb not implemented\n");
 }
 
 /**
@@ -3018,11 +3019,11 @@ sh4_or_rmrn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	int rm = (ICODE >> 4) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
 	Rn = Rm | Rn;
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -3037,7 +3038,7 @@ sh4_or_immr0(void)
 {
 	uint32_t imm = ICODE & 0xff;
 	uint32_t R0 = SH4_GetGpr(0);
-	SH4_SetGpr(R0 | imm,0);
+	SH4_SetGpr(R0 | imm, 0);
 }
 
 /**
@@ -3056,7 +3057,7 @@ sh4_or_immar0gbr(void)
 	uint32_t R0 = SH4_GetGpr(0);
 	uint32_t Gbr = SH4_GetGBR();
 	uint32_t addr = Gbr + R0;
-	SH4_MMUWrite8(SH4_MMURead8(addr) | imm,addr);
+	SH4_MMUWrite8(SH4_MMURead8(addr) | imm, addr);
 }
 
 /*
@@ -3066,7 +3067,7 @@ sh4_or_immar0gbr(void)
 void
 sh4_pref(void)
 {
-	fprintf(stderr,"sh4_pref not implemented\n");
+	fprintf(stderr, "sh4_pref not implemented\n");
 }
 
 /** 
@@ -3153,14 +3154,14 @@ sh4_rotr(void)
 void
 sh4_rte(void)
 {
-        SH4_InstructionProc *iproc;
+	SH4_InstructionProc *iproc;
 
-	if(SH4_GetSR() & SR_MD) {
-		CycleCounter+=2;
+	if (SH4_GetSR() & SR_MD) {
+		CycleCounter += 2;
 		CycleTimers_Check();
 		ICODE = SH4_MMURead16(SH4_GetRegPC());
 
-		SH4_SetSR(SH4_GetSSR());	
+		SH4_SetSR(SH4_GetSSR());
 		SH4_SetRegPC(SH4_GetSPC());
 
 		iproc = SH4_InstructionProcFind(ICODE);
@@ -3227,15 +3228,15 @@ sh4_shad(void)
 	int shift;
 	int32_t Rm = SH4_GetGpr(rm);
 	int32_t Rn = SH4_GetGpr(rn);;
-	if(Rm >= 0) {
+	if (Rm >= 0) {
 		shift = Rm & 0x1f;
 		Rn <<= shift;
 	} else {
 		Rm = Rm | ~UINT32_C(0x1f);
-		shift = - Rm;
+		shift = -Rm;
 		/* Shift > width of type special case */
-		if(shift == 32) {
-			if(Rn < 0) {
+		if (shift == 32) {
+			if (Rn < 0) {
 				Rn = ~UINT32_C(0);
 			} else {
 				Rn = 0;
@@ -3244,7 +3245,7 @@ sh4_shad(void)
 			Rn >>= shift;
 		}
 	}
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -3294,20 +3295,20 @@ sh4_shld(void)
 	int rn = (ICODE >> 8) & 0xf;
 	int32_t Rm = SH4_GetGpr(rm);
 	uint32_t Rn = SH4_GetGpr(rn);;
-	if(Rm >= 0) {
+	if (Rm >= 0) {
 		shift = Rm & 0x1f;
 		Rn <<= shift;
 	} else {
 		Rm = Rm | 0xFFFFffe0;
-		shift = - Rm;
+		shift = -Rm;
 		/* Shift > width of type special case */
-		if(shift == 32) {
+		if (shift == 32) {
 			Rn = 0;
 		} else {
 			Rn >>= shift;
 		}
 	}
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -3435,12 +3436,12 @@ sh4_shlr16(void)
 void
 sh4_sleep(void)
 {
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
-	fprintf(stderr,"sh4_sleep not implemented\n");
+	fprintf(stderr, "sh4_sleep not implemented\n");
 }
 
 /**
@@ -3455,9 +3456,9 @@ sh4_stc_sr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Sr;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Sr = SH4_GetSR();
-		SH4_SetGpr(Sr,rn);
+		SH4_SetGpr(Sr, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3475,7 +3476,7 @@ sh4_stc_gbr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Gbr = SH4_GetGBR();
-	SH4_SetGpr(Gbr,rn);
+	SH4_SetGpr(Gbr, rn);
 }
 
 /**
@@ -3490,9 +3491,9 @@ sh4_stc_vbr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Vbr;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Vbr = SH4_GetVBR();
-		SH4_SetGpr(Vbr,rn);
+		SH4_SetGpr(Vbr, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3510,9 +3511,9 @@ sh4_stc_ssr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Ssr;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Ssr = SH4_GetSSR();
-		SH4_SetGpr(Ssr,rn);
+		SH4_SetGpr(Ssr, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3529,9 +3530,9 @@ sh4_stc_spc_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Spc;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Spc = SH4_GetSPC();
-		SH4_SetGpr(Spc,rn);
+		SH4_SetGpr(Spc, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3549,9 +3550,9 @@ sh4_stc_sgr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Sgr;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Sgr = SH4_GetSGR();
-		SH4_SetGpr(Sgr,rn);
+		SH4_SetGpr(Sgr, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3569,9 +3570,9 @@ sh4_stc_dbr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Dbr;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Dbr = SH4_GetDBR();
-		SH4_SetGpr(Dbr,rn);
+		SH4_SetGpr(Dbr, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3590,9 +3591,9 @@ sh4_stc_rb_rn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	int rb = (ICODE >> 4) & 7;
 	uint32_t R;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		R = SH4_GetGprBank(rb);
-		SH4_SetGpr(R,rn);
+		SH4_SetGpr(R, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3613,12 +3614,12 @@ sh4_stcl_sr_amrn(void)
 	uint32_t Sr;
 	uint32_t Rn;
 	Sr = SH4_GetSR();
-	if(Sr & SR_MD) {
+	if (Sr & SR_MD) {
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model */
-		SH4_MMUWrite32(Sr,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Sr, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3640,8 +3641,8 @@ sh4_stcl_gbr_amrn(void)
 	uint32_t Rn = SH4_GetGpr(rn);
 	Rn -= 4;
 	/* Base restored exception model */
-	SH4_MMUWrite32(Gbr,Rn);
-	SH4_SetGpr(Rn,rn);
+	SH4_MMUWrite32(Gbr, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -3658,13 +3659,13 @@ sh4_stcl_vbr_amrn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Vbr;
 	uint32_t Rn;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Vbr = SH4_GetVBR();
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model ? */
-		SH4_MMUWrite32(Vbr,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Vbr, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3684,13 +3685,13 @@ sh4_stcl_ssr_amrn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Ssr;
 	uint32_t Rn;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Ssr = SH4_GetSSR();
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model */
-		SH4_MMUWrite32(Ssr,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Ssr, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3710,13 +3711,13 @@ sh4_stcl_spc_amrn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Spc;
 	uint32_t Rn;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Spc = SH4_GetSPC();
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model ??? */
-		SH4_MMUWrite32(Spc,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Spc, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3735,13 +3736,13 @@ sh4_stcl_sgr_amrn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Sgr;
 	uint32_t Rn;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Sgr = SH4_GetSGR();
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model */
-		SH4_MMUWrite32(Sgr,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Sgr, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3761,13 +3762,13 @@ sh4_stcl_dbr_amrn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Dbr;
 	uint32_t Rn;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Dbr = SH4_GetDBR();
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model ??? */
-		SH4_MMUWrite32(Dbr,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Dbr, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3788,13 +3789,13 @@ sh4_stcl_rb_amrn(void)
 	int rb = (ICODE >> 4) & 7;
 	uint32_t Rb;
 	uint32_t Rn;
-	if(SH4_GetSR() & SR_MD) {
+	if (SH4_GetSR() & SR_MD) {
 		Rb = SH4_GetGprBank(rb);
 		Rn = SH4_GetGpr(rn);
 		Rn -= 4;
 		/* Base restored exception model */
-		SH4_MMUWrite32(Rb,Rn);
-		SH4_SetGpr(Rn,rn);
+		SH4_MMUWrite32(Rb, Rn);
+		SH4_SetGpr(Rn, rn);
 	} else {
 		SH4_Exception(EX_RESINST);
 	}
@@ -3812,7 +3813,7 @@ sh4_sts_mach_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Mach = SH4_GetMacH();
-	SH4_SetGpr(Mach,rn);
+	SH4_SetGpr(Mach, rn);
 }
 
 /**
@@ -3827,7 +3828,7 @@ sh4_sts_macl_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Macl = SH4_GetMacL();
-	SH4_SetGpr(Macl,rn);
+	SH4_SetGpr(Macl, rn);
 }
 
 /*
@@ -3842,7 +3843,7 @@ sh4_sts_pr_rn(void)
 {
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Pr = SH4_GetPR();
-	SH4_SetGpr(Pr,rn);
+	SH4_SetGpr(Pr, rn);
 }
 
 /**
@@ -3861,8 +3862,8 @@ sh4_stsl_mach_amrn(void)
 	uint32_t Rn = SH4_GetGpr(rn);
 	Rn -= 4;
 	/* Base restored exception model */
-	SH4_MMUWrite32(Mach,Rn);
-	SH4_SetGpr(Rn,rn);
+	SH4_MMUWrite32(Mach, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -3881,8 +3882,8 @@ sh4_stsl_macl_amrn(void)
 	uint32_t Rn = SH4_GetGpr(rn);
 	Rn -= 4;
 	/* Base restored exception model */
-	SH4_MMUWrite32(Macl,Rn);
-	SH4_SetGpr(Rn,rn);
+	SH4_MMUWrite32(Macl, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -3901,8 +3902,8 @@ sh4_stsl_pr_amrn(void)
 	uint32_t Rn = SH4_GetGpr(rn);
 	Rn -= 4;
 	/* Base restored exception model */
-	SH4_MMUWrite32(Pr,Rn);
-	SH4_SetGpr(Rn,rn);
+	SH4_MMUWrite32(Pr, Rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 void
@@ -3911,8 +3912,8 @@ sh4_sts_fpul_rn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Fpul;
 	Fpul = SH4_GetFPUL();
-	SH4_SetGpr(Fpul,rn);
-	fprintf(stderr,"sh4_sts_fpul_rn not tested\n");
+	SH4_SetGpr(Fpul, rn);
+	fprintf(stderr, "sh4_sts_fpul_rn not tested\n");
 }
 
 void
@@ -3921,8 +3922,8 @@ sh4_fpscr_rn(void)
 	int rn = (ICODE >> 8) & 0xf;
 	uint32_t Fpscr;
 	Fpscr = SH4_GetFPSCR();
-	SH4_SetGpr(Fpscr,rn);
-	fprintf(stderr,"sh4_fpscr_rn not tested\n");
+	SH4_SetGpr(Fpscr, rn);
+	fprintf(stderr, "sh4_fpscr_rn not tested\n");
 }
 
 void
@@ -3935,10 +3936,10 @@ sh4_sts_fpul_amrn(void)
 	Rn = SH4_GetGpr(rn);
 	Rn -= 4;
 	/* I think that the Renesas manual is wrong and that
- 	 * base address is restored in case of exception */
-	SH4_MMUWrite32(Fpul,Rn);
-	SH4_SetGpr(Rn,rn);
-	fprintf(stderr,"sh4_sts_fpul_amrn not tested\n");
+	 * base address is restored in case of exception */
+	SH4_MMUWrite32(Fpul, Rn);
+	SH4_SetGpr(Rn, rn);
+	fprintf(stderr, "sh4_sts_fpul_amrn not tested\n");
 }
 
 void
@@ -3951,10 +3952,10 @@ sh4_sts_fpscr_amrn(void)
 	Rn = SH4_GetGpr(rn);
 	Rn -= 4;
 	/* I think that the Renesas manual is wrong and that
- 	 * base address is restored in case of exception */
-	SH4_MMUWrite32(Fpscr,Rn);
-	SH4_SetGpr(Rn,rn);
-	fprintf(stderr,"sh4_sts_fpscr_amrn not tested\n");
+	 * base address is restored in case of exception */
+	SH4_MMUWrite32(Fpscr, Rn);
+	SH4_SetGpr(Rn, rn);
+	fprintf(stderr, "sh4_sts_fpscr_amrn not tested\n");
 }
 
 /*
@@ -3967,14 +3968,14 @@ sh4_sts_fpscr_amrn(void)
 void
 sh4_sub_rm_rn(void)
 {
-	int rn,rm;
-	int32_t Rn,Rm,R;
+	int rn, rm;
+	int32_t Rn, Rm, R;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	R = Rn - Rm; 
-	SH4_SetGpr(R,rn);
+	R = Rn - Rm;
+	SH4_SetGpr(R, rn);
 }
 
 /**
@@ -3987,15 +3988,15 @@ sh4_sub_rm_rn(void)
 void
 sh4_subc_rm_rn(void)
 {
-	int rn,rm;
-	int32_t Rn,Rm,R;
+	int rn, rm;
+	int32_t Rn, Rm, R;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	R = Rn - Rm - SH4_GetTrue(); 
-	SH4_SetGpr(R,rn);
-	if(sub_carry(Rm,Rn,R)) {
+	R = Rn - Rm - SH4_GetTrue();
+	SH4_SetGpr(R, rn);
+	if (sub_carry(Rm, Rn, R)) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -4012,15 +4013,15 @@ sh4_subc_rm_rn(void)
 void
 sh4_subv_rm_rn(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm,R;
+	int rn, rm;
+	uint32_t Rn, Rm, R;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	Rn = SH4_GetGpr(rn);
-	R = Rn - Rm; 
-	SH4_SetGpr(R,rn);
-	if(sub_overflow(Rm,Rn,R)) {
+	R = Rn - Rm;
+	SH4_SetGpr(R, rn);
+	if (sub_overflow(Rm, Rn, R)) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -4036,13 +4037,13 @@ sh4_subv_rm_rn(void)
 void
 sh4_swapb_rm_rn(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm;
+	int rn, rm;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	Rn = (Rm & 0xFFFF0000) | ((Rm >> 8) & 0xff) | ((Rm << 8) & 0xff00);
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -4055,13 +4056,13 @@ sh4_swapb_rm_rn(void)
 void
 sh4_swapw_rm_rn(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm;
+	int rn, rm;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rm = SH4_GetGpr(rm);
 	Rn = ((Rm >> 16) & 0xFFFF) | ((Rm & 0xffff) << 16);
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -4078,10 +4079,10 @@ sh4_tas(void)
 	uint32_t Rn;
 	uint8_t data;
 	rn = (ICODE >> 8) & 0xf;
-	Rn = SH4_GetGpr(rn);	
+	Rn = SH4_GetGpr(rn);
 	data = SH4_MMURead8(Rn);
 	SH4_MMUWrite8(data | 0x80, Rn);
-	if(data == 0) {
+	if (data == 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -4091,7 +4092,7 @@ sh4_tas(void)
 void
 sh4_trapa(void)
 {
-	fprintf(stderr,"sh4_trapa not implemented\n");
+	fprintf(stderr, "sh4_trapa not implemented\n");
 	SH4_Break();
 }
 
@@ -4105,13 +4106,13 @@ sh4_trapa(void)
 void
 sh4_tst_rm_rn(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm;
+	int rn, rm;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
-	if((Rm & Rn) == 0) {
+	if ((Rm & Rn) == 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -4133,7 +4134,7 @@ sh4_tst_imm_r0(void)
 	uint32_t R0;
 	R0 = SH4_GetGpr(0);
 	imm = ICODE & 0xff;
-	if((R0 & imm) == 0) {
+	if ((R0 & imm) == 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -4153,12 +4154,12 @@ sh4_tstb_imm_ar0gbr(void)
 {
 	uint32_t imm;
 	uint32_t data;
-	uint32_t R0,Gbr;
+	uint32_t R0, Gbr;
 	R0 = SH4_GetGpr(0);
 	Gbr = SH4_GetGBR();
 	imm = ICODE & 0xff;
 	data = SH4_MMURead8(R0 + Gbr);
-	if((data & imm) == 0) {
+	if ((data & imm) == 0) {
 		SH4_SetTrue(1);
 	} else {
 		SH4_SetTrue(0);
@@ -4175,14 +4176,14 @@ sh4_tstb_imm_ar0gbr(void)
 void
 sh4_xor_rm_rn(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm;
+	int rn, rm;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
 	Rn = Rn ^ Rm;
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 /**
@@ -4196,11 +4197,11 @@ sh4_xor_rm_rn(void)
 void
 sh4_xor_imm_r0(void)
 {
-	uint32_t R0,imm;
+	uint32_t R0, imm;
 	imm = ICODE & 0xff;
 	R0 = SH4_GetGpr(0);
 	R0 = R0 ^ imm;
-	SH4_SetGpr(R0,0);
+	SH4_SetGpr(R0, 0);
 }
 
 /**
@@ -4216,13 +4217,13 @@ sh4_xorb_ar0gbr(void)
 {
 	uint32_t imm;
 	uint32_t data;
-	uint32_t R0,Gbr;
+	uint32_t R0, Gbr;
 	R0 = SH4_GetGpr(0);
 	Gbr = SH4_GetGBR();
 	imm = ICODE & 0xff;
 	data = SH4_MMURead8(R0 + Gbr);
 	data = data ^ imm;
-	SH4_MMUWrite8(data,R0 + Gbr);
+	SH4_MMUWrite8(data, R0 + Gbr);
 }
 
 /**
@@ -4235,20 +4236,20 @@ sh4_xorb_ar0gbr(void)
 void
 sh4_xtrct(void)
 {
-	int rn,rm;
-	uint32_t Rn,Rm;
+	int rn, rm;
+	uint32_t Rn, Rm;
 	rn = (ICODE >> 8) & 0xf;
 	rm = (ICODE >> 4) & 0xf;
 	Rn = SH4_GetGpr(rn);
 	Rm = SH4_GetGpr(rm);
 	Rn = ((Rm & 0xffff) << 16) | (Rn >> 16);
-	SH4_SetGpr(Rn,rn);
+	SH4_SetGpr(Rn, rn);
 }
 
 void
 sh4_undef(void)
 {
-	fprintf(stderr,"SH4 undefined instruction code %04x at %08x\n",ICODE,SH4_CIA);
+	fprintf(stderr, "SH4 undefined instruction code %04x at %08x\n", ICODE, SH4_CIA);
 	SH4_Break();
 	//exit(1);
 }

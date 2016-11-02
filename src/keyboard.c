@@ -46,11 +46,11 @@
  * Keyboard_AddListener
  * --------------------------------------
  */
-void 
-Keyboard_AddListener(Keyboard *keyboard,KeyEventProc *eventProc,void *clientData) 
+void
+Keyboard_AddListener(Keyboard * keyboard, KeyEventProc * eventProc, void *clientData)
 {
 	KeyboardListener *listener;
-	if(!keyboard)
+	if (!keyboard)
 		return;
 	listener = sg_new(KeyboardListener);
 
@@ -66,20 +66,21 @@ Keyboard_AddListener(Keyboard *keyboard,KeyEventProc *eventProc,void *clientData
  * 	Remove a keyevent sink from the linked list of listeners
  * ----------------------------------------------------------------------------
  */
-void 
-Keyboard_RemoveListener(Keyboard *keyboard,KeyEventProc *eventProc) 
+void
+Keyboard_RemoveListener(Keyboard * keyboard, KeyEventProc * eventProc)
 {
-	KeyboardListener *cursor,*prev;
-	for(prev=NULL,cursor=keyboard->listener_head;cursor;prev=cursor,cursor=cursor->next) {
-		if(cursor->eventProc == eventProc) {
-			if(prev) {
+	KeyboardListener *cursor, *prev;
+	for (prev = NULL, cursor = keyboard->listener_head; cursor;
+	     prev = cursor, cursor = cursor->next) {
+		if (cursor->eventProc == eventProc) {
+			if (prev) {
 				prev->next = cursor->next;
 			} else {
 				keyboard->listener_head = cursor->next;
 			}
 			free(cursor);
 			return;
-		}		
+		}
 	}
 }
 
@@ -92,15 +93,14 @@ Keyboard_RemoveListener(Keyboard *keyboard,KeyEventProc *eventProc)
  *	from the vncclient
  * ------------------------------------------------------------------------------
  */
-void 
-Keyboard_SendEvent(Keyboard *keyboard,KeyEvent *event) 
+void
+Keyboard_SendEvent(Keyboard * keyboard, KeyEvent * event)
 {
-	KeyboardListener *cursor;	
-	if(!keyboard) {
+	KeyboardListener *cursor;
+	if (!keyboard) {
 		return;
 	}
-	for(cursor=keyboard->listener_head;cursor;cursor=cursor->next) {
-		cursor->eventProc(cursor->clientData,event);	
+	for (cursor = keyboard->listener_head; cursor; cursor = cursor->next) {
+		cursor->eventProc(cursor->clientData, event);
 	}
 }
-

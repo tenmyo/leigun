@@ -1,1 +1,1 @@
-BusDevice * MCF5282_PitNew(const char *name);
+BusDevice *MCF5282_PitNew(const char *name);

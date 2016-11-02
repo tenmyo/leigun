@@ -1,2 +1,2 @@
 #include "bus.h"
-BusDevice * SCI_New(const char *name);
+BusDevice *SCI_New(const char *name);

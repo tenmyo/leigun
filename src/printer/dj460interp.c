@@ -59,68 +59,74 @@ Dj460Interp_New(const char *outfiledir)
 {
 	Dj460Interp *interp = sg_new(Dj460Interp);
 	PrintEngine *pe;
-	pe = interp->print_engine = PEng_New(outfiledir); 
+	pe = interp->print_engine = PEng_New(outfiledir);
 	interp->pjl_interp = PJLInterp_New();
 	interp->pcl3_interp = PCL3Interp_New();
 	interp->pcl3gui_interp = PCL3GUIInterp_New(pe);
 	interp->curlang = Pl_Pcl3;
-	fprintf(stderr,"DJ460 PCL3/PCL3GUI interpreter created\n");
+	fprintf(stderr, "DJ460 PCL3/PCL3GUI interpreter created\n");
 	return interp;
 }
 
 void
-Dj460Interp_Reset(Dj460Interp *interp) 
+Dj460Interp_Reset(Dj460Interp * interp)
 {
 	PJLInterp_Reset(interp->pjl_interp);
 	PCL3Interp_Reset(interp->pcl3_interp);
 	PCL3GUIInterp_Reset(interp->pcl3gui_interp);
 }
+
 /*
  * -----------------------------------------------------------------------
  * Feed the interpreter with print data
  * -----------------------------------------------------------------------
  */
 int
-Dj460Interp_Feed(Dj460Interp *interp,void *buf,int len)
+Dj460Interp_Feed(Dj460Interp * interp, void *buf, int len)
 {
 	int result;
-	int count = 0; 
+	int count = 0;
 	int done = 0;
-	while(count < len) {
-		switch(interp->curlang) {
-			case 0:
-				fprintf(stderr,"Done\n");
-				exit(0);
+	while (count < len) {
+		switch (interp->curlang) {
+		    case 0:
+			    fprintf(stderr, "Done\n");
+			    exit(0);
 
-			case Pl_Pjl:
-				result = PJLInterp_Feed(interp->pjl_interp,buf+count,len-count,&interp->curlang);
-				break;
+		    case Pl_Pjl:
+			    result =
+				PJLInterp_Feed(interp->pjl_interp, buf + count, len - count,
+					       &interp->curlang);
+			    break;
 
-			case Pl_Pcl3:
-				result = PCL3Interp_Feed(interp->pcl3_interp,buf+count,len-count,&done);
-				if(done) {
-					interp->curlang = Pl_Pjl;
-				}
-				break;
+		    case Pl_Pcl3:
+			    result =
+				PCL3Interp_Feed(interp->pcl3_interp, buf + count, len - count,
+						&done);
+			    if (done) {
+				    interp->curlang = Pl_Pjl;
+			    }
+			    break;
 
-			case Pl_Pcl3Gui:
-				result =  PCL3GUIInterp_Feed(interp->pcl3gui_interp,buf+count,len-count,&done);
-				if(done) {
-					fprintf(stderr,"PCL3GUI is done\n");
-					interp->curlang = Pl_Pjl;
-				}
-				break;
-			default:
-				result = -1;
-				fprintf(stderr,"Unknown Printer language %d\n",interp->curlang);
-				break;
+		    case Pl_Pcl3Gui:
+			    result =
+				PCL3GUIInterp_Feed(interp->pcl3gui_interp, buf + count, len - count,
+						   &done);
+			    if (done) {
+				    fprintf(stderr, "PCL3GUI is done\n");
+				    interp->curlang = Pl_Pjl;
+			    }
+			    break;
+		    default:
+			    result = -1;
+			    fprintf(stderr, "Unknown Printer language %d\n", interp->curlang);
+			    break;
 		}
-		if(result <= 0) {
+		if (result <= 0) {
 			return result;
 		}
-		count+=result;
+		count += result;
 		//fprintf(stderr,"New lang %d\n",interp->curlang);
 	}
 	return count;
 }
-

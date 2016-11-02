@@ -1,2 +1,2 @@
 #include "bus.h"
-BusDevice * Bosch_CanNew(const char *name);
+BusDevice *Bosch_CanNew(const char *name);

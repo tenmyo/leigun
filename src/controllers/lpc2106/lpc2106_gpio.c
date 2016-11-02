@@ -48,116 +48,115 @@
 
 typedef struct LPC2106_Gpio {
 	uint32_t gpio_outstate;
-	uint32_t gpiodir;   
-	SigNode *gpioNode[32];	
+	uint32_t gpiodir;
+	SigNode *gpioNode[32];
 } LPC2106_Gpio;
 
 void
-update_gpios(LPC2106_Gpio *gpio) 
+update_gpios(LPC2106_Gpio * gpio)
 {
 	int i;
-	for(i=0;i<32;i++) {
-		if(!(gpio->gpiodir & (1<<i))) 
-		{
-			SigNode_Set(gpio->gpioNode[i],SIG_OPEN);
+	for (i = 0; i < 32; i++) {
+		if (!(gpio->gpiodir & (1 << i))) {
+			SigNode_Set(gpio->gpioNode[i], SIG_OPEN);
 			continue;
 		}
-		if(gpio->gpio_outstate & (1<<i)) {
-			SigNode_Set(gpio->gpioNode[i],SIG_HIGH);
+		if (gpio->gpio_outstate & (1 << i)) {
+			SigNode_Set(gpio->gpioNode[i], SIG_HIGH);
 		} else {
-			SigNode_Set(gpio->gpioNode[i],SIG_LOW);
+			SigNode_Set(gpio->gpioNode[i], SIG_LOW);
 		}
 	}
 }
 
-static uint32_t 
-iopin_read(void *clientData,uint32_t address,int rqlen) 
+static uint32_t
+iopin_read(void *clientData, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
-	uint32_t pinval=0;
+	uint32_t pinval = 0;
 	int i;
-	for(i=0;i<32;i++) {
-		int val = SigNode_Val(gpio->gpioNode[i]); 
-		if((val == SIG_HIGH) || (val == SIG_PULLUP)) {
-			pinval |= (1<<i);	
+	for (i = 0; i < 32; i++) {
+		int val = SigNode_Val(gpio->gpioNode[i]);
+		if ((val == SIG_HIGH) || (val == SIG_PULLUP)) {
+			pinval |= (1 << i);
 		}
 	}
 	return pinval;
 }
 
-static void 
-iopin_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+static void
+iopin_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
 	gpio->gpio_outstate = value;
 	update_gpios(gpio);
 }
 
-static uint32_t 
-ioset_read(void *clientData,uint32_t address,int rqlen) 
+static uint32_t
+ioset_read(void *clientData, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
 	return gpio->gpio_outstate;
 }
 
-static void 
-ioset_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+static void
+ioset_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
 	gpio->gpio_outstate |= value;
 	update_gpios(gpio);
 }
 
-static uint32_t 
-iodir_read(void *clientData,uint32_t address,int rqlen) 
+static uint32_t
+iodir_read(void *clientData, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
 	return gpio->gpiodir;
 }
 
-static void 
-iodir_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+static void
+iodir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
 	gpio->gpiodir = value;
 	update_gpios(gpio);
 }
 
-static uint32_t 
-ioclr_read(void *clientData,uint32_t address,int rqlen) 
+static uint32_t
+ioclr_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
-static void 
-ioclr_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+static void
+ioclr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	LPC2106_Gpio *gpio = clientData;
 	gpio->gpio_outstate &= ~value;
 }
 
 static void
-LPCGpio_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags) 
+LPCGpio_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	LPC2106_Gpio *gpio = owner;
-	IOH_New32(REG_IOPIN,iopin_read,iopin_write,gpio);
-	IOH_New32(REG_IOSET,ioset_read,ioset_write,gpio);
-	IOH_New32(REG_IODIR,iodir_read,iodir_write,gpio);
-	IOH_New32(REG_IOCLR,ioclr_read,ioclr_write,gpio);
+	IOH_New32(REG_IOPIN, iopin_read, iopin_write, gpio);
+	IOH_New32(REG_IOSET, ioset_read, ioset_write, gpio);
+	IOH_New32(REG_IODIR, iodir_read, iodir_write, gpio);
+	IOH_New32(REG_IOCLR, ioclr_read, ioclr_write, gpio);
 }
 
 void
-LPC2106_GpioNew(const char *name) 
+LPC2106_GpioNew(const char *name)
 {
 	LPC2106_Gpio *gpio;
 	int i;
 	gpio = sg_new(LPC2106_Gpio);
-	for(i=0;i<32;i++) {
-		gpio->gpioNode[i] = SigNode_New("%s.%d",name,i);	
-		if(!gpio->gpioNode[i]) {
-			fprintf(stderr,"Can not create gpio node %d\n",i);
+	for (i = 0; i < 32; i++) {
+		gpio->gpioNode[i] = SigNode_New("%s.%d", name, i);
+		if (!gpio->gpioNode[i]) {
+			fprintf(stderr, "Can not create gpio node %d\n", i);
 			exit(4);
 		}
-	}	
-	LPCGpio_Map(gpio,0xe0028000,0,0);
+	}
+	LPCGpio_Map(gpio, 0xe0028000, 0, 0);
 }

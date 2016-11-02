@@ -78,62 +78,61 @@
  * you can not link nonexisting Signals
  * ---------------------------------------------------------------
  */
-static void 
-create_signal_links() 
+static void
+create_signal_links()
 {
-	SigName_Link("i2cbus0000.sda","bbutil.gpio.13"); 
-	SigName_Link("i2cbus0000.scl","bbutil.gpio.14");
-	SigName_Link("i2cbus0000.cfg_eeprom.wc","bbutil.gpio.15");
-	SigName_Link("i2cbus1000.sda","bbutil.gpio.31"); 
-	SigName_Link("i2cbus1000.scl","bbutil.gpio.30");
-	SigName_Link("i2cbus2000.sda","bbutil.gpio.18"); 
-	SigName_Link("i2cbus2000.scl","bbutil.gpio.29");
+	SigName_Link("i2cbus0000.sda", "bbutil.gpio.13");
+	SigName_Link("i2cbus0000.scl", "bbutil.gpio.14");
+	SigName_Link("i2cbus0000.cfg_eeprom.wc", "bbutil.gpio.15");
+	SigName_Link("i2cbus1000.sda", "bbutil.gpio.31");
+	SigName_Link("i2cbus1000.scl", "bbutil.gpio.30");
+	SigName_Link("i2cbus2000.sda", "bbutil.gpio.18");
+	SigName_Link("i2cbus2000.scl", "bbutil.gpio.29");
 
-	SigName_Link("i2cbus1000.eeprom.wc",     "bbutil.gpio.11");
+	SigName_Link("i2cbus1000.eeprom.wc", "bbutil.gpio.11");
 	SigName_Link("i2cbus2000.bpl_eeprom.wc", "bbutil.gpio.11");
 	SigName_Link("i2cbus2000.fan_eeprom.wc", "bbutil.gpio.11");
 	SigName_Link("i2cbus2000.ps1_eeprom.wc", "bbutil.gpio.11");
 	SigName_Link("i2cbus2000.ps2_eeprom.wc", "bbutil.gpio.11");
 
 	/* Netsilicon CPU-I2C */
-	SigName_Link("ns9750_i2c.sda","i2cbus2000.sda");
-	SigName_Link("ns9750_i2c.scl","i2cbus2000.scl");
-	SigName_Link("ns9750_i2c.reset","bbutil.rst_i2c");
+	SigName_Link("ns9750_i2c.sda", "i2cbus2000.sda");
+	SigName_Link("ns9750_i2c.scl", "i2cbus2000.scl");
+	SigName_Link("ns9750_i2c.reset", "bbutil.rst_i2c");
 
-	SigName_Link("ns9750_i2c.irq","bbus.irq_i2c");  
+	SigName_Link("ns9750_i2c.irq", "bbus.irq_i2c");
 	//SigName_Link("ns9750_i2c.irq","sysco.irq_i2c");  
-	SigName_Link("ns9750sysco.irq14","ns9750_i2c.irq");
-	SigName_Link("serialA.tx_irq","bbus.irq_satx");  
-	SigName_Link("serialA.rx_irq","bbus.irq_sarx");  
-	SigName_Link("serialB.tx_irq","bbus.irq_sbtx");  
-	SigName_Link("serialB.rx_irq","bbus.irq_sbrx");  
-	SigName_Link("serialC.tx_irq","bbus.irq_sctx");  
-	SigName_Link("serialC.rx_irq","bbus.irq_scrx");  
-	SigName_Link("serialD.tx_irq","bbus.irq_sdtx");  
-	SigName_Link("serialD.rx_irq","bbus.irq_sdrx");  
-	SigName_Link("ns9750_eth.rx_irq","ns9750sysco.irq4");
-	SigName_Link("ns9750_eth.tx_irq","ns9750sysco.irq5");
+	SigName_Link("ns9750sysco.irq14", "ns9750_i2c.irq");
+	SigName_Link("serialA.tx_irq", "bbus.irq_satx");
+	SigName_Link("serialA.rx_irq", "bbus.irq_sarx");
+	SigName_Link("serialB.tx_irq", "bbus.irq_sbtx");
+	SigName_Link("serialB.rx_irq", "bbus.irq_sbrx");
+	SigName_Link("serialC.tx_irq", "bbus.irq_sctx");
+	SigName_Link("serialC.rx_irq", "bbus.irq_scrx");
+	SigName_Link("serialD.tx_irq", "bbus.irq_sdtx");
+	SigName_Link("serialD.rx_irq", "bbus.irq_sdrx");
+	SigName_Link("ns9750_eth.rx_irq", "ns9750sysco.irq4");
+	SigName_Link("ns9750_eth.tx_irq", "ns9750sysco.irq5");
 
- 
 	/* CPU Internal DMA request links */
-	SigName_Link("serialA.TxDmaReq","bbdma.1.FbrDmaReq");
-	SigName_Link("serialB.TxDmaReq","bbdma.3.FbrDmaReq");
-	SigName_Link("serialC.TxDmaReq","bbdma.5.FbrDmaReq");
-	SigName_Link("serialD.TxDmaReq","bbdma.7.FbrDmaReq");
+	SigName_Link("serialA.TxDmaReq", "bbdma.1.FbrDmaReq");
+	SigName_Link("serialB.TxDmaReq", "bbdma.3.FbrDmaReq");
+	SigName_Link("serialC.TxDmaReq", "bbdma.5.FbrDmaReq");
+	SigName_Link("serialD.TxDmaReq", "bbdma.7.FbrDmaReq");
 
 	/* Serial Interfaces Endian */
-        SigName_Link("bbutil.endian_serA","serialA.endian");
-        SigName_Link("bbutil.endian_serB","serialB.endian");
-        SigName_Link("bbutil.endian_serC","serialC.endian");
-        SigName_Link("bbutil.endian_serD","serialD.endian");
-	SigName_Link("bbutil.endian_usb","ns9750_ohci.endian");
-	SigName_Link("mmu.endian","ns9750_eth.dataendian");
-	SigName_Link("mmu.endian","ns9750_pci.cpu_endian");
-	SigName_Link("flash1.big_endian","memco.big_endian");
+	SigName_Link("bbutil.endian_serA", "serialA.endian");
+	SigName_Link("bbutil.endian_serB", "serialB.endian");
+	SigName_Link("bbutil.endian_serC", "serialC.endian");
+	SigName_Link("bbutil.endian_serD", "serialD.endian");
+	SigName_Link("bbutil.endian_usb", "ns9750_ohci.endian");
+	SigName_Link("mmu.endian", "ns9750_eth.dataendian");
+	SigName_Link("mmu.endian", "ns9750_pci.cpu_endian");
+	SigName_Link("flash1.big_endian", "memco.big_endian");
 
 	/* Link the CAN-Bus Interrupts */
-	SigName_Link("acc_can0.irq","ns9750sysco.extirq2");
-	SigName_Link("acc_can1.irq","ns9750sysco.extirq1");
+	SigName_Link("acc_can0.irq", "ns9750sysco.extirq2");
+	SigName_Link("acc_can1.irq", "ns9750sysco.extirq1");
 }
 
 /*
@@ -143,7 +142,7 @@ create_signal_links()
  * ----------------------------------------------------
  */
 static void
-create_i2c_devices() 
+create_i2c_devices()
 {
 	I2C_Slave *i2c_slave;
 	I2C_SerDes *i2c_serdes0000;
@@ -156,63 +155,62 @@ create_i2c_devices()
 	i2c_serdes2000 = I2C_SerDesNew("i2cbus2000");
 
 	/* Configuration EEPRom with 64kBit */
-	i2c_slave = M24Cxx_New("M24C64","i2cbus0000.cfg_eeprom");
-	I2C_SerDesAddSlave(i2c_serdes0000,i2c_slave,0x50);
+	i2c_slave = M24Cxx_New("M24C64", "i2cbus0000.cfg_eeprom");
+	I2C_SerDesAddSlave(i2c_serdes0000, i2c_slave, 0x50);
 
 	/* Real Time Clock */
 	i2c_slave = PCF8563_New("i2cbus0000.rtc");
-	I2C_SerDesAddSlave(i2c_serdes0000,i2c_slave,0x51);
+	I2C_SerDesAddSlave(i2c_serdes0000, i2c_slave, 0x51);
 
 	/* Second I2C-Bus */
-	/* Card */ 
+	/* Card */
 	i2c_slave = PCF8575_New("i2cbus1000.plugged0");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x20);
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x20);
 	i2c_slave = PCF8575_New("i2cbus1000.plugged1");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x24);
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x24);
 	i2c_slave = PCF8575_New("i2cbus1000.id");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x22);
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x22);
 	i2c_slave = PCF8575_New("i2cbus1000.signals");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x21);
-	i2c_slave = M24Cxx_New("M24C02","i2cbus1000.eeprom");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x52);
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x21);
+	i2c_slave = M24Cxx_New("M24C02", "i2cbus1000.eeprom");
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x52);
 	i2c_slave = LM75_New("i2cbus1000.card_temp");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x48);
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x48);
 	i2c_slave = PCF8591_New("i2cbus1000.card_voltages");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x4c);
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x4c);
 
 	/* Third bus */
-	i2c_slave = M24Cxx_New("M24C02","i2cbus2000.bpl_eeprom");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x50);
+	i2c_slave = M24Cxx_New("M24C02", "i2cbus2000.bpl_eeprom");
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x50);
 
-	i2c_slave = M24Cxx_New("M24C02","i2cbus2000.fan_eeprom");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x52);
+	i2c_slave = M24Cxx_New("M24C02", "i2cbus2000.fan_eeprom");
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x52);
 
-	i2c_slave = M24Cxx_New("M24C02","i2cbus2000.ps1_eeprom");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x54);
+	i2c_slave = M24Cxx_New("M24C02", "i2cbus2000.ps1_eeprom");
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x54);
 
-	i2c_slave = M24Cxx_New("M24C02","i2cbus2000.ps2_eeprom");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x55);
+	i2c_slave = M24Cxx_New("M24C02", "i2cbus2000.ps2_eeprom");
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x55);
 
 	i2c_slave = LM75_New("i2cbus2000.fan_temp");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x4a);
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x4a);
 
 	i2c_slave = LM75_New("i2cbus2000.ps1_temp");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x4c);
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x4c);
 
 	i2c_slave = LM75_New("i2cbus2000.ps2_temp");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x4d);
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x4d);
 
 	i2c_slave = MAX6651_New("i2cbus2000.fan0");
-        I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x1b);
-        i2c_slave = MAX6651_New("i2cbus2000.fan1");
-        I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x4b);
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x1b);
+	i2c_slave = MAX6651_New("i2cbus2000.fan1");
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x4b);
 
 	i2c_slave = PCF8574_New("i2cbus2000.fanok");
-	I2C_SerDesAddSlave(i2c_serdes2000,i2c_slave,0x22);
+	I2C_SerDesAddSlave(i2c_serdes2000, i2c_slave, 0x22);
 
 	i2c_slave = PCF8574_New("i2cbus2000.fault");
-	I2C_SerDesAddSlave(i2c_serdes1000,i2c_slave,0x23);
-	
+	I2C_SerDesAddSlave(i2c_serdes1000, i2c_slave, 0x23);
 
 }
 
@@ -222,7 +220,7 @@ create_i2c_devices()
  * -------------------------------------------------------------------------------
  */
 static int
-board_lacc_create() 
+board_lacc_create()
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
@@ -232,67 +230,74 @@ board_lacc_create()
 	PHY_Device *phy;
 	PCI_Function *bridge;
 
-	Bus_Init(MMU_InvalidateTlb,4*1024);
+	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
-	copro = MMU9_Create("mmu",TARGET_BYTEORDER,MMU_ARM926EJS | MMUV_NS9750);
-	ARM9_RegisterCoprocessor(copro,15);
+	copro = MMU9_Create("mmu", TARGET_BYTEORDER, MMU_ARM926EJS | MMUV_NS9750);
+	ARM9_RegisterCoprocessor(copro, 15);
 
-	bbus=NS9xxx_BBusNew("NS9750","bbus");
-	bbdma=NS9750_BBusDMA_New("bbdma");
-        NS9750_SerialInit(bbdma);
-        NS9750_TimerInit("sysco");
+	bbus = NS9xxx_BBusNew("NS9750", "bbus");
+	bbdma = NS9750_BBusDMA_New("bbdma");
+
+	dev = NS9750Serial_New("serialA", bbdma);
+	Mem_AreaAddMapping(dev, 0x90200040, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	dev = NS9750Serial_New("serialB", bbdma);
+	Mem_AreaAddMapping(dev, 0x90200000, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	dev = NS9750Serial_New("serialC", bbdma);
+	Mem_AreaAddMapping(dev, 0x90300000, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	dev = NS9750Serial_New("serialD", bbdma);
+	Mem_AreaAddMapping(dev, 0x90300040, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+
+	NS9750_TimerInit("sysco");
 	memco = NS9750_MemCoInit("memco");
-	dev=NS9750_EthInit("ns9750_eth");
+	dev = NS9750_EthInit("ns9750_eth");
 
-	phy=Lxt971a_New();
-	NS9750_EthRegisterPhy(dev,phy,0);
-	phy=ML6652_New();
-	NS9750_EthRegisterPhy(dev,phy,1);
-	phy=ML6652_New();
-	NS9750_EthRegisterPhy(dev,phy,17);
+	phy = Lxt971a_New("phy");
+	NS9750_EthRegisterPhy(dev, phy, 0);
+	phy = ML6652_New();
+	NS9750_EthRegisterPhy(dev, phy, 1);
+	phy = ML6652_New();
+	NS9750_EthRegisterPhy(dev, phy, 17);
 	NS9750Usb_New("ns9750_usb");
 	NS9xxx_I2CNew("ns9750_i2c");
 
-	bridge=NS9750_PciInit("ns9750_pci",PCI_DEVICE(0));
-	STE_New("ste_0",bridge,PCI_DEVICE(1),PCI_INTA);
-        STE_New("ste_1",bridge,PCI_DEVICE(2),PCI_INTB);
-        STE_New("ste_2",bridge,PCI_DEVICE(3),PCI_INTC);
+	bridge = NS9750_PciInit("ns9750_pci", PCI_DEVICE(0));
+	STE_New("ste_0", bridge, PCI_DEVICE(1), PCI_INTA);
+	STE_New("ste_1", bridge, PCI_DEVICE(2), PCI_INTB);
+	STE_New("ste_2", bridge, PCI_DEVICE(3), PCI_INTC);
 	//I82559_New("eepro100_0",bridge,PCI_DEVICE(3),PCI_INTC);
-
-
 
 	/* Now Create and Register the devices */
 	dev = DRam_New("dram0");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS4);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS4);
 	}
 	dev = DRam_New("dram1");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS5);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS5);
 	}
 	dev = DRam_New("dram2");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS6);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS6);
 	}
 	dev = DRam_New("dram3");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS7);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS7);
 	}
 
-	dev=AMDFlashBank_New("flash0");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS0);
+	dev = AMDFlashBank_New("flash0");
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS0);
 	}
 	dev = AMDFlashBank_New("flash1");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS1);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS1);
 	} else {
-		fprintf(stderr,"Warning ! no boot Flash available !\n");
+		fprintf(stderr, "Warning ! no boot Flash available !\n");
 		sleep(2);
 	}
 
-	dev=LaccCAN_New();
-	NS9750_RegisterDevice(memco,dev,NS9750_CS3);
+	dev = LaccCAN_New();
+	NS9750_RegisterDevice(memco, dev, NS9750_CS3);
 
 	create_i2c_devices();
 	create_signal_links();
@@ -300,7 +305,8 @@ board_lacc_create()
 }
 
 static void
-board_lacc_run(Board *bd) {
+board_lacc_run(Board * bd)
+{
 	ARM9_Run();
 }
 
@@ -322,16 +328,16 @@ board_lacc_run(Board *bd) {
 "\n"
 
 static Board board_lacc = {
-	.name =	"LACC",
-	.description =	"Lightmaze NS9750 ARM Controller Card",
-	.createBoard =	board_lacc_create,
-	.runBoard =	board_lacc_run,
-	.defaultconfig = DEFAULTCONFIG 
+	.name = "LACC",
+	.description = "Lightmaze NS9750 ARM Controller Card",
+	.createBoard = board_lacc_create,
+	.runBoard = board_lacc_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
 __CONSTRUCTOR__ static void
-lacc_init() {
-        fprintf(stderr,"Loading Lightmaze ARM controller board module\n");
-        Board_Register(&board_lacc);
+lacc_init()
+{
+	fprintf(stderr, "Loading Lightmaze ARM controller board module\n");
+	Board_Register(&board_lacc);
 }
-

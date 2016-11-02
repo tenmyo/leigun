@@ -61,4 +61,4 @@
 #define PIC1_INT_PK1		(1)
 #define PIC1_INT_PK0		(0)
 
-BusDevice * TCC8K_PicNew(const char *name); 
+BusDevice *TCC8K_PicNew(const char *name);

@@ -75,7 +75,7 @@
 #define MM_CS7STO(base)		((base) + 0x64)
 
 typedef struct MM {
-        BusDevice bdev;
+	BusDevice bdev;
 	BusDevice *csdev[8];
 	BusDevice *sdram[2];
 	uint32_t cs_sta[8];
@@ -84,339 +84,336 @@ typedef struct MM {
 } MM;
 
 static uint32_t
-mabr_read(void *clientData,uint32_t address,int rqlen) 
+mabr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM MABR: register not implemented\n");
+	fprintf(stderr, "MM MABR: register not implemented\n");
 	return 0;
 }
 
 static void
-mabr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mabr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM MABR: register not implemented\n");
+	fprintf(stderr, "MM MABR: register not implemented\n");
 }
 
 static uint32_t
-cs0sta_read(void *clientData,uint32_t address,int rqlen) 
+cs0sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS0STA: register not implemented\n");
+	fprintf(stderr, "MM CS0STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs0sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs0sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS0STA: register not implemented\n");
+	fprintf(stderr, "MM CS0STA: register not implemented\n");
 }
 
 static uint32_t
-cs0sto_read(void *clientData,uint32_t address,int rqlen) 
+cs0sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS0STO: register not implemented\n");
+	fprintf(stderr, "MM CS0STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs0sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs0sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS0STO: register not implemented\n");
+	fprintf(stderr, "MM CS0STO: register not implemented\n");
 }
 
 static uint32_t
-cs1sta_read(void *clientData,uint32_t address,int rqlen) 
+cs1sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS1STA: register not implemented\n");
+	fprintf(stderr, "MM CS1STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs1sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs1sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS1STA: register not implemented\n");
+	fprintf(stderr, "MM CS1STA: register not implemented\n");
 }
 
 static uint32_t
-cs1sto_read(void *clientData,uint32_t address,int rqlen) 
+cs1sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS1STO: register not implemented\n");
+	fprintf(stderr, "MM CS1STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs1sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs1sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS1STO: register not implemented\n");
+	fprintf(stderr, "MM CS1STO: register not implemented\n");
 }
 
 static uint32_t
-cs2sta_read(void *clientData,uint32_t address,int rqlen) 
+cs2sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS2STA: register not implemented\n");
+	fprintf(stderr, "MM CS2STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs2sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs2sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS2STA: register not implemented\n");
+	fprintf(stderr, "MM CS2STA: register not implemented\n");
 }
 
 static uint32_t
-cs2sto_read(void *clientData,uint32_t address,int rqlen) 
+cs2sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS2STO: register not implemented\n");
+	fprintf(stderr, "MM CS2STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs2sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs2sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS2STO: register not implemented\n");
-}
-
-
-static uint32_t
-cs3sta_read(void *clientData,uint32_t address,int rqlen) 
-{
-        fprintf(stderr,"MM CS3STA: register not implemented\n");
-	return 0;
-}
-
-static void
-cs3sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"MM CS3STA: register not implemented\n");
+	fprintf(stderr, "MM CS2STO: register not implemented\n");
 }
 
 static uint32_t
-cs3sto_read(void *clientData,uint32_t address,int rqlen) 
+cs3sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS3STO: register not implemented\n");
+	fprintf(stderr, "MM CS3STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs3sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs3sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS3STO: register not implemented\n");
+	fprintf(stderr, "MM CS3STA: register not implemented\n");
 }
 
 static uint32_t
-cs4sta_read(void *clientData,uint32_t address,int rqlen) 
+cs3sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS4STA: register not implemented\n");
+	fprintf(stderr, "MM CS3STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs4sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs3sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS4STA: register not implemented\n");
+	fprintf(stderr, "MM CS3STO: register not implemented\n");
 }
 
 static uint32_t
-cs4sto_read(void *clientData,uint32_t address,int rqlen) 
+cs4sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS4STO: register not implemented\n");
+	fprintf(stderr, "MM CS4STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs4sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs4sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS4STO: register not implemented\n");
+	fprintf(stderr, "MM CS4STA: register not implemented\n");
 }
 
 static uint32_t
-cs5sta_read(void *clientData,uint32_t address,int rqlen) 
+cs4sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS5STA: register not implemented\n");
+	fprintf(stderr, "MM CS4STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs5sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs4sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS5STA: register not implemented\n");
+	fprintf(stderr, "MM CS4STO: register not implemented\n");
 }
 
 static uint32_t
-cs5sto_read(void *clientData,uint32_t address,int rqlen) 
+cs5sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS5STO: register not implemented\n");
+	fprintf(stderr, "MM CS5STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs5sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs5sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS5STO: register not implemented\n");
+	fprintf(stderr, "MM CS5STA: register not implemented\n");
 }
 
 static uint32_t
-cs6sta_read(void *clientData,uint32_t address,int rqlen) 
+cs5sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS6STA: register not implemented\n");
+	fprintf(stderr, "MM CS5STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs6sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs5sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS6STA: register not implemented\n");
+	fprintf(stderr, "MM CS5STO: register not implemented\n");
 }
 
 static uint32_t
-cs6sto_read(void *clientData,uint32_t address,int rqlen) 
+cs6sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS6STO: register not implemented\n");
+	fprintf(stderr, "MM CS6STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs6sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs6sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS6STO: register not implemented\n");
+	fprintf(stderr, "MM CS6STA: register not implemented\n");
 }
 
 static uint32_t
-cs7sta_read(void *clientData,uint32_t address,int rqlen) 
+cs6sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS7STA: register not implemented\n");
+	fprintf(stderr, "MM CS6STO: register not implemented\n");
 	return 0;
 }
 
 static void
-cs7sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs6sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS7STA: register not implemented\n");
+	fprintf(stderr, "MM CS6STO: register not implemented\n");
 }
 
 static uint32_t
-cs7sto_read(void *clientData,uint32_t address,int rqlen) 
+cs7sta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS7STO: register not implemented\n");
+	fprintf(stderr, "MM CS7STA: register not implemented\n");
 	return 0;
 }
 
 static void
-cs7sto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs7sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM CS7STO: register not implemented\n");
+	fprintf(stderr, "MM CS7STA: register not implemented\n");
 }
 
 static uint32_t
-sdram_cs0_read(void *clientData,uint32_t address,int rqlen) 
+cs7sto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM SDRAM_CS0: register not implemented\n");
+	fprintf(stderr, "MM CS7STO: register not implemented\n");
 	return 0;
 }
 
 static void
-sdram_cs0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cs7sto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM SDRAM_CS0: register not implemented\n");
+	fprintf(stderr, "MM CS7STO: register not implemented\n");
 }
 
 static uint32_t
-sdram_cs1_read(void *clientData,uint32_t address,int rqlen) 
+sdram_cs0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM SDRAM_CS1: register not implemented\n");
+	fprintf(stderr, "MM SDRAM_CS0: register not implemented\n");
 	return 0;
 }
 
 static void
-sdram_cs1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdram_cs0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM SDRAM_CS1: register not implemented\n");
+	fprintf(stderr, "MM SDRAM_CS0: register not implemented\n");
 }
 
 static uint32_t
-bootsta_read(void *clientData,uint32_t address,int rqlen) 
+sdram_cs1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM Boot Start: register not implemented\n");
+	fprintf(stderr, "MM SDRAM_CS1: register not implemented\n");
 	return 0;
 }
 
 static void
-bootsta_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdram_cs1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM Boot start: register not implemented\n");
+	fprintf(stderr, "MM SDRAM_CS1: register not implemented\n");
 }
 
 static uint32_t
-bootsto_read(void *clientData,uint32_t address,int rqlen) 
+bootsta_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM Boot stop: register not implemented\n");
+	fprintf(stderr, "MM Boot Start: register not implemented\n");
 	return 0;
 }
 
 static void
-bootsto_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bootsta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM Boot stop: register not implemented\n");
+	fprintf(stderr, "MM Boot start: register not implemented\n");
 }
 
 static uint32_t
-ipbi_cr_read(void *clientData,uint32_t address,int rqlen) 
+bootsto_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM IPBI_CR: register not implemented\n");
+	fprintf(stderr, "MM Boot stop: register not implemented\n");
 	return 0;
 }
 
 static void
-ipbi_cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bootsto_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"MM IPBI_CR: register not implemented\n");
+	fprintf(stderr, "MM Boot stop: register not implemented\n");
 }
 
+static uint32_t
+ipbi_cr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "MM IPBI_CR: register not implemented\n");
+	return 0;
+}
 
 static void
-MM_Unmap(void *owner,uint32_t base,uint32_t mask)
+ipbi_cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "MM IPBI_CR: register not implemented\n");
+}
+
+static void
+MM_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 //        IOH_Delete8(PSC_MR1(base));
 }
 
 static void
-MM_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+MM_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 
-	MM *mm = (MM*) owner;
-	IOH_New32(MM_MABR(base),mabr_read,mabr_write,mm);
-	IOH_New32(MM_CS0STA(base),cs0sta_read,cs0sta_write,mm);
-	IOH_New32(MM_CS0STO(base),cs0sto_read,cs0sto_write,mm);
-	IOH_New32(MM_CS1STA(base),cs1sta_read,cs1sta_write,mm);
-	IOH_New32(MM_CS1STO(base),cs1sto_read,cs1sto_write,mm);
-	IOH_New32(MM_CS2STA(base),cs2sta_read,cs2sta_write,mm);
-	IOH_New32(MM_CS2STO(base),cs2sto_read,cs2sto_write,mm);
-	IOH_New32(MM_CS3STA(base),cs3sta_read,cs3sta_write,mm);
-	IOH_New32(MM_CS3STO(base),cs3sto_read,cs3sto_write,mm);
-	IOH_New32(MM_CS4STA(base),cs4sta_read,cs4sta_write,mm);
-	IOH_New32(MM_CS4STO(base),cs4sto_read,cs4sto_write,mm);
-	IOH_New32(MM_CS5STA(base),cs5sta_read,cs5sta_write,mm);
-	IOH_New32(MM_CS5STO(base),cs5sto_read,cs5sto_write,mm);
+	MM *mm = (MM *) owner;
+	IOH_New32(MM_MABR(base), mabr_read, mabr_write, mm);
+	IOH_New32(MM_CS0STA(base), cs0sta_read, cs0sta_write, mm);
+	IOH_New32(MM_CS0STO(base), cs0sto_read, cs0sto_write, mm);
+	IOH_New32(MM_CS1STA(base), cs1sta_read, cs1sta_write, mm);
+	IOH_New32(MM_CS1STO(base), cs1sto_read, cs1sto_write, mm);
+	IOH_New32(MM_CS2STA(base), cs2sta_read, cs2sta_write, mm);
+	IOH_New32(MM_CS2STO(base), cs2sto_read, cs2sto_write, mm);
+	IOH_New32(MM_CS3STA(base), cs3sta_read, cs3sta_write, mm);
+	IOH_New32(MM_CS3STO(base), cs3sto_read, cs3sto_write, mm);
+	IOH_New32(MM_CS4STA(base), cs4sta_read, cs4sta_write, mm);
+	IOH_New32(MM_CS4STO(base), cs4sto_read, cs4sto_write, mm);
+	IOH_New32(MM_CS5STA(base), cs5sta_read, cs5sta_write, mm);
+	IOH_New32(MM_CS5STO(base), cs5sto_read, cs5sto_write, mm);
 
-	IOH_New32(MM_SDRAM_CS0(base),sdram_cs0_read,sdram_cs0_write,mm);
-	IOH_New32(MM_SDRAM_CS1(base),sdram_cs1_read,sdram_cs1_write,mm);
+	IOH_New32(MM_SDRAM_CS0(base), sdram_cs0_read, sdram_cs0_write, mm);
+	IOH_New32(MM_SDRAM_CS1(base), sdram_cs1_read, sdram_cs1_write, mm);
 
-	IOH_New32(MM_BOOTSTA(base),bootsta_read,bootsta_write,mm);
-	IOH_New32(MM_BOOTSTO(base),bootsto_read,bootsto_write,mm);
-	IOH_New32(MM_IPBI_CR(base),ipbi_cr_read,ipbi_cr_write,mm);
-	IOH_New32(MM_CS6STA(base),cs6sta_read,cs6sta_write,mm);
-	IOH_New32(MM_CS6STO(base),cs6sto_read,cs6sto_write,mm);
-	IOH_New32(MM_CS7STA(base),cs7sta_read,cs7sta_write,mm);
-	IOH_New32(MM_CS7STO(base),cs7sto_read,cs7sto_write,mm);
+	IOH_New32(MM_BOOTSTA(base), bootsta_read, bootsta_write, mm);
+	IOH_New32(MM_BOOTSTO(base), bootsto_read, bootsto_write, mm);
+	IOH_New32(MM_IPBI_CR(base), ipbi_cr_read, ipbi_cr_write, mm);
+	IOH_New32(MM_CS6STA(base), cs6sta_read, cs6sta_write, mm);
+	IOH_New32(MM_CS6STO(base), cs6sto_read, cs6sto_write, mm);
+	IOH_New32(MM_CS7STA(base), cs7sta_read, cs7sta_write, mm);
+	IOH_New32(MM_CS7STO(base), cs7sto_read, cs7sto_write, mm);
 }
 
 BusDevice *
 MPC5200_MMNew(const char *name)
 {
-        MM *mm = sg_calloc(sizeof(MM));
-        mm->bdev.first_mapping=NULL;
-        mm->bdev.Map=MM_Map;
-        mm->bdev.UnMap=MM_Unmap;
-        mm->bdev.owner=mm;
-        mm->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &mm->bdev;
+	MM *mm = sg_calloc(sizeof(MM));
+	mm->bdev.first_mapping = NULL;
+	mm->bdev.Map = MM_Map;
+	mm->bdev.UnMap = MM_Unmap;
+	mm->bdev.owner = mm;
+	mm->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &mm->bdev;
 }
-

@@ -76,10 +76,10 @@ extern uint32_t mmu_enabled;
 #define MMUV_NS9750	(0x2)
 #define MMUV_IMX21	(0x3)
 
-ArmCoprocessor *MMU9_Create(const char *name,int endian,uint32_t type);
-uint32_t MMU9_TranslateAddress(uint32_t addr,uint32_t access_type);
+ArmCoprocessor *MMU9_Create(const char *name, int endian, uint32_t type);
+uint32_t MMU9_TranslateAddress(uint32_t addr, uint32_t access_type);
 
 void MMU_AlignmentException(uint32_t far);
-void MMU_InvalidateTlb(); 
+void MMU_InvalidateTlb();
 void MMU_SetDebugMode(int val);
 int MMU_Byteorder();

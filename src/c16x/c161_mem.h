@@ -41,8 +41,7 @@
 #define XADRS_RGSZ_SHIFT	(0)
 #define XADRS_RGSZ_MASK		(0xf)
 
-
 typedef struct C161_Memco C161_Memco;
 
-C161_Memco * C161_MemcoNew();
-void C161_RegisterDevice(C161_Memco *memco,BusDevice *bdev,uint32_t cs); 
+C161_Memco *C161_MemcoNew();
+void C161_RegisterDevice(C161_Memco * memco, BusDevice * bdev, uint32_t cs);

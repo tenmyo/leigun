@@ -88,197 +88,197 @@ typedef struct AT91Spi {
 	char *name;
 	Spi_Device *spidev;
 	SigNode *sigMiso;
-        SigNode *sigMosi;
-        SigNode *sigSck;
-        SigNode *sigCS[4];
-        SigNode *sigIrq;
-	
+	SigNode *sigMosi;
+	SigNode *sigSck;
+	SigNode *sigCS[4];
+	SigNode *sigIrq;
+
 	Clock_t *clkIn;
 	Clock_t *clkSpi;
 } AT91Spi;
 
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-rdr_read(void *clientData,uint32_t address,int rqlen)
+rdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-rdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-tdr_read(void *clientData,uint32_t address,int rqlen)
+tdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-tdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return SR_SPIENS | SR_RXBUFF;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return SR_SPIENS | SR_RXBUFF;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-csr0_read(void *clientData,uint32_t address,int rqlen)
+csr0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-csr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-csr1_read(void *clientData,uint32_t address,int rqlen)
+csr1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-csr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-csr2_read(void *clientData,uint32_t address,int rqlen)
+csr2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-csr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static uint32_t
-csr3_read(void *clientData,uint32_t address,int rqlen)
+csr3_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-csr3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csr3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"SPI controller %s not implemented\n",__func__);
+	fprintf(stderr, "SPI controller %s not implemented\n", __func__);
 }
 
 static void
-AT91Spi_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Spi_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	AT91Spi *spi = owner;
-	IOH_New32(SPI_CR(base),cr_read,cr_write,spi);
-	IOH_New32(SPI_MR(base),mr_read,mr_write,spi);	
-	IOH_New32(SPI_RDR(base),rdr_read,rdr_write,spi);
-	IOH_New32(SPI_TDR(base),tdr_read,tdr_write,spi);
-	IOH_New32(SPI_SR(base),sr_read,sr_write,spi);	
-	IOH_New32(SPI_IER(base),ier_read,ier_write,spi);
-	IOH_New32(SPI_IDR(base),idr_read,idr_write,spi);
-	IOH_New32(SPI_IMR(base),imr_read,imr_write,spi);
-	IOH_New32(SPI_CSR0(base),csr0_read,csr0_write,spi);
-	IOH_New32(SPI_CSR1(base),csr1_read,csr1_write,spi);
-	IOH_New32(SPI_CSR2(base),csr2_read,csr2_write,spi);
-	IOH_New32(SPI_CSR3(base),csr3_read,csr3_write,spi);
+	IOH_New32(SPI_CR(base), cr_read, cr_write, spi);
+	IOH_New32(SPI_MR(base), mr_read, mr_write, spi);
+	IOH_New32(SPI_RDR(base), rdr_read, rdr_write, spi);
+	IOH_New32(SPI_TDR(base), tdr_read, tdr_write, spi);
+	IOH_New32(SPI_SR(base), sr_read, sr_write, spi);
+	IOH_New32(SPI_IER(base), ier_read, ier_write, spi);
+	IOH_New32(SPI_IDR(base), idr_read, idr_write, spi);
+	IOH_New32(SPI_IMR(base), imr_read, imr_write, spi);
+	IOH_New32(SPI_CSR0(base), csr0_read, csr0_write, spi);
+	IOH_New32(SPI_CSR1(base), csr1_read, csr1_write, spi);
+	IOH_New32(SPI_CSR2(base), csr2_read, csr2_write, spi);
+	IOH_New32(SPI_CSR3(base), csr3_read, csr3_write, spi);
 }
 
 static void
-AT91Spi_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Spi_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(SPI_CR(base));
-	IOH_Delete32(SPI_MR(base));	
+	IOH_Delete32(SPI_MR(base));
 	IOH_Delete32(SPI_RDR(base));
 	IOH_Delete32(SPI_TDR(base));
-	IOH_Delete32(SPI_SR(base));	
+	IOH_Delete32(SPI_SR(base));
 	IOH_Delete32(SPI_IER(base));
 	IOH_Delete32(SPI_IDR(base));
 	IOH_Delete32(SPI_IMR(base));
@@ -289,16 +289,17 @@ AT91Spi_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-spidev_xmit(void *owner,uint8_t *data,int bits) {
+spidev_xmit(void *owner, uint8_t * data, int bits)
+{
 #if 0
-        M32C_Uart *mua = owner;
-        if((mua->reg_uic1 & UiC1_RE)) {
-                mua->reg_uirb = *data;
-                if(!(mua->reg_uic1 & UiC1_RI)) {
-                        mua->reg_uic1 |= UiC1_RI;
-                        post_rx_interrupt(mua);
-                }
-        }
+	M32C_Uart *mua = owner;
+	if ((mua->reg_uic1 & UiC1_RE)) {
+		mua->reg_uirb = *data;
+		if (!(mua->reg_uic1 & UiC1_RI)) {
+			mua->reg_uic1 |= UiC1_RI;
+			post_rx_interrupt(mua);
+		}
+	}
 #endif
 }
 
@@ -309,16 +310,15 @@ AT91Spi_New(const char *name)
 	char *spidev_name = alloca(30 + strlen(name));
 	//char *spidev_clkname = alloca(34 + strlen(name));
 
-        spi->bdev.first_mapping = NULL;
-        spi->bdev.Map = AT91Spi_Map;
-        spi->bdev.UnMap = AT91Spi_UnMap;
-        spi->bdev.owner = spi;
-        spi->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	sprintf(spidev_name,"%s.spi",name);
-        spi->name = sg_strdup(name);
-	spi->spidev = SpiDev_New(spidev_name,spidev_xmit,spi);
+	spi->bdev.first_mapping = NULL;
+	spi->bdev.Map = AT91Spi_Map;
+	spi->bdev.UnMap = AT91Spi_UnMap;
+	spi->bdev.owner = spi;
+	spi->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	sprintf(spidev_name, "%s.spi", name);
+	spi->name = sg_strdup(name);
+	spi->spidev = SpiDev_New(spidev_name, spidev_xmit, spi);
 
-        fprintf(stderr,"AT91 SPI controller \"%s\" created\n",name);
-        return &spi->bdev;
+	fprintf(stderr, "AT91 SPI controller \"%s\" created\n", name);
+	return &spi->bdev;
 }
-

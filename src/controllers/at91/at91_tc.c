@@ -103,7 +103,6 @@
 #define		CMR_WM_BSWTRG_MASK	(3<<30)
 #define		CMR_WM_BSWTRG_SHIFT	(30)
 
-
 #define TC_CV(base,chan)	((base)+(chan)*0x40+0x10)
 #define TC_RA(base,chan)	((base)+(chan)*0x40+0x14)
 #define TC_RB(base,chan)	((base)+(chan)*0x40+0x18)
@@ -168,29 +167,29 @@ typedef struct AT91Tc AT91Tc;
 typedef struct AT91TcChannel {
 	AT91Tc *tc;
 	CycleCounter_t last_timer_update;
-	CycleCounter_t remainder; 
-	uint32_t ccr;	
-	uint32_t cmr;	
-	uint16_t  cv;
-	uint16_t  ra;
-	uint16_t  rb;
-	uint16_t  rc;
-	uint32_t  sr;
-	uint8_t  imr;
+	CycleCounter_t remainder;
+	uint32_t ccr;
+	uint32_t cmr;
+	uint16_t cv;
+	uint16_t ra;
+	uint16_t rb;
+	uint16_t rc;
+	uint32_t sr;
+	uint8_t imr;
 	SigNode *irqNode;
-	Clock_t	*xc0;
-	Clock_t	*xc1;
-	Clock_t	*xc2;
+	Clock_t *xc0;
+	Clock_t *xc1;
+	Clock_t *xc2;
 
 	Clock_t *mck;
 	Clock_t *slck;
-	Clock_t	*timer_clock1;
-	Clock_t	*timer_clock2;
-	Clock_t	*timer_clock3;
-	Clock_t	*timer_clock4;
-	Clock_t	*timer_clock5;
+	Clock_t *timer_clock1;
+	Clock_t *timer_clock2;
+	Clock_t *timer_clock3;
+	Clock_t *timer_clock4;
+	Clock_t *timer_clock5;
 
-	Clock_t *clk;	/* The real input to the counter */
+	Clock_t *clk;		/* The real input to the counter */
 } AT91TcChannel;
 
 /* The timer Controller */
@@ -200,42 +199,42 @@ struct AT91Tc {
 	AT91TcChannel chan[3];
 };
 
-
-static void 
-update_interrupt(AT91TcChannel *tcchan) 
+static void
+update_interrupt(AT91TcChannel * tcchan)
 {
-	if(tcchan->sr & tcchan->imr) {
-		SigNode_Set(tcchan->irqNode,SIG_HIGH);
+	if (tcchan->sr & tcchan->imr) {
+		SigNode_Set(tcchan->irqNode, SIG_HIGH);
 	} else {
-		SigNode_Set(tcchan->irqNode,SIG_PULLDOWN);
+		SigNode_Set(tcchan->irqNode, SIG_PULLDOWN);
 	}
 }
 
 static void
-actualize_counter(AT91TcChannel *tcchan) 
+actualize_counter(AT91TcChannel * tcchan)
 {
 	uint64_t timer_cycles;
 	uint32_t cmr = tcchan->cmr;
 	uint32_t period;
-	if(cmr & CMR_CM_CPCTRG) {
-		period = tcchan->rc; 
+	if (cmr & CMR_CM_CPCTRG) {
+		period = tcchan->rc;
 	} else {
 		period = 65536;
 	}
-	if(!period) {
+	if (!period) {
 		tcchan->cv = 0;
 		return;
-	} 
-	if(!Clock_Freq(tcchan->clk)) {
+	}
+	if (!Clock_Freq(tcchan->clk)) {
 		return;
 	}
 	tcchan->remainder += CycleCounter_Get() - tcchan->last_timer_update;
-        tcchan->last_timer_update = CycleCounter_Get();
-	if(tcchan->remainder > (uint64_t) 0x80000000) {
-		timer_cycles = tcchan->remainder / (CycleTimerRate_Get()/Clock_Freq(tcchan->clk)); 
-		tcchan->remainder -= timer_cycles * (CycleTimerRate_Get()/Clock_Freq(tcchan->clk));
+	tcchan->last_timer_update = CycleCounter_Get();
+	if (tcchan->remainder > (uint64_t) 0x80000000) {
+		timer_cycles = tcchan->remainder / (CycleTimerRate_Get() / Clock_Freq(tcchan->clk));
+		tcchan->remainder -=
+		    timer_cycles * (CycleTimerRate_Get() / Clock_Freq(tcchan->clk));
 	} else {
-		timer_cycles = Clock_Freq(tcchan->clk) * tcchan->remainder / CycleTimerRate_Get(); 
+		timer_cycles = Clock_Freq(tcchan->clk) * tcchan->remainder / CycleTimerRate_Get();
 		tcchan->remainder -= timer_cycles * CycleTimerRate_Get() / Clock_Freq(tcchan->clk);
 	}
 	tcchan->cv = (tcchan->cv + timer_cycles) % period;
@@ -244,83 +243,82 @@ actualize_counter(AT91TcChannel *tcchan)
 
 /* Update the frequency of the input to the 16 Bit counter */
 static void
-update_clk(AT91TcChannel *tcchan) 
+update_clk(AT91TcChannel * tcchan)
 {
 	uint32_t tcclks = (tcchan->cmr & CMR_WM_TCCLKS_MASK);
 	int clken = !!(tcchan->ccr & CCR_CLKEN);
-	switch(tcclks) {
-		case 0:
-			Clock_MakeDerived(tcchan->clk,tcchan->timer_clock1,clken,1);
-			break;
-		case 1:
-			Clock_MakeDerived(tcchan->clk,tcchan->timer_clock2,clken,1);
-			break;
-		case 2:
-			Clock_MakeDerived(tcchan->clk,tcchan->timer_clock3,clken,1);
-			break;
-		case 3:
-			Clock_MakeDerived(tcchan->clk,tcchan->timer_clock4,clken,1);
-			break;
-		case 4:
-			Clock_MakeDerived(tcchan->clk,tcchan->timer_clock5,clken,1);
-			break;
-		case 5:
-			Clock_MakeDerived(tcchan->clk,tcchan->xc0,clken,1);
-			break;
-		case 6:
-			Clock_MakeDerived(tcchan->clk,tcchan->xc1,clken,1);
-			break;
-		case 7:
-			Clock_MakeDerived(tcchan->clk,tcchan->xc2,clken,1);
-			break;
-		default:
-			break;
+	switch (tcclks) {
+	    case 0:
+		    Clock_MakeDerived(tcchan->clk, tcchan->timer_clock1, clken, 1);
+		    break;
+	    case 1:
+		    Clock_MakeDerived(tcchan->clk, tcchan->timer_clock2, clken, 1);
+		    break;
+	    case 2:
+		    Clock_MakeDerived(tcchan->clk, tcchan->timer_clock3, clken, 1);
+		    break;
+	    case 3:
+		    Clock_MakeDerived(tcchan->clk, tcchan->timer_clock4, clken, 1);
+		    break;
+	    case 4:
+		    Clock_MakeDerived(tcchan->clk, tcchan->timer_clock5, clken, 1);
+		    break;
+	    case 5:
+		    Clock_MakeDerived(tcchan->clk, tcchan->xc0, clken, 1);
+		    break;
+	    case 6:
+		    Clock_MakeDerived(tcchan->clk, tcchan->xc1, clken, 1);
+		    break;
+	    case 7:
+		    Clock_MakeDerived(tcchan->clk, tcchan->xc2, clken, 1);
+		    break;
+	    default:
+		    break;
 	}
 }
 
-
 static uint32_t
-ccr_read(void *clientData,uint32_t address,int rqlen)
+ccr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: CCR is writeonly\n");
+	fprintf(stderr, "AT91Tc: CCR is writeonly\n");
 	return 0;
 }
 
 static void
-ccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	/* CLKDIS has precedence according to manual */
 	if (value & CCR_CLKDIS) {
 		tcchan->ccr &= ~CCR_CLKEN;
 		tcchan->ccr |= ~CCR_CLKDIS;
-	} else if(value & CCR_CLKEN) {
+	} else if (value & CCR_CLKEN) {
 		tcchan->ccr &= ~CCR_CLKDIS;
 		tcchan->ccr |= ~CCR_CLKEN;
-	} 
+	}
 	update_clk(tcchan);
-        return;
+	return;
 }
 
 static uint32_t
-cmr_read(void *clientData,uint32_t address,int rqlen)
+cmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	return tcchan->cmr;
 }
 
 static void
-cmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	actualize_counter(tcchan);
 	tcchan->cmr = value & 0x000fc7ff;
 	update_clk(tcchan);
-        return;
+	return;
 }
 
 static uint32_t
-cv_read(void *clientData,uint32_t address,int rqlen)
+cv_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	actualize_counter(tcchan);
@@ -329,184 +327,182 @@ cv_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-cv_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cv_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: CV is a read-only register\n");
-        return;
+	fprintf(stderr, "AT91Tc: CV is a read-only register\n");
+	return;
 }
 
 static uint32_t
-ra_read(void *clientData,uint32_t address,int rqlen)
+ra_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	return tcchan->ra;
 }
 
 static void
-ra_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ra_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
-        tcchan->ra = value & 0xffff;
+	tcchan->ra = value & 0xffff;
 }
 
 static uint32_t
-rb_read(void *clientData,uint32_t address,int rqlen)
+rb_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
-        return tcchan->rb;
+	return tcchan->rb;
 }
 
 static void
-rb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
-        tcchan->rb = value & 0xffff;
+	tcchan->rb = value & 0xffff;
 }
 
 static uint32_t
-rc_read(void *clientData,uint32_t address,int rqlen)
+rc_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	return tcchan->rc;
 }
 
 static void
-rc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	tcchan->rc = value & 0xffff;
-        return;
+	return;
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	return tcchan->sr;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: writing to readonly register SR\n");
-        return;
+	fprintf(stderr, "AT91Tc: writing to readonly register SR\n");
+	return;
 }
 
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: reading writeonly register IER\n");
+	fprintf(stderr, "AT91Tc: reading writeonly register IER\n");
 	return 0;
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	tcchan->imr |= value;
 	update_interrupt(tcchan);
-        return;
+	return;
 }
 
-
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: reading from writeonly register IDR\n");
+	fprintf(stderr, "AT91Tc: reading from writeonly register IDR\n");
 	return 0;
 }
 
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	tcchan->imr &= ~value;
 	update_interrupt(tcchan);
-        return;
+	return;
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91TcChannel *tcchan = (AT91TcChannel *) clientData;
 	return tcchan->imr;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: writing to readonly register IMR\n");
-        return;
+	fprintf(stderr, "AT91Tc: writing to readonly register IMR\n");
+	return;
 }
 
 static uint32_t
-bcr_read(void *clientData,uint32_t address,int rqlen)
+bcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Tc: reading from writeonly register BCR\n");
+	fprintf(stderr, "AT91Tc: reading from writeonly register BCR\n");
 	return 0;
 }
 
 static void
-bcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Tc *tc = (AT91Tc *) clientData;
 	AT91TcChannel *tcchan;
 	int i;
-	if(value & BCR_SYNC) {
-		for(i=0;i<3;i++) {
+	if (value & BCR_SYNC) {
+		for (i = 0; i < 3; i++) {
 			tcchan = &tc->chan[i];
 			actualize_counter(tcchan);
 			tcchan->cv = 0;
 		}
 	}
-        return;
+	return;
 }
 
 static uint32_t
-bmr_read(void *clientData,uint32_t address,int rqlen)
+bmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Tc *tc = (AT91Tc *) clientData;
 	return tc->bmr;
 }
 
 static void
-bmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Tc *tc = (AT91Tc *) clientData;
 	tc->bmr = value & 0x3f;
-	if(value != 0x15) {
-		fprintf(stderr,"AT91Tc: BMR not implemented\n");
+	if (value != 0x15) {
+		fprintf(stderr, "AT91Tc: BMR not implemented\n");
 	}
-        return;
+	return;
 }
 
-
 static void
-AT91Tc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Tc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91Tc *tc = (AT91Tc*) owner;
+	AT91Tc *tc = (AT91Tc *) owner;
 	int chan;
 	AT91TcChannel *tcchan;
-	for(chan=0;chan<3;chan++) {
+	for (chan = 0; chan < 3; chan++) {
 		tcchan = &tc->chan[chan];
-		IOH_New32(TC_CCR(base,chan),ccr_read,ccr_write,tcchan);
-		IOH_New32(TC_CMR(base,chan),cmr_read,cmr_write,tcchan);
-		IOH_New32(TC_CV(base,chan),cv_read,cv_write,tcchan);
-		IOH_New32(TC_RA(base,chan),ra_read,ra_write,tcchan);
-		IOH_New32(TC_RB(base,chan),rb_read,rb_write,tcchan);
-		IOH_New32(TC_RC(base,chan),rc_read,rc_write,tcchan);
-		IOH_New32(TC_SR(base,chan),sr_read,sr_write,tcchan);
-		IOH_New32(TC_IER(base,chan),ier_read,ier_write,tcchan);
-		IOH_New32(TC_IDR(base,chan),idr_read,idr_write,tcchan);
-		IOH_New32(TC_IMR(base,chan),imr_read,imr_write,tcchan);
+		IOH_New32(TC_CCR(base, chan), ccr_read, ccr_write, tcchan);
+		IOH_New32(TC_CMR(base, chan), cmr_read, cmr_write, tcchan);
+		IOH_New32(TC_CV(base, chan), cv_read, cv_write, tcchan);
+		IOH_New32(TC_RA(base, chan), ra_read, ra_write, tcchan);
+		IOH_New32(TC_RB(base, chan), rb_read, rb_write, tcchan);
+		IOH_New32(TC_RC(base, chan), rc_read, rc_write, tcchan);
+		IOH_New32(TC_SR(base, chan), sr_read, sr_write, tcchan);
+		IOH_New32(TC_IER(base, chan), ier_read, ier_write, tcchan);
+		IOH_New32(TC_IDR(base, chan), idr_read, idr_write, tcchan);
+		IOH_New32(TC_IMR(base, chan), imr_read, imr_write, tcchan);
 	}
 
-	IOH_New32(TC_BCR(base),bcr_read,bcr_write,tc);
-	IOH_New32(TC_BMR(base),bmr_read,bmr_write,tc);
+	IOH_New32(TC_BCR(base), bcr_read, bcr_write, tc);
+	IOH_New32(TC_BMR(base), bmr_read, bmr_write, tc);
 }
 
 static void
-AT91Tc_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Tc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 //        IOH_Delete32(US_CR(base));
 }
@@ -515,60 +511,60 @@ BusDevice *
 AT91Tc_New(const char *name)
 {
 	int i;
-        AT91Tc *tc = sg_new(AT91Tc);
+	AT91Tc *tc = sg_new(AT91Tc);
 #if 0
-	tc->mck = Clock_New("%s.mck",name);
-	tc->slck = Clock_New("%s.slck",name);
-	tc->timer_clock1 = Clock_New("%s.timer_clock1",name);
-	tc->timer_clock2 = Clock_New("%s.timer_clock2",name);
-	tc->timer_clock3 = Clock_New("%s.timer_clock3",name);
-	tc->timer_clock4 = Clock_New("%s.timer_clock4",name);
-	tc->timer_clock5 = Clock_New("%s.timer_clock5",name);
-	Clock_MakeDerived(tc->timer_clock1,tc->mck,1,2);
-	Clock_MakeDerived(tc->timer_clock2,tc->mck,1,8);
-	Clock_MakeDerived(tc->timer_clock3,tc->mck,1,32);
-	Clock_MakeDerived(tc->timer_clock4,tc->mck,1,128);
-	Clock_MakeDerived(tc->timer_clock5,tc->slck,1,1);
+	tc->mck = Clock_New("%s.mck", name);
+	tc->slck = Clock_New("%s.slck", name);
+	tc->timer_clock1 = Clock_New("%s.timer_clock1", name);
+	tc->timer_clock2 = Clock_New("%s.timer_clock2", name);
+	tc->timer_clock3 = Clock_New("%s.timer_clock3", name);
+	tc->timer_clock4 = Clock_New("%s.timer_clock4", name);
+	tc->timer_clock5 = Clock_New("%s.timer_clock5", name);
+	Clock_MakeDerived(tc->timer_clock1, tc->mck, 1, 2);
+	Clock_MakeDerived(tc->timer_clock2, tc->mck, 1, 8);
+	Clock_MakeDerived(tc->timer_clock3, tc->mck, 1, 32);
+	Clock_MakeDerived(tc->timer_clock4, tc->mck, 1, 128);
+	Clock_MakeDerived(tc->timer_clock5, tc->slck, 1, 1);
 #endif
 
-	for(i=0;i<3;i++) {
+	for (i = 0; i < 3; i++) {
 		AT91TcChannel *tcchan = &tc->chan[i];
 		tcchan->tc = tc;
-        	tcchan->irqNode = SigNode_New("%s.ch%d.irq",name,i);
-		if(!tcchan->irqNode) {
-			fprintf(stderr,"AT91Tc: Can not create interrupt signal line\n");
+		tcchan->irqNode = SigNode_New("%s.ch%d.irq", name, i);
+		if (!tcchan->irqNode) {
+			fprintf(stderr, "AT91Tc: Can not create interrupt signal line\n");
 		}
-		SigNode_Set(tcchan->irqNode,SIG_PULLDOWN);
+		SigNode_Set(tcchan->irqNode, SIG_PULLDOWN);
 
-		tcchan->mck = Clock_New("%s.ch%d.mck",name,i);
-		tcchan->slck = Clock_New("%s.ch%d.slck",name,i);
-		tcchan->timer_clock1 = Clock_New("%s.ch%d.timer_clock1",name,i);
-		tcchan->timer_clock2 = Clock_New("%s.ch%d.timer_clock2",name,i);
-		tcchan->timer_clock3 = Clock_New("%s.ch%d.timer_clock3",name,i);
-		tcchan->timer_clock4 = Clock_New("%s.ch%d.timer_clock4",name,i);
-		tcchan->timer_clock5 = Clock_New("%s.ch%d.timer_clock5",name,i);
-		Clock_MakeDerived(tcchan->timer_clock1,tcchan->mck,1,2);
-		Clock_MakeDerived(tcchan->timer_clock2,tcchan->mck,1,8);
-		Clock_MakeDerived(tcchan->timer_clock3,tcchan->mck,1,32);
-		Clock_MakeDerived(tcchan->timer_clock4,tcchan->mck,1,128);
-		Clock_MakeDerived(tcchan->timer_clock5,tcchan->slck,1,1);
+		tcchan->mck = Clock_New("%s.ch%d.mck", name, i);
+		tcchan->slck = Clock_New("%s.ch%d.slck", name, i);
+		tcchan->timer_clock1 = Clock_New("%s.ch%d.timer_clock1", name, i);
+		tcchan->timer_clock2 = Clock_New("%s.ch%d.timer_clock2", name, i);
+		tcchan->timer_clock3 = Clock_New("%s.ch%d.timer_clock3", name, i);
+		tcchan->timer_clock4 = Clock_New("%s.ch%d.timer_clock4", name, i);
+		tcchan->timer_clock5 = Clock_New("%s.ch%d.timer_clock5", name, i);
+		Clock_MakeDerived(tcchan->timer_clock1, tcchan->mck, 1, 2);
+		Clock_MakeDerived(tcchan->timer_clock2, tcchan->mck, 1, 8);
+		Clock_MakeDerived(tcchan->timer_clock3, tcchan->mck, 1, 32);
+		Clock_MakeDerived(tcchan->timer_clock4, tcchan->mck, 1, 128);
+		Clock_MakeDerived(tcchan->timer_clock5, tcchan->slck, 1, 1);
 
-		tcchan->xc0 = Clock_New("%s.ch%d.xc0",name,i);
-		tcchan->xc1 = Clock_New("%s.ch%d.xc1",name,i);
-		tcchan->xc2 = Clock_New("%s.ch%d.xc2",name,i);
-		tcchan->clk = Clock_New("%s.ch%d.clk",name,i);
-		Clock_SetFreq(tcchan->xc0,0);
-		Clock_SetFreq(tcchan->xc1,0);
-		Clock_SetFreq(tcchan->xc2,0);
-        	update_interrupt(tcchan);
+		tcchan->xc0 = Clock_New("%s.ch%d.xc0", name, i);
+		tcchan->xc1 = Clock_New("%s.ch%d.xc1", name, i);
+		tcchan->xc2 = Clock_New("%s.ch%d.xc2", name, i);
+		tcchan->clk = Clock_New("%s.ch%d.clk", name, i);
+		Clock_SetFreq(tcchan->xc0, 0);
+		Clock_SetFreq(tcchan->xc1, 0);
+		Clock_SetFreq(tcchan->xc2, 0);
+		update_interrupt(tcchan);
 		update_clk(tcchan);
 	}
 
-        tc->bdev.first_mapping=NULL;
-        tc->bdev.Map=AT91Tc_Map;
-        tc->bdev.UnMap=AT91Tc_UnMap;
-        tc->bdev.owner=tc;
-        tc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"AT91RM9200 TimerCounter TC \"%s\" created\n",name);
-        return &tc->bdev;
+	tc->bdev.first_mapping = NULL;
+	tc->bdev.Map = AT91Tc_Map;
+	tc->bdev.UnMap = AT91Tc_UnMap;
+	tc->bdev.owner = tc;
+	tc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "AT91RM9200 TimerCounter TC \"%s\" created\n", name);
+	return &tc->bdev;
 }

@@ -34,7 +34,6 @@
  *************************************************************************************************
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -46,20 +45,18 @@
  * Returns the number of RGB pixels in the buffer
  */
 
-
-enum
-{
-    eeNewPixel = 0x0,
-    eeWPixel = 0x20, 	/* left side (West) pixel */
-    eeNEPixel = 0x40,	/* North east side pixel (right up) */	
-    eeCachedColor = 0x60
+enum {
+	eeNewPixel = 0x0,
+	eeWPixel = 0x20,	/* left side (West) pixel */
+	eeNEPixel = 0x40,	/* North east side pixel (right up) */
+	eeCachedColor = 0x60
 };
 
-inline uint32_t get3pixel (uint8_t* src)
+static inline uint32_t
+get3pixel(uint8_t * src)
 {
-    return (src[0] << 16) | (src[1] << 8) | (src[2]);
-} 
-
+	return (src[0] << 16) | (src[1] << 8) | (src[2]);
+}
 
 /*
  * ------------------------------------------------------------------------
@@ -81,48 +78,49 @@ inline uint32_t get3pixel (uint8_t* src)
  * -----------------------------------------------------------------------
  */
 static inline uint32_t
-mode10_get_pixel(const uint8_t *src,uint32_t oldpixel,unsigned int *indexP,int maxlen) {
+mode10_get_pixel(const uint8_t * src, uint32_t oldpixel, unsigned int *indexP, int maxlen)
+{
 	uint32_t pixel;
-	src+=*indexP;
-	if(maxlen < 2) {
+	src += *indexP;
+	if (maxlen < 2) {
 		return 0xffffff;
 	}
-	if(src[0] & 0x80) {
+	if (src[0] & 0x80) {
 		uint16_t delta;
-		int32_t dr,dg,db;
-		int r,g,b;
-		delta = (src[0]<<8) | src[1];
-		dr = (delta & 0x7c00) >> 10;	
+		int32_t dr, dg, db;
+		int r, g, b;
+		delta = (src[0] << 8) | src[1];
+		dr = (delta & 0x7c00) >> 10;
 		dg = (delta & 0x3e0) >> 5;
 		db = (delta & 0x1f) << 1;
-		if(dr & 0x10) {
+		if (dr & 0x10) {
 			dr |= 0xffffffe0;
 		}
-		if(dg & 0x10) {
+		if (dg & 0x10) {
 			dg |= 0xffffffe0;
 		}
-		if(db & 0x20) {
+		if (db & 0x20) {
 			db |= 0xffffffd0;
 		}
-		r = ((oldpixel >> 16) + dr) & 0xff; 
-		g = ((oldpixel >> 8)  + dg) & 0xff;
-		b = ((oldpixel >> 0)  + db) & 0xff;
+		r = ((oldpixel >> 16) + dr) & 0xff;
+		g = ((oldpixel >> 8) + dg) & 0xff;
+		b = ((oldpixel >> 0) + db) & 0xff;
 		pixel = (r << 16) | (g << 8) | (b);
-		fprintf(stderr,"Delta\n");
-		*indexP+=2;
+		fprintf(stderr, "Delta\n");
+		*indexP += 2;
 	} else {
-		if(maxlen < 3) {
+		if (maxlen < 3) {
 			return 0xffffff;
 		}
-		pixel = ((src[0] << 16) | (src[1]<<8) | (src[2]))<<1;
+		pixel = ((src[0] << 16) | (src[1] << 8) | (src[2])) << 1;
 		/* 
 		 * Don't know how lowest bit of blue is produced correctly 
 		 * to avoid error accumulation in seedrow
 		 */
-		if(pixel & 0x80)  {
+		if (pixel & 0x80) {
 			pixel |= 1;
 		}
-		*indexP+=3;
+		*indexP += 3;
 	}
 	return pixel;
 }
@@ -148,124 +146,127 @@ mode10_get_pixel(const uint8_t *src,uint32_t oldpixel,unsigned int *indexP,int m
  * --------------------------------------------------------------------------------------------------
  */
 int
-Mode10_Decompress(uint8_t * const dst,const uint8_t *src,int dstlen,int srclen) 
+Mode10_Decompress(uint8_t * const dst, const uint8_t * src, int dstlen, int srclen)
 {
 	int j;
 	uint32_t cachedColor = 0x00ffffff;
-	uint32_t pixel = 0xffffff;				
+	uint32_t pixel = 0xffffff;
 	uint8_t cmd;
 	int rle;
 	uint8_t *seedrow = dst;
-	unsigned int dI = 0; /* destination Index */
-	unsigned int sI = 0; /* source Index */
-	while(sI<srclen) {
+	unsigned int dI = 0;	/* destination Index */
+	unsigned int sI = 0;	/* source Index */
+	while (sI < srclen) {
 		cmd = src[sI++];
 		rle = cmd & 0x80;
 		int seedcnt;
 		int runlen;
 		int repeat;
-		int pixel_source = cmd  & 0x60;
+		int pixel_source = cmd & 0x60;
 		seedcnt = (cmd >> 3) & 0x3;
-		if(seedcnt == 3) {
+		if (seedcnt == 3) {
 			do {
-				if(sI >= srclen) {
+				if (sI >= srclen) {
 					return -1;
 				}
-				seedcnt+= src[sI];
-			} while(src[sI++] == 0xff); 
+				seedcnt += src[sI];
+			} while (src[sI++] == 0xff);
 		}
 		runlen = (cmd & 0x7);
-		if(runlen == 7) {
+		if (runlen == 7) {
 			repeat = 1;
 		} else {
 			repeat = 0;
 		}
-		dI+=seedcnt*3;
-		if(pixel_source == eeNewPixel) {
+		dI += seedcnt * 3;
+		if (pixel_source == eeNewPixel) {
 			/* do nothing in this case */
-		} else  if(pixel_source == eeWPixel) {
-			if(dI>2) {
-				pixel = (dst[dI-3] << 16) | (dst[dI-2]<<8) | (dst[dI-1]); 
+		} else if (pixel_source == eeWPixel) {
+			if (dI > 2) {
+				pixel = (dst[dI - 3] << 16) | (dst[dI - 2] << 8) | (dst[dI - 1]);
 			} else {
 				pixel = 0xffffff;
-				fprintf(stderr,"Mode10 decompressor: First pixel is eeWPixel encoded\n");
+				fprintf(stderr,
+					"Mode10 decompressor: First pixel is eeWPixel encoded\n");
 			}
-		} else if(pixel_source == eeNEPixel) {
+		} else if (pixel_source == eeNEPixel) {
 			/* North East pixel is still in seedrow */
-			if(((dI+5) < dstlen) && seedrow) {
-				pixel = (seedrow[dI+3] << 16) | (seedrow[dI+4] << 8) | seedrow[dI+5];
+			if (((dI + 5) < dstlen) && seedrow) {
+				pixel =
+				    (seedrow[dI + 3] << 16) | (seedrow[dI + 4] << 8) | seedrow[dI +
+											       5];
 			} else {
 				pixel = 0xffffff;
-				fprintf(stderr,"Mode10 decompressor: Pixel not in seedrow\n");
+				fprintf(stderr, "Mode10 decompressor: Pixel not in seedrow\n");
 			}
 		} else {	// eeCachedColor
-			pixel = cachedColor;	
+			pixel = cachedColor;
 		}
-		if(rle) {
+		if (rle) {
 			/* RLE is ok */
-			runlen+=2;
-			if(pixel_source == eeNewPixel) {
-				if((dI+3) > dstlen) {
+			runlen += 2;
+			if (pixel_source == eeNewPixel) {
+				if ((dI + 3) > dstlen) {
 					return -2;
 				}
-				pixel = get3pixel(dst+dI);
-				pixel = mode10_get_pixel(src,pixel,&sI,srclen - sI);
+				pixel = get3pixel(dst + dI);
+				pixel = mode10_get_pixel(src, pixel, &sI, srclen - sI);
 				cachedColor = pixel;
 			}
-			if(repeat) {
+			if (repeat) {
 				do {
-					if(sI >= srclen) {
+					if (sI >= srclen) {
 						return -1;
 					}
-					runlen+= src[sI];
-				} while(src[sI++] == 0xff); 
+					runlen += src[sI];
+				} while (src[sI++] == 0xff);
 			}
-			for(j=0;j<runlen;j++) {
-				if((dI+3) > dstlen) {
+			for (j = 0; j < runlen; j++) {
+				if ((dI + 3) > dstlen) {
 					return -2;
 				}
-				dst[dI++] = (pixel >> 16) & 0xff;	
-				dst[dI++] = (pixel >> 8) & 0xff;	
-				dst[dI++] = (pixel >> 0) & 0xff;	
+				dst[dI++] = (pixel >> 16) & 0xff;
+				dst[dI++] = (pixel >> 8) & 0xff;
+				dst[dI++] = (pixel >> 0) & 0xff;
 			}
 		} else {
-			runlen+=1;
-			if(pixel_source == eeNewPixel) {
-				if((dI+3) > dstlen) {
+			runlen += 1;
+			if (pixel_source == eeNewPixel) {
+				if ((dI + 3) > dstlen) {
 					return -2;
 				}
-				pixel = get3pixel(dst+dI);
-				pixel = mode10_get_pixel(src,pixel,&sI,srclen - sI);
+				pixel = get3pixel(dst + dI);
+				pixel = mode10_get_pixel(src, pixel, &sI, srclen - sI);
 				cachedColor = pixel;
-				runlen--;	
+				runlen--;
 			}
-			if((dI+3) > dstlen) {
+			if ((dI + 3) > dstlen) {
 				return -2;
 			}
-			dst[dI++] = (pixel >> 16) & 0xff;	
-			dst[dI++] = (pixel >> 8) & 0xff;	
-			dst[dI++] = (pixel >> 0) & 0xff;	
-			while(1) {
-				for(j=0;j<runlen;j++) {
-					if((dI+3) > dstlen) {
+			dst[dI++] = (pixel >> 16) & 0xff;
+			dst[dI++] = (pixel >> 8) & 0xff;
+			dst[dI++] = (pixel >> 0) & 0xff;
+			while (1) {
+				for (j = 0; j < runlen; j++) {
+					if ((dI + 3) > dstlen) {
 						return -2;
 					}
-					pixel = get3pixel(dst+dI);
-					pixel = mode10_get_pixel(src,pixel,&sI,srclen - sI);
+					pixel = get3pixel(dst + dI);
+					pixel = mode10_get_pixel(src, pixel, &sI, srclen - sI);
 					//cachedColor = pixel; /* I think it is only updated on first literal pixel */
-					dst[dI++] = (pixel >> 16) & 0xff;	
-					dst[dI++] = (pixel >> 8) & 0xff;	
-					dst[dI++] = (pixel >> 0) & 0xff;	
+					dst[dI++] = (pixel >> 16) & 0xff;
+					dst[dI++] = (pixel >> 8) & 0xff;
+					dst[dI++] = (pixel >> 0) & 0xff;
 				}
-				if(repeat) {
-					runlen = src[sI++];	
-					if(runlen != 255) {
-						repeat=0;
+				if (repeat) {
+					runlen = src[sI++];
+					if (runlen != 255) {
+						repeat = 0;
 					}
 				} else {
-					break; 
+					break;
 				}
-			} 
+			}
 		}
 	}
 	return dI;
@@ -278,74 +279,74 @@ Mode10_Decompress(uint8_t * const dst,const uint8_t *src,int dstlen,int srclen)
  */
 
 int
-Mode9_Decompress(uint8_t *dst,uint8_t *src ,int buflen,int srclen)
+Mode9_Decompress(uint8_t * dst, uint8_t * src, int buflen, int srclen)
 {
-        int i,dst_wp = 0;
-        for(i=0;i<srclen;) {
-                uint8_t cmd=src[i++];
-                if(cmd & 0x80) { // rle
-                        int replacement_count = (cmd & 31)+2;
+	int i, dst_wp = 0;
+	for (i = 0; i < srclen;) {
+		uint8_t cmd = src[i++];
+		if (cmd & 0x80) {	// rle
+			int replacement_count = (cmd & 31) + 2;
 			int offset_count = (cmd >> 5) & 3;
-			if(offset_count == 3) {
-                                do {
-					if(i >= srclen) {
-						return - 1;
+			if (offset_count == 3) {
+				do {
+					if (i >= srclen) {
+						return -1;
 					}
-                                        offset_count+=src[i];
-                                } while (src[i++]==255) ;
+					offset_count += src[i];
+				} while (src[i++] == 255);
 			}
-                        if(replacement_count == 33) {
-                                do {
-					if(i >= srclen) {
-						return - 1;
+			if (replacement_count == 33) {
+				do {
+					if (i >= srclen) {
+						return -1;
 					}
-                                        replacement_count+=src[i];
-                                } while (src[i++]==255) ;
-                        }
+					replacement_count += src[i];
+				} while (src[i++] == 255);
+			}
 			dst_wp += offset_count;
-			if((dst_wp + replacement_count) > buflen) {
+			if ((dst_wp + replacement_count) > buflen) {
 				return -2;
 			}
-			if(i >= srclen) {
+			if (i >= srclen) {
 				return -1;
 			}
-                        while(replacement_count) {
-                                dst[dst_wp++] = src[i];
-                                replacement_count--;
-                        }
-                        i++;
-                } else {
-                        int count = (cmd & 7)+1;
+			while (replacement_count) {
+				dst[dst_wp++] = src[i];
+				replacement_count--;
+			}
+			i++;
+		} else {
+			int count = (cmd & 7) + 1;
 			int offset_count = (cmd >> 3) & 0xf;
-			if(offset_count == 15) {
-                                do {
-					if(i >= srclen) {
-						return - 1;
+			if (offset_count == 15) {
+				do {
+					if (i >= srclen) {
+						return -1;
 					}
-                                        offset_count+=src[i];
-                                } while(src[i++] == 255);
+					offset_count += src[i];
+				} while (src[i++] == 255);
 			}
-                        if(count == 8) {
-                                do {
-					if(i >= srclen) {
-						return - 1;
+			if (count == 8) {
+				do {
+					if (i >= srclen) {
+						return -1;
 					}
-                                        count+=src[i];
-                                } while(src[i++] == 255);
-                        }
+					count += src[i];
+				} while (src[i++] == 255);
+			}
 			dst_wp += offset_count;
-			if(dst_wp + count > buflen) {
+			if (dst_wp + count > buflen) {
 				return -2;
 			}
-			if(i >= srclen) {
+			if (i >= srclen) {
 				return -1;
 			}
-                        while(count) {
-                                dst[dst_wp++] = src[i];
-                                i++;
-                                count--;
-                        }
-                }
-        }
-        return dst_wp;
+			while (count) {
+				dst[dst_wp++] = src[i];
+				i++;
+				count--;
+			}
+		}
+	}
+	return dst_wp;
 }

@@ -10,24 +10,23 @@ typedef struct KeyEvent {
 
 typedef struct Keyboard Keyboard;
 
-typedef void KeyEventProc(void *clientData,KeyEvent *);
+typedef void KeyEventProc(void *clientData, KeyEvent *);
 
 typedef struct KeyboardListener {
-        struct KeyboardListener *next;
+	struct KeyboardListener *next;
 	void *clientData;
-        KeyEventProc *eventProc;
+	KeyEventProc *eventProc;
 } KeyboardListener;
 
 struct Keyboard {
-        KeyboardListener *listener_head;
+	KeyboardListener *listener_head;
 };
 
-
 /* public functions */
-void Keyboard_AddListener(Keyboard *keyboard,KeyEventProc *,void *clientData);
-void Keyboard_RemoveListener(Keyboard *keyboard,KeyEventProc *);
+void Keyboard_AddListener(Keyboard * keyboard, KeyEventProc *, void *clientData);
+void Keyboard_RemoveListener(Keyboard * keyboard, KeyEventProc *);
 
 /* KeyBoard_SendEvent is private ! */
-void Keyboard_SendEvent(Keyboard *,KeyEvent *);
+void Keyboard_SendEvent(Keyboard *, KeyEvent *);
 
 #endif

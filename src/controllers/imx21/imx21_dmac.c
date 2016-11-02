@@ -34,7 +34,6 @@
  *************************************************************************************************
  */
 
-
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -72,7 +71,7 @@
 
 #define DMA_WSRA(base)          ((base) + 0x040)
 #define DMA_XSRA(base)          ((base) + 0x044)
-#define DMA_YSRA(base)          ((base) + 0x048) 
+#define DMA_YSRA(base)          ((base) + 0x048)
 #define DMA_WSRB(base)          ((base) + 0x04C)
 #define DMA_XSRB(base)          ((base) + 0x050)
 #define DMA_YSRB(base)          ((base) + 0x054)
@@ -149,21 +148,21 @@
 #define DMA_REQ_CSPI3_TX        2
 #define DMA_REQ_CSPI3_RX        1
 
-typedef struct IMX21Dmac IMX21Dmac; 
+typedef struct IMX21Dmac IMX21Dmac;
 
 typedef struct DMAChan {
 	IMX21Dmac *dmac;
-	int nr; 	/* my own number */
-	SigNode * irqNode;
+	int nr;			/* my own number */
+	SigNode *irqNode;
 	SigNode *currReqLine;
-	uint8_t xfer_buf[64]; 
+	uint8_t xfer_buf[64];
 	unsigned int xferbuf_rp;
 	unsigned int xferbuf_wp;
 	SigTrace *dmaReqTrace;
 	int stop_dma;
 	int interrupt_posted;
 	uint32_t sar;
-	uint32_t sar_buf; /* double buffered */
+	uint32_t sar_buf;	/* double buffered */
 	uint32_t dar;
 	uint32_t dar_buf;
 	uint32_t cntr;
@@ -198,7 +197,7 @@ struct IMX21Dmac {
 };
 
 static void
-dmac_reset(IMX21Dmac *dmac) 
+dmac_reset(IMX21Dmac * dmac)
 {
 	int i;
 
@@ -213,8 +212,8 @@ dmac_reset(IMX21Dmac *dmac)
 	dmac->wsra = dmac->wsrb = 0;
 	dmac->xsra = dmac->xsrb = 0;
 	dmac->ysra = dmac->ysrb = 0;
-	for(i=0;i<16;i++) {
-		DMAChan * chan = &dmac->dmachan[i];
+	for (i = 0; i < 16; i++) {
+		DMAChan *chan = &dmac->dmachan[i];
 		chan->sar = 0;
 		chan->dar = 0;
 		chan->cntr = 0;
@@ -225,244 +224,246 @@ dmac_reset(IMX21Dmac *dmac)
 		chan->blr = 0;
 		chan->rtor = 0;
 		chan->bucr = 0;
-		chan->ccnr =0;
+		chan->ccnr = 0;
 	}
 }
 
 static void
-update_interrupts(IMX21Dmac *dmac) 
+update_interrupts(IMX21Dmac * dmac)
 {
 	int i;
-	uint16_t ints = (dmac->disr|dmac->dbtosr|dmac->drtosr|dmac->dsesr|dmac->dbosr) 
-			& ~dmac->dimr; 
-	dbgprintf("DMAC: update ints %04x\n",ints);
-	for(i=0;i<16;i++) {
+	uint16_t ints = (dmac->disr | dmac->dbtosr | dmac->drtosr | dmac->dsesr | dmac->dbosr)
+	    & ~dmac->dimr;
+	dbgprintf("DMAC: update ints %04x\n", ints);
+	for (i = 0; i < 16; i++) {
 		DMAChan *chan = &dmac->dmachan[i];
-		if(ints & (1<<i)) {
-			if(!chan->interrupt_posted) {
+		if (ints & (1 << i)) {
+			if (!chan->interrupt_posted) {
 				chan->interrupt_posted = 1;
-				dbgprintf("Post an DMA int chan %d\n",chan->nr);
-				SigNode_Set(chan->irqNode,SIG_LOW);
+				dbgprintf("Post an DMA int chan %d\n", chan->nr);
+				SigNode_Set(chan->irqNode, SIG_LOW);
 			}
 		} else {
-			if(chan->interrupt_posted) {
+			if (chan->interrupt_posted) {
 				chan->interrupt_posted = 0;
-				dbgprintf("UnPost an DMA int chan %d\n",chan->nr);
-				SigNode_Set(chan->irqNode,SIG_HIGH);
+				dbgprintf("UnPost an DMA int chan %d\n", chan->nr);
+				SigNode_Set(chan->irqNode, SIG_HIGH);
 			}
 		}
 	}
 }
 
 static void
-dma_read(DMAChan *chan,int smod,int ssiz) 
+dma_read(DMAChan * chan, int smod, int ssiz)
 {
-	uint32_t value,addr;
+	uint32_t value, addr;
 	addr = chan->sar;
-	if((smod == CCR_SMOD_LINEAR)) {
+	if (smod == CCR_SMOD_LINEAR) {
 		addr += chan->ccnr;
-	} else if(smod == CCR_SMOD_2D) {
-		IMX21Dmac *dmac = chan->dmac;	
-		unsigned int xs,ys,ws,y,x;
-		if(!(chan->ccr & CCR_MSEL)) {
-			ws=dmac->wsra;
-			xs=dmac->xsra;
-			ys=dmac->ysra;
+	} else if (smod == CCR_SMOD_2D) {
+		IMX21Dmac *dmac = chan->dmac;
+		unsigned int xs, ys, ws, y, x;
+		if (!(chan->ccr & CCR_MSEL)) {
+			ws = dmac->wsra;
+			xs = dmac->xsra;
+			ys = dmac->ysra;
 		} else {
-			ws=dmac->wsrb;
-			xs=dmac->xsrb;
-			ys=dmac->ysrb;
+			ws = dmac->wsrb;
+			xs = dmac->xsrb;
+			ys = dmac->ysrb;
 		}
-		if(xs) {
+		if (xs) {
 			y = chan->ccnr / xs;
-			x = chan->ccnr - y * xs; 
+			x = chan->ccnr - y * xs;
 		} else {
-			y=0;
-			x=0;
+			y = 0;
+			x = 0;
 		}
-		addr += y * ws + x; 
-	} else if(smod == CCR_SMOD_FIFO) {
+		addr += y * ws + x;
+	} else if (smod == CCR_SMOD_FIFO) {
 		/* Increment nothing when reading from fifo */
 	}
-	switch(ssiz) {
-		case 8:
-			if(chan->xferbuf_wp > 63) {
-				fprintf(stderr,"Emulator bug in %s line %d\n",__FILE__,__LINE__);
-				return;
-			}
-			chan->xfer_buf[chan->xferbuf_wp++] = Bus_Read8(addr);
-			break;
-		case 16:
-			if(chan->xferbuf_wp > 62) {
-				fprintf(stderr,"Emulator bug in %s line %d\n",__FILE__,__LINE__);
-				return;
-			}
-			value =  Bus_Read16(addr);
-			chan->xfer_buf[chan->xferbuf_wp++] = value & 0xff;
-			chan->xfer_buf[chan->xferbuf_wp++] = (value>>8) & 0xff;
-			break;
-		case 32:
-			if(chan->xferbuf_wp > 60) {
-				fprintf(stderr,"Emulator bug in %s line %d\n",__FILE__,__LINE__);
-				return;
-			}
-			value =  Bus_Read32(addr);
-			chan->xfer_buf[chan->xferbuf_wp++] = value & 0xff;
-			chan->xfer_buf[chan->xferbuf_wp++] = (value>>8) & 0xff;
-			chan->xfer_buf[chan->xferbuf_wp++] = (value>>16) & 0xff;
-			chan->xfer_buf[chan->xferbuf_wp++] = (value>>24) & 0xff;
-			break;
-		default:
-			break;
-	}	
-	 
+	switch (ssiz) {
+	    case 8:
+		    if (chan->xferbuf_wp > 63) {
+			    fprintf(stderr, "Emulator bug in %s line %d\n", __FILE__, __LINE__);
+			    return;
+		    }
+		    chan->xfer_buf[chan->xferbuf_wp++] = Bus_Read8(addr);
+		    break;
+	    case 16:
+		    if (chan->xferbuf_wp > 62) {
+			    fprintf(stderr, "Emulator bug in %s line %d\n", __FILE__, __LINE__);
+			    return;
+		    }
+		    value = Bus_Read16(addr);
+		    chan->xfer_buf[chan->xferbuf_wp++] = value & 0xff;
+		    chan->xfer_buf[chan->xferbuf_wp++] = (value >> 8) & 0xff;
+		    break;
+	    case 32:
+		    if (chan->xferbuf_wp > 60) {
+			    fprintf(stderr, "Emulator bug in %s line %d\n", __FILE__, __LINE__);
+			    return;
+		    }
+		    value = Bus_Read32(addr);
+		    chan->xfer_buf[chan->xferbuf_wp++] = value & 0xff;
+		    chan->xfer_buf[chan->xferbuf_wp++] = (value >> 8) & 0xff;
+		    chan->xfer_buf[chan->xferbuf_wp++] = (value >> 16) & 0xff;
+		    chan->xfer_buf[chan->xferbuf_wp++] = (value >> 24) & 0xff;
+		    break;
+	    default:
+		    break;
+	}
+
 }
 
 static void
-dma_write(DMAChan *chan,int dmod,int dsiz) 
+dma_write(DMAChan * chan, int dmod, int dsiz)
 {
 	uint32_t addr = chan->dar;
 	uint32_t value;
-	if((dmod == CCR_DMOD_LINEAR)) {
-		addr+= chan->ccnr;
-	} else if(dmod == CCR_DMOD_2D) {
-		IMX21Dmac *dmac = chan->dmac;	
-		unsigned int xs,ys,ws,y,x;
-		if(!(chan->ccr & CCR_MSEL)) {
-			ws=dmac->wsra;
-			xs=dmac->xsra;
-			ys=dmac->ysra;
+	if (dmod == CCR_DMOD_LINEAR) {
+		addr += chan->ccnr;
+	} else if (dmod == CCR_DMOD_2D) {
+		IMX21Dmac *dmac = chan->dmac;
+		unsigned int xs, ys, ws, y, x;
+		if (!(chan->ccr & CCR_MSEL)) {
+			ws = dmac->wsra;
+			xs = dmac->xsra;
+			ys = dmac->ysra;
 		} else {
-			ws=dmac->wsrb;
-			xs=dmac->xsrb;
-			ys=dmac->ysrb;
+			ws = dmac->wsrb;
+			xs = dmac->xsrb;
+			ys = dmac->ysrb;
 		}
-		if(xs) {
+		if (xs) {
 			y = chan->ccnr / xs;
-			x = chan->ccnr - y * xs; 
+			x = chan->ccnr - y * xs;
 		} else {
-			y=0;
-			x=0;
+			y = 0;
+			x = 0;
 		}
-		addr += y * ws + x; 
-	} else if(dmod == CCR_DMOD_FIFO) {
+		addr += y * ws + x;
+	} else if (dmod == CCR_DMOD_FIFO) {
 		/* Increment nothing when reading from fifo */
 	} else {
-		fprintf(stderr,"DMAC: Illegal destination address mode\n");
-	} 
-	switch(dsiz) {
-		case 8:
-			if(chan->xferbuf_rp > 63) {
-				fprintf(stderr,"Emulator bug in %s line %d\n",__FILE__,__LINE__);
-				return;
-			}
-			Bus_Write8(chan->xfer_buf[chan->xferbuf_rp++],addr);
-			break;
-		case 16:
-			if(chan->xferbuf_rp > 62) {
-				fprintf(stderr,"Emulator bug in %s line %d\n",__FILE__,__LINE__);
-				return;
-			}
-			value = chan->xfer_buf[chan->xferbuf_rp] | (chan->xfer_buf[chan->xferbuf_rp+1]<<8); /* Little endian ? */
-			chan->xferbuf_rp+=2;
-			Bus_Write16(value,addr);
-			break;
-		case 32:
-			if(chan->xferbuf_rp > 60) {
-				fprintf(stderr,"Emulator bug in %s line %d\n",__FILE__,__LINE__);
-				return;
-			}
-			value = chan->xfer_buf[0] | (chan->xfer_buf[1]<<8) | 
-				(chan->xfer_buf[2]<<16) | (chan->xfer_buf[3]<<24);
-			chan->xferbuf_rp+=4;
-			Bus_Write32(value,addr);
-			break;
-		default:
-			break;
-	}	
+		fprintf(stderr, "DMAC: Illegal destination address mode\n");
+	}
+	switch (dsiz) {
+	    case 8:
+		    if (chan->xferbuf_rp > 63) {
+			    fprintf(stderr, "Emulator bug in %s line %d\n", __FILE__, __LINE__);
+			    return;
+		    }
+		    Bus_Write8(chan->xfer_buf[chan->xferbuf_rp++], addr);
+		    break;
+	    case 16:
+		    if (chan->xferbuf_rp > 62) {
+			    fprintf(stderr, "Emulator bug in %s line %d\n", __FILE__, __LINE__);
+			    return;
+		    }
+		    value = chan->xfer_buf[chan->xferbuf_rp] | (chan->xfer_buf[chan->xferbuf_rp + 1] << 8);	/* Little endian ? */
+		    chan->xferbuf_rp += 2;
+		    Bus_Write16(value, addr);
+		    break;
+	    case 32:
+		    if (chan->xferbuf_rp > 60) {
+			    fprintf(stderr, "Emulator bug in %s line %d\n", __FILE__, __LINE__);
+			    return;
+		    }
+		    value = chan->xfer_buf[0] | (chan->xfer_buf[1] << 8) |
+			(chan->xfer_buf[2] << 16) | (chan->xfer_buf[3] << 24);
+		    chan->xferbuf_rp += 4;
+		    Bus_Write32(value, addr);
+		    break;
+	    default:
+		    break;
+	}
 }
 
-
 static void
-do_dma(DMAChan *chan) 
+do_dma(DMAChan * chan)
 {
 	IMX21Dmac *dmac = chan->dmac;
-	uint32_t smod,dmod,dsiz,ssiz;
+	uint32_t smod, dmod, dsiz, ssiz;
 	chan->stop_dma = 0;
 	int count = 0;
 	//int burst_len = chan->blr & 0x3f; 
 	dbgprintf("Entered DO-DMA\n");
 	smod = (chan->ccr & CCR_SMOD_MASK);
 	dmod = (chan->ccr & CCR_DMOD_MASK);
-	switch(chan->ccr & CCR_SSIZ_MASK) {
-		case CCR_SSIZ_32:
-			ssiz = 32;
-			break;
-		case CCR_SSIZ_16:
-			ssiz = 16;
-			break;
-		case CCR_SSIZ_8:
-			ssiz = 8;
-			break;
-		default:
-			fprintf(stderr,"illegal ssiz\n");
-			return;
+	switch (chan->ccr & CCR_SSIZ_MASK) {
+	    case CCR_SSIZ_32:
+		    ssiz = 32;
+		    break;
+	    case CCR_SSIZ_16:
+		    ssiz = 16;
+		    break;
+	    case CCR_SSIZ_8:
+		    ssiz = 8;
+		    break;
+	    default:
+		    fprintf(stderr, "illegal ssiz\n");
+		    return;
 	}
-	switch(chan->ccr & CCR_DSIZ_MASK) {
-		case CCR_DSIZ_32:
-			dsiz = 32;
-			break;
-		case CCR_DSIZ_16:
-			dsiz = 16;
-			break;
-		case CCR_DSIZ_8:
-			dsiz = 8;
-			break;
-		default:
-			fprintf(stderr,"illegal dsiz\n");
-			return;
+	switch (chan->ccr & CCR_DSIZ_MASK) {
+	    case CCR_DSIZ_32:
+		    dsiz = 32;
+		    break;
+	    case CCR_DSIZ_16:
+		    dsiz = 16;
+		    break;
+	    case CCR_DSIZ_8:
+		    dsiz = 8;
+		    break;
+	    default:
+		    fprintf(stderr, "illegal dsiz\n");
+		    return;
 
 	}
-	if(chan->ccr & CCR_MDIR) {
-		fprintf(stderr,"i.MX21 DMAC: downwards DMA direction not implemented\n");
+	if (chan->ccr & CCR_MDIR) {
+		fprintf(stderr, "i.MX21 DMAC: downwards DMA direction not implemented\n");
 		return;
 	}
-	while((chan->ccnr < chan->cntr) && ((SigNode_Val(chan->currReqLine) == SIG_LOW) || !(chan->ccr & CCR_REN))) {
+	while ((chan->ccnr < chan->cntr)
+	       && ((SigNode_Val(chan->currReqLine) == SIG_LOW) || !(chan->ccr & CCR_REN))) {
 		chan->xferbuf_wp = 0;
 		chan->xferbuf_rp = 0;
-		do { 
-			dma_read(chan,smod,ssiz);		
-			count += ssiz;	
+		do {
+			dma_read(chan, smod, ssiz);
+			count += ssiz;
 		} while (count < dsiz);
 		do {
-			dma_write(chan,dmod,dsiz);
+			dma_write(chan, dmod, dsiz);
 			count -= dsiz;
-		} while(count > 0);
-		chan->ccnr = (ssiz > dsiz) ? chan->ccnr + (ssiz>>3) : chan->ccnr + (dsiz>>3);
+		} while (count > 0);
+		chan->ccnr = (ssiz > dsiz) ? chan->ccnr + (ssiz >> 3) : chan->ccnr + (dsiz >> 3);
 	}
-	if(chan->ccnr >= chan->cntr) {
-		dmac->disr |= (1<<chan->nr);
+	if (chan->ccnr >= chan->cntr) {
+		dmac->disr |= (1 << chan->nr);
 		update_interrupts(dmac);
 	}
-	dbgprintf("**************** Leave Do DMA with CCNR %d of CNTR %d, disr 0x%04x, chan %d ssiz %d dsiz %d\n",chan->ccnr,chan->cntr,dmac->disr,chan->nr,ssiz,dsiz);
+	dbgprintf
+	    ("**************** Leave Do DMA with CCNR %d of CNTR %d, disr 0x%04x, chan %d ssiz %d dsiz %d\n",
+	     chan->ccnr, chan->cntr, dmac->disr, chan->nr, ssiz, dsiz);
 }
 
 static void
-check_dma(DMAChan *chan) 
+check_dma(DMAChan * chan)
 {
 	int sigval;
 	sigval = SigNode_Val(chan->currReqLine);
-	if(sigval == SIG_LOW) {
+	if (sigval == SIG_LOW) {
 		do_dma(chan);
 	}
 }
 
-static void 
-change_dmareq(SigNode *node,int value,void *clientData)
+static void
+change_dmareq(SigNode * node, int value, void *clientData)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-	dbgprintf("DMAC: request line changed to state %d\n",value);
-	if(value == SIG_LOW) {
+	dbgprintf("DMAC: request line changed to state %d\n", value);
+	if (value == SIG_LOW) {
 		do_dma(chan);
 	} else {
 		chan->stop_dma = 1;
@@ -470,63 +471,64 @@ change_dmareq(SigNode *node,int value,void *clientData)
 }
 
 static void
-disable_dmareq(DMAChan *chan) 
+disable_dmareq(DMAChan * chan)
 {
-	if(chan->dmaReqTrace) {
+	if (chan->dmaReqTrace) {
 		dbgprintf("DMAC: UnTracing dma request line\n");
-		SigNode_Untrace(chan->currReqLine,chan->dmaReqTrace);
+		SigNode_Untrace(chan->currReqLine, chan->dmaReqTrace);
 		chan->dmaReqTrace = NULL;
 	}
 }
+
 static void
-enable_dmareq(DMAChan *chan) 
+enable_dmareq(DMAChan * chan)
 {
 	IMX21Dmac *dmac = chan->dmac;
-	if(chan->currReqLine != dmac->dummyHighNode) {
+	if (chan->currReqLine != dmac->dummyHighNode) {
 		dbgprintf("DMAC: Tracing dma request line\n");
-		chan->dmaReqTrace = SigNode_Trace(chan->currReqLine,change_dmareq,chan);
+		chan->dmaReqTrace = SigNode_Trace(chan->currReqLine, change_dmareq, chan);
 		check_dma(chan);
 	}
 }
 
 static void
-update_dmareq(DMAChan *chan) 
+update_dmareq(DMAChan * chan)
 {
 	IMX21Dmac *dmac = chan->dmac;
-	if(!(dmac->dcr & DCR_DEN)) {
-		return disable_dmareq(chan); 
+	if (!(dmac->dcr & DCR_DEN)) {
+		return disable_dmareq(chan);
 	}
-	if(chan->ccr & (CCR_REN && CCR_CEN)) {
+	if (chan->ccr & (CCR_REN && CCR_CEN)) {
 		enable_dmareq(chan);
 	} else {
-		dbgprintf("disable dmareq in %d\n",__LINE__);
-		disable_dmareq(chan);	
+		dbgprintf("disable dmareq in %d\n", __LINE__);
+		disable_dmareq(chan);
 	}
 }
 
 static uint32_t
-dcr_read(void *clientData,uint32_t address,int rqlen)
+dcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->dcr;
+	return dmac->dcr;
 }
 
 static void
-dcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	uint32_t diff = dmac->dcr ^ value;
 	int i;
 	dmac->dcr = value & 7;
-	if(value & DCR_DRST) {
+	if (value & DCR_DRST) {
 		dmac_reset(dmac);
 	}
-	if(diff & DCR_DEN) {
-		for(i=0;i<16;i++) {
+	if (diff & DCR_DEN) {
+		for (i = 0; i < 16; i++) {
 			update_dmareq(&dmac->dmachan[i]);
 		}
 	}
-        return;
+	return;
 }
 
 /*
@@ -536,20 +538,20 @@ dcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------
  */
 static uint32_t
-disr_read(void *clientData,uint32_t address,int rqlen)
+disr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->disr;
+	return dmac->disr;
 }
 
 static void
-disr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+disr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	uint16_t clearmask = ~value;
 	dmac->disr = dmac->disr & clearmask;
 	update_interrupts(dmac);
-        return;
+	return;
 }
 
 /*
@@ -559,19 +561,19 @@ disr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------
  */
 static uint32_t
-dimr_read(void *clientData,uint32_t address,int rqlen)
+dimr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->dimr;
+	return dmac->dimr;
 }
 
 static void
-dimr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dimr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->dimr = value;
 	update_interrupts(dmac);
-        return;
+	return;
 }
 
 /*
@@ -581,20 +583,20 @@ dimr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------------
  */
 static uint32_t
-dbtosr_read(void *clientData,uint32_t address,int rqlen)
+dbtosr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->dbtosr; 
+	return dmac->dbtosr;
 }
 
 static void
-dbtosr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dbtosr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	uint16_t clearmask = ~value;
 	dmac->dbtosr &= clearmask;
 	update_interrupts(dmac);
-        return;
+	return;
 }
 
 /*
@@ -604,19 +606,19 @@ dbtosr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------------
  */
 static uint32_t
-drtosr_read(void *clientData,uint32_t address,int rqlen)
+drtosr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->drtosr;
+	return dmac->drtosr;
 }
 
 static void
-drtosr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+drtosr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	uint16_t clearmask = ~value;
 	dmac->drtosr &= clearmask;
-        return;
+	return;
 }
 
 /*
@@ -627,19 +629,19 @@ drtosr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-dsesr_read(void *clientData,uint32_t address,int rqlen)
+dsesr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->dsesr;
+	return dmac->dsesr;
 }
 
 static void
-dsesr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dsesr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	uint16_t clearmask = ~value;
 	dmac->dsesr &= clearmask;
-        return;
+	return;
 }
 
 /*
@@ -649,19 +651,19 @@ dsesr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------
  */
 static uint32_t
-dbosr_read(void *clientData,uint32_t address,int rqlen)
+dbosr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->dbosr;
+	return dmac->dbosr;
 }
 
 static void
-dbosr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dbosr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	uint16_t clearmask = ~value;
 	dmac->dbosr &= clearmask;
-        return;
+	return;
 }
 
 /*
@@ -671,172 +673,172 @@ dbosr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------------------------------------------------
  */
 static uint32_t
-dbtocr_read(void *clientData,uint32_t address,int rqlen)
+dbtocr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->dbtocr;
+	return dmac->dbtocr;
 }
 
 static void
-dbtocr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dbtocr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->dbtocr = value;
-        return;
+	return;
 }
 
 static uint32_t
-wsra_read(void *clientData,uint32_t address,int rqlen)
+wsra_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->wsra;
+	return dmac->wsra;
 }
 
 static void
-wsra_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wsra_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->wsra = value;
-        return;
+	return;
 }
 
 static uint32_t
-xsra_read(void *clientData,uint32_t address,int rqlen)
+xsra_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->xsra;
+	return dmac->xsra;
 }
 
 static void
-xsra_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+xsra_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->xsra = value;
-        return;
+	return;
 }
 
 static uint32_t
-ysra_read(void *clientData,uint32_t address,int rqlen)
+ysra_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->ysra;
+	return dmac->ysra;
 }
 
 static void
-ysra_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ysra_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->ysra = value;
-        return;
+	return;
 }
 
 static uint32_t
-wsrb_read(void *clientData,uint32_t address,int rqlen)
+wsrb_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->wsrb;
+	return dmac->wsrb;
 }
 
 static void
-wsrb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wsrb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->wsrb = value;
-        return;
+	return;
 }
 
 static uint32_t
-xsrb_read(void *clientData,uint32_t address,int rqlen)
+xsrb_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->xsrb;
+	return dmac->xsrb;
 }
 
 static void
-xsrb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+xsrb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->xsrb = value;
-        return;
+	return;
 }
 
 static uint32_t
-ysrb_read(void *clientData,uint32_t address,int rqlen)
+ysrb_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
-        return dmac->ysrb;
+	return dmac->ysrb;
 }
 
 static void
-ysrb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ysrb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) clientData;
 	dmac->ysrb = value;
-        return;
+	return;
 }
 
 static uint32_t
-sar_read(void *clientData,uint32_t address,int rqlen)
+sar_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-        return chan->sar;
+	return chan->sar;
 }
 
 static void
-sar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	chan->sar = value;
-        return;
+	return;
 }
 
 static uint32_t
-dar_read(void *clientData,uint32_t address,int rqlen)
+dar_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-        return chan->dar;
+	return chan->dar;
 }
 
 static void
-dar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	chan->dar = value;
-        return;
+	return;
 }
 
 static uint32_t
-cntr_read(void *clientData,uint32_t address,int rqlen)
+cntr_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-        return chan->cntr;
+	return chan->cntr;
 }
 
 static void
-cntr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cntr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	chan->cntr = value & 0xffffff;
-        return;
+	return;
 }
 
 static uint32_t
-ccr_read(void *clientData,uint32_t address,int rqlen)
+ccr_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-        return chan->ccr;
+	return chan->ccr;
 }
 
 static void
-ccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	uint16_t diff = value ^ chan->cntr;
-	chan->ccr = value & 0x7fff;	
-	if((diff & CCR_CEN) && (value & CCR_CEN)) {
+	chan->ccr = value & 0x7fff;
+	if ((diff & CCR_CEN) && (value & CCR_CEN)) {
 		chan->ccnr = 0;
-	} 
-	if(diff & (CCR_CEN | CCR_REN)) { 
+	}
+	if (diff & (CCR_CEN | CCR_REN)) {
 		/* 
 		 * ---------------------------------------
 		 * Check for dma_req line triggered DMA 
@@ -846,54 +848,54 @@ ccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 	}
 	/* 
 	 * -----------------------------------------------
- 	 * Check for Manually triggered DMA 
+	 * Check for Manually triggered DMA 
 	 * -----------------------------------------------
 	 */
-	if((value & CCR_CEN) && !(value & CCR_REN)) {
+	if ((value & CCR_CEN) && !(value & CCR_REN)) {
 		do_dma(chan);
 	}
-        return;
+	return;
 }
 
 static uint32_t
-rssr_read(void *clientData,uint32_t address,int rqlen)
+rssr_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-        return chan->rssr;
+	return chan->rssr;
 }
 
 static void
-rssr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rssr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	IMX21Dmac *dmac = chan->dmac;
 	value = value & 0x1f;
-	if(chan->rssr != value) {
+	if (chan->rssr != value) {
 		chan->rssr = value;
 		disable_dmareq(chan);
-		if(value == 0) {
-			chan->currReqLine = dmac->dummyHighNode; 
-		} else {	
+		if (value == 0) {
+			chan->currReqLine = dmac->dummyHighNode;
+		} else {
 			chan->currReqLine = dmac->dmaReqNode[value];
 		}
 		update_dmareq(chan);
 	}
-        return;
+	return;
 }
 
 static uint32_t
-blr_read(void *clientData,uint32_t address,int rqlen)
+blr_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	return chan->blr;
 }
 
 static void
-blr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+blr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
 	chan->blr = value & 0x3f;
-        return;
+	return;
 }
 
 /*
@@ -904,47 +906,47 @@ blr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-rtor_bucr_read(void *clientData,uint32_t address,int rqlen)
+rtor_bucr_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-	if(chan->ccr & CCR_REN) {
-        	return chan->rtor;
+	if (chan->ccr & CCR_REN) {
+		return chan->rtor;
 	} else {
-        	return chan->bucr;
+		return chan->bucr;
 	}
 }
 
 static void
-rtor_bucr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rtor_bucr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-	if(chan->ccr & CCR_REN) {
-        	chan->rtor = value;
+	if (chan->ccr & CCR_REN) {
+		chan->rtor = value;
 	} else {
-        	chan->bucr = value;
+		chan->bucr = value;
 	}
-        return;
+	return;
 }
 
 static uint32_t
-ccnr_read(void *clientData,uint32_t address,int rqlen)
+ccnr_read(void *clientData, uint32_t address, int rqlen)
 {
 	DMAChan *chan = (DMAChan *) clientData;
-        return chan->ccnr;
+	return chan->ccnr;
 }
 
 static void
-ccnr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ccnr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"IMX21 DMAC: CCNR not writable\n");
-        return;
+	fprintf(stderr, "IMX21 DMAC: CCNR not writable\n");
+	return;
 }
 
 static void
-IMXDmac_Unmap(void *owner,uint32_t base,uint32_t mask)
+IMXDmac_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
-	IOH_Delete32(DMA_DCR(base)); 
+	IOH_Delete32(DMA_DCR(base));
 	IOH_Delete32(DMA_DISR(base));
 	IOH_Delete32(DMA_DIMR(base));
 	IOH_Delete32(DMA_DBTOSR(base));
@@ -953,93 +955,95 @@ IMXDmac_Unmap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(DMA_DBOSR(base));
 	IOH_Delete32(DMA_DBTOCR(base));
 
-	IOH_Delete32(DMA_WSRA(base)); 
+	IOH_Delete32(DMA_WSRA(base));
 	IOH_Delete32(DMA_XSRA(base));
 	IOH_Delete32(DMA_YSRA(base));
 	IOH_Delete32(DMA_WSRB(base));
 	IOH_Delete32(DMA_XSRB(base));
 	IOH_Delete32(DMA_YSRB(base));
 
-	for(i=0;i<16;i++) {
-		IOH_Delete32(DMA_SAR(base,i));
-		IOH_Delete32(DMA_DAR(base,i));
-		IOH_Delete32(DMA_CNTR(base,i));
-		IOH_Delete32(DMA_CCR(base,i));
-		IOH_Delete32(DMA_RSSR(base,i));
-		IOH_Delete32(DMA_BLR(base,i));
-		IOH_Delete32(DMA_RTOR(base,i));
-		IOH_Delete32(DMA_BUCR(base,i));
-		IOH_Delete32(DMA_CCNR(base,i));
+	for (i = 0; i < 16; i++) {
+		IOH_Delete32(DMA_SAR(base, i));
+		IOH_Delete32(DMA_DAR(base, i));
+		IOH_Delete32(DMA_CNTR(base, i));
+		IOH_Delete32(DMA_CCR(base, i));
+		IOH_Delete32(DMA_RSSR(base, i));
+		IOH_Delete32(DMA_BLR(base, i));
+		IOH_Delete32(DMA_RTOR(base, i));
+		IOH_Delete32(DMA_BUCR(base, i));
+		IOH_Delete32(DMA_CCNR(base, i));
 	}
 }
 
 static void
-IMXDmac_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+IMXDmac_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	IMX21Dmac *dmac = (IMX21Dmac *) owner;
 	int i;
-	IOH_New32(DMA_DCR(base),dcr_read,dcr_write,dmac); 
-	IOH_New32(DMA_DISR(base),disr_read,disr_write,dmac);
-	IOH_New32(DMA_DIMR(base),dimr_read,dimr_write,dmac);
-	IOH_New32(DMA_DBTOSR(base),dbtosr_read,dbtosr_write,dmac);
-	IOH_New32(DMA_DRTOSR(base),drtosr_read,drtosr_write,dmac);
-	IOH_New32(DMA_DSESR(base),dsesr_read,dsesr_write,dmac);
-	IOH_New32(DMA_DBOSR(base),dbosr_read,dbosr_write,dmac);
-	IOH_New32(DMA_DBTOCR(base),dbtocr_read,dbtocr_write,dmac);
+	IOH_New32(DMA_DCR(base), dcr_read, dcr_write, dmac);
+	IOH_New32(DMA_DISR(base), disr_read, disr_write, dmac);
+	IOH_New32(DMA_DIMR(base), dimr_read, dimr_write, dmac);
+	IOH_New32(DMA_DBTOSR(base), dbtosr_read, dbtosr_write, dmac);
+	IOH_New32(DMA_DRTOSR(base), drtosr_read, drtosr_write, dmac);
+	IOH_New32(DMA_DSESR(base), dsesr_read, dsesr_write, dmac);
+	IOH_New32(DMA_DBOSR(base), dbosr_read, dbosr_write, dmac);
+	IOH_New32(DMA_DBTOCR(base), dbtocr_read, dbtocr_write, dmac);
 
-	IOH_New32(DMA_WSRA(base),wsra_read,wsra_write,dmac); 
-	IOH_New32(DMA_XSRA(base),xsra_read,xsra_write,dmac);
-	IOH_New32(DMA_YSRA(base),ysra_read,ysra_write,dmac);
-	IOH_New32(DMA_WSRB(base),wsrb_read,wsrb_write,dmac);
-	IOH_New32(DMA_XSRB(base),xsrb_read,xsrb_write,dmac);
-	IOH_New32(DMA_YSRB(base),ysrb_read,ysrb_write,dmac);
+	IOH_New32(DMA_WSRA(base), wsra_read, wsra_write, dmac);
+	IOH_New32(DMA_XSRA(base), xsra_read, xsra_write, dmac);
+	IOH_New32(DMA_YSRA(base), ysra_read, ysra_write, dmac);
+	IOH_New32(DMA_WSRB(base), wsrb_read, wsrb_write, dmac);
+	IOH_New32(DMA_XSRB(base), xsrb_read, xsrb_write, dmac);
+	IOH_New32(DMA_YSRB(base), ysrb_read, ysrb_write, dmac);
 
-	for(i=0;i<16;i++) {
+	for (i = 0; i < 16; i++) {
 		DMAChan *chan = &dmac->dmachan[i];
-		IOH_New32(DMA_SAR(base,i),sar_read,sar_write,chan);
-		IOH_New32(DMA_DAR(base,i),dar_read,dar_write,chan);
-		IOH_New32(DMA_CNTR(base,i),cntr_read,cntr_write,chan);
-		IOH_New32(DMA_CCR(base,i),ccr_read,ccr_write,chan);
-		IOH_New32(DMA_RSSR(base,i),rssr_read,rssr_write,chan);
-		IOH_New32(DMA_BLR(base,i),blr_read,blr_write,chan);
-		IOH_New32(DMA_RTOR(base,i),rtor_bucr_read,rtor_bucr_write,chan);
-		IOH_New32(DMA_CCNR(base,i),ccnr_read,ccnr_write,chan);
+		IOH_New32(DMA_SAR(base, i), sar_read, sar_write, chan);
+		IOH_New32(DMA_DAR(base, i), dar_read, dar_write, chan);
+		IOH_New32(DMA_CNTR(base, i), cntr_read, cntr_write, chan);
+		IOH_New32(DMA_CCR(base, i), ccr_read, ccr_write, chan);
+		IOH_New32(DMA_RSSR(base, i), rssr_read, rssr_write, chan);
+		IOH_New32(DMA_BLR(base, i), blr_read, blr_write, chan);
+		IOH_New32(DMA_RTOR(base, i), rtor_bucr_read, rtor_bucr_write, chan);
+		IOH_New32(DMA_CCNR(base, i), ccnr_read, ccnr_write, chan);
 	}
 }
 
 BusDevice *
-IMX21_DmacNew(const char *name) {
-        IMX21Dmac *dmac = sg_new(IMX21Dmac);
+IMX21_DmacNew(const char *name)
+{
+	IMX21Dmac *dmac = sg_new(IMX21Dmac);
 	int i;
-	dmac->dummyHighNode = SigNode_New("%s.high",name);
-	if(!dmac->dummyHighNode) {
-		fprintf(stderr,"Can not create dummy high node for DMAC\n");
-	}	
-	SigNode_Set(dmac->dummyHighNode,SIG_HIGH);
-	for(i=0;i<32;i++) {
-		dmac->dmaReqNode[i] = SigNode_New("%s.dma_req%d",name,i);
-		if(!dmac->dmaReqNode[i]) {
-			fprintf(stderr,"i.MX21 DMA controller: Can not create DMA request node %d\n",i);
+	dmac->dummyHighNode = SigNode_New("%s.high", name);
+	if (!dmac->dummyHighNode) {
+		fprintf(stderr, "Can not create dummy high node for DMAC\n");
+	}
+	SigNode_Set(dmac->dummyHighNode, SIG_HIGH);
+	for (i = 0; i < 32; i++) {
+		dmac->dmaReqNode[i] = SigNode_New("%s.dma_req%d", name, i);
+		if (!dmac->dmaReqNode[i]) {
+			fprintf(stderr,
+				"i.MX21 DMA controller: Can not create DMA request node %d\n", i);
 			exit(1);
 		}
 	}
-	for(i=0;i<16;i++) {
+	for (i = 0; i < 16; i++) {
 		DMAChan *chan = &dmac->dmachan[i];
 		chan->dmac = dmac;
 		chan->nr = i;
-		chan->irqNode = SigNode_New("%s.irq%d",name,i);
+		chan->irqNode = SigNode_New("%s.irq%d", name, i);
 		chan->currReqLine = dmac->dummyHighNode;
-		if(!chan->irqNode) {
-			fprintf(stderr,"i.MX21 DMA controller: can not create irq node %d\n",i);
+		if (!chan->irqNode) {
+			fprintf(stderr, "i.MX21 DMA controller: can not create irq node %d\n", i);
 			exit(1);
 		}
-		SigNode_Set(chan->irqNode,SIG_PULLUP);
+		SigNode_Set(chan->irqNode, SIG_PULLUP);
 	}
-        dmac->bdev.first_mapping=NULL;
-        dmac->bdev.Map=IMXDmac_Map;
-        dmac->bdev.UnMap=IMXDmac_Unmap;
-        dmac->bdev.owner=dmac;
-        dmac->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"i.MX21 DMA controller \"%s\" created\n",name);
-        return &dmac->bdev;
+	dmac->bdev.first_mapping = NULL;
+	dmac->bdev.Map = IMXDmac_Map;
+	dmac->bdev.UnMap = IMXDmac_Unmap;
+	dmac->bdev.owner = dmac;
+	dmac->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "i.MX21 DMA controller \"%s\" created\n", name);
+	return &dmac->bdev;
 }

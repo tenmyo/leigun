@@ -47,78 +47,78 @@ typedef struct Parport {
 } Parport;
 
 static uint32_t
-data_read(void *clientData,uint32_t address,int rqlen)
+data_read(void *clientData, uint32_t address, int rqlen)
 {
 	//uint8_t data = 0;
 	//int i;
-        return 0;
+	return 0;
 }
 
 static void
-data_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+data_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-status_read(void *clientData,uint32_t address,int rqlen)
+status_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-status_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+status_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-control_read(void *clientData,uint32_t address,int rqlen)
+control_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-control_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+control_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-epp_addr_read(void *clientData,uint32_t address,int rqlen)
+epp_addr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-epp_addr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+epp_addr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static uint32_t
-epp_data_read(void *clientData,uint32_t address,int rqlen)
+epp_data_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-epp_data_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+epp_data_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 }
 
 static void
-Parport_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+Parport_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        Parport *pp = (Parport*) owner;
-	IOH_New32(PP_DATA(base),data_read,data_write,pp);
-	IOH_New32(PP_STATUS(base),status_read,status_write,pp);
-	IOH_New32(PP_CONTROL(base),control_read,control_write,pp);
-	IOH_New32(PP_EPP_ADDR(base),epp_addr_read,epp_addr_write,pp);
-	IOH_New32(PP_EPP_DATA0(base),epp_data_read,epp_data_write,pp);
-	IOH_New32(PP_EPP_DATA1(base),epp_data_read,epp_data_write,pp);
-	IOH_New32(PP_EPP_DATA2(base),epp_data_read,epp_data_write,pp);
-	IOH_New32(PP_EPP_DATA3(base),epp_data_read,epp_data_write,pp);
+	Parport *pp = (Parport *) owner;
+	IOH_New32(PP_DATA(base), data_read, data_write, pp);
+	IOH_New32(PP_STATUS(base), status_read, status_write, pp);
+	IOH_New32(PP_CONTROL(base), control_read, control_write, pp);
+	IOH_New32(PP_EPP_ADDR(base), epp_addr_read, epp_addr_write, pp);
+	IOH_New32(PP_EPP_DATA0(base), epp_data_read, epp_data_write, pp);
+	IOH_New32(PP_EPP_DATA1(base), epp_data_read, epp_data_write, pp);
+	IOH_New32(PP_EPP_DATA2(base), epp_data_read, epp_data_write, pp);
+	IOH_New32(PP_EPP_DATA3(base), epp_data_read, epp_data_write, pp);
 }
 
 static void
-Parport_UnMap(void *owner,uint32_t base,uint32_t mask)
+Parport_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(PP_DATA(base));
 	IOH_Delete32(PP_STATUS(base));
@@ -133,27 +133,26 @@ Parport_UnMap(void *owner,uint32_t base,uint32_t mask)
 BusDevice *
 ParportPC_New(const char *name)
 {
-        Parport *pp = sg_new(Parport);
+	Parport *pp = sg_new(Parport);
 	int i;
-	for(i=0;i<8;i++) {
-		pp->dataport[i] = SigNode_New("%s.d%d",name,i);
+	for (i = 0; i < 8; i++) {
+		pp->dataport[i] = SigNode_New("%s.d%d", name, i);
 	}
-	pp->n_err = SigNode_New("%s.n_err",name);
-	pp->slct = SigNode_New("%s.slct",name);
-	pp->pe = SigNode_New("%s.pe",name);
-	pp->n_ack = SigNode_New("%s.n_ack",name);
-	pp->n_busy = SigNode_New("%s.n_busy",name);
+	pp->n_err = SigNode_New("%s.n_err", name);
+	pp->slct = SigNode_New("%s.slct", name);
+	pp->pe = SigNode_New("%s.pe", name);
+	pp->n_ack = SigNode_New("%s.n_ack", name);
+	pp->n_busy = SigNode_New("%s.n_busy", name);
 
-	pp->n_strobe = SigNode_New("%s.n_strobe",name);
-	pp->autofd = SigNode_New("%s.autofd",name);
-	pp->n_init = SigNode_New("%s.n_init",name);
-	pp->slctin = SigNode_New("%s.slctin",name);
+	pp->n_strobe = SigNode_New("%s.n_strobe", name);
+	pp->autofd = SigNode_New("%s.autofd", name);
+	pp->n_init = SigNode_New("%s.n_init", name);
+	pp->slctin = SigNode_New("%s.slctin", name);
 
-        pp->bdev.first_mapping=NULL;
-        pp->bdev.Map=Parport_Map;
-        pp->bdev.UnMap=Parport_UnMap;
-        pp->bdev.owner=pp;
-        pp->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &pp->bdev;
+	pp->bdev.first_mapping = NULL;
+	pp->bdev.Map = Parport_Map;
+	pp->bdev.UnMap = Parport_UnMap;
+	pp->bdev.owner = pp;
+	pp->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &pp->bdev;
 }
-

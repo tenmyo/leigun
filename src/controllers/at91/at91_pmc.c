@@ -127,8 +127,8 @@ static char *pidTableRM9200[32] = {
 };
 
 static char *pidTableSAM9263[32] = {
-	NULL,	/* "pc_aic" */
-	"pc_sysc",	/* "pc_sysc" */
+	NULL,			/* "pc_aic" */
+	"pc_sysc",		/* "pc_sysc" */
 	"pc_pioa",
 	"pc_piob",
 	"pc_piocde",
@@ -157,8 +157,8 @@ static char *pidTableSAM9263[32] = {
 	"pc_dma",
 	NULL,
 	"pc_uhp",
-	NULL, /* "pc_aic2", */
-	NULL, /* "pc_aic3", */
+	NULL,			/* "pc_aic2", */
+	NULL,			/* "pc_aic3", */
 };
 
 typedef struct AT91Pmc {
@@ -169,10 +169,10 @@ typedef struct AT91Pmc {
 	uint32_t mor;
 	uint32_t mcfr;
 	uint32_t pllar;
-	uint32_t pllbr;	
+	uint32_t pllbr;
 	uint32_t mckr;
 	uint32_t pck[4];
-	uint32_t sr;	
+	uint32_t sr;
 	uint32_t imr;
 	Clock_t *slck;
 	uint32_t freqXin;
@@ -190,281 +190,296 @@ typedef struct AT91Pmc {
 } AT91Pmc;
 
 static void
-dump_clocks(AT91Pmc *pmc)
+dump_clocks(AT91Pmc * pmc)
 {
-//	Clock_DumpTree(pmc->main_clk);
+//      Clock_DumpTree(pmc->main_clk);
 }
 
 static void
-update_interrupt(AT91Pmc *pmc)
+update_interrupt(AT91Pmc * pmc)
 {
 	/* System interupt is wired or, positive level */
-	if(pmc->sr & pmc->imr) {
-		SigNode_Set(pmc->irqNode,SIG_HIGH);
+	if (pmc->sr & pmc->imr) {
+		SigNode_Set(pmc->irqNode, SIG_HIGH);
 	} else {
-		SigNode_Set(pmc->irqNode,SIG_PULLDOWN);
+		SigNode_Set(pmc->irqNode, SIG_PULLDOWN);
 	}
 }
 
 static void
-update_pck_n(AT91Pmc *pmc,unsigned int index)
+update_pck_n(AT91Pmc * pmc, unsigned int index)
 {
 	uint32_t css;
 	int prescaler;
-	int ena = !!(pmc->scsr & (1<<(index+8)));
-	if(index > 3) {
+	int ena = !!(pmc->scsr & (1 << (index + 8)));
+	if (index > 3) {
 		return;
 	}
 	css = pmc->pck[index] & PCK_CSS_MASK;
 	prescaler = 1 << ((pmc->pck[index] & PCK_PRES_MASK) >> PCK_PRES_SHIFT);
 	Clock_t *srcclk;
-	fprintf(stderr,"PCK%d css %u\n",index,css);
-	switch(css) {	
-		case PCK_CSS_SLCK:
-			srcclk = pmc->slck;
-			break;
-		case PCK_CSS_MAINCK:
-			srcclk = pmc->main_clk;
-			break;
-		case PCK_CSS_PLLACK:
-			srcclk = pmc->plla_clk;
-			break;
-		case PCK_CSS_PLLBCK:
-			srcclk = pmc->pllb_clk;
-			break;
-		default:
-			return;
+	fprintf(stderr, "PCK%d css %u\n", index, css);
+	switch (css) {
+	    case PCK_CSS_SLCK:
+		    srcclk = pmc->slck;
+		    break;
+	    case PCK_CSS_MAINCK:
+		    srcclk = pmc->main_clk;
+		    break;
+	    case PCK_CSS_PLLACK:
+		    srcclk = pmc->plla_clk;
+		    break;
+	    case PCK_CSS_PLLBCK:
+		    srcclk = pmc->pllb_clk;
+		    break;
+	    default:
+		    return;
 	}
-	if(ena) {
-		Clock_MakeDerived(pmc->pck_clk[index],srcclk,1,prescaler);
-		pmc->sr |= (1<<(8+index));
+	if (ena) {
+		Clock_MakeDerived(pmc->pck_clk[index], srcclk, 1, prescaler);
+		pmc->sr |= (1 << (8 + index));
 	} else {
-		Clock_MakeDerived(pmc->pck_clk[index],srcclk,0,prescaler);
-		pmc->sr &= ~(1<<(8+index));
+		Clock_MakeDerived(pmc->pck_clk[index], srcclk, 0, prescaler);
+		pmc->sr &= ~(1 << (8 + index));
 	}
 	update_interrupt(pmc);
 }
+
 static uint32_t
-scer_read(void *clientData,uint32_t address,int rqlen)
+scer_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: read from writeonly register SCER\n");
-        return 0;
+	fprintf(stderr, "AT91Pmc: read from writeonly register SCER\n");
+	return 0;
 }
+
 static void
-scer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+scer_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	int i;
 	pmc->scsr |= value & 0xf17;
-	for(i=0;i<4;i++) {
-		update_pck_n(pmc,i);
+	for (i = 0; i < 4; i++) {
+		update_pck_n(pmc, i);
 	}
 }
 
 static uint32_t
-scdr_read(void *clientData,uint32_t address,int rqlen)
+scdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: read from writeonly register SDER\n");
-        return 0;
+	fprintf(stderr, "AT91Pmc: read from writeonly register SDER\n");
+	return 0;
 }
+
 static void
-scdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+scdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	int i;
 	pmc->scsr &= ~(value & 0xf17);
-	for(i=0;i<4;i++) {
-		update_pck_n(pmc,i);
+	for (i = 0; i < 4; i++) {
+		update_pck_n(pmc, i);
 	}
 }
 
 static uint32_t
-scsr_read(void *clientData,uint32_t address,int rqlen)
+scsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
-        return pmc->scsr;
+	return pmc->scsr;
 }
+
 static void
-scsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+scsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc:  write to readonly register SDSR\n");
+	fprintf(stderr, "AT91Pmc:  write to readonly register SDSR\n");
 }
 
 static uint32_t
-pcer_read(void *clientData,uint32_t address,int rqlen)
+pcer_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: read from writeonly register PCER\n");
-        return 0;
+	fprintf(stderr, "AT91Pmc: read from writeonly register PCER\n");
+	return 0;
 }
+
 static void
-pcer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pcer_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Pmc *pmc = (AT91Pmc *)clientData;
+	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	unsigned int i;
 	uint32_t diff = pmc->pcsr ^ (pmc->pcsr | value);
 	pmc->pcsr |= value;
-	for(i = 0; i < 32; i++) {
-		if(diff & (1 << i) && pmc->pcClk[i]) {
-			Clock_MakeDerived(pmc->pcClk[i],pmc->mck,1,1);
+	for (i = 0; i < 32; i++) {
+		if (diff & (1 << i) && pmc->pcClk[i]) {
+			Clock_MakeDerived(pmc->pcClk[i], pmc->mck, 1, 1);
 		}
 	}
 	dump_clocks(pmc);
 }
+
 static uint32_t
-pcdr_read(void *clientData,uint32_t address,int rqlen)
+pcdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: read from writeonly register PCDR\n");
-        return 0;
+	fprintf(stderr, "AT91Pmc: read from writeonly register PCDR\n");
+	return 0;
 }
+
 static void
-pcdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pcdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Pmc *pmc = (AT91Pmc *)clientData;
+	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	unsigned int i;
 	uint32_t diff = pmc->pcsr ^ (pmc->pcsr & ~value);
 	pmc->pcsr &= ~value;
-	for(i = 0; i < 32; i++) {
-		if(diff & (1 << i) && pmc->pcClk[i]) {
-			Clock_MakeDerived(pmc->pcClk[i],pmc->mck,0,1);
+	for (i = 0; i < 32; i++) {
+		if (diff & (1 << i) && pmc->pcClk[i]) {
+			Clock_MakeDerived(pmc->pcClk[i], pmc->mck, 0, 1);
 		}
 	}
 }
 
 static uint32_t
-pcsr_read(void *clientData,uint32_t address,int rqlen)
+pcsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
-        return pmc->pcsr;
+	return pmc->pcsr;
 }
+
 static void
-pcsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pcsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: write to readonly register PCSR\n");
+	fprintf(stderr, "AT91Pmc: write to readonly register PCSR\n");
 }
 
 static uint32_t
-mor_read(void *clientData,uint32_t address,int rqlen)
+mor_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
-        return pmc->mor;
+	return pmc->mor;
 }
+
 static void
-mor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mor_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	pmc->mor = value & 0xff01;
-	if(value & MOR_MOSCEN) {
-		Clock_SetFreq(pmc->main_clk,pmc->freqXin);
+	if (value & MOR_MOSCEN) {
+		Clock_SetFreq(pmc->main_clk, pmc->freqXin);
 		pmc->sr |= SR_MOSCS;
-        	fprintf(stderr,"AT91Pmc: Enabled master clock\n");
+		fprintf(stderr, "AT91Pmc: Enabled master clock\n");
 		//dump_clocks(pmc);
 	} else {
-		Clock_SetFreq(pmc->main_clk,0);
+		Clock_SetFreq(pmc->main_clk, 0);
 		pmc->sr &= ~SR_MOSCS;
 	}
 	update_interrupt(pmc);
 }
+
 static uint32_t
-mcfr_read(void *clientData,uint32_t address,int rqlen)
+mcfr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	uint32_t mcfr = 0;
-	if(Clock_Freq(pmc->slck) && (pmc->mor & MOR_MOSCEN)) {
+	if (Clock_Freq(pmc->slck) && (pmc->mor & MOR_MOSCEN)) {
 		mcfr = 16 * Clock_Freq(pmc->main_clk) / Clock_Freq(pmc->slck);
-		mcfr |= (1<<16);
+		mcfr |= (1 << 16);
 	} else {
-		fprintf(stderr,"Can not read MCFR with disabled main clock or without slck\n");
+		fprintf(stderr, "Can not read MCFR with disabled main clock or without slck\n");
 	}
-        return mcfr;
+	return mcfr;
 }
+
 static void
-mcfr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mcfr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: Illegal write to readonly register MCFR\n");
+	fprintf(stderr, "AT91Pmc: Illegal write to readonly register MCFR\n");
 }
 
 static uint32_t
-pllar_read(void *clientData,uint32_t address,int rqlen)
+pllar_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91Pmc *pmc = (AT91Pmc *)clientData;
-        return pmc->pllar;
+	AT91Pmc *pmc = (AT91Pmc *) clientData;
+	return pmc->pllar;
 }
+
 static void
-pllar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pllar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	pmc->pllar = value;
 	int mul = ((value >> 16) & 0x7ff) + 1;
 	int div = value & 0xff;
-	if(div == 0) {
-		Clock_MakeDerived(pmc->plla_clk,pmc->main_clk,0,1);	
+	if (div == 0) {
+		Clock_MakeDerived(pmc->plla_clk, pmc->main_clk, 0, 1);
 		pmc->sr &= ~SR_LOCKA;
 	} else {
-		Clock_MakeDerived(pmc->plla_clk,pmc->main_clk,mul,div);	
+		Clock_MakeDerived(pmc->plla_clk, pmc->main_clk, mul, div);
 		pmc->sr |= SR_LOCKA;
 	}
 	update_interrupt(pmc);
 }
 
 static uint32_t
-pllbr_read(void *clientData,uint32_t address,int rqlen)
+pllbr_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91Pmc *pmc = (AT91Pmc *)clientData;
-        return pmc->pllbr;
+	AT91Pmc *pmc = (AT91Pmc *) clientData;
+	return pmc->pllbr;
 }
+
 static void
-pllbr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pllbr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	pmc->pllbr = value;
 	int mul = ((value >> 16) & 0x7ff) + 1;
 	int div = value & 0xff;
-	if(div == 0) {
-		Clock_MakeDerived(pmc->pllb_clk,pmc->main_clk,0,1);	
+	if (div == 0) {
+		Clock_MakeDerived(pmc->pllb_clk, pmc->main_clk, 0, 1);
 		pmc->sr &= ~SR_LOCKB;
 	} else {
 		pmc->sr |= SR_LOCKB;
-		if(value & (1<<28)) {
-			Clock_MakeDerived(pmc->pllb_clk,pmc->main_clk,mul,div * 2);	
+		if (value & (1 << 28)) {
+			Clock_MakeDerived(pmc->pllb_clk, pmc->main_clk, mul, div * 2);
 		} else {
-			Clock_MakeDerived(pmc->pllb_clk,pmc->main_clk,mul,div);	
+			Clock_MakeDerived(pmc->pllb_clk, pmc->main_clk, mul, div);
 		}
 	}
 	update_interrupt(pmc);
 }
+
 static uint32_t
-mckr_read(void *clientData,uint32_t address,int rqlen)
+mckr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
-	return pmc->mckr; 
+	return pmc->mckr;
 }
+
 static void
-mckr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mckr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	pmc->mckr = value;
 	int mdiv = ((value & MCKR_MDIV_MASK) >> MCKR_MDIV_SHIFT) + 1;
 	int prescaler = 1 << ((value & MCKR_PRES_MASK) >> MCKR_PRES_SHIFT);
 	uint32_t css = value & MCKR_CSS_MASK;
-	switch(css) {
-		case MCKR_CSS_SCLK:
-			Clock_MakeDerived(pmc->cpu_clk,pmc->slck,1,prescaler);
-			break;
-		case MCKR_CSS_MAINCK:
-			Clock_MakeDerived(pmc->cpu_clk,pmc->main_clk,1,prescaler);
-			break;
-		case MCKR_CSS_PLLACK:
-			Clock_MakeDerived(pmc->cpu_clk,pmc->plla_clk,1,prescaler);
-			break;
+	switch (css) {
+	    case MCKR_CSS_SCLK:
+		    Clock_MakeDerived(pmc->cpu_clk, pmc->slck, 1, prescaler);
+		    break;
+	    case MCKR_CSS_MAINCK:
+		    Clock_MakeDerived(pmc->cpu_clk, pmc->main_clk, 1, prescaler);
+		    break;
+	    case MCKR_CSS_PLLACK:
+		    Clock_MakeDerived(pmc->cpu_clk, pmc->plla_clk, 1, prescaler);
+		    break;
 
-		case MCKR_CSS_PLLBCK:
-			Clock_MakeDerived(pmc->cpu_clk,pmc->pllb_clk,1,prescaler);
-			break;
+	    case MCKR_CSS_PLLBCK:
+		    Clock_MakeDerived(pmc->cpu_clk, pmc->pllb_clk, 1, prescaler);
+		    break;
 	}
-	Clock_MakeDerived(pmc->mck,pmc->cpu_clk,1,mdiv);
+	Clock_MakeDerived(pmc->mck, pmc->cpu_clk, 1, mdiv);
 	/* 
 	 * SR_MCKRDY should be set on a clock trace handler as soon as there is
- 	 * a nonzero frequency on mck
+	 * a nonzero frequency on mck
 	 */
 	pmc->sr |= SR_MCKRDY;
 	update_interrupt(pmc);
@@ -473,30 +488,32 @@ mckr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 	//dump_clocks(pmc);
 }
 
-
 static uint32_t
-pck_read(void *clientData,uint32_t address,int rqlen)
+pck_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	int index = (address >> 2) & 3;
-        return pmc->pck[index];
+	return pmc->pck[index];
 }
+
 static void
-pck_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pck_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	int index = (address >> 2) & 3;
 	pmc->pck[index] = value & 0x1f;
-	update_pck_n(pmc,index);
+	update_pck_n(pmc, index);
 }
+
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: Illegal read from writeonly register IER\n");
-        return 0;
+	fprintf(stderr, "AT91Pmc: Illegal read from writeonly register IER\n");
+	return 0;
 }
+
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	pmc->imr |= (value & 0x0f0f);
@@ -504,13 +521,14 @@ ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: Illegal read from writeonly register IDR\n");
-        return 0;
+	fprintf(stderr, "AT91Pmc: Illegal read from writeonly register IDR\n");
+	return 0;
 }
+
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
 	pmc->imr &= ~(value & 0x0f0f);
@@ -518,56 +536,58 @@ idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
-        return pmc->sr;
+	return pmc->sr;
 }
+
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Pmc: Illegal write to readonly SR\n");
+	fprintf(stderr, "AT91Pmc: Illegal write to readonly SR\n");
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pmc *pmc = (AT91Pmc *) clientData;
-        return pmc->imr;
-}
-static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"AT91Pmc: IMR register is readonly\n");
+	return pmc->imr;
 }
 
 static void
-AT91Pmc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        AT91Pmc *pmc = (AT91Pmc *) owner;
-	IOH_New32(PMC_SCER(base),scer_read,scer_write,pmc);
-	IOH_New32(PMC_SCDR(base),scdr_read,scdr_write,pmc);
-	IOH_New32(PMC_SCSR(base),scsr_read,scsr_write,pmc);
-	IOH_New32(PMC_PCER(base),pcer_read,pcer_write,pmc);
-	IOH_New32(PMC_PCDR(base),pcdr_read,pcdr_write,pmc);
-	IOH_New32(PMC_PCSR(base),pcsr_read,pcsr_write,pmc);
-	IOH_New32(CKGR_MOR(base),mor_read,mor_write,pmc);
-	IOH_New32(CKGR_MCFR(base),mcfr_read,mcfr_write,pmc);
-	IOH_New32(CKGR_PLLAR(base),pllar_read,pllar_write,pmc);
-	IOH_New32(CKGR_PLLBR(base),pllbr_read,pllbr_write,pmc);
-	IOH_New32(PMC_MCKR(base),mckr_read,mckr_write,pmc);
-	IOH_New32(PMC_PCK0(base),pck_read,pck_write,pmc);
-	IOH_New32(PMC_PCK1(base),pck_read,pck_write,pmc);
-	IOH_New32(PMC_PCK2(base),pck_read,pck_write,pmc);
-	IOH_New32(PMC_PCK3(base),pck_read,pck_write,pmc);
-	IOH_New32(PMC_IER(base),ier_read,ier_write,pmc);
-	IOH_New32(PMC_IDR(base),idr_read,idr_write,pmc);
-	IOH_New32(PMC_SR(base),sr_read,sr_write,pmc);
-	IOH_New32(PMC_IMR(base),imr_read,imr_write,pmc);
+	fprintf(stderr, "AT91Pmc: IMR register is readonly\n");
 }
 
 static void
-AT91Pmc_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Pmc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
+{
+	AT91Pmc *pmc = (AT91Pmc *) owner;
+	IOH_New32(PMC_SCER(base), scer_read, scer_write, pmc);
+	IOH_New32(PMC_SCDR(base), scdr_read, scdr_write, pmc);
+	IOH_New32(PMC_SCSR(base), scsr_read, scsr_write, pmc);
+	IOH_New32(PMC_PCER(base), pcer_read, pcer_write, pmc);
+	IOH_New32(PMC_PCDR(base), pcdr_read, pcdr_write, pmc);
+	IOH_New32(PMC_PCSR(base), pcsr_read, pcsr_write, pmc);
+	IOH_New32(CKGR_MOR(base), mor_read, mor_write, pmc);
+	IOH_New32(CKGR_MCFR(base), mcfr_read, mcfr_write, pmc);
+	IOH_New32(CKGR_PLLAR(base), pllar_read, pllar_write, pmc);
+	IOH_New32(CKGR_PLLBR(base), pllbr_read, pllbr_write, pmc);
+	IOH_New32(PMC_MCKR(base), mckr_read, mckr_write, pmc);
+	IOH_New32(PMC_PCK0(base), pck_read, pck_write, pmc);
+	IOH_New32(PMC_PCK1(base), pck_read, pck_write, pmc);
+	IOH_New32(PMC_PCK2(base), pck_read, pck_write, pmc);
+	IOH_New32(PMC_PCK3(base), pck_read, pck_write, pmc);
+	IOH_New32(PMC_IER(base), ier_read, ier_write, pmc);
+	IOH_New32(PMC_IDR(base), idr_read, idr_write, pmc);
+	IOH_New32(PMC_SR(base), sr_read, sr_write, pmc);
+	IOH_New32(PMC_IMR(base), imr_read, imr_write, pmc);
+}
+
+static void
+AT91Pmc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(PMC_SCER(base));
 	IOH_Delete32(PMC_SCDR(base));
@@ -592,68 +612,68 @@ AT91Pmc_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 BusDevice *
-AT91Pmc_New(const char *name,unsigned int pid_table)
+AT91Pmc_New(const char *name, unsigned int pid_table)
 {
 	unsigned int i;
 	char **pidTable;
 
 	AT91Pmc *pmc = sg_new(AT91Pmc);
-	pmc->irqNode = SigNode_New("%s.irq",name);
-	if(!pmc->irqNode) {
-		fprintf(stderr,"Failed to create irq line for AT91 PMC\n");
+	pmc->irqNode = SigNode_New("%s.irq", name);
+	if (!pmc->irqNode) {
+		fprintf(stderr, "Failed to create irq line for AT91 PMC\n");
 		exit(1);
 	}
-	SigNode_Set(pmc->irqNode,SIG_PULLDOWN);
-	pmc->freqXin = 18432000; 
-	Config_ReadUInt32(&pmc->freqXin,"global","xin");
-	switch(pid_table) {
-		case AT91_PID_TABLE_RM9200: 
-			pidTable = pidTableRM9200;
-			break;
-		case AT91_PID_TABLE_SAM9263: 
-			pidTable = pidTableSAM9263;
-			break;
-		default:
-			fprintf(stderr,"Selected nonexisting PID table %u\n",pid_table);
-			exit(1);
+	SigNode_Set(pmc->irqNode, SIG_PULLDOWN);
+	pmc->freqXin = 18432000;
+	Config_ReadUInt32(&pmc->freqXin, "global", "xin");
+	switch (pid_table) {
+	    case AT91_PID_TABLE_RM9200:
+		    pidTable = pidTableRM9200;
+		    break;
+	    case AT91_PID_TABLE_SAM9263:
+		    pidTable = pidTableSAM9263;
+		    break;
+	    default:
+		    fprintf(stderr, "Selected nonexisting PID table %u\n", pid_table);
+		    exit(1);
 	}
-	pmc->slck = Clock_New("%s.slck",name);
-	pmc->main_clk = Clock_New("%s.main_clk",name);
-	pmc->plla_clk = Clock_New("%s.plla_clk",name);
-	pmc->pllb_clk = Clock_New("%s.pllb_clk",name);
-	pmc->cpu_clk = Clock_New("%s.cpu_clk",name);
-	pmc->mck = Clock_New("%s.mck",name);
-	pmc->udpck = Clock_New("%s.udpck",name);
-	pmc->uhpck = Clock_New("%s.uhpck",name);
-	pmc->pck_clk[0] = Clock_New("%s.pck0",name);
-	pmc->pck_clk[1] = Clock_New("%s.pck1",name);
-	pmc->pck_clk[2] = Clock_New("%s.pck2",name);
-	pmc->pck_clk[3] = Clock_New("%s.pck3",name);
-	Clock_SetFreq(pmc->slck,32768);
-	for(i = 0; i < 32; i++) {
-		if(pidTable[i] != 0) {
-			pmc->pcClk[i] = Clock_New("%s.%s",name,pidTable[i]);
-		} 
+	pmc->slck = Clock_New("%s.slck", name);
+	pmc->main_clk = Clock_New("%s.main_clk", name);
+	pmc->plla_clk = Clock_New("%s.plla_clk", name);
+	pmc->pllb_clk = Clock_New("%s.pllb_clk", name);
+	pmc->cpu_clk = Clock_New("%s.cpu_clk", name);
+	pmc->mck = Clock_New("%s.mck", name);
+	pmc->udpck = Clock_New("%s.udpck", name);
+	pmc->uhpck = Clock_New("%s.uhpck", name);
+	pmc->pck_clk[0] = Clock_New("%s.pck0", name);
+	pmc->pck_clk[1] = Clock_New("%s.pck1", name);
+	pmc->pck_clk[2] = Clock_New("%s.pck2", name);
+	pmc->pck_clk[3] = Clock_New("%s.pck3", name);
+	Clock_SetFreq(pmc->slck, 32768);
+	for (i = 0; i < 32; i++) {
+		if (pidTable[i] != 0) {
+			pmc->pcClk[i] = Clock_New("%s.%s", name, pidTable[i]);
+		}
 	}
 	pmc->scsr = 0x01;
 	pmc->pcsr = 0xffffffff;
-	pcdr_write(pmc,0xffffffff,0,4);
+	pcdr_write(pmc, 0xffffffff, 0, 4);
 	pmc->mor = 0;
 	pmc->pllar = 0x3f00;
 	pmc->pllbr = 0x3f00;
 	pmc->mckr = 0;
 	pmc->pck[0] = pmc->pck[1] = pmc->pck[2] = pmc->pck[3] = 0;
-	pmc->sr = 0x0f0e; 
+	pmc->sr = 0x0f0e;
 	pmc->imr = 0;
-	pllar_write(pmc,pmc->pllar,0,4);
-	pllbr_write(pmc,pmc->pllbr,0,4);
-	mckr_write(pmc,pmc->mckr,0,4);
-	pmc->bdev.first_mapping=NULL;
-	pmc->bdev.Map=AT91Pmc_Map;
-	pmc->bdev.UnMap=AT91Pmc_UnMap;
-	pmc->bdev.owner=pmc;
-	pmc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	pllar_write(pmc, pmc->pllar, 0, 4);
+	pllbr_write(pmc, pmc->pllbr, 0, 4);
+	mckr_write(pmc, pmc->mckr, 0, 4);
+	pmc->bdev.first_mapping = NULL;
+	pmc->bdev.Map = AT91Pmc_Map;
+	pmc->bdev.UnMap = AT91Pmc_UnMap;
+	pmc->bdev.owner = pmc;
+	pmc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	update_interrupt(pmc);
-	fprintf(stderr,"AT91 variant %u Power Management Controller created\n",pid_table);
+	fprintf(stderr, "AT91 variant %u Power Management Controller created\n", pid_table);
 	return &pmc->bdev;
 }

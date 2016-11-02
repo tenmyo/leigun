@@ -52,15 +52,14 @@
 #define dbgprintf(x...)
 #endif
 
-
 struct PCA9544 {
-        I2C_Slave i2c_slave;
+	I2C_Slave i2c_slave;
 	uint8_t ctrl_reg;
 	uint8_t new_ctrl_reg;
 	SigNode *sda;
 	SigNode *scl;
-        SigNode *sd[4];
-        SigNode *sc[4];
+	SigNode *sd[4];
+	SigNode *sc[4];
 };
 
 /*
@@ -70,24 +69,26 @@ struct PCA9544 {
  * -----------------------------------------------------
  */
 static int
-pca9544_write(void *dev,uint8_t data) {
-        PCA9544 *pca = dev;
-	pca->new_ctrl_reg = data;
-        return I2C_ACK;
-};
-
-static int 
-pca9544_read(void *dev,uint8_t *data)
+pca9544_write(void *dev, uint8_t data)
 {
-        PCA9544 *pca = dev;
-	*data = pca->ctrl_reg;
-        return I2C_DONE;
+	PCA9544 *pca = dev;
+	pca->new_ctrl_reg = data;
+	return I2C_ACK;
 };
 
 static int
-pca9544_start(void *dev,int i2c_addr,int operation) {
-        dbgprintf("pca9544 start\n");
-        return I2C_ACK;
+pca9544_read(void *dev, uint8_t * data)
+{
+	PCA9544 *pca = dev;
+	*data = pca->ctrl_reg;
+	return I2C_DONE;
+};
+
+static int
+pca9544_start(void *dev, int i2c_addr, int operation)
+{
+	dbgprintf("pca9544 start\n");
+	return I2C_ACK;
 }
 
 /*
@@ -98,75 +99,76 @@ pca9544_start(void *dev,int i2c_addr,int operation) {
  * -----------------------------------------------
  */
 static void
-pca9544_stop(void *dev) {
-        PCA9544 *pca = dev;
-	switch(pca->ctrl_reg & 0x7) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-			break;
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-			SigNode_RemoveLink(pca->sda,pca->sd[pca->ctrl_reg & 3]);
-			SigNode_RemoveLink(pca->scl,pca->sc[pca->ctrl_reg & 3]);
-			break;
-	}	
-	switch(pca->new_ctrl_reg & 0x7) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-			break;
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-			SigNode_Link(pca->sda,pca->sd[pca->new_ctrl_reg & 3]);
-			SigNode_Link(pca->scl,pca->sc[pca->new_ctrl_reg & 3]);
-			break;
+pca9544_stop(void *dev)
+{
+	PCA9544 *pca = dev;
+	switch (pca->ctrl_reg & 0x7) {
+	    case 0:
+	    case 1:
+	    case 2:
+	    case 3:
+		    break;
+	    case 4:
+	    case 5:
+	    case 6:
+	    case 7:
+		    SigNode_RemoveLink(pca->sda, pca->sd[pca->ctrl_reg & 3]);
+		    SigNode_RemoveLink(pca->scl, pca->sc[pca->ctrl_reg & 3]);
+		    break;
+	}
+	switch (pca->new_ctrl_reg & 0x7) {
+	    case 0:
+	    case 1:
+	    case 2:
+	    case 3:
+		    break;
+	    case 4:
+	    case 5:
+	    case 6:
+	    case 7:
+		    SigNode_Link(pca->sda, pca->sd[pca->new_ctrl_reg & 3]);
+		    SigNode_Link(pca->scl, pca->sc[pca->new_ctrl_reg & 3]);
+		    break;
 	}
 	pca->ctrl_reg = pca->new_ctrl_reg & 0xf;
-        dbgprintf("pca9544 stop\n");
+	dbgprintf("pca9544 stop\n");
 }
 
 static I2C_SlaveOps pca9544_ops = {
-        .start = pca9544_start,
-        .stop =  pca9544_stop,
-        .read =  pca9544_read,
-        .write = pca9544_write
+	.start = pca9544_start,
+	.stop = pca9544_stop,
+	.read = pca9544_read,
+	.write = pca9544_write
 };
 
 I2C_Slave *
-PCA9544_New(char *name) {
-        PCA9544 *pca = sg_new(PCA9544);
-        I2C_Slave *i2c_slave;
-        int i;
-        i2c_slave = &pca->i2c_slave;
-        i2c_slave->devops = &pca9544_ops;
-        i2c_slave->dev = pca;
+PCA9544_New(char *name)
+{
+	PCA9544 *pca = sg_new(PCA9544);
+	I2C_Slave *i2c_slave;
+	int i;
+	i2c_slave = &pca->i2c_slave;
+	i2c_slave->devops = &pca9544_ops;
+	i2c_slave->dev = pca;
 	i2c_slave->speed = I2C_SPEED_FAST;
-        for(i=0;i<4;i++) {
-                pca->sd[i]=SigNode_New("%s.sd%d",name,i);
-                if(!pca->sd[i]) {
+	for (i = 0; i < 4; i++) {
+		pca->sd[i] = SigNode_New("%s.sd%d", name, i);
+		if (!pca->sd[i]) {
 			exit(1);
-                }
-                pca->sc[i]=SigNode_New("%s.sc%d",name,i);
-                if(!pca->sc[i]) {
+		}
+		pca->sc[i] = SigNode_New("%s.sc%d", name, i);
+		if (!pca->sc[i]) {
 			exit(1);
-                }
-        }
-        pca->scl=SigNode_New("%s.scl",name);
-        if(!pca->scl) {
+		}
+	}
+	pca->scl = SigNode_New("%s.scl", name);
+	if (!pca->scl) {
 		exit(1);
-        }
-        pca->sda=SigNode_New("%s.sda",name);
-        if(!pca->sda) {
+	}
+	pca->sda = SigNode_New("%s.sda", name);
+	if (!pca->sda) {
 		exit(1);
-        }
-        fprintf(stderr,"PCA9544 I2C-Multiplexer \"%s\" created\n",name);
-        return i2c_slave;
+	}
+	fprintf(stderr, "PCA9544 I2C-Multiplexer \"%s\" created\n", name);
+	return i2c_slave;
 }
-

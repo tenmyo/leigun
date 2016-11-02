@@ -15,12 +15,11 @@
 #include "senseless.h"
 #include "sgstring.h"
 
-
 /* TXX9 Serial Registers */
 #define TXX9_SILCR(base)      ((base)+0x00)
 #define		SILCR_UMODE_MASK	(3)
 #define		SILCR_UMODE_SHIFT	(0)
-#define 	SILCR_USBL		(1<<2)	
+#define 	SILCR_USBL		(1<<2)
 #define		SILCR_UPEN		(1<<3)
 #define		SILCR_UEPS		(1<<4)
 #define		SILCR_SCS_MASK		(3<<5)
@@ -41,7 +40,7 @@
 #define TXX9_SIDISR(base)     ((base)+0x08)
 #define		SIDISR_RFDN_MASK	(0x1f)
 #define		SIDISR_RFDN_SHIFT	(0)
-#define		SIDISR_STIS		(1<<6) 
+#define		SIDISR_STIS		(1<<6)
 #define		SIDISR_RDIS		(1<<7)
 #define		SIDISR_TDIS		(1<<8)
 #define		SIDISR_TOUT		(1<<9)
@@ -84,7 +83,6 @@
 #define TXX9_SITFIFO(base)    ((base)+0x1c)
 #define TXX9_SIRFIFO(base)    ((base)+0x20)
 
-
 #define RX_FIFO_SIZE (16)
 #define RX_FIFO_MASK (RX_FIFO_SIZE-1)
 #define RX_FIFO_COUNT(ser) ((ser)->rxfifo_wp - (ser)->rxfifo_rp)
@@ -99,10 +97,10 @@
 #define TX_FIFO_WIDX(ua) ((ua)->txfifo_wp & TX_FIFO_MASK)
 #define TX_FIFO_RIDX(ua) ((ua)->txfifo_rp & TX_FIFO_MASK)
 
-typedef struct	TX49xx_Uart {
+typedef struct TX49xx_Uart {
 	BusDevice bdev;
-	Clock_t *in_clk;	
-	Clock_t *baud_clk;	
+	Clock_t *in_clk;
+	Clock_t *baud_clk;
 	ClockTrace_t *baud_trace;
 	SigNode *irqNode;
 	UartPort *port;
@@ -115,7 +113,7 @@ typedef struct	TX49xx_Uart {
 	uint64_t txfifo_wp;
 	uint64_t txfifo_rp;
 
-	uint32_t silcr; 
+	uint32_t silcr;
 	uint32_t sidicr;
 	uint32_t sidisr;
 	uint32_t siscisr;
@@ -126,122 +124,102 @@ typedef struct	TX49xx_Uart {
 } TX49xx_Uart;
 
 static void
-tx49xx_uart_reset(TX49xx_Uart *ua) 
+tx49xx_uart_reset(TX49xx_Uart * ua)
 {
-	ua->silcr = 0x4040;  /* From real device */
+	ua->silcr = 0x4040;	/* From real device */
 	ua->sidicr = 0;
 	ua->sidisr = 0x4100;
-	ua->siscisr = 0x6; 	/* Bit 4 should be cts status (real device shows 0x16) */ 
+	ua->siscisr = 0x6;	/* Bit 4 should be cts status (real device shows 0x16) */
 	ua->sifcr = 0;
-	ua->siflcr  = 0x182;
+	ua->siflcr = 0x182;
 	ua->sibgr = 0x3ff;
 	ua->txfifo_rp = ua->txfifo_wp = 0;
 	ua->rxfifo_rp = ua->rxfifo_wp = 0;
-	Clock_MakeDerived(ua->baud_clk,ua->in_clk,1,128*255);
+	Clock_MakeDerived(ua->baud_clk, ua->in_clk, 1, 128 * 255);
 }
 
 static void
-update_baudrate(Clock_t *clock,void *clientData)
+update_baudrate(Clock_t * clock, void *clientData)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
-	UartCmd cmd;	
+	UartCmd cmd;
 	cmd.opcode = UART_OPC_SET_BAUDRATE;
 	cmd.arg = Clock_Freq(clock);
-	SerialDevice_Cmd(ua->port,&cmd);
+	SerialDevice_Cmd(ua->port, &cmd);
 	return;
-	
+
 }
 
 static void
-update_interrupt(TX49xx_Uart *ua)
+update_interrupt(TX49xx_Uart * ua)
 {
 	int interrupt = 0;
-	if((ua->sidicr & SIDICR_RIE) && (ua->sidisr & SIDISR_RDIS)) {
+	if ((ua->sidicr & SIDICR_RIE) && (ua->sidisr & SIDISR_RDIS)) {
 		interrupt = 1;
 	}
-	if((ua->sidicr & SIDICR_TIE) && (ua->sidisr & SIDISR_TDIS)) {
+	if ((ua->sidicr & SIDICR_TIE) && (ua->sidisr & SIDISR_TDIS)) {
 		interrupt = 1;
 	}
-	if((ua->sidicr & SIDICR_SPIE) && (ua->sidisr & SIDISR_ERI)) {
+	if ((ua->sidicr & SIDICR_SPIE) && (ua->sidisr & SIDISR_ERI)) {
 		interrupt = 1;
 	}
 #if 0
-	if((ua->sidicr & SIDICR_CTSAC) && (ua->sidisr & SIDISR_CTSS)) {
+	if ((ua->sidicr & SIDICR_CTSAC) && (ua->sidisr & SIDISR_CTSS)) {
 		interrupt = 1;
 	}
 #endif
-	if(interrupt) {
-		SigNode_Set(ua->irqNode,SIG_LOW);
+	if (interrupt) {
+		SigNode_Set(ua->irqNode, SIG_LOW);
 	} else {
-		SigNode_Set(ua->irqNode,SIG_HIGH);
+		SigNode_Set(ua->irqNode, SIG_HIGH);
 	}
-	
+
 }
-static void
-serial_output(void * cd)
+
+static bool
+serial_output(void *cd, UartChar * c)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) cd;
-	int fill;
-	while(TX_FIFO_COUNT(ua) > 0) {
-		int count,len;
-		fill = TX_FIFO_COUNT(ua);
-		len = fill;
-		if((TX_FIFO_RIDX(ua)+fill) > TX_FIFO_SIZE) {
-			len = TX_FIFO_SIZE - TX_FIFO_RIDX(ua);
-		}
-		count = SerialDevice_Write(ua->port,&ua->txfifo[TX_FIFO_RIDX(ua)],len);
-		if(count > 0) {
-			ua->txfifo_rp += count;	
-			// update_txdma();
-		} else {
-			update_interrupt(ua);
-			return;
-		}
+	if (TX_FIFO_COUNT(ua) > 0) {
+		*c = ua->txfifo[TX_FIFO_RIDX(ua)];
+		ua->txfifo_rp += 1;
+	} else {
+		fprintf(stderr, "Bug in %s %s\n", __FILE__, __func__);
 	}
-	SerialDevice_StopTx(ua->port);
+	if (TX_FIFO_COUNT(ua) == 0) {
+		SerialDevice_StopTx(ua->port);
+	}
 	update_interrupt(ua);
-	return;
-	
+	return true;
+
 }
 
 static void
-serial_input(void *cd) 
+serial_input(void *cd, UartChar c)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) cd;
 	int fifocount;
 	int rx_triglev;
-	while(1) {
-		UartChar data[RX_FIFO_SIZE];
-		int count;
-		int space;
-		space = RX_FIFO_SPACE(ua);
-		if(space < 1) {
-			SerialDevice_StopRx(ua->port);		
-			break;
-		}
-		count = SerialDevice_Read(ua->port,data,space);
-		if(count > 0) {
-			int i;
-			for(i=0;i<count;i++) {
-				ua->rxfifo[RX_FIFO_WIDX(ua)] = data[i];
-				ua->rxfifo_wp++;
-			}
-		} else  {
-			break;
-		}
+	int space;
+	space = RX_FIFO_SPACE(ua);
+	if (space < 1) {
+		return;
 	}
+	ua->rxfifo[RX_FIFO_WIDX(ua)] = c;
+	ua->rxfifo_wp++;
 	fifocount = RX_FIFO_COUNT(ua);
 	rx_triglev = ((ua->sifcr & SIFCR_RDIL_MASK) >> SIFCR_RDIL_SHIFT) << 2;
-	if(rx_triglev == 0) {
+	if (rx_triglev == 0) {
 		rx_triglev = 1;
 	}
-	if(fifocount >= rx_triglev) {
+	if (fifocount >= rx_triglev) {
 		ua->sidisr |= SIDISR_RDIS;
-	} 
+	}
 	//ua->sidisr = (ua->sidisr & ~SIDISR_RFDN_MASK) | fifocount;
 	update_interrupt(ua);
 	return;
 }
+
 /*
  * ------------------------------------------------
  * SILCR 	Line Control Register
@@ -257,16 +235,18 @@ serial_input(void *cd)
  */
 
 static uint32_t
-silcr_read(void *clientData,uint32_t address,int rqlen)
+silcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"silcr not implemented\n");
+	fprintf(stderr, "silcr not implemented\n");
 	return 0;
 }
+
 static void
-silcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+silcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"silcr not implemented\n");
+	fprintf(stderr, "silcr not implemented\n");
 }
+
 /*
  * -----------------------------------------------------------
  * SIDICR 	DMA/Interrupt Control Register
@@ -281,16 +261,18 @@ silcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------
  */
 static uint32_t
-sidicr_read(void *clientData,uint32_t address,int rqlen)
+sidicr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"silcr not implemented\n");
+	fprintf(stderr, "silcr not implemented\n");
 	return 0;
 }
+
 static void
-sidicr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sidicr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"silcr not implemented\n");
+	fprintf(stderr, "silcr not implemented\n");
 }
+
 /*
  * ---------------------------------------------------------------
  * SIDISR	DMA/Interrupt Status Register
@@ -309,20 +291,20 @@ sidicr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------
  */
 static uint32_t
-sidisr_read(void *clientData,uint32_t address,int rqlen)
+sidisr_read(void *clientData, uint32_t address, int rqlen)
 {
-	TX49xx_Uart *ua = (TX49xx_Uart *)clientData;
+	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	int fifocount = RX_FIFO_COUNT(ua);
 	ua->sidisr = (ua->sidisr & ~SIDISR_RFDN_MASK) | fifocount;
 	return ua->sidisr;
 }
 
 static void
-sidisr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sidisr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TX49xx_Uart *ua = (TX49xx_Uart *)clientData;
-	uint32_t andmask = value  | 
-		~(SIDISR_ERI | SIDISR_TOUT | SIDISR_TDIS | SIDISR_RDIS | SIDISR_STIS);
+	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
+	uint32_t andmask = value |
+	    ~(SIDISR_ERI | SIDISR_TOUT | SIDISR_TDIS | SIDISR_RDIS | SIDISR_STIS);
 	ua->sidisr &= andmask;
 	update_interrupt(ua);
 }
@@ -339,15 +321,15 @@ sidisr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------------------------------
  */
 static uint32_t
-siscisr_read(void *clientData,uint32_t address,int rqlen)
+siscisr_read(void *clientData, uint32_t address, int rqlen)
 {
-	TX49xx_Uart *ua = (TX49xx_Uart *)clientData;
-	if(TX_FIFO_SPACE(ua) > 0) {
+	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
+	if (TX_FIFO_SPACE(ua) > 0) {
 		ua->siscisr |= SISCISR_TRDY;
 	} else {
 		ua->siscisr &= ~SISCISR_TRDY;
 	}
-	if(TX_FIFO_COUNT(ua) == 0) {
+	if (TX_FIFO_COUNT(ua) == 0) {
 		ua->siscisr |= SISCISR_TXALS;
 	} else {
 		ua->siscisr &= ~SISCISR_TXALS;
@@ -356,9 +338,9 @@ siscisr_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-siscisr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+siscisr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TX49xx_Uart *ua = (TX49xx_Uart *)clientData;
+	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	uint32_t andmask = ~SISCISR_UBRKD & value;
 	ua->siscisr &= andmask;
 }
@@ -375,28 +357,29 @@ siscisr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------
  */
 static uint32_t
-sifcr_read(void *clientData,uint32_t address,int rqlen)
+sifcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	TX49xx_Uart *ua = (TX49xx_Uart*) clientData;
+	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	return ua->sifcr;
 }
 
 static void
-sifcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sifcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TX49xx_Uart *ua = (TX49xx_Uart*) clientData;
-	if(value & (SIFCR_FRSTE | SIFCR_RFRST)) {
-		ua->rxfifo_rp = ua->rxfifo_wp	= 0;
+	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
+	if (value & (SIFCR_FRSTE | SIFCR_RFRST)) {
+		ua->rxfifo_rp = ua->rxfifo_wp = 0;
 	}
-	if(value & (SIFCR_FRSTE | SIFCR_TFRST)) {
-		ua->txfifo_rp = ua->txfifo_wp	= 0;
+	if (value & (SIFCR_FRSTE | SIFCR_TFRST)) {
+		ua->txfifo_rp = ua->txfifo_wp = 0;
 	}
 	ua->sifcr = value & 0x19f;
-	if(value & SIFCR_SWRST) {
+	if (value & SIFCR_SWRST) {
 		/* sifcr is also cleared by this reset */
-		tx49xx_uart_reset(ua);	
+		tx49xx_uart_reset(ua);
 	}
 }
+
 /*
  * ------------------------------------------------------------------------
  * SIFLCR	Flow Control Register
@@ -410,15 +393,16 @@ sifcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------
  */
 static uint32_t
-siflcr_read(void *clientData,uint32_t address,int rqlen)
+siflcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"silcr not implemented\n");
+	fprintf(stderr, "silcr not implemented\n");
 	return 0;
 }
+
 static void
-siflcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+siflcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"silcr not implemented\n");
+	fprintf(stderr, "silcr not implemented\n");
 }
 
 /*
@@ -427,13 +411,14 @@ siflcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------
  */
 static uint32_t
-sibgr_read(void *clientData,uint32_t address,int rqlen)
+sibgr_read(void *clientData, uint32_t address, int rqlen)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	return ua->sibgr;
 }
+
 static void
-sibgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sibgr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	int brd = value & 0xff;
@@ -441,27 +426,28 @@ sibgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 	int prediv = 2 << (bclk * 2);
 	ua->sibgr = value & 0x3ff;
 	/* clock is traced */
-	Clock_MakeDerived(ua->baud_clk,ua->in_clk,1,prediv * brd);
+	Clock_MakeDerived(ua->baud_clk, ua->in_clk, 1, prediv * brd);
 }
+
 /*
  * -----------------------------------------------------------------
  * TFIFO: TX Fifo
  * -----------------------------------------------------------------
  */
 static uint32_t
-sitfifo_read(void *clientData,uint32_t address,int rqlen)
+sitfifo_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Warning: TX-Fifo not readable in real device (crash) \n");
+	fprintf(stderr, "Warning: TX-Fifo not readable in real device (crash) \n");
 	return 0;
 }
 
 static void
-sitfifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sitfifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	int space = TX_FIFO_SPACE(ua);
-	if(!space) {
-		fprintf(stderr,"TX Fifo overflow\n");
+	if (!space) {
+		fprintf(stderr, "TX Fifo overflow\n");
 		return;
 	}
 	ua->txfifo[TX_FIFO_WIDX(ua)] = value & 0xff;
@@ -471,19 +457,20 @@ sitfifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 	update_interrupt(ua);
 	return;
 }
+
 /*
  * -----------------------------------------------------------------
  * RFIFO: RX Fifo
  * -----------------------------------------------------------------
  */
 static uint32_t
-sirfifo_read(void *clientData,uint32_t address,int rqlen)
+sirfifo_read(void *clientData, uint32_t address, int rqlen)
 {
 	TX49xx_Uart *ua = (TX49xx_Uart *) clientData;
 	int fill = TX_FIFO_COUNT(ua);
-	uint32_t val = ua->txfifo[TX_FIFO_RIDX(ua)];
+	uint32_t val;
 	val = ua->txfifo[TX_FIFO_RIDX(ua)];
-	if(fill) {
+	if (fill) {
 		ua->txfifo_rp++;
 	}
 	// update some flags
@@ -492,13 +479,13 @@ sirfifo_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-sirfifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sirfifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Uart: RX-Fifo is not writable\n");
+	fprintf(stderr, "Uart: RX-Fifo is not writable\n");
 }
 
 static void
-TX49xx_Uart_UnMap(void *owner,uint32_t base,uint32_t mask)
+TX49xx_Uart_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(TXX9_SILCR(base));
 	IOH_Delete32(TXX9_SIDICR(base));
@@ -512,38 +499,39 @@ TX49xx_Uart_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-TX49xx_Uart_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+TX49xx_Uart_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	TX49xx_Uart *ua = owner;
 	/* TXX9 Serial Registers */
-	IOH_New32(TXX9_SILCR(base),silcr_read,silcr_write,ua);
-	IOH_New32(TXX9_SIDICR(base),sidicr_read,sidicr_write,ua);
-	IOH_New32(TXX9_SIDISR(base),sidisr_read,sidisr_write,ua);
-	IOH_New32(TXX9_SISCISR(base),siscisr_read,siscisr_write,ua);
-	IOH_New32(TXX9_SIFCR(base),sifcr_read,sifcr_write,ua);
-	IOH_New32(TXX9_SIFLCR(base),siflcr_read,siflcr_write,ua);
-	IOH_New32(TXX9_SIBGR(base),sibgr_read,sibgr_write,ua);
-	IOH_New32(TXX9_SITFIFO(base),sitfifo_read,sitfifo_write,ua);
-	IOH_New32(TXX9_SIRFIFO(base),sirfifo_read,sirfifo_write,ua);
+	IOH_New32(TXX9_SILCR(base), silcr_read, silcr_write, ua);
+	IOH_New32(TXX9_SIDICR(base), sidicr_read, sidicr_write, ua);
+	IOH_New32(TXX9_SIDISR(base), sidisr_read, sidisr_write, ua);
+	IOH_New32(TXX9_SISCISR(base), siscisr_read, siscisr_write, ua);
+	IOH_New32(TXX9_SIFCR(base), sifcr_read, sifcr_write, ua);
+	IOH_New32(TXX9_SIFLCR(base), siflcr_read, siflcr_write, ua);
+	IOH_New32(TXX9_SIBGR(base), sibgr_read, sibgr_write, ua);
+	IOH_New32(TXX9_SITFIFO(base), sitfifo_read, sitfifo_write, ua);
+	IOH_New32(TXX9_SIRFIFO(base), sirfifo_read, sirfifo_write, ua);
 
 }
+
 BusDevice *
 TX49xx_Uart_New(const char *name)
 {
 	TX49xx_Uart *ua = sg_new(TX49xx_Uart);
-	ua->irqNode = SigNode_New("%s.irq",name);
-	if(!ua->irqNode) {
-		fprintf(stderr,"Can not create uart signal lines\n");
+	ua->irqNode = SigNode_New("%s.irq", name);
+	if (!ua->irqNode) {
+		fprintf(stderr, "Can not create uart signal lines\n");
 	}
-	ua->in_clk = Clock_New("%s.clk",name);
-	ua->baud_clk = Clock_New("%s.baud",name);
-	ua->baud_trace = Clock_Trace(ua->baud_clk,update_baudrate,ua);
+	ua->in_clk = Clock_New("%s.clk", name);
+	ua->baud_clk = Clock_New("%s.baud", name);
+	ua->baud_trace = Clock_Trace(ua->baud_clk, update_baudrate, ua);
 	ua->bdev.first_mapping = NULL;
 	ua->bdev.Map = TX49xx_Uart_Map;
 	ua->bdev.UnMap = TX49xx_Uart_UnMap;
 	ua->bdev.owner = ua;
 	ua->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	ua->name = sg_strdup(name);
-	ua->port = Uart_New(name,serial_input,serial_output,NULL,ua);
+	ua->port = Uart_New(name, serial_input, serial_output, NULL, ua);
 	return &ua->bdev;
 }

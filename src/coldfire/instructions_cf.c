@@ -40,7 +40,7 @@
 #include <mem_cf.h>
 typedef enum {
 	Eat_Invalid = -1,
-	Eat_Addr,	
+	Eat_Addr,
 	Eat_Reg,
 	Eat_Imm
 } EaType;
@@ -48,7 +48,7 @@ typedef struct {
 	EaType ea_type;
 	int reg;
 	int size;
-	uint32_t addr;	
+	uint32_t addr;
 	uint32_t value;
 } EAddress;
 
@@ -56,51 +56,54 @@ typedef struct {
 #define ISNOTNEG(x) (!((x)&(1<<31)))
 
 static inline uint16_t
-add_carry(uint32_t op1,uint32_t op2,uint32_t result) {
-        if( ((ISNEG(op1) && ISNEG(op2))
-          || (ISNEG(op1) && ISNOTNEG(result))
-          || (ISNEG(op2) && ISNOTNEG(result)))) {
-                        return CCR_C;
-        } else {
-                return 0;
-        }
+add_carry(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if (((ISNEG(op1) && ISNEG(op2))
+	     || (ISNEG(op1) && ISNOTNEG(result))
+	     || (ISNEG(op2) && ISNOTNEG(result)))) {
+		return CCR_C;
+	} else {
+		return 0;
+	}
 }
+
 /*
  * Coldfire has borrow style carry
  * (Add complement and invert carry) 
  */
 static inline uint32_t
-sub_carry(uint32_t op1,uint32_t op2,uint32_t result) {
-        if( ((ISNEG(op1) && ISNOTNEG(op2))
-          || (ISNEG(op1) && ISNOTNEG(result))
-          || (ISNOTNEG(op2) && ISNOTNEG(result)))) {
-                        return 0;
-        } else {
-                        return CCR_C;
-        }
+sub_carry(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if (((ISNEG(op1) && ISNOTNEG(op2))
+	     || (ISNEG(op1) && ISNOTNEG(result))
+	     || (ISNOTNEG(op2) && ISNOTNEG(result)))) {
+		return 0;
+	} else {
+		return CCR_C;
+	}
 }
 
 static inline uint32_t
-sub_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
-        if ((ISNEG (op1) && ISNOTNEG (op2) && ISNOTNEG (result))
-          || (ISNOTNEG (op1) && ISNEG (op2) && ISNEG (result))) {
-                return CCR_V;
-        } else {
-                return 0;
-        }
+sub_overflow(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if ((ISNEG(op1) && ISNOTNEG(op2) && ISNOTNEG(result))
+	    || (ISNOTNEG(op1) && ISNEG(op2) && ISNEG(result))) {
+		return CCR_V;
+	} else {
+		return 0;
+	}
 }
-
 
 static inline uint16_t
-add_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
-        if ((ISNEG (op1) && ISNEG (op2) && ISNOTNEG (result))
-          || (ISNOTNEG (op1) && ISNOTNEG (op2) && ISNEG (result))) {
-                return CCR_V;
-        } else {
-                return 0;
-        }
+add_overflow(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if ((ISNEG(op1) && ISNEG(op2) && ISNOTNEG(result))
+	    || (ISNOTNEG(op1) && ISNOTNEG(op2) && ISNEG(result))) {
+		return CCR_V;
+	} else {
+		return 0;
+	}
 }
-
 
 /*
  ****************************************************************
@@ -112,33 +115,34 @@ add_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
  */
 
 uint32_t
-Ea_GetValue(EAddress *ea) {
-	switch(ea->ea_type) {
-		case Eat_Reg:
-			return CF_GetReg(ea->reg);
-		case Eat_Addr:
-			switch(ea->size) {
-				case 8: 
-					return CF_MemRead8(ea->addr);
-					break;
-				case 16: 
-					return CF_MemRead16(ea->addr);
-					break;
-				case 32: 
-					return CF_MemRead32(ea->addr);
-					break;
-				default:
-					fprintf(stderr,"Shit, bad data size %d\n",ea->size);
-					exit(1);
-			}	
-			break;
-		case Eat_Imm:
-			return ea->value;
-			
-		default:
-			fprintf(stderr,"Badly initialized ea_type\n");
-			exit(1);
-			return 0;
+Ea_GetValue(EAddress * ea)
+{
+	switch (ea->ea_type) {
+	    case Eat_Reg:
+		    return CF_GetReg(ea->reg);
+	    case Eat_Addr:
+		    switch (ea->size) {
+			case 8:
+				return CF_MemRead8(ea->addr);
+				break;
+			case 16:
+				return CF_MemRead16(ea->addr);
+				break;
+			case 32:
+				return CF_MemRead32(ea->addr);
+				break;
+			default:
+				fprintf(stderr, "Shit, bad data size %d\n", ea->size);
+				exit(1);
+		    }
+		    break;
+	    case Eat_Imm:
+		    return ea->value;
+
+	    default:
+		    fprintf(stderr, "Badly initialized ea_type\n");
+		    exit(1);
+		    return 0;
 	}
 }
 
@@ -150,21 +154,22 @@ Ea_GetValue(EAddress *ea) {
  *********************************************************************
  */
 uint32_t
-Ea_GetAddr(EAddress *ea) {
-	switch(ea->ea_type) {
-		case Eat_Reg:
-		case Eat_Imm:
-			fprintf(stderr,"A register/immediate is not an address, can not get\n");
-			/* some exception ? */
-			return 0; 
+Ea_GetAddr(EAddress * ea)
+{
+	switch (ea->ea_type) {
+	    case Eat_Reg:
+	    case Eat_Imm:
+		    fprintf(stderr, "A register/immediate is not an address, can not get\n");
+		    /* some exception ? */
+		    return 0;
 
-		case Eat_Addr:
-			return ea->addr;
-			
-		default:
-			fprintf(stderr,"Badly initialized ea_type\n");
-			exit(1);
-			return 0;
+	    case Eat_Addr:
+		    return ea->addr;
+
+	    default:
+		    fprintf(stderr, "Badly initialized ea_type\n");
+		    exit(1);
+		    return 0;
 	}
 }
 
@@ -177,47 +182,48 @@ Ea_GetAddr(EAddress *ea) {
  ****************************************************************************
  */
 void
-Ea_SetValue(uint32_t value,EAddress *ea) {
-	switch(ea->ea_type) {
-		case Eat_Reg:
-			switch(ea->size) {
+Ea_SetValue(uint32_t value, EAddress * ea)
+{
+	switch (ea->ea_type) {
+	    case Eat_Reg:
+		    switch (ea->size) {
 				uint32_t oldval;
-				case 8:
-					oldval = CF_GetReg(ea->reg);
-					return CF_SetReg((value & 0xff) | (oldval & 0xffffff00),ea->reg);
-				case 16:	
-					oldval = CF_GetReg(ea->reg);
-					return CF_SetReg((value & 0xffff) | (oldval & 0xffff0000),ea->reg);
-					
-				case 32:
-					return CF_SetReg(value,ea->reg);
-				default:
-					fprintf(stderr,"Bad size in effective address\n");
-			}
-			break;
-		case Eat_Addr:
-			switch(ea->size) {
-				case 8: 
-					CF_MemWrite8(value,ea->addr);
-					break;
-				case 16: 
-					CF_MemWrite16(value,ea->addr);
-					break;
-				case 32: 
-					CF_MemWrite32(value,ea->addr);
-					break;
-				default:
-					fprintf(stderr,"Shit, bad data size %d\n",ea->size);
-			}	
-			break;
-		case Eat_Imm:
-			fprintf(stderr,"Shit, can not write to an immediate value\n");
-			break;
-			
-		default:
-			fprintf(stderr,"EA-Type is invalid\n");
-			break;
-			
+			case 8:
+				oldval = CF_GetReg(ea->reg);
+				return CF_SetReg((value & 0xff) | (oldval & 0xffffff00), ea->reg);
+			case 16:
+				oldval = CF_GetReg(ea->reg);
+				return CF_SetReg((value & 0xffff) | (oldval & 0xffff0000), ea->reg);
+
+			case 32:
+				return CF_SetReg(value, ea->reg);
+			default:
+				fprintf(stderr, "Bad size in effective address\n");
+		    }
+		    break;
+	    case Eat_Addr:
+		    switch (ea->size) {
+			case 8:
+				CF_MemWrite8(value, ea->addr);
+				break;
+			case 16:
+				CF_MemWrite16(value, ea->addr);
+				break;
+			case 32:
+				CF_MemWrite32(value, ea->addr);
+				break;
+			default:
+				fprintf(stderr, "Shit, bad data size %d\n", ea->size);
+		    }
+		    break;
+	    case Eat_Imm:
+		    fprintf(stderr, "Shit, can not write to an immediate value\n");
+		    break;
+
+	    default:
+		    fprintf(stderr, "EA-Type is invalid\n");
+		    break;
+
 	}
 }
 
@@ -231,7 +237,7 @@ Ea_SetValue(uint32_t value,EAddress *ea) {
  */
 
 void
-Ea_Get(EAddress *ea,uint8_t mode,uint8_t reg,int size) 
+Ea_Get(EAddress * ea, uint8_t mode, uint8_t reg, int size)
 {
 	uint16_t eword1;
 	int xi;
@@ -240,129 +246,132 @@ Ea_Get(EAddress *ea,uint8_t mode,uint8_t reg,int size)
 	ea->ea_type = Eat_Invalid;
 	//ea->reg = 0;
 	ea->size = size;
-	switch(mode) {
-		/* Data register direct mode */
-		case 0:
-			ea->ea_type = Eat_Reg;
-			ea->reg = reg;
-			return;
+	switch (mode) {
+		    /* Data register direct mode */
+	    case 0:
+		    ea->ea_type = Eat_Reg;
+		    ea->reg = reg;
+		    return;
 
-		/* Address register direct mode */
-		case 1:
-			ea->ea_type = Eat_Reg;
-			ea->reg = reg+8;
-			return;
+		    /* Address register direct mode */
+	    case 1:
+		    ea->ea_type = Eat_Reg;
+		    ea->reg = reg + 8;
+		    return;
 
-		/* Address register indirect mode */
-		case 2:
-			ea->ea_type = Eat_Addr;
-			ea->addr = CF_GetRegA(reg);
-			return;
+		    /* Address register indirect mode */
+	    case 2:
+		    ea->ea_type = Eat_Addr;
+		    ea->addr = CF_GetRegA(reg);
+		    return;
 
-		/* Address register indirect mode with postincrement */
-		case 3:
-			ea->ea_type = Eat_Addr;
-			ea->addr = CF_GetRegA(reg);
-			CF_SetRegA(ea->addr+(size>>3),reg);
-			return;
+		    /* Address register indirect mode with postincrement */
+	    case 3:
+		    ea->ea_type = Eat_Addr;
+		    ea->addr = CF_GetRegA(reg);
+		    CF_SetRegA(ea->addr + (size >> 3), reg);
+		    return;
 
-		/* Address register indirect mode with predecrement */	
-		case 4:
-			ea->ea_type = Eat_Addr;
-			ea->addr = CF_GetRegA(reg) - (size>>3);
-			CF_SetRegA(ea->addr,reg);
-			return;	
+		    /* Address register indirect mode with predecrement */
+	    case 4:
+		    ea->ea_type = Eat_Addr;
+		    ea->addr = CF_GetRegA(reg) - (size >> 3);
+		    CF_SetRegA(ea->addr, reg);
+		    return;
 
-		/*  Address register indirect with signed 16 Bit displacement */
-		case 5:
-			eword1 = CF_MemRead16(CF_GetRegPC());	
-			CF_SetRegPC(CF_GetRegPC()+2);
-			ea->ea_type = Eat_Addr;
-			ea->addr = (int16_t)eword1 + CF_GetRegA(reg);
-			return;
+		    /*  Address register indirect with signed 16 Bit displacement */
+	    case 5:
+		    eword1 = CF_MemRead16(CF_GetRegPC());
+		    CF_SetRegPC(CF_GetRegPC() + 2);
+		    ea->ea_type = Eat_Addr;
+		    ea->addr = (int16_t) eword1 + CF_GetRegA(reg);
+		    return;
 
-		/* Address register indirect with scaled index and 8 Bit displacement */
-		case 6:
-			eword1 = CF_MemRead16(CF_GetRegPC());	
-			CF_SetRegPC(CF_GetRegPC()+2);
-			ea->ea_type = Eat_Addr;
-			if((eword1 & (1 << 11)) == 0) {
-				fprintf(stderr,"Address error exception not implemented\n");
-			}
-			xi = (eword1 & 0xf000) >> 12; 
-			shift = ((eword1 & 0x0600) >> 9);
-			ea->addr = CF_GetRegA(reg) + (CF_GetReg(xi) << shift) + (int8_t)(eword1 & 0xff);
-			return;
+		    /* Address register indirect with scaled index and 8 Bit displacement */
+	    case 6:
+		    eword1 = CF_MemRead16(CF_GetRegPC());
+		    CF_SetRegPC(CF_GetRegPC() + 2);
+		    ea->ea_type = Eat_Addr;
+		    if ((eword1 & (1 << 11)) == 0) {
+			    fprintf(stderr, "Address error exception not implemented\n");
+		    }
+		    xi = (eword1 & 0xf000) >> 12;
+		    shift = ((eword1 & 0x0600) >> 9);
+		    ea->addr =
+			CF_GetRegA(reg) + (CF_GetReg(xi) << shift) + (int8_t) (eword1 & 0xff);
+		    return;
 
-		case 7:
-			switch(reg) {
+	    case 7:
+		    switch (reg) {
 				/* Absolute short addressing mode */
-				case 0:
-					ea->addr = (int16_t)CF_MemRead16(CF_GetRegPC());	
-					ea->ea_type = Eat_Addr;
-					CF_SetRegPC(CF_GetRegPC()+2);
-					return;
+			case 0:
+				ea->addr = (int16_t) CF_MemRead16(CF_GetRegPC());
+				ea->ea_type = Eat_Addr;
+				CF_SetRegPC(CF_GetRegPC() + 2);
+				return;
 
-				/* Absoulute Long addressing mode */	
-				case 1:
-					ea->addr = CF_MemRead32(CF_GetRegPC());
-					ea->ea_type = Eat_Addr;
-					CF_SetRegPC(CF_GetRegPC()+4);
-					break;
+				/* Absoulute Long addressing mode */
+			case 1:
+				ea->addr = CF_MemRead32(CF_GetRegPC());
+				ea->ea_type = Eat_Addr;
+				CF_SetRegPC(CF_GetRegPC() + 4);
+				break;
 
 				/* Programm counter indirect with 16 Bit displacement */
-				case 2:
-					d16 = CF_MemRead16(CF_GetRegPC());	
-					ea->ea_type = Eat_Addr;
-					ea->addr = (int16_t)d16 + CF_GetRegPC();
-					CF_SetRegPC(CF_GetRegPC()+2);
-					break;
+			case 2:
+				d16 = CF_MemRead16(CF_GetRegPC());
+				ea->ea_type = Eat_Addr;
+				ea->addr = (int16_t) d16 + CF_GetRegPC();
+				CF_SetRegPC(CF_GetRegPC() + 2);
+				break;
 
 				/* Programm counter indirect with scaled index and 8 Bit displacement */
-				case 3:
-					eword1 = CF_MemRead16(CF_GetRegPC());	
-					shift = ((eword1 & 0x0600) >> 9);
-					xi = (eword1 & 0xf000) >> 12; 
-					if((eword1 & (1 << 11)) == 0) {
-						fprintf(stderr,"Address error exception not implemented\n");
-					}
-					ea->ea_type = Eat_Addr;
-					ea->addr = CF_GetRegPC() + (CF_GetReg(xi) << shift) + (int8_t)(eword1 & 0xff);
-					CF_SetRegPC(CF_GetRegPC()+2);
-					break;
+			case 3:
+				eword1 = CF_MemRead16(CF_GetRegPC());
+				shift = ((eword1 & 0x0600) >> 9);
+				xi = (eword1 & 0xf000) >> 12;
+				if ((eword1 & (1 << 11)) == 0) {
+					fprintf(stderr,
+						"Address error exception not implemented\n");
+				}
+				ea->ea_type = Eat_Addr;
+				ea->addr =
+				    CF_GetRegPC() + (CF_GetReg(xi) << shift) +
+				    (int8_t) (eword1 & 0xff);
+				CF_SetRegPC(CF_GetRegPC() + 2);
+				break;
 
 				/* Immediate Data */
-				case 4:
-					ea->ea_type = Eat_Imm;
-					switch(size) {
-						case 8:
-							ea->value = CF_MemRead16(CF_GetRegPC()) & 0xff;
-							CF_SetRegPC(CF_GetRegPC()+2);
-							break;
-						case 16:
-							ea->value = CF_MemRead16(CF_GetRegPC());
-							CF_SetRegPC(CF_GetRegPC()+2);
-							break;
-						case 32:
-							ea->value = CF_MemRead32(CF_GetRegPC());
-							CF_SetRegPC(CF_GetRegPC()+4);
-							break;
-					}
-					break;
-				default:
-					fprintf(stderr,"Unimplemented ea_reg == %d for mode 7\n",reg);
-					// illegal instr ?
-					exit(1);
-				
-			}
-			break;
-
+			case 4:
+				ea->ea_type = Eat_Imm;
+				switch (size) {
+				    case 8:
+					    ea->value = CF_MemRead16(CF_GetRegPC()) & 0xff;
+					    CF_SetRegPC(CF_GetRegPC() + 2);
+					    break;
+				    case 16:
+					    ea->value = CF_MemRead16(CF_GetRegPC());
+					    CF_SetRegPC(CF_GetRegPC() + 2);
+					    break;
+				    case 32:
+					    ea->value = CF_MemRead32(CF_GetRegPC());
+					    CF_SetRegPC(CF_GetRegPC() + 4);
+					    break;
+				}
+				break;
 			default:
-				fprintf(stderr,"Unimplemented ea_mode == %d\n",mode);
+				fprintf(stderr, "Unimplemented ea_reg == %d for mode 7\n", reg);
 				// illegal instr ?
 				exit(1);
-				
-		
+
+		    }
+		    break;
+
+	    default:
+		    fprintf(stderr, "Unimplemented ea_mode == %d\n", mode);
+		    // illegal instr ?
+		    exit(1);
+
 	}
 
 }
@@ -375,16 +384,17 @@ Ea_Get(EAddress *ea,uint8_t mode,uint8_t reg,int size)
  *************************************************************************
  */
 static inline uint16_t
-add_flags(uint32_t op1,uint32_t op2,uint32_t result) {
-	
-	uint16_t flags = add_carry(op1,op2,result);
-	if(flags & CCR_C) {
+add_flags(uint32_t op1, uint32_t op2, uint32_t result)
+{
+
+	uint16_t flags = add_carry(op1, op2, result);
+	if (flags & CCR_C) {
 		flags |= CCR_X;
 	}
-	flags |= add_overflow(op1,op2,result);
-	if(ISNEG(result)) {
+	flags |= add_overflow(op1, op2, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		flags |= CCR_Z;
 	}
 	return flags;
@@ -398,20 +408,22 @@ add_flags(uint32_t op1,uint32_t op2,uint32_t result) {
  ********************************************************************
  */
 static inline uint16_t
-sub_flags(uint32_t op1,uint32_t op2,uint32_t result) {
-	
-	uint16_t flags = sub_carry(op1,op2,result);
-	if(flags & CCR_C) {
+sub_flags(uint32_t op1, uint32_t op2, uint32_t result)
+{
+
+	uint16_t flags = sub_carry(op1, op2, result);
+	if (flags & CCR_C) {
 		flags |= CCR_X;
 	}
-	flags |= sub_overflow(op1,op2,result);
-	if(ISNEG(result)) {
+	flags |= sub_overflow(op1, op2, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		flags |= CCR_Z;
 	}
 	return flags;
 }
+
 /*
  ***********************************************************
  * Coldfire ADD instruction
@@ -422,27 +434,27 @@ void
 cf_add(void)
 {
 	uint16_t opmode = (ICODE & 0x1c0) >> 6;
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op1 = Ea_GetValue(&ea); 
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op1 = Ea_GetValue(&ea);
 	op2 = CF_GetRegD(reg);
 	result = op1 + op2;
-	if(opmode == 2) {
+	if (opmode == 2) {
 		/* <ea>y + Dx -> Dx */
-		CF_SetRegD(result,reg);
-	} else if(opmode == 6) {
+		CF_SetRegD(result, reg);
+	} else if (opmode == 6) {
 		/* Dy + <ea>x -> <ea>x */
-		Ea_SetValue(result,&ea);	
+		Ea_SetValue(result, &ea);
 	} else {
-		fprintf(stderr,"Illegal opmode for add instruction\n");
+		fprintf(stderr, "Illegal opmode for add instruction\n");
 		return;
-	}	
+	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= add_flags(op1,op2,result); 
+	CF_REG_CCR |= add_flags(op1, op2, result);
 }
 
 /*
@@ -454,18 +466,18 @@ cf_add(void)
 void
 cf_adda(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op1 = Ea_GetValue(&ea); 
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op1 = Ea_GetValue(&ea);
 	op2 = CF_GetRegA(reg);
 	result = op1 + op2;
-	CF_SetRegA(result,reg);
+	CF_SetRegA(result, reg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= add_flags(op1,op2,result); 
+	CF_REG_CCR |= add_flags(op1, op2, result);
 }
 
 /*
@@ -478,14 +490,14 @@ void
 cf_addi(void)
 {
 	int dreg = (ICODE & 0x7);
-	uint32_t op1,op2,result;
+	uint32_t op1, op2, result;
 	op1 = CF_MemRead32(CF_GetRegPC());
-	op2 = CF_GetRegD(dreg);	
+	op2 = CF_GetRegD(dreg);
 	result = op1 + op2;
-	CF_SetRegPC(CF_GetRegPC()+4);
-	CF_SetRegD(result,dreg);
+	CF_SetRegPC(CF_GetRegPC() + 4);
+	CF_SetRegD(result, dreg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= add_flags(op1,op2,result); 
+	CF_REG_CCR |= add_flags(op1, op2, result);
 }
 
 /*
@@ -498,20 +510,20 @@ cf_addi(void)
 void
 cf_addq(void)
 {
-	EAddress ea;	
-	uint32_t op2,result;
+	EAddress ea;
+	uint32_t op2, result;
 	uint32_t op1 = (ICODE & 0x0e00) >> 9;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	if(op1 == 0) {
+	int ea_reg = (ICODE & 7);
+	if (op1 == 0) {
 		op1 = 8;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op2 = Ea_GetValue(&ea); 
-	result = op1 + op2;	
-	Ea_SetValue(result,&ea); 
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op2 = Ea_GetValue(&ea);
+	result = op1 + op2;
+	Ea_SetValue(result, &ea);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= add_flags(op1,op2,result); 
+	CF_REG_CCR |= add_flags(op1, op2, result);
 }
 
 /*
@@ -525,26 +537,26 @@ cf_addx(void)
 {
 	int dy = ICODE & 0x7;
 	int dx = (ICODE & 0x0e00) >> 9;
-	uint32_t op1,op2,result;
+	uint32_t op1, op2, result;
 	uint16_t flags;
 	op1 = CF_GetRegD(dy);
 	op2 = CF_GetRegD(dx);
 	result = op1 + op2;
-	if(CF_REG_CCR & CCR_X) {
+	if (CF_REG_CCR & CCR_X) {
 		result += 1;
 	}
-	CF_SetRegD(result,dx);
-	flags = add_carry(op1,op2,result);
-	if(flags & CCR_C) {
+	CF_SetRegD(result, dx);
+	flags = add_carry(op1, op2, result);
+	if (flags & CCR_C) {
 		flags |= CCR_X;
 	}
-	flags |= add_overflow(op1,op2,result);
-	if(ISNEG(result)) {
+	flags |= add_overflow(op1, op2, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} 
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V |  CCR_N | CCR_X);
+	}
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_N | CCR_X);
 	CF_REG_CCR |= flags;
-	if(result != 0) {
+	if (result != 0) {
 		CF_REG_CCR &= ~CCR_Z;
 	}
 }
@@ -559,29 +571,29 @@ void
 cf_and(void)
 {
 	uint16_t opmode = (ICODE & 0x1c0) >> 6;
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op1 = Ea_GetValue(&ea); 
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op1 = Ea_GetValue(&ea);
 	op2 = CF_GetRegD(reg);
 	result = op1 & op2;
-	if(opmode == 2) {
+	if (opmode == 2) {
 		/* <ea>y + Dx -> Dx */
-		CF_SetRegD(result,reg);
-	} else if(opmode == 6) {
+		CF_SetRegD(result, reg);
+	} else if (opmode == 6) {
 		/* Dy + <ea>x -> <ea>x */
-		Ea_SetValue(result,&ea);	
+		Ea_SetValue(result, &ea);
 	} else {
 		// illegal opmode 
-	}	
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N );
-	if(ISNEG(result))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	}
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -595,17 +607,17 @@ void
 cf_andi(void)
 {
 	int dreg = (ICODE & 0x7);
-	uint32_t op1,op2,result;
+	uint32_t op1, op2, result;
 	op1 = CF_MemRead32(CF_GetRegPC());
-	op2 = CF_GetRegD(dreg);	
+	op2 = CF_GetRegD(dreg);
 	result = op1 & op2;
-	CF_SetRegPC(CF_GetRegPC()+4);
-	CF_SetRegD(result,dreg);
+	CF_SetRegPC(CF_GetRegPC() + 4);
+	CF_SetRegD(result, dreg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(result)) {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -623,22 +635,22 @@ cf_asri(void)
 	int count = (ICODE & 0x0e00) >> 9;
 	int32_t Dx;
 	int shiftout;
-	if(count == 0) {
+	if (count == 0) {
 		count = 8;
 	}
 	Dx = CF_GetReg(dx);
 	shiftout = (Dx >> (count - 1)) & 1;
 	Dx = Dx >> count;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(shiftout) {
+	if (shiftout) {
 		CF_REG_CCR |= CCR_X | CCR_C;
-	}	
-	if(ISNEG(Dx)) {
+	}
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -660,33 +672,33 @@ cf_asrr(void)
 	Dx = CF_GetReg(dx);
 	Dy = CF_GetReg(dy);
 	shift = Dy & 0x3f;
-	if(shift < 32) {
-		shiftout = (Dx >> (shift-1)) & 1;
+	if (shift < 32) {
+		shiftout = (Dx >> (shift - 1)) & 1;
 		Dx = Dx >> shift;
-	} else if(shift >= 32) {
+	} else if (shift >= 32) {
 		/* I'm not totally sure for shift count > 32 */
-		if(ISNEG(Dx)) {
+		if (ISNEG(Dx)) {
 			shiftout = 1;
 			Dx = 0xffffffff;
 		} else {
 			shiftout = 0;
 			Dx = 0;
-		}	
+		}
 	}
-	if(shift == 0) {
+	if (shift == 0) {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
 	} else {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-		if(shiftout) {
+		if (shiftout) {
 			CF_REG_CCR |= CCR_X | CCR_C;
-		}	
+		}
 	}
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -703,22 +715,22 @@ cf_asli(void)
 	uint32_t Dx;
 	int count = (ICODE & 0x0e00) >> 9;
 	uint32_t shiftout;
-	if(count == 0) {
+	if (count == 0) {
 		count = 8;
 	}
 	Dx = CF_GetRegD(dx);
-	shiftout = (Dx >> (32-count)) & 1;
-	Dx = Dx << count;	
+	shiftout = (Dx >> (32 - count)) & 1;
+	Dx = Dx << count;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(shiftout) {
+	if (shiftout) {
 		CF_REG_CCR = CCR_X | CCR_C;
 	}
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -739,30 +751,30 @@ cf_aslr(void)
 	Dx = CF_GetReg(dx);
 	Dy = CF_GetReg(dy);
 	shift = Dy & 0x3f;
-	if(shift < 32) {
-		shiftout = (Dx >> (32-shift)) & 1;
-		Dx = Dx << shift;	
-	} else if(shift == 32) {
+	if (shift < 32) {
+		shiftout = (Dx >> (32 - shift)) & 1;
+		Dx = Dx << shift;
+	} else if (shift == 32) {
 		shiftout = (Dx & 1);
-		Dx = 0;	
+		Dx = 0;
 	} else {
 		shiftout = 0;
 		Dx = 0;
 	}
-	if(shift == 0) {
+	if (shift == 0) {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
 	} else {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-		if(shiftout) {
+		if (shiftout) {
 			CF_REG_CCR |= CCR_X | CCR_C;
-		}	
+		}
 	}
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 #define CC_TRUE	 (0x0)
@@ -793,81 +805,80 @@ static uint8_t condition_tab[256];
  ************************************************************************************
  */
 void
-cf_init_condition_tab(void) 
+cf_init_condition_tab(void)
 {
 	int i;
-	for(i=0;i<256;i++) {
+	for (i = 0; i < 256; i++) {
 		int result;
 		int ccode = i & 0xf;
-		int ccr = (i>>4) & 0xf;
+		int ccr = (i >> 4) & 0xf;
 		int ccr_C = !!(ccr & CCR_C);
 		int ccr_N = !!(ccr & CCR_N);
 		int ccr_V = !!(ccr & CCR_V);
 		int ccr_Z = !!(ccr & CCR_Z);
-		switch(ccode) {
-			case CC_TRUE:
-				result = 1;
-				break;
-			case CC_FALSE:
-				result = 0;
-				break;
-			case CC_CC:
-				result = !ccr_C;
-				break;
-			case CC_CS:
-				result = ccr_C;
-				break;
-			case CC_EQ:
-				result = ccr_Z;
-				break;
-			case CC_GE:
-				result = (ccr_N && ccr_V) || (!ccr_N && !ccr_V);
-				break;
+		switch (ccode) {
+		    case CC_TRUE:
+			    result = 1;
+			    break;
+		    case CC_FALSE:
+			    result = 0;
+			    break;
+		    case CC_CC:
+			    result = !ccr_C;
+			    break;
+		    case CC_CS:
+			    result = ccr_C;
+			    break;
+		    case CC_EQ:
+			    result = ccr_Z;
+			    break;
+		    case CC_GE:
+			    result = (ccr_N && ccr_V) || (!ccr_N && !ccr_V);
+			    break;
 
-			case CC_GT:
-				result = (ccr_N && ccr_V && !ccr_Z) ||
-					 (!ccr_N && !ccr_V && !ccr_Z);
-				break;
+		    case CC_GT:
+			    result = (ccr_N && ccr_V && !ccr_Z) || (!ccr_N && !ccr_V && !ccr_Z);
+			    break;
 
-			case CC_HI:
-				result = !ccr_C && !ccr_Z;
-				break;
+		    case CC_HI:
+			    result = !ccr_C && !ccr_Z;
+			    break;
 
-			case CC_LE:
-				result = ccr_Z || (ccr_N && !ccr_V) || (!ccr_N && ccr_V);
-				break;
+		    case CC_LE:
+			    result = ccr_Z || (ccr_N && !ccr_V) || (!ccr_N && ccr_V);
+			    break;
 
-			case CC_LS:
-				result = ccr_C || ccr_Z;
-				break;
+		    case CC_LS:
+			    result = ccr_C || ccr_Z;
+			    break;
 
-			case CC_LT:
-				result = (ccr_N && !ccr_V) || (!ccr_N && ccr_V);
-				break;
+		    case CC_LT:
+			    result = (ccr_N && !ccr_V) || (!ccr_N && ccr_V);
+			    break;
 
-			case CC_MI:
-				result = ccr_N;
-				break;
+		    case CC_MI:
+			    result = ccr_N;
+			    break;
 
-			case CC_NE:
-				result = !ccr_Z;
-				break;
+		    case CC_NE:
+			    result = !ccr_Z;
+			    break;
 
-			case CC_PL:
-				result = !ccr_N;	
-				break;
+		    case CC_PL:
+			    result = !ccr_N;
+			    break;
 
-			case CC_VC:
-				result = !ccr_V;
-				break;
+		    case CC_VC:
+			    result = !ccr_V;
+			    break;
 
-			case CC_VS:
-				result = ccr_V;
-				break;
-			default:
-				fprintf(stderr,"shit, should never happen\n");
-				exit(1);
-			
+		    case CC_VS:
+			    result = ccr_V;
+			    break;
+		    default:
+			    fprintf(stderr, "shit, should never happen\n");
+			    exit(1);
+
 		}
 		condition_tab[i] = result;
 	}
@@ -886,21 +897,21 @@ void
 cf_bcc(void)
 {
 	int ccode = (ICODE & 0x0f00) >> 8;
-	int8_t disp8 = ICODE & 0xff;	
+	int8_t disp8 = ICODE & 0xff;
 	int32_t disp32;
 	uint32_t saved_pc = CF_GetRegPC();
 	uint32_t nia = saved_pc;
-	if(disp8 == 0) {
+	if (disp8 == 0) {
 		disp32 = (int16_t) CF_MemRead16(CF_GetRegPC());
 		nia += 2;
-	} else if(disp8 == (int8_t)0xff) {
+	} else if (disp8 == (int8_t) 0xff) {
 		disp32 = CF_MemRead32(CF_GetRegPC());
 		nia += 4;
 	} else {
-		disp32 = disp8; /* sign extend */
+		disp32 = disp8;	/* sign extend */
 	}
-	if(CHECK_CONDITION(ccode,CF_REG_CCR)) {
-		CF_SetRegPC(saved_pc+disp32);
+	if (CHECK_CONDITION(ccode, CF_REG_CCR)) {
+		CF_SetRegPC(saved_pc + disp32);
 	} else {
 		CF_SetRegPC(nia);
 	}
@@ -915,29 +926,29 @@ cf_bcc(void)
 void
 cf_bchgi(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int size;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t val;
 	uint8_t bit = (CF_MemRead16(CF_GetRegPC()));
-	if(ea_mode == 0) {
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	CF_SetRegPC(CF_GetRegPC()+2);
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	CF_SetRegPC(CF_GetRegPC() + 2);
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
-	val = val ^ (1<<bit);
-	Ea_SetValue(val,&ea);
+	val = val ^ (1 << bit);
+	Ea_SetValue(val, &ea);
 }
 
 /* 
@@ -949,29 +960,29 @@ cf_bchgi(void)
 void
 cf_bchgr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0x0e00) >> 9;
 	int size;
 	uint32_t val;
-	uint32_t bit = CF_GetRegD(reg); 
-	if(ea_mode == 0) {
+	uint32_t bit = CF_GetRegD(reg);
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
-	val = val ^ (1<<bit);
-	Ea_SetValue(val,&ea);
+	val = val ^ (1 << bit);
+	Ea_SetValue(val, &ea);
 }
 
 /*
@@ -983,30 +994,31 @@ cf_bchgr(void)
 void
 cf_bclri(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int size;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t val;
 	uint16_t bit = (CF_MemRead16(CF_GetRegPC()));
-	if(ea_mode == 0) {
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	CF_SetRegPC(CF_GetRegPC()+2);
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	CF_SetRegPC(CF_GetRegPC() + 2);
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
-	val = val &~ (1<<bit);
-	Ea_SetValue(val,&ea);
+	val = val & ~(1 << bit);
+	Ea_SetValue(val, &ea);
 }
+
 /*
  ***********************************************************************
  * BCLR Test a Bit and Clear. Bit number is in a register 
@@ -1016,29 +1028,29 @@ cf_bclri(void)
 void
 cf_bclrr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0x0e00) >> 9;
 	int size;
 	uint32_t val;
-	uint32_t bit = CF_GetRegD(reg); 
-	if(ea_mode == 0) {
+	uint32_t bit = CF_GetRegD(reg);
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
-	val = val & ~(1<<bit);
-	Ea_SetValue(val,&ea);
+	val = val & ~(1 << bit);
+	Ea_SetValue(val, &ea);
 }
 
 /*
@@ -1050,12 +1062,12 @@ cf_bclrr(void)
 static inline uint32_t
 bitreverse32(uint32_t x)
 {
-        x = (x >> 16) | (x << 16);
-        x = ((x >> 8) & 0x00ff00ff) | ((x << 8) & 0xff00ff00);
-        x = ((x >> 4) & 0x0f0f0f0f) | ((x << 4) & 0xf0f0f0f0);
-        x = ((x >> 2) & 0x33333333) | ((x << 2) & 0xcccccccc);
-        x = ((x >> 1) & 0x55555555) | ((x << 1) & 0xaaaaaaaa);
-        return x;
+	x = (x >> 16) | (x << 16);
+	x = ((x >> 8) & 0x00ff00ff) | ((x << 8) & 0xff00ff00);
+	x = ((x >> 4) & 0x0f0f0f0f) | ((x << 4) & 0xf0f0f0f0);
+	x = ((x >> 2) & 0x33333333) | ((x << 2) & 0xcccccccc);
+	x = ((x >> 1) & 0x55555555) | ((x << 1) & 0xaaaaaaaa);
+	return x;
 }
 
 /*
@@ -1070,7 +1082,7 @@ cf_bitrev(void)
 	int reg = ICODE & 7;
 	uint32_t val = CF_GetRegD(reg);
 	val = bitreverse32(val);
-	CF_SetRegD(val,reg);
+	CF_SetRegD(val, reg);
 }
 
 /*
@@ -1082,29 +1094,29 @@ cf_bitrev(void)
 void
 cf_bseti(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int size;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t val;
 	uint16_t bit = (CF_MemRead16(CF_GetRegPC()));
-	if(ea_mode == 0) {
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	CF_SetRegPC(CF_GetRegPC()+2);
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	CF_SetRegPC(CF_GetRegPC() + 2);
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
-	val = val | (1<<bit);
-	Ea_SetValue(val,&ea);
+	val = val | (1 << bit);
+	Ea_SetValue(val, &ea);
 }
 
 /*
@@ -1116,29 +1128,29 @@ cf_bseti(void)
 void
 cf_bsetr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0x0e00) >> 9;
 	int size;
 	uint32_t val;
-	uint32_t bit = CF_GetRegD(reg); 
-	if(ea_mode == 0) {
+	uint32_t bit = CF_GetRegD(reg);
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
-	val = val | (1<<bit);
-	Ea_SetValue(val,&ea);
+	val = val | (1 << bit);
+	Ea_SetValue(val, &ea);
 }
 
 /*
@@ -1150,21 +1162,21 @@ cf_bsetr(void)
 void
 cf_bsr(void)
 {
-	int8_t disp8 = ICODE & 0xff;	
+	int8_t disp8 = ICODE & 0xff;
 	int32_t disp32;
 	uint32_t nia = CF_GetRegPC();
 	uint32_t pc = nia;
-	if(disp8 == 0) {
-		disp32 = (int16_t)CF_MemRead16(CF_GetRegPC());
-		nia+=2;
-	}  else if(disp8 == (int8_t)0xff) {
+	if (disp8 == 0) {
+		disp32 = (int16_t) CF_MemRead16(CF_GetRegPC());
+		nia += 2;
+	} else if (disp8 == (int8_t) 0xff) {
 		disp32 = CF_MemRead32(CF_GetRegPC());
-		nia+=4;
+		nia += 4;
 	} else {
-		disp32 = disp8; /* sign extend */
+		disp32 = disp8;	/* sign extend */
 	}
-	Push4(nia); 
-	CF_SetRegPC(pc+disp32);
+	Push4(nia);
+	CF_SetRegPC(pc + disp32);
 }
 
 /*
@@ -1176,24 +1188,24 @@ cf_bsr(void)
 void
 cf_btsti(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int size;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t val;
 	uint16_t bit = (CF_MemRead16(CF_GetRegPC()));
-	if(ea_mode == 0) {
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	CF_SetRegPC(CF_GetRegPC()+2);
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	CF_SetRegPC(CF_GetRegPC() + 2);
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
@@ -1208,24 +1220,24 @@ cf_btsti(void)
 void
 cf_btstr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0x0e00) >> 9;
 	int size;
 	uint8_t val;
-	uint32_t bit = CF_GetRegD(reg); 
-	if(ea_mode == 0) {
+	uint32_t bit = CF_GetRegD(reg);
+	if (ea_mode == 0) {
 		bit = bit & 31;
 		size = 32;
 	} else {
 		bit = bit & 7;
 		size = 8;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	val = Ea_GetValue(&ea); 
-	if(val & (1<<bit)) {
-		CF_REG_CCR = CF_REG_CCR &~ CCR_Z;
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	val = Ea_GetValue(&ea);
+	if (val & (1 << bit)) {
+		CF_REG_CCR = CF_REG_CCR & ~CCR_Z;
 	} else {
 		CF_REG_CCR = CF_REG_CCR | CCR_Z;
 	}
@@ -1237,9 +1249,9 @@ cf_btstr(void)
 static inline uint32_t
 bytereverse32(uint32_t x)
 {
-        x = (x >> 16) | (x << 16);
-        x = ((x >> 8) & 0x00ff00ff) | ((x << 8) & 0xff00ff00);
-        return x;
+	x = (x >> 16) | (x << 16);
+	x = ((x >> 8) & 0x00ff00ff) | ((x << 8) & 0xff00ff00);
+	return x;
 }
 
 /* 
@@ -1254,7 +1266,7 @@ cf_byterev(void)
 	int reg = ICODE & 7;
 	uint32_t val = CF_GetRegD(reg);
 	val = bytereverse32(val);
-	CF_SetRegD(val,reg);
+	CF_SetRegD(val, reg);
 }
 
 /*
@@ -1266,14 +1278,14 @@ cf_byterev(void)
 void
 cf_clr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int size = 8 << ((ICODE & 0xc0) >> 6);
-	Ea_Get(&ea,ea_mode,ea_reg,size);
-	Ea_SetValue(0,&ea);
+	Ea_Get(&ea, ea_mode, ea_reg, size);
+	Ea_SetValue(0, &ea);
 	CF_REG_CCR &= ~(CCR_N | CCR_V | CCR_C);
-	CF_REG_CCR |= CCR_Z; 
+	CF_REG_CCR |= CCR_Z;
 }
 
 /*
@@ -1287,28 +1299,28 @@ cf_clr(void)
 void
 cf_cmp(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t src;
 	uint32_t Dx;
 	uint32_t result;
 	uint16_t flags;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	int reg = (ICODE & 0x0e00) >> 9;	
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	src = Ea_GetValue(&ea); 
+	int ea_reg = (ICODE & 7);
+	int reg = (ICODE & 0x0e00) >> 9;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	src = Ea_GetValue(&ea);
 	Dx = CF_GetRegD(reg);
 	result = Dx - src;
-	
-	flags = sub_carry(Dx,src,result);
-	flags |= sub_overflow(Dx,src,result);
-	if(ISNEG(result)) {
+
+	flags = sub_carry(Dx, src, result);
+	flags |= sub_overflow(Dx, src, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		flags |= CCR_Z;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	CF_REG_CCR |= flags;		
+	CF_REG_CCR |= flags;
 }
 
 /*
@@ -1319,29 +1331,30 @@ cf_cmp(void)
 void
 cf_cmpa(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t src;
 	uint32_t Ax;
 	uint32_t result;
 	uint16_t flags;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	int reg = (ICODE & 0x0e00) >> 9;	
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	src = Ea_GetValue(&ea); 
+	int ea_reg = (ICODE & 7);
+	int reg = (ICODE & 0x0e00) >> 9;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	src = Ea_GetValue(&ea);
 	Ax = CF_GetRegA(reg);
 	result = Ax - src;
-	
-	flags = sub_carry(Ax,src,result);
-	flags |= sub_overflow(Ax,src,result);
-	if(ISNEG(result)) {
+
+	flags = sub_carry(Ax, src, result);
+	flags |= sub_overflow(Ax, src, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		flags |= CCR_Z;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	CF_REG_CCR |= flags;		
+	CF_REG_CCR |= flags;
 }
+
 /*
  *****************************************************************
  * CMP Compare Immediate
@@ -1355,33 +1368,33 @@ cf_cmpi(void)
 	int dx = ICODE & 0x7;
 	uint16_t flags;
 	uint32_t Dx;
-	uint32_t imm,result;
+	uint32_t imm, result;
 	Dx = CF_GetRegD(dx);
-	if(size == 0) { /* Byte */
-		fprintf(stderr,"cmpi.b not implemented\n");
+	if (size == 0) {	/* Byte */
+		fprintf(stderr, "cmpi.b not implemented\n");
 		return;
-	} else if(size == 1) { /* word */
-		fprintf(stderr,"cmpi.w not implemented\n");
+	} else if (size == 1) {	/* word */
+		fprintf(stderr, "cmpi.w not implemented\n");
 		return;
-	} else if(size == 2) { /* longword */
+	} else if (size == 2) {	/* longword */
 		imm = CF_MemRead32(CF_GetRegPC());
-		CF_SetRegPC(CF_GetRegPC()+4);
+		CF_SetRegPC(CF_GetRegPC() + 4);
 	} else {
-		fprintf(stderr,"Illegal size in cmpi instruction\n");
+		fprintf(stderr, "Illegal size in cmpi instruction\n");
 		// undefined instruction
 		return;
 	}
 	result = Dx - imm;
-	
-	flags = sub_carry(Dx,imm,result);
-	flags |= sub_overflow(Dx,imm,result);
-	if(ISNEG(result)) {
+
+	flags = sub_carry(Dx, imm, result);
+	flags |= sub_overflow(Dx, imm, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		flags |= CCR_Z;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	CF_REG_CCR |= flags;		
+	CF_REG_CCR |= flags;
 }
 
 /*
@@ -1393,40 +1406,40 @@ cf_cmpi(void)
 void
 cf_divs_w(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int16_t src;
 	int32_t Dx;
 	int32_t quot;
 	int32_t remainder;
 	uint32_t result;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	int dx = (ICODE & 0x0e00) >> 9;	
-	Ea_Get(&ea,ea_mode,ea_reg,16);
-	src = Ea_GetValue(&ea); 
-	Dx = CF_GetRegD(dx);	
-	if(src == 0) {
+	int ea_reg = (ICODE & 7);
+	int dx = (ICODE & 0x0e00) >> 9;
+	Ea_Get(&ea, ea_mode, ea_reg, 16);
+	src = Ea_GetValue(&ea);
+	Dx = CF_GetRegD(dx);
+	if (src == 0) {
 		/* do some exception is missing here */
 		return;
 	} else {
 		quot = Dx / src;
 		remainder = Dx % src;
 	}
-	if((quot > 0x7fff) | (quot < -0x8000)) {
+	if ((quot > 0x7fff) | (quot < -0x8000)) {
 		/* overflow */
-		CF_REG_CCR = CF_REG_CCR & ~(CCR_N | CCR_Z | CCR_C); 
+		CF_REG_CCR = CF_REG_CCR & ~(CCR_N | CCR_Z | CCR_C);
 		CF_REG_CCR |= CCR_V;
 		/* If an overflow is detected the destination register is untouched ! */
 		return;
 	} else {
-		result = (int16_t)quot | ((remainder & 0xffff) << 16);
+		result = (int16_t) quot | ((remainder & 0xffff) << 16);
 		CF_REG_CCR &= ~(CCR_V | CCR_C | CCR_Z | CCR_N);
-		if(quot == 0) {
+		if (quot == 0) {
 			CF_REG_CCR |= CCR_Z;
-		} else if(quot < 0) {
+		} else if (quot < 0) {
 			CF_REG_CCR |= CCR_N;
 		}
-		CF_SetRegD(result,dx);
+		CF_SetRegD(result, dx);
 	}
 }
 
@@ -1437,20 +1450,20 @@ cf_divs_w(void)
 void
 cf_divs_l(uint16_t secword)
 {
-	EAddress ea;	
+	EAddress ea;
 	int32_t src;
 	int32_t Dx;
 	int32_t quot;
 	int32_t remainder;
 	uint32_t result;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int dx = (secword & 0x7000) >> 12;
 	int dw = (secword & 7);
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	src = Ea_GetValue(&ea); 
-	Dx = CF_GetRegD(dx);	
-	if(src == 0) {
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	src = Ea_GetValue(&ea);
+	Dx = CF_GetRegD(dx);
+	if (src == 0) {
 		/* do some exception is missing here */
 		return;
 	} else {
@@ -1459,17 +1472,17 @@ cf_divs_l(uint16_t secword)
 	}
 	result = quot;
 	CF_REG_CCR &= ~(CCR_V | CCR_C | CCR_Z | CCR_N);
-	if(result == 0) {
+	if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
-	} else if(ISNEG(result)) {
+	} else if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(result == 0x80000000) {
+	} else if (result == 0x80000000) {
 		CF_REG_CCR |= CCR_V;
 	}
-	if(dw == dx) {
-		CF_SetRegD(quot,dx);
+	if (dw == dx) {
+		CF_SetRegD(quot, dx);
 	} else {
-		CF_SetRegD(remainder,dw);
+		CF_SetRegD(remainder, dw);
 	}
 }
 
@@ -1479,40 +1492,40 @@ cf_divs_l(uint16_t secword)
 void
 cf_divu_w(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint16_t src;
 	uint32_t Dx;
 	uint32_t quot;
 	uint32_t remainder;
 	uint32_t result;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	int dx = (ICODE & 0x0e00) >> 9;	
-	Ea_Get(&ea,ea_mode,ea_reg,16);
-	src = Ea_GetValue(&ea); 
-	Dx = CF_GetRegD(dx);	
-	if(src == 0) {
+	int ea_reg = (ICODE & 7);
+	int dx = (ICODE & 0x0e00) >> 9;
+	Ea_Get(&ea, ea_mode, ea_reg, 16);
+	src = Ea_GetValue(&ea);
+	Dx = CF_GetRegD(dx);
+	if (src == 0) {
 		/* do some exception is missing here */
 		return;
 	} else {
 		quot = Dx / src;
 		remainder = Dx % src;
 	}
-	if((quot > 0xffff)) {
+	if ((quot > 0xffff)) {
 		/* overflow */
-		CF_REG_CCR = CF_REG_CCR & ~(CCR_N | CCR_Z | CCR_C); 
+		CF_REG_CCR = CF_REG_CCR & ~(CCR_N | CCR_Z | CCR_C);
 		CF_REG_CCR |= CCR_V;
 		/* Do not touch Dx in case of overflow */
 		return;
 	} else {
-		result = (uint16_t)quot | ((remainder & 0xffff) << 16);
+		result = (uint16_t) quot | ((remainder & 0xffff) << 16);
 		CF_REG_CCR &= ~(CCR_V | CCR_C | CCR_Z | CCR_N);
-		if(quot == 0) {
+		if (quot == 0) {
 			CF_REG_CCR |= CCR_Z;
-		} else if(quot & 0x8000) {
+		} else if (quot & 0x8000) {
 			CF_REG_CCR |= CCR_N;
 		}
-		CF_SetRegD(result,dx);
+		CF_SetRegD(result, dx);
 	}
 }
 
@@ -1522,19 +1535,19 @@ cf_divu_w(void)
 void
 cf_divu_l(uint16_t secword)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t src;
 	uint32_t Dx;
 	uint32_t quot;
 	uint32_t remainder;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	int dx = (secword & 0x7000) >> 12; 
+	int ea_reg = (ICODE & 7);
+	int dx = (secword & 0x7000) >> 12;
 	int dw = secword & 7;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	src = Ea_GetValue(&ea); 
-	Dx = CF_GetRegD(dx);	
-	if(src == 0) {
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	src = Ea_GetValue(&ea);
+	Dx = CF_GetRegD(dx);
+	if (src == 0) {
 		/* do some exception is missing here */
 		return;
 	} else {
@@ -1542,32 +1555,32 @@ cf_divu_l(uint16_t secword)
 		remainder = Dx % src;
 	}
 	CF_REG_CCR &= ~(CCR_V | CCR_C | CCR_Z | CCR_N);
-	if(quot == 0) {
+	if (quot == 0) {
 		CF_REG_CCR |= CCR_Z;
-	} else if(ISNEG(quot)) {
+	} else if (ISNEG(quot)) {
 		CF_REG_CCR |= CCR_N;
 	}
-	if(dx == dw) {
-		CF_SetRegD(quot,dx);
+	if (dx == dw) {
+		CF_SetRegD(quot, dx);
 	} else {
-		CF_SetRegD(remainder,dw);
+		CF_SetRegD(remainder, dw);
 	}
 }
 
 /*
  * Long version needs second word to decide if signed or unsigned
  */
-void 
+void
 cf_div_l(void)
 {
 	uint16_t secword = CF_MemRead16(CF_GetRegPC());
-	if(secword & (1<<11)) {
+	if (secword & (1 << 11)) {
 		cf_divs_l(secword);
 	} else {
 		cf_divu_l(secword);
 	}
 	/* Increment PC here because div may throw an exception with CIA */
-	CF_SetRegPC(CF_GetRegPC()+2);
+	CF_SetRegPC(CF_GetRegPC() + 2);
 }
 
 /*
@@ -1579,21 +1592,21 @@ cf_div_l(void)
 void
 cf_eor(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op1 = Ea_GetValue(&ea); 
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op1 = Ea_GetValue(&ea);
 	op2 = CF_GetRegD(reg);
 	result = op1 ^ op2;
-	Ea_SetValue(result,&ea);	
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N );
-	if(ISNEG(result))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	Ea_SetValue(result, &ea);
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -1605,17 +1618,17 @@ void
 cf_eori(void)
 {
 	int dreg = (ICODE & 0x7);
-	uint32_t op1,op2,result;
+	uint32_t op1, op2, result;
 	op1 = CF_MemRead32(CF_GetRegPC());
-	op2 = CF_GetRegD(dreg);	
+	op2 = CF_GetRegD(dreg);
 	result = op1 ^ op2;
-	CF_SetRegPC(CF_GetRegPC()+4);
-	CF_SetRegD(result,dreg);
+	CF_SetRegPC(CF_GetRegPC() + 4);
+	CF_SetRegD(result, dreg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(result))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -1632,22 +1645,22 @@ cf_ext(void)
 	int dx = (ICODE & 7);
 	uint32_t Dx = CF_GetRegD(dx);
 	uint32_t result;
-	if(opmode == 2) { /* byte to word */
-		Dx = (Dx & 0xffff0000) | (uint32_t)(int16_t)(int8_t)Dx;
-	} else if (opmode == 3) { /* word to longword */
-		Dx = (int32_t)(int16_t)Dx; 
-	} else if (opmode == 7) { /* byte to longword */
-		Dx = (int32_t)(int8_t)Dx; 
+	if (opmode == 2) {	/* byte to word */
+		Dx = (Dx & 0xffff0000) | (uint32_t) (int16_t) (int8_t) Dx;
+	} else if (opmode == 3) {	/* word to longword */
+		Dx = (int32_t) (int16_t) Dx;
+	} else if (opmode == 7) {	/* byte to longword */
+		Dx = (int32_t) (int8_t) Dx;
 	} else {
-		fprintf(stderr,"cf_ext illegal opmode\n");
+		fprintf(stderr, "cf_ext illegal opmode\n");
 		return;
-	}	
-	result = Dx; /* is this true or are only the lower 16 bit used for opmode 2 ??? */	
+	}
+	result = Dx;		/* is this true or are only the lower 16 bit used for opmode 2 ??? */
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(result))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -1661,24 +1674,24 @@ cf_ff1(void)
 	int dx = ICODE & 7;
 	uint32_t Dx = CF_GetRegD(dx);
 	int i;
-	for(i=0;i<32;i++,Dx = Dx>>1) {
-		if(Dx & 0x80000000) {
+	for (i = 0; i < 32; i++, Dx = Dx >> 1) {
+		if (Dx & 0x80000000) {
 			break;
 		}
 	}
-	CF_SetRegD(i,dx);
+	CF_SetRegD(i, dx);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(Dx))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(Dx == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	if (ISNEG(Dx)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (Dx == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
 void
 cf_illegal(void)
 {
-	fprintf(stderr,"cf_illegal not implemented\n");
+	fprintf(stderr, "cf_illegal not implemented\n");
 }
 
 /*
@@ -1690,12 +1703,12 @@ cf_illegal(void)
 void
 cf_jmp(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t addr;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	addr = Ea_GetAddr(&ea); 
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	addr = Ea_GetAddr(&ea);
 	CF_SetRegPC(addr);
 }
 
@@ -1708,13 +1721,13 @@ cf_jmp(void)
 void
 cf_jsr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t addr;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	addr = Ea_GetAddr(&ea); 
-	Push4(CF_GetRegPC()); 
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	addr = Ea_GetAddr(&ea);
+	Push4(CF_GetRegPC());
 	CF_SetRegPC(addr);
 }
 
@@ -1727,14 +1740,14 @@ cf_jsr(void)
 void
 cf_lea(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t addr;
 	int ax = (ICODE & 0xe00) >> 9;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	addr = Ea_GetAddr(&ea); 
-	CF_SetRegA(addr,ax);
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	addr = Ea_GetAddr(&ea);
+	CF_SetRegA(addr, ax);
 }
 
 /*
@@ -1746,17 +1759,17 @@ cf_lea(void)
 void
 cf_link(void)
 {
-	int ay = ICODE & 7;	
+	int ay = ICODE & 7;
 	uint32_t Ay = CF_GetRegA(ay);
 	uint32_t Sp;
 	int16_t Dn;
 	Push4(Ay);
 	Sp = CF_GetRegA(7);
-	CF_SetRegA(Sp,ay);
+	CF_SetRegA(Sp, ay);
 	Dn = CF_MemRead16(CF_GetRegPC());
-	CF_SetRegPC(CF_GetRegPC()+2);
+	CF_SetRegPC(CF_GetRegPC() + 2);
 	Sp += Dn;
-	CF_SetRegA(Sp,7);
+	CF_SetRegA(Sp, 7);
 }
 
 /*
@@ -1772,22 +1785,22 @@ cf_lsri(void)
 	int count = (ICODE & 0x0e00) >> 9;
 	uint32_t Dx;
 	int shiftout;
-	if(count == 0) {
+	if (count == 0) {
 		count = 8;
 	}
 	Dx = CF_GetReg(dx);
 	shiftout = (Dx >> (count - 1)) & 1;
 	Dx = Dx >> count;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(shiftout) {
+	if (shiftout) {
 		CF_REG_CCR |= CCR_X | CCR_C;
-	}	
-	if(ISNEG(Dx)) {
+	}
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -1808,27 +1821,27 @@ cf_lsrr(void)
 	Dx = CF_GetReg(dx);
 	Dy = CF_GetReg(dy);
 	shift = Dy & 0x3f;
-	if(shift < 32) {
+	if (shift < 32) {
 		shiftout = (Dx >> (shift - 1)) & 1;
 		Dx = Dx >> shift;
-	} else if(shift >= 32) {
+	} else if (shift >= 32) {
 		shiftout = 0;
 		Dx = 0;
 	}
-	if(shift == 0) {
+	if (shift == 0) {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
 	} else {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-		if(shiftout) {
+		if (shiftout) {
 			CF_REG_CCR |= CCR_X | CCR_C;
-		}	
+		}
 	}
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 
 }
 
@@ -1846,24 +1859,25 @@ cf_lsli(void)
 	uint32_t Dx;
 	int count = (ICODE & 0x0e00) >> 9;
 	uint32_t shiftout;
-	if(count == 0) {
+	if (count == 0) {
 		count = 8;
 	}
 	Dx = CF_GetRegD(dx);
 	shiftout = (Dx >> (32 - count)) & 1;
-	Dx = Dx << count;	
+	Dx = Dx << count;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(shiftout) {
+	if (shiftout) {
 		CF_REG_CCR = CCR_X | CCR_C;
 	}
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
-	
+	CF_SetRegD(Dx, dx);
+
 }
+
 /*
  **********************************************************************
  * LSL by register
@@ -1882,30 +1896,30 @@ cf_lslr(void)
 	Dx = CF_GetReg(dx);
 	Dy = CF_GetReg(dy);
 	shift = Dy & 0x3f;
-	if(shift < 32) {
+	if (shift < 32) {
 		shiftout = (Dx >> (32 - shift)) & 1;
-		Dx = Dx << shift;	
-	} else if(shift == 32) {
+		Dx = Dx << shift;
+	} else if (shift == 32) {
 		shiftout = (Dx & 1);
-		Dx = 0;	
+		Dx = 0;
 	} else {
 		shiftout = 0;
 		Dx = 0;
 	}
-	if(shift == 0) {
+	if (shift == 0) {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
 	} else {
 		CF_REG_CCR = CF_REG_CCR & ~(CCR_X | CCR_C | CCR_V | CCR_Z | CCR_N);
-		if(shiftout) {
+		if (shiftout) {
 			CF_REG_CCR |= CCR_X | CCR_C;
-		}	
+		}
 	}
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -1917,17 +1931,17 @@ cf_lslr(void)
 void
 cf_mov3q(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
 	int32_t imm = (ICODE & 0x0e00) >> 9;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(imm == 0) {
+	if (imm == 0) {
 		imm = -1;
 		CF_REG_CCR |= CCR_N;
-	} 
-	Ea_SetValue(imm,&ea);
+	}
+	Ea_SetValue(imm, &ea);
 }
 
 /*
@@ -1938,31 +1952,31 @@ cf_mov3q(void)
 void
 cf_move(void)
 {
-	EAddress eas;	
-	EAddress ead;	
+	EAddress eas;
+	EAddress ead;
 	int eas_mode = (ICODE & 0x38) >> 3;
 	int ead_mode = (ICODE & 0x1c0) >> 6;
-	int eas_reg = (ICODE & 7); 
-	int ead_reg = (ICODE & 0xe00) >> 9; 
+	int eas_reg = (ICODE & 7);
+	int ead_reg = (ICODE & 0xe00) >> 9;
 	int size = (ICODE & 0x3000) >> 12;
 	uint32_t result;
-	if(size == 1) {
+	if (size == 1) {
 		size = 8;
-	} else if(size == 3) {
+	} else if (size == 3) {
 		size = 16;
-	} else if(size == 2) {
+	} else if (size == 2) {
 		size = 32;
 	}
-	Ea_Get(&eas,eas_mode,eas_reg,size);
-	Ea_Get(&ead,ead_mode,ead_reg,size);
+	Ea_Get(&eas, eas_mode, eas_reg, size);
+	Ea_Get(&ead, ead_mode, ead_reg, size);
 	result = Ea_GetValue(&eas);
-	Ea_SetValue(result,&ead);
+	Ea_SetValue(result, &ead);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
 	/* I'm not sure if it shouldn't be ISNEG(result) (32 Bit) */
 	//if(result & (1<<(size - 1))) 
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
 }
@@ -1977,28 +1991,28 @@ cf_move(void)
 void
 cf_movea(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
+	int eas_reg = (ICODE & 7);
 	int size = (ICODE & 0x3000) >> 12;
 	int ax = (ICODE & 0xe00) >> 9;
 	uint32_t result;
-	if(size == 3) {
+	if (size == 3) {
 		size = 16;
-	} else if(size == 2) {
+	} else if (size == 2) {
 		size = 32;
 	} else {
-		fprintf(stderr,"reserved\n");
+		fprintf(stderr, "reserved\n");
 		/* should trigger some exception ? */
 		return;
 
 	}
-	Ea_Get(&eas,eas_mode,eas_reg,size);
+	Ea_Get(&eas, eas_mode, eas_reg, size);
 	result = Ea_GetValue(&eas);
-	if(size==16) {
-		result = (int32_t)(int16_t)result;
+	if (size == 16) {
+		result = (int32_t) (int16_t) result;
 	}
-	CF_SetRegA(result,ax);	
+	CF_SetRegA(result, ax);
 }
 
 /*
@@ -2014,30 +2028,30 @@ cf_movem(void)
 	uint16_t list;
 	int i;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t addr;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	list = CF_MemRead16(CF_GetRegPC());
 	CF_SetRegPC(CF_GetRegPC() + 2);
 	addr = Ea_GetAddr(&ea);
-	
-	if(ICODE & (1<<10)) {  /* memory to register */
-		for(i=0;i<16;i++) {
-			if(list & (1<<i)) {
+
+	if (ICODE & (1 << 10)) {	/* memory to register */
+		for (i = 0; i < 16; i++) {
+			if (list & (1 << i)) {
 				uint32_t val = CF_MemRead32(addr);
-				CF_SetReg(val,i);
-				addr+=4;
+				CF_SetReg(val, i);
+				addr += 4;
 			}
 		}
-	} else { /* register to memory */
-		for(i=0;i<16;i++) {
-			if(list & (1<<i)) {
+	} else {		/* register to memory */
+		for (i = 0; i < 16; i++) {
+			if (list & (1 << i)) {
 				uint32_t val = CF_GetReg(i);
-				CF_MemWrite32(val,addr);
-				addr+=4;
+				CF_MemWrite32(val, addr);
+				addr += 4;
 			}
 		}
-	}	
+	}
 }
 
 /*
@@ -2052,15 +2066,16 @@ cf_moveq(void)
 	int8_t imm = (ICODE & 0xff);
 	int dx = (ICODE & 0xe00) >> 9;
 	uint32_t Dx;
-	Dx = (int32_t)imm;		
-	CF_SetRegD(Dx,dx);
+	Dx = (int32_t) imm;
+	CF_SetRegD(Dx, dx);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(Dx)) {
-		CF_REG_CCR |=  CCR_N;
-	} else if(Dx == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	if (ISNEG(Dx)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (Dx == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
+
 /*
  ***************************************************************
  * MOVE from CCR
@@ -2072,9 +2087,8 @@ cf_movefccr(void)
 {
 	int dx = ICODE & 7;
 	uint32_t Dx = CF_GetRegD(dx);
-	Dx = (Dx & 0xffff0000) | 
-		(CF_REG_CCR & (CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X)); 
-	CF_SetRegD(Dx,dx);
+	Dx = (Dx & 0xffff0000) | (CF_REG_CCR & (CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X));
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -2086,11 +2100,11 @@ cf_movefccr(void)
 void
 cf_movetccr(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
+	int eas_reg = (ICODE & 7);
 	uint8_t value;
-	Ea_Get(&eas,eas_mode,eas_reg,8);
+	Ea_Get(&eas, eas_mode, eas_reg, 8);
 	value = Ea_GetValue(&eas);
 	CF_REG_CCR = (CF_REG_CCR & 0xff00) | (value & 0xff);
 	return;
@@ -2105,25 +2119,26 @@ cf_movetccr(void)
 void
 cf_mulsw(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	int16_t Dx;
 	int16_t eaval;
 	int32_t result;
 	int dx = (ICODE & 0xe00) >> 9;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
-	Ea_Get(&eas,eas_mode,eas_reg,16);
+	int eas_reg = (ICODE & 7);
+	Ea_Get(&eas, eas_mode, eas_reg, 16);
 	Dx = CF_GetRegD(dx);
 	eaval = Ea_GetValue(&eas);
 	result = eaval * Dx;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(result == 0) {
+	if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
-	} else if(ISNEG(result)) {
+	} else if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
 	}
-	CF_SetRegD(result,dx);
+	CF_SetRegD(result, dx);
 }
+
 /*
  **********************************************************
  * MULS.L + MULU.L
@@ -2133,34 +2148,34 @@ cf_mulsw(void)
 void
 cf_mull(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	uint16_t sword;
 	uint32_t Dx;
 	uint32_t eaval;
 	uint32_t result;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
+	int eas_reg = (ICODE & 7);
 	int dx;
 	int is_signed;
 	sword = CF_MemRead16(CF_GetRegPC());
-	CF_SetRegPC(CF_GetRegPC()+2);
+	CF_SetRegPC(CF_GetRegPC() + 2);
 	is_signed = !!(sword >> 11);
 	dx = (sword & 0x7000) >> 12;
-	Ea_Get(&eas,eas_mode,eas_reg,32);
+	Ea_Get(&eas, eas_mode, eas_reg, 32);
 	Dx = CF_GetRegD(dx);
 	eaval = Ea_GetValue(&eas);
-	if(is_signed) {
-		result = (int32_t)eaval * (int32_t)Dx;
+	if (is_signed) {
+		result = (int32_t) eaval *(int32_t) Dx;
 	} else {
 		result = eaval * Dx;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(result == 0) {
+	if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
-	} else if(ISNEG(result)) {
+	} else if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
 	}
-	CF_SetRegD(result,dx);
+	CF_SetRegD(result, dx);
 }
 
 /*
@@ -2172,24 +2187,24 @@ cf_mull(void)
 void
 cf_muluw(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	uint16_t Dx;
 	uint16_t eaval;
 	uint32_t result;
 	int dx = (ICODE & 0xe00) >> 9;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
-	Ea_Get(&eas,eas_mode,eas_reg,16);
+	int eas_reg = (ICODE & 7);
+	Ea_Get(&eas, eas_mode, eas_reg, 16);
 	Dx = CF_GetRegD(dx);
 	eaval = Ea_GetValue(&eas);
 	result = eaval * Dx;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(result == 0) {
+	if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
-	} else if(ISNEG(result)) {
+	} else if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
 	}
-	CF_SetRegD(result,dx);
+	CF_SetRegD(result, dx);
 }
 
 /*
@@ -2202,27 +2217,27 @@ cf_muluw(void)
 void
 cf_mvs(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
+	int eas_reg = (ICODE & 7);
 	int size = (ICODE & 0x40) ? 16 : 8;
 	int dx = (ICODE & 0xe00) >> 9;
 	uint32_t value;
 	uint32_t result;
-	Ea_Get(&eas,eas_mode,eas_reg,size);
+	Ea_Get(&eas, eas_mode, eas_reg, size);
 	value = Ea_GetValue(&eas);
-	if(size == 8) {
-		result = (int32_t)(int8_t) value;
+	if (size == 8) {
+		result = (int32_t) (int8_t) value;
 	} else {
-		result = (int32_t)(int16_t) value;
+		result = (int32_t) (int16_t) value;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(result == 0) {
+	if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
-	} else if(ISNEG(result)) {
+	} else if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
 	}
-	CF_SetRegD(result,dx);
+	CF_SetRegD(result, dx);
 
 }
 
@@ -2236,27 +2251,28 @@ cf_mvs(void)
 void
 cf_mvz(void)
 {
-	EAddress eas;	
+	EAddress eas;
 	int eas_mode = (ICODE & 0x38) >> 3;
-	int eas_reg = (ICODE & 7); 
+	int eas_reg = (ICODE & 7);
 	int size = (ICODE & 0x40) ? 16 : 8;
 	int dx = (ICODE & 0xe00) >> 9;
 	uint32_t value;
 	uint32_t result;
-	Ea_Get(&eas,eas_mode,eas_reg,size);
+	Ea_Get(&eas, eas_mode, eas_reg, size);
 	value = Ea_GetValue(&eas);
-	if(size == 8) {
-		result = (uint32_t)(uint8_t) value;
+	if (size == 8) {
+		result = (uint32_t) (uint8_t) value;
 	} else {
-		result = (uint32_t)(uint16_t) value;
+		result = (uint32_t) (uint16_t) value;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
 	/* Negative can not happen because of zero fill */
-	if(result == 0) {
+	if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(result,dx);
+	CF_SetRegD(result, dx);
 }
+
 /*
  ***************************************************************
  * NEG 0 - Destination -> Destination
@@ -2269,18 +2285,18 @@ cf_neg(void)
 	int dx = (ICODE & 7);
 	int32_t Dx = CF_GetRegD(dx);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	if(Dx == 0) {
+	if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	} else {
 		CF_REG_CCR |= CCR_C | CCR_X;
 	}
-	if(ISNEG(-Dx)) {
+	if (ISNEG(-Dx)) {
 		CF_REG_CCR |= CCR_N;
 	}
-	if(sub_overflow(0,Dx,-Dx)) {
+	if (sub_overflow(0, Dx, -Dx)) {
 		CF_REG_CCR |= CCR_V;
 	}
-	CF_SetRegD(-Dx,dx);
+	CF_SetRegD(-Dx, dx);
 }
 
 /*
@@ -2296,12 +2312,12 @@ cf_negx(void)
 	int32_t Dx = CF_GetRegD(dx);
 	int32_t result;
 	result = -Dx;
-	if(CF_REG_CCR & CCR_X) {
+	if (CF_REG_CCR & CCR_X) {
 		result -= 1;
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= sub_flags(0,Dx,result); 
-	CF_SetRegD(result,dx);
+	CF_REG_CCR |= sub_flags(0, Dx, result);
+	CF_SetRegD(result, dx);
 }
 
 /*
@@ -2330,12 +2346,12 @@ cf_not(void)
 	uint32_t result;
 	result = ~Dx;
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
-	CF_SetRegD(result,dx);
+	CF_SetRegD(result, dx);
 }
 
 /*
@@ -2348,29 +2364,29 @@ void
 cf_or(void)
 {
 	uint16_t opmode = (ICODE & 0x1c0) >> 6;
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op1 = Ea_GetValue(&ea); 
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op1 = Ea_GetValue(&ea);
 	op2 = CF_GetRegD(reg);
 	result = op1 | op2;
-	if(opmode == 2) {
+	if (opmode == 2) {
 		/* <ea>y | Dx -> Dx */
-		CF_SetRegD(result,reg);
-	} else if(opmode == 6) {
+		CF_SetRegD(result, reg);
+	} else if (opmode == 6) {
 		/* Dy | <ea>x -> <ea>x */
-		Ea_SetValue(result,&ea);	
+		Ea_SetValue(result, &ea);
 	} else {
 		// illegal opmode 
-	}	
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N );
-	if(ISNEG(result))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	}
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -2384,17 +2400,17 @@ void
 cf_ori(void)
 {
 	int dreg = (ICODE & 0x7);
-	uint32_t op1,op2,result;
+	uint32_t op1, op2, result;
 	op1 = CF_MemRead32(CF_GetRegPC());
-	op2 = CF_GetRegD(dreg);	
+	op2 = CF_GetRegD(dreg);
 	result = op1 | op2;
-	CF_SetRegPC(CF_GetRegPC()+4);
-	CF_SetRegD(result,dreg);
+	CF_SetRegPC(CF_GetRegPC() + 4);
+	CF_SetRegD(result, dreg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(result))  {
-		CF_REG_CCR |=  CCR_N;
-	} else if(result == 0) {
-		CF_REG_CCR |=  CCR_Z;
+	if (ISNEG(result)) {
+		CF_REG_CCR |= CCR_N;
+	} else if (result == 0) {
+		CF_REG_CCR |= CCR_Z;
 	}
 }
 
@@ -2407,11 +2423,11 @@ cf_ori(void)
 void
 cf_pea(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t addr;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	addr = Ea_GetAddr(&ea);
 	Push4(addr);
 }
@@ -2419,7 +2435,7 @@ cf_pea(void)
 void
 cf_pulse(void)
 {
-	fprintf(stderr,"cf_pulse not implemented\n");
+	fprintf(stderr, "cf_pulse not implemented\n");
 }
 
 /*
@@ -2446,18 +2462,18 @@ cf_sats(void)
 {
 	int dx = (ICODE & 7);
 	uint32_t Dx = CF_GetRegD(dx);
-	if(CF_REG_CCR & CCR_V) {
-		if(ISNEG(Dx)) {
+	if (CF_REG_CCR & CCR_V) {
+		if (ISNEG(Dx)) {
 			Dx = 0x7fffffff;
 		} else {
 			Dx = 0x80000000;
 		}
-		CF_SetRegD(Dx,dx);
+		CF_SetRegD(Dx, dx);
 	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(Dx)) {
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
 }
@@ -2475,12 +2491,12 @@ cf_scc(void)
 	int dx = ICODE & 7;
 	uint32_t Dx = CF_GetRegD(dx);
 	int ccode = (ICODE & 0x0f00) >> 8;
-	if(CHECK_CONDITION(ccode,CF_REG_CCR)) {
+	if (CHECK_CONDITION(ccode, CF_REG_CCR)) {
 		Dx |= 0xff;
 	} else {
 		Dx &= ~UINT32_C(0xff);
 	}
-	CF_SetRegD(Dx,dx);
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -2494,31 +2510,31 @@ void
 cf_sub(void)
 {
 	uint16_t opmode = (ICODE & 0x1c0) >> 6;
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	if(opmode == 2) {
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	if (opmode == 2) {
 		/* Dx - <ea>y -> Dx */
 		op1 = CF_GetRegD(reg);
-		op2 = Ea_GetValue(&ea); 
+		op2 = Ea_GetValue(&ea);
 		result = op1 - op2;
-		CF_SetRegD(result,reg);
-	} else if(opmode == 6) {
+		CF_SetRegD(result, reg);
+	} else if (opmode == 6) {
 		/* <ea> - Dy -> <ea>x */
-		op1 = Ea_GetValue(&ea); 
+		op1 = Ea_GetValue(&ea);
 		op2 = CF_GetRegD(reg);
 		result = op1 - op2;
-		Ea_SetValue(result,&ea);	
+		Ea_SetValue(result, &ea);
 	} else {
-		fprintf(stderr,"sub illegal opmode\n");
+		fprintf(stderr, "sub illegal opmode\n");
 		// illegal opmode 
 		return;
-	}	
+	}
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= sub_flags(op1,op2,result); 
+	CF_REG_CCR |= sub_flags(op1, op2, result);
 }
 
 /*
@@ -2530,18 +2546,18 @@ cf_sub(void)
 void
 cf_suba(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int reg = (ICODE & 0xe00) >> 9;
-	uint32_t op1,op2,result;
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	uint32_t op1, op2, result;
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	op1 = CF_GetRegA(reg);
-	op2 = Ea_GetValue(&ea); 
+	op2 = Ea_GetValue(&ea);
 	result = op1 - op2;
-	CF_SetRegA(result,reg);
+	CF_SetRegA(result, reg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= sub_flags(op1,op2,result); 
+	CF_REG_CCR |= sub_flags(op1, op2, result);
 }
 
 /*
@@ -2554,14 +2570,14 @@ void
 cf_subi(void)
 {
 	int dreg = (ICODE & 0x7);
-	uint32_t op1,op2,result;
-	op1 = CF_GetRegD(dreg);	
+	uint32_t op1, op2, result;
+	op1 = CF_GetRegD(dreg);
 	op2 = CF_MemRead32(CF_GetRegPC());
 	result = op1 - op2;
-	CF_SetRegPC(CF_GetRegPC()+4);
-	CF_SetRegD(result,dreg);
+	CF_SetRegPC(CF_GetRegPC() + 4);
+	CF_SetRegD(result, dreg);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= sub_flags(op1,op2,result); 
+	CF_REG_CCR |= sub_flags(op1, op2, result);
 }
 
 /*
@@ -2574,21 +2590,22 @@ cf_subi(void)
 void
 cf_subq(void)
 {
-	EAddress ea;	
-	uint32_t op1,result;
+	EAddress ea;
+	uint32_t op1, result;
 	uint32_t op2 = (ICODE & 0x0e00) >> 9;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	if(op2 == 0) {
+	int ea_reg = (ICODE & 7);
+	if (op2 == 0) {
 		op2 = 8;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,32);
-	op1 = Ea_GetValue(&ea); 
-	result = op1-op2;	
-	Ea_SetValue(result,&ea); 
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
+	op1 = Ea_GetValue(&ea);
+	result = op1 - op2;
+	Ea_SetValue(result, &ea);
 	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N | CCR_X);
-	CF_REG_CCR |= sub_flags(op1,op2,result); 
+	CF_REG_CCR |= sub_flags(op1, op2, result);
 }
+
 /*
  ************************************************************
  * SUBX Subtract Extended
@@ -2600,26 +2617,26 @@ cf_subx(void)
 {
 	int dy = ICODE & 0x7;
 	int dx = (ICODE & 0x0e00) >> 9;
-	uint32_t op1,op2,result;
+	uint32_t op1, op2, result;
 	uint16_t flags;
 	op1 = CF_GetRegD(dy);
 	op2 = CF_GetRegD(dx);
 	result = op1 - op2;
-	if(CF_REG_CCR & CCR_X) {
+	if (CF_REG_CCR & CCR_X) {
 		result -= 1;
 	}
-	CF_SetRegD(result,dx);
-	flags = sub_carry(op1,op2,result);
-	if(flags & CCR_C) {
+	CF_SetRegD(result, dx);
+	flags = sub_carry(op1, op2, result);
+	if (flags & CCR_C) {
 		flags |= CCR_X;
 	}
-	flags |= sub_overflow(op1,op2,result);
-	if(ISNEG(result)) {
+	flags |= sub_overflow(op1, op2, result);
+	if (ISNEG(result)) {
 		flags |= CCR_N;
-	} 
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V |  CCR_N | CCR_X);
+	}
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_N | CCR_X);
 	CF_REG_CCR |= flags;
-	if(result != 0) {
+	if (result != 0) {
 		CF_REG_CCR &= ~CCR_Z;
 	}
 }
@@ -2636,11 +2653,11 @@ cf_swap(void)
 	int dx = (ICODE & 7);
 	uint32_t Dx = CF_GetRegD(dx);
 	Dx = (Dx >> 16) | (Dx << 16);
-	CF_SetRegD(Dx,dx);
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V |  CCR_Z | CCR_N);
-	if(ISNEG(Dx)) {
+	CF_SetRegD(Dx, dx);
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
+	if (ISNEG(Dx)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(Dx == 0) {
+	} else if (Dx == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
 }
@@ -2652,17 +2669,17 @@ cf_swap(void)
 void
 cf_tas(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint8_t val;
-	Ea_Get(&ea,ea_mode,ea_reg,8);
-	val = Ea_GetValue(&ea); 
-	Ea_SetValue(val | 0x80,&ea);
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V |  CCR_Z | CCR_N);
-	if(val & 0x80)   {
+	Ea_Get(&ea, ea_mode, ea_reg, 8);
+	val = Ea_GetValue(&ea);
+	Ea_SetValue(val | 0x80, &ea);
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
+	if (val & 0x80) {
 		CF_REG_CCR |= CCR_N;
-	} else if(val == 0) {
+	} else if (val == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
 }
@@ -2678,14 +2695,14 @@ void
 cf_tpf(void)
 {
 	int opmode = (ICODE & 7);
-	if(opmode == 2) {
-		CF_SetRegPC(CF_GetRegPC()+2);
-	} else if(opmode == 3) {
-		CF_SetRegPC(CF_GetRegPC()+4);
-	} else if(opmode == 4) {
+	if (opmode == 2) {
+		CF_SetRegPC(CF_GetRegPC() + 2);
+	} else if (opmode == 3) {
+		CF_SetRegPC(CF_GetRegPC() + 4);
+	} else if (opmode == 4) {
 		/* nothing */
 	} else {
-		fprintf(stderr,"tpf: illegal opmode\n");
+		fprintf(stderr, "tpf: illegal opmode\n");
 		// some exception ? 
 		return;
 	}
@@ -2697,7 +2714,7 @@ cf_tpf(void)
 void
 cf_trap(void)
 {
-	fprintf(stderr,"cf_trap not implemented\n");
+	fprintf(stderr, "cf_trap not implemented\n");
 }
 
 /*
@@ -2711,21 +2728,21 @@ cf_tst(void)
 {
 	int sz = (ICODE & 0xc0) >> 6;
 	int size;
-	EAddress ea;	
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	uint32_t value;
-	if(sz < 3) {
+	if (sz < 3) {
 		size = 8 << sz;
 	} else {
 		size = 16;
 	}
-	Ea_Get(&ea,ea_mode,ea_reg,size);
+	Ea_Get(&ea, ea_mode, ea_reg, size);
 	value = Ea_GetValue(&ea);
-	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V |  CCR_Z | CCR_N);
-	if(ISNEG(value))   {
+	CF_REG_CCR = CF_REG_CCR & ~(CCR_C | CCR_V | CCR_Z | CCR_N);
+	if (ISNEG(value)) {
 		CF_REG_CCR |= CCR_N;
-	} else if(value == 0) {
+	} else if (value == 0) {
 		CF_REG_CCR |= CCR_Z;
 	}
 }
@@ -2741,14 +2758,14 @@ cf_unlk(void)
 {
 	int ax = ICODE & 7;
 	uint32_t Ax = CF_GetRegA(ax);
-	CF_SetRegA(Ax,7);
-	CF_SetRegA(Pop4(),ax);	
+	CF_SetRegA(Ax, 7);
+	CF_SetRegA(Pop4(), ax);
 }
 
 void
 cf_wddata(void)
 {
-	fprintf(stderr,"cf_wddata not implemented\n");
+	fprintf(stderr, "cf_wddata not implemented\n");
 }
 
 /*
@@ -2763,13 +2780,13 @@ void
 cf_macsac(void)
 {
 	uint16_t secword;
-	int rx,ry;
-	int ulx,uly;
-	uint32_t Rx,Ry; 
+	int rx, ry;
+	int ulx, uly;
+	uint32_t Rx, Ry;
 	uint32_t Acc;
 	uint32_t Op2;
 	uint32_t Result;
-	int sz,scale_factor;
+	int sz, scale_factor;
 	int subtract;
 	secword = CF_MemRead16(CF_GetRegPC());
 	CF_SetRegPC(CF_GetRegPC() + 2);
@@ -2783,44 +2800,45 @@ cf_macsac(void)
 	Rx = CF_GetReg(rx);
 	Ry = CF_GetReg(ry);
 	Acc = CF_GetRegMacAcc();
-	if(sz == 0) {
-		if(ulx) {
+	if (sz == 0) {
+		if (ulx) {
 			Rx = Rx >> 16;
 		} else {
 			Rx = Rx & 0xffff;
 		}
-		if(uly) {
+		if (uly) {
 			Ry = Ry >> 16;
 		} else {
 			Ry = Ry & 0xffff;
 		}
 	}
-	if(scale_factor == 0) {
+	if (scale_factor == 0) {
 		Op2 = (Ry * Rx);
 	} else if (scale_factor == 1) {
 		Op2 = (Ry * Rx) << 1;
 	} else if (scale_factor == 3) {
 		Op2 = (Ry * Rx) >> 1;
 	} else {
-		fprintf(stderr,"illegal scale factor\n");
+		fprintf(stderr, "illegal scale factor\n");
 		// exception
 		return;
 	}
-	CF_REG_MACSR = CF_REG_MACSR & ~(CCR_V |  CCR_Z | CCR_N);
-	if(subtract) {
+	CF_REG_MACSR = CF_REG_MACSR & ~(CCR_V | CCR_Z | CCR_N);
+	if (subtract) {
 		Result = Acc - Op2;
-		CF_REG_MACSR |= sub_overflow(Acc,Op2,Result); 
+		CF_REG_MACSR |= sub_overflow(Acc, Op2, Result);
 	} else {
 		Result = Acc + Op2;
-		CF_REG_MACSR |= add_overflow(Acc,Op2,Result); 
+		CF_REG_MACSR |= add_overflow(Acc, Op2, Result);
 	}
-	if(ISNEG(Result)) {
+	if (ISNEG(Result)) {
 		CF_REG_MACSR |= CCR_N;
-	} else if(Result == 0) {
+	} else if (Result == 0) {
 		CF_REG_MACSR |= CCR_Z;
 	}
 	CF_SetRegMacAcc(Result);
 }
+
 /*
  ******************************************************************
  * MAC with load
@@ -2831,25 +2849,25 @@ void
 cf_macsacl(void)
 {
 	uint16_t secword;
-	int rx,ry,rw;
-	int ulx,uly;
-	uint32_t Rx,Ry,Rw; 
+	int rx, ry, rw;
+	int ulx, uly;
+	uint32_t Rx, Ry, Rw;
 	uint32_t Acc;
 	uint32_t Op2;
 	uint32_t Result;
-	int sz,scale_factor,mask;
-	EAddress ea;	
+	int sz, scale_factor, mask;
+	EAddress ea;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
+	int ea_reg = (ICODE & 7);
 	int subtract;
 	secword = CF_MemRead16(CF_GetRegPC());
-	CF_SetRegPC(CF_GetRegPC()+2);
+	CF_SetRegPC(CF_GetRegPC() + 2);
 	subtract = (secword >> 8) & 1;
 	sz = (secword >> 11) & 1;
-	if(sz) {
-		Ea_Get(&ea,ea_mode,ea_reg,32);
+	if (sz) {
+		Ea_Get(&ea, ea_mode, ea_reg, 32);
 	} else {
-		Ea_Get(&ea,ea_mode,ea_reg,16);
+		Ea_Get(&ea, ea_mode, ea_reg, 16);
 	}
 	scale_factor = (secword >> 9) & 3;
 	rx = ((secword >> 12) & 0xf);
@@ -2862,35 +2880,35 @@ cf_macsacl(void)
 	Rx = CF_GetReg(rx);
 	Ry = CF_GetReg(ry);
 	Acc = CF_GetRegMacAcc();
-	if(scale_factor == 0) {
+	if (scale_factor == 0) {
 		Op2 = (Ry * Rx);
 	} else if (scale_factor == 1) {
 		Op2 = (Ry * Rx) << 1;
 	} else if (scale_factor == 3) {
 		Op2 = (Ry * Rx) >> 1;
 	} else {
-		fprintf(stderr,"Illegal scale factor\n");
+		fprintf(stderr, "Illegal scale factor\n");
 		// undefined instruction exception
 		return;
 	}
-	CF_REG_MACSR = CF_REG_MACSR & ~(CCR_V |  CCR_Z | CCR_N);
-	if(subtract) {
+	CF_REG_MACSR = CF_REG_MACSR & ~(CCR_V | CCR_Z | CCR_N);
+	if (subtract) {
 		Result = Acc - Op2;
-		CF_REG_MACSR |= sub_overflow(Acc,Op2,Result); 
+		CF_REG_MACSR |= sub_overflow(Acc, Op2, Result);
 	} else {
 		Result = Acc + Op2;
-		CF_REG_MACSR |= add_overflow(Acc,Op2,Result); 
+		CF_REG_MACSR |= add_overflow(Acc, Op2, Result);
 	}
-	if(ISNEG(Result))   {
+	if (ISNEG(Result)) {
 		CF_REG_MACSR |= CCR_N;
-	} else if(Result == 0) {
+	} else if (Result == 0) {
 		CF_REG_MACSR |= CCR_Z;
 	}
 	Rw = Ea_GetValue(&ea);
-	if(mask) {
+	if (mask) {
 		Rw = Rw & CF_GetRegMacMask();
-	}	
-	CF_SetReg(Rw,rw);
+	}
+	CF_SetReg(Rw, rw);
 	CF_SetRegMacAcc(Result);
 }
 
@@ -2906,7 +2924,7 @@ void
 cf_movfromacc(void)
 {
 	int rx = ICODE & 0xf;
-	CF_SetReg(rx,CF_GetRegMacAcc());
+	CF_SetReg(rx, CF_GetRegMacAcc());
 }
 
 /*
@@ -2920,7 +2938,7 @@ void
 cf_movfrommacsr(void)
 {
 	int rx = ICODE & 0xf;
-	CF_SetReg(rx,CF_GetRegMacSr());
+	CF_SetReg(rx, CF_GetRegMacSr());
 }
 
 /*
@@ -2933,7 +2951,7 @@ void
 cf_movfrommask(void)
 {
 	int rx = ICODE & 0xf;
-	CF_SetReg(rx,CF_GetRegMacMask());
+	CF_SetReg(rx, CF_GetRegMacMask());
 }
 
 /*
@@ -2958,20 +2976,21 @@ cf_movmacsrtoccr(void)
 void
 cf_movtoacc(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t value;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	value = Ea_GetValue(&ea);
 	CF_SetRegMacAcc(value);
 	CF_REG_MACSR &= ~(CCR_V | CCR_Z | CCR_N);
-	if(ISNEG(value)) {
-		CF_REG_MACSR |=  CCR_N;
-	} else if(value == 0) {
-		CF_REG_MACSR |=  CCR_Z;
+	if (ISNEG(value)) {
+		CF_REG_MACSR |= CCR_N;
+	} else if (value == 0) {
+		CF_REG_MACSR |= CCR_Z;
 	}
 }
+
 /*
  **************************************************************
  * MOVE to MACSR
@@ -2981,11 +3000,11 @@ cf_movtoacc(void)
 void
 cf_movtomacsr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t value;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	value = Ea_GetValue(&ea);
 	CF_REG_MACSR = (value & 0xfe) | (CF_REG_MACSR & ~0xfe);
 }
@@ -2999,11 +3018,11 @@ cf_movtomacsr(void)
 void
 cf_movtomask(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t value;
 	int ea_mode = (ICODE & 0x38) >> 3;
-	int ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	int ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	value = Ea_GetValue(&ea);
 	CF_SetRegMacMask(value);
 }
@@ -3011,49 +3030,49 @@ cf_movtomask(void)
 void
 cf_maaac(void)
 {
-	fprintf(stderr,"cf_maaac not implemented\n");
+	fprintf(stderr, "cf_maaac not implemented\n");
 }
 
 void
 cf_cpushl(void)
 {
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
-	fprintf(stderr,"cf_cpushl not implemented\n");
+	fprintf(stderr, "cf_cpushl not implemented\n");
 }
 
 void
 cf_frestore(void)
 {
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
-	fprintf(stderr,"cf_frestore not implemented\n");
+	fprintf(stderr, "cf_frestore not implemented\n");
 }
 
 void
 cf_fsave(void)
 {
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
-	fprintf(stderr,"cf_fsave not implemented\n");
+	fprintf(stderr, "cf_fsave not implemented\n");
 }
 
 void
 cf_halt(void)
 {
 #if 0
-	if(!CF_IsSupervisor() && !CSRUHE) {
-		fprintf(stderr,"Privilege exception missing\n");
+	if (!CF_IsSupervisor() && !CSRUHE) {
+		fprintf(stderr, "Privilege exception missing\n");
 		return;
 	}
 #endif
-	fprintf(stderr,"cf_halt not implemented\n");
+	fprintf(stderr, "cf_halt not implemented\n");
 }
 
 /* 
@@ -3063,8 +3082,8 @@ cf_halt(void)
 void
 cf_intouch(void)
 {
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing\n");
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing\n");
 		return;
 	}
 	/* Do nothing, instruction cache not emulated */
@@ -3081,13 +3100,13 @@ cf_movefromsr(void)
 {
 	int dx = (ICODE & 0x7);
 	uint32_t Dx;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	Dx = CF_GetRegD(dx);
-	Dx = (Dx & 0xffff0000) |  CF_REG_CCR;
-	CF_SetRegD(Dx,dx);
+	Dx = (Dx & 0xffff0000) | CF_REG_CCR;
+	CF_SetRegD(Dx, dx);
 }
 
 /*
@@ -3101,12 +3120,12 @@ void
 cf_movfromusp(void)
 {
 	int ax;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	ax = ICODE & 7;
-	CF_SetRegA(CF_GetRegOtherA7(),ax);
+	CF_SetRegA(CF_GetRegOtherA7(), ax);
 }
 
 /*
@@ -3118,17 +3137,17 @@ cf_movfromusp(void)
 void
 cf_movetosr(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t value;
 	int ea_mode;
 	int ea_reg;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	ea_mode = (ICODE & 0x38) >> 3;
-	ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,16);
+	ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 16);
 	value = Ea_GetValue(&ea);
 	CF_SetRegSR(value);
 }
@@ -3145,8 +3164,8 @@ cf_movetousp(void)
 {
 	int ay = ICODE & 7;
 	uint32_t Ay;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	Ay = CF_GetRegA(ay);
@@ -3165,19 +3184,19 @@ cf_movec(void)
 	uint32_t Rx;
 	int rx;
 	int cr;
-	uint16_t eword1;	
+	uint16_t eword1;
 	uint32_t pc;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	pc = CF_GetRegPC();
-	eword1 = CF_MemRead16(pc);	
+	eword1 = CF_MemRead16(pc);
 	rx = (eword1 & 0xf000) >> 12;
 	cr = (eword1 & 0xfff);
-	CF_SetRegPC(pc+2);
+	CF_SetRegPC(pc + 2);
 	Rx = CF_GetReg(rx);
-	CF_SetRegCR(Rx,cr);
+	CF_SetRegCR(Rx, cr);
 }
 
 /*
@@ -3194,22 +3213,22 @@ cf_rte(void)
 	uint32_t formvec;
 	uint32_t pc;
 	int format;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
-	formvec = Pop4(); 
+	formvec = Pop4();
 	pc = Pop4();
 	format = (formvec >> 28) & 0xf;
-	if((format > 7) || (format < 4)) {
-		fprintf(stderr,"Bad format field in stack frame\n");
+	if ((format > 7) || (format < 4)) {
+		fprintf(stderr, "Bad format field in stack frame\n");
 	} else {
-		uint32_t sp = CF_GetRegA(7);	
-		sp+=(format-4);
-		CF_SetRegA(sp,7);	
+		uint32_t sp = CF_GetRegA(7);
+		sp += (format - 4);
+		CF_SetRegA(sp, 7);
 	}
 	CF_SetRegPC(pc);
-	CF_SetRegSR(formvec & 0xffff);	
+	CF_SetRegSR(formvec & 0xffff);
 }
 
 /*
@@ -3224,20 +3243,20 @@ cf_strldsr(void)
 	uint32_t pc;
 	uint16_t eword1;
 	uint16_t sr;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	pc = CF_GetRegPC();
-	eword1 = CF_MemRead16(pc);	
-	if(eword1 != 0x46fc) {
-		fprintf(stderr,"Not a STRLDSR instruction\n");
-		// unknown instruction exception	
+	eword1 = CF_MemRead16(pc);
+	if (eword1 != 0x46fc) {
+		fprintf(stderr, "Not a STRLDSR instruction\n");
+		// unknown instruction exception        
 	}
-	sr = CF_MemRead16(pc+2);	
+	sr = CF_MemRead16(pc + 2);
 	Push4(CF_REG_CCR);
 	CF_SetRegSR(sr);
-	CF_SetRegPC(pc+4);
+	CF_SetRegPC(pc + 4);
 }
 
 void
@@ -3245,44 +3264,44 @@ cf_stop(void)
 {
 	uint32_t pc;
 	uint16_t sr;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	pc = CF_GetRegPC();
-	sr = CF_MemRead16(pc);	
+	sr = CF_MemRead16(pc);
 	CF_SetRegSR(sr);
-	CF_SetRegPC(pc+2);
-	fprintf(stderr,"Stop not implemented\n");
+	CF_SetRegPC(pc + 2);
+	fprintf(stderr, "Stop not implemented\n");
 }
 
 void
 cf_wdebug(void)
 {
-	EAddress ea;	
+	EAddress ea;
 	uint32_t value;
 	int ea_mode;
 	int ea_reg;
-	if(!CF_IsSupervisor()) {
-		fprintf(stderr,"Privilege exception missing %04x\n",CF_REG_CCR);
+	if (!CF_IsSupervisor()) {
+		fprintf(stderr, "Privilege exception missing %04x\n", CF_REG_CCR);
 		return;
 	}
 	ea_mode = (ICODE & 0x38) >> 3;
-	ea_reg = (ICODE & 7); 
-	Ea_Get(&ea,ea_mode,ea_reg,32);
+	ea_reg = (ICODE & 7);
+	Ea_Get(&ea, ea_mode, ea_reg, 32);
 	value = Ea_GetValue(&ea);
-	fprintf(stderr,"WDEBUG not implemented: %08x\n",value);
+	fprintf(stderr, "WDEBUG not implemented: %08x\n", value);
 	//CF_WriteDebug(value);
 }
+
 void
 cf_wdebug_ctrl(void)
 {
-	fprintf(stderr,"WDEBUG control not implemented\n");
+	fprintf(stderr, "WDEBUG control not implemented\n");
 }
 
 void
-cf_undefined(void) 
+cf_undefined(void)
 {
-	fprintf(stderr,"Undefined instruction 0x%04x\n",ICODE);
+	fprintf(stderr, "Undefined instruction 0x%04x\n", ICODE);
 }
-

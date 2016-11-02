@@ -13,137 +13,926 @@ MCS51_InstructionProc **mcs51_iProcTab = NULL;
 MCS51_Instruction **mcs51_instrTab = NULL;
 
 static MCS51_Instruction instrlist[] = {
-        {0x28,0xf8,"mcs51_add",mcs51_add,1,1},
-	{0x25,0xff,"mcs51_adddir",mcs51_adddir,2,1},
-	{0x26,0xfe,"mcs51_addari",mcs51_addari,1,1},
-	{0x24,0xff,"mcs51_addadata",mcs51_addadata,2,1},
-	{0x38,0xf8,"mcs51_addc",mcs51_addc,1,1},
-	{0x35,0xff,"mcs51_addcdir",mcs51_addcdir,2,1},
-	{0x36,0xfe,"mcs51_addcari",mcs51_addcari,1,1},
-	{0x34,0xff,"mcs51_addcadata",mcs51_addcadata,2,1},
-	{0x58,0xf8,"mcs51_anlrn",mcs51_anlrn,1,1},	
-	{0x55,0xff,"mcs51_anldir",mcs51_anldir,2,1},
-	{0x56,0xfe,"mcs51_anlari",mcs51_anlari,1,1},
-	{0x54,0xff,"mcs51_anladata",mcs51_anladata,2,1},
-	{0x52,0xff,"mcs51_anldira",mcs51_anldira,2,1},
-	{0x53,0xff,"mcs51_anldirdata",mcs51_anldirdata,3,2},
-	{0x82,0xff,"mcs51_anlcbit",mcs51_anlcbit,2,2},
-	{0xb0,0xff,"mcs51_anlcnbit",mcs51_anlcnbit,2,2},
-	{0xb5,0xff,"mcs51_cjneadirrel",mcs51_cjneadirrel,3,2},
-	{0xb4,0xff,"mcs51_cjneadatarel",mcs51_cjneadataresl,3,2},
-	{0xb8,0xf8,"mcs51_cjnerdatarel",mcs51_cjnerdatarel,3,2},
-	{0xb6,0xfe,"mcs51_cjneardatarel",mcs51_cjneardatarel,3,2},
-	{0xe4,0xff,"mcs51_clra",mcs51_clra,1,1},	
-	{0xc3,0xff,"mcs51_clrc",mcs51_clrc,1,1},
-	{0xc2,0xff,"mcs51_clrbit",mcs51_clrbit,2,1},
-	{0xf4,0xff,"mcs51_cpla",mcs51_cpla,1,1},
-	{0xb3,0xff,"mcs51_cplc",mcs51_cplc,1,1},
-	{0xb2,0xff,"mcs51_cplbit",mcs51_cplbit,2,1},
-	{0xd4,0xff,"mcs51_da",mcs51_da,1,1},	
-	{0x14,0xff,"mcs51_deca",mcs51_deca,1,1},
-	{0x18,0xf8,"mcs51_decr",mcs51_decr,1,1},
-	{0x15,0xff,"mcs51_decdir",mcs51_decdir,2,1},
-	{0x16,0xfe,"mcs51_decari",mcs51_decari,1,1},
-	{0x84,0xff,"mcs51_divab",mcs51_divab,1,4},
-	{0xd8,0xf8,"mcs51_djnzrrel",mcs51_djnzrrel,2,2},	
-	{0xb5,0xff,"mcs51_djnzdirrel",mcs51_djnzdirrel,3,2},
-	{0x04,0xff,"mcs51_inca",mcs51_inca,1,1},
-	{0x08,0xf8,"mcs51_incr",mcs51_incr,1,1},
-	{0x05,0xff,"mcs51_incdir",mcs51_incdir,2,1},
-	{0x06,0xfe,"mcs51_incari",mcs51_incari,1,1},	
-	{0xa3,0xff,"mcs51_incdptr",mcs51_incdptr,1,2},
-	{0x20,0xff,"mcs51_jbbitrel",mcs51_jbbitrel,3,2},
-	{0x10,0xff,"mcs51_jbcbitrel",mcs51_jbcbitrel,3,2},
-	{0x40,0xff,"mcs51_jcrel",mcs51_jcrel,2,2},
-	{0x73,0xff,"mcs51_jmpaadptr",mcs51_jmpaadptr,1,2},
-	{0x30,0xff,"mcs51_jnbbitrel",mcs51_jnbbitrel,3,2},
-	{0x50,0xff,"mcs51_jncrel",mcs51_jncrel,2,2},
-	{0x70,0xff,"mcs51_jnzrel",mcs51_jnzrel,2,2},
-	{0x60,0xff,"mcs51_jzrel",mcs51_jzrel,2,2},
-	{0x12,0xff,"mcs51_lcall",mcs51_lcall,3,2},
-	{0x02,0xff,"mcs51_ljmp",mcs51_ljmp,3,2},
-	{0xe8,0xf8,"mcs51_movarn",mcs51_movarn,1,1},	
-	{0xe5,0xff,"mcs51_movadir",mcs51_movadir,2,1},
-	{0xe6,0xfe,"mcs51_movaari",mcs51_movaari,1,1},
-	{0x74,0xff,"mcs51_movadata",mcs51_movadata,2,1},
-	{0xf8,0xf8,"mcs51_movra",mcs51_movra,1,1},
-	{0xa8,0xf8,"mcs51_movrdir",mcs51_movrdir,2,2},
-	{0x78,0xf8,"mcs51_movrdata",mcs51_movrdata,2,1},
-	{0xf5,0xff,"mcs51_movdira",mcs51_movdira,2,1},
-	{0x88,0xf8,"mcs51_movdirr",mcs51_movdirr,2,2},
-	{0x85,0xff,"mcs51_movdirdir",mcs51_movdirdir,3,2},
-	{0x86,0xfe,"mcs51_movdirari",mcs51_movdirari,2,2},
-	{0x75,0xff,"mcs51_movdirdata",mcs51_movdirdata,3,2},
-	{0xf6,0xfe,"mcs51_movaria",mcs51_movaria,1,1},
-	{0xa6,0xfe,"mcs51_movaridir",mcs51_movaridir,2,2},
-	{0x76,0xfe,"mcs51_movaridata",mcs51_movaridata,2,1},
-	{0xa2,0xff,"mcs51_movcbit",mcs51_movcbit,2,1},
-	{0x92,0xff,"mcs51_movbitc",mcs51_movbitc,2,2},
-	{0x90,0xff,"mcs51_movdptrdata",mcs51_movdptrdata,3,2},
-	{0x93,0xff,"mcs51_movcaadptr",mcs51_movcaadptr,1,2},
-	{0x83,0xff,"mcs51_movaapc",mcs51_movaapc,1,2},
-	{0xe2,0xfe,"mcs51_movxaari",mcs51_movxaari,1,2},
-	{0xe0,0xff,"mcs51_movxaadptr",mcs51_movxaadptr,1,2},
-	{0xf2,0xfe,"mcs51_movxara",mcs51_movxara,1,2},
-	{0xf0,0xff,"mcs51_movxadptra",mcs51_movxadptra,1,2},
-	{0xa4,0xff,"mcs51_mulab",mcs51_mulab,1,4},
-	{0x00,0xff,"mcs51_nop",mcs51_nop,1,1},
-	{0x48,0xf8,"mcs51_orlar",mcs51_orlar,1,1},
-	{0x45,0xff,"mcs51_orladir",mcs51_orladir,2,1},
-	{0x46,0xfe,"mcs51_orlaari",mcs51_orlaari,1,1},
-	{0x44,0xff,"mcs51_orladata",mcs51_orladata,2,1},
-	{0x42,0xff,"mcs51_orldira",mcs51_orldira,2,1},
-	{0x43,0xff,"mcs51_orldirdata",mcs51_orldirdata,3,2},
-	{0x72,0xff,"mcs51_orlcbit",mcs51_orlcbit,2,2},
-	{0xa0,0xff,"mcs51_orlcnbit",mcs51_orlcnbit,2,2},
-	{0xb0,0xff,"mcs51_popdir",mcs51_popdir,2,2},
-	{0xc0,0xff,"mcs51_pusdir",mcs51_pushdir,2,2},
-	{0x22,0xff,"mcs51_ret",mcs51_ret,1,2},
-	{0x32,0xff,"mcs51_reti",mcs51_reti,1,2},
-	{0x23,0xff,"mcs51_rla",mcs51_rla,1,1},
-	{0x33,0xff,"mcs51_rlca",mcs51_rlca,1,1},
-	{0x03,0xff,"mcs51_rra",mcs51_rra,1,1},
-	{0x13,0xff,"mcs51_rrca",mcs51_rrca,1,1},
-	{0xd3,0xff,"mcs51_setbc",mcs51_setbc,1,1},
-	{0xd2,0xff,"mcs51_setbbit",mcs51_setbbit,2,1},
-	{0x80,0xff,"mcs51_sjmprel",mcs51_sjmprel,2,2},
-	{0x98,0xf8,"mcs51_subbar",mcs51_subbar,1,1},
-	{0x95,0xff,"mcs51_subbadir",mcs51_subbadir,2,1},
-	{0x96,0xfe,"mcs51_subbaari",mcs51_subbaari,1,1},
-	{0x94,0xff,"mcs51_subbadata",mcs51_subbadata,2,1},
-	{0xc4,0xff,"mcs51_swapa",mcs51_swapa,1,1},
-	{0xc8,0xf8,"mcs51_xchar",mcs51_xchar,1,1},
-	{0xc5,0xff,"mcs51_xchadir",mcs51_xchadir,2,1},
-	{0xc6,0xfe,"mcs51_xchaari",mcs51_xchaari,1,1},
-	{0xd6,0xfe,"mcs51_xchdaari",mcs51_xchdaari,1,1},
-	{0x68,0xf8,"mcs51_xrlar",mcs51_xrlar,1,1}
+	{
+		.icode = 0x11, 
+		.mask = 0x1f, 
+		.name = "mcs51_acall", 
+		.iproc = mcs51_acall, 
+		.len = 2, 
+		.cycles = 2,
+	},
+	{
+		.icode = 0x28, 
+		.mask = 0xf8, 
+		.name = "mcs51_adda", 
+		.iproc = mcs51_adda, 
+		.len = 1, 
+		.cycles = 1,
+	},
+	{
+		.icode = 0x25, 
+		.mask = 0xff, 
+		.name = "mcs51_addadir", 
+		.iproc = mcs51_addadir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x26, 
+		.mask = 0xfe, 
+		.name = "mcs51_addaari", 
+		.iproc = mcs51_addaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x24, 
+		.mask = 0xff, 
+		.name = "mcs51_addadata", 
+		.iproc = mcs51_addadata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x38, 
+		.mask = 0xf8, 
+		.name = "mcs51_addcar", 
+		.iproc = mcs51_addcar, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x35, 
+		.mask = 0xff, 
+		.name = "mcs51_addcadir", 
+		.iproc = mcs51_addcadir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x36, 
+		.mask = 0xfe, 
+		.name = "mcs51_addcaari", 
+		.iproc = mcs51_addcaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x34, 
+		.mask = 0xff, 
+		.name= "mcs51_addcadata", 
+		.iproc = mcs51_addcadata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x01, 
+		.mask = 0x1f, 
+		.name = "mcs51_ajmp", 
+		.iproc = mcs51_ajmp, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x58, 
+		.mask = 0xf8, 
+		.name = "mcs51_anlarn", 
+		.iproc = mcs51_anlarn, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x55, 
+		.mask = 0xff, 
+		.name = "mcs51_anladir", 
+		.iproc = mcs51_anladir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x56, 
+		.mask = 0xfe, 
+		.name = "mcs51_anlaari", 
+		.iproc = mcs51_anlaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x54, 
+		.mask = 0xff, 
+		.name = "mcs51_anladata", 
+		.iproc = mcs51_anladata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x52, 
+		.mask = 0xff, 
+		.name = "mcs51_anldira", 
+		.iproc = mcs51_anldira, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x53, 
+		.mask = 0xff, 
+		.name = "mcs51_anldirdata", 
+		.iproc = mcs51_anldirdata, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x82, 
+		.mask = 0xff, 
+		.name ="mcs51_anlcbit", 
+		.iproc = mcs51_anlcbit, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xb0, 
+		.mask = 0xff, 
+		.name = "mcs51_anlcnbit", 
+		.iproc = mcs51_anlcnbit, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xb5, 
+		.mask = 0xff, 
+		.name = "mcs51_cjneadirrel", 
+		.iproc = mcs51_cjneadirrel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xb4, 
+		.mask = 0xff, 
+		.name = "mcs51_cjneadatarel", 
+		.iproc = mcs51_cjneadatarel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xb8, 
+		.mask = 0xf8, 
+		.name = "mcs51_cjnerdatarel", 
+		.iproc = mcs51_cjnerdatarel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xb6, 
+		.mask = 0xfe, 
+		.name = "mcs51_cjneardatarel", 
+		.iproc = mcs51_cjneardatarel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xe4, 
+		.mask = 0xff, 
+		.name = "mcs51_clra", 
+		.iproc = mcs51_clra, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xc3, 
+		.mask = 0xff, 
+		.name = "mcs51_clrc", 
+		.iproc = mcs51_clrc, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xc2, 
+		.mask = 0xff, 
+		.name = "mcs51_clrbit", 
+		.iproc = mcs51_clrbit, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xf4, 
+		.mask = 0xff, 
+		.name = "mcs51_cpla", 
+		.iproc = mcs51_cpla, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xb3, 
+		.mask = 0xff, 
+		.name = "mcs51_cplc", 
+		.iproc = mcs51_cplc, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xb2, 
+		.mask = 0xff, 
+		.name = "mcs51_cplbit", 
+		.iproc = mcs51_cplbit, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xd4, 
+		.mask = 0xff, 
+		.name = "mcs51_da", 
+		.iproc = mcs51_da, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x14, 
+		.mask = 0xff, 
+		.name = "mcs51_deca", 
+		.iproc = mcs51_deca, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x18, 
+		.mask = 0xf8, 
+		.name = "mcs51_decr", 
+		.iproc = mcs51_decr, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x15, 
+		.mask = 0xff, 
+		.name = "mcs51_decdir", 
+		.iproc = mcs51_decdir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x16, 
+		.mask = 0xfe, 
+		.name = "mcs51_decari", 
+		.iproc = mcs51_decari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x84, 
+		.mask = 0xff, 
+		.name = "mcs51_divab", 
+		.iproc = mcs51_divab, 
+		.len = 1, 
+		.cycles = 4
+	},
+	{
+		.icode = 0xd8, 
+		.mask = 0xf8, 
+		.name = "mcs51_djnzrrel", 
+		.iproc = mcs51_djnzrrel, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xd5, 
+		.mask = 0xff, 
+		.name = "mcs51_djnzdirrel", 
+		.iproc = mcs51_djnzdirrel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x04, 
+		.mask = 0xff, 
+		.name = "mcs51_inca", 
+		.iproc = mcs51_inca, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x08, 
+		.mask = 0xf8, 
+		.name = "mcs51_incr", 
+		.iproc = mcs51_incr, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x05, 
+		.mask = 0xff, 
+		.name = "mcs51_incdir", 
+		.iproc = mcs51_incdir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x06, 
+		.mask = 0xfe, 
+		.name = "mcs51_incari", 
+		.iproc = mcs51_incari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xa3, 
+		.mask = 0xff, 
+		.name = "mcs51_incdptr", 
+		.iproc = mcs51_incdptr, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x20, 
+		.mask = 0xff, 
+		.name = "mcs51_jbbitrel", 
+		.iproc = mcs51_jbbitrel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x10, 
+		.mask = 0xff, 
+		.name = "mcs51_jbcbitrel", 
+		.iproc = mcs51_jbcbitrel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x40, 
+		.mask = 0xff, 
+		.name = "mcs51_jcrel", 
+		.iproc = mcs51_jcrel, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x73, 
+		.mask = 0xff, 
+		.name = "mcs51_jmpaadptr", 
+		.iproc = mcs51_jmpaadptr, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x30, 
+		.mask = 0xff, 
+		.name = "mcs51_jnbbitrel", 
+		.iproc = mcs51_jnbbitrel, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x50, 
+		.mask = 0xff, 
+		.name = "mcs51_jncrel", 
+		.iproc = mcs51_jncrel, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x70, 
+		.mask = 0xff, 
+		.name = "mcs51_jnzrel", 
+		.iproc = mcs51_jnzrel, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x60, 
+		.mask = 0xff, 
+		.name = "mcs51_jzrel", 
+		.iproc = mcs51_jzrel, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x12, 
+		.mask = 0xff, 
+		.name = "mcs51_lcall", 
+		.iproc = mcs51_lcall, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x02, 
+		.mask = 0xff, 
+		.name ="mcs51_ljmp", 
+		.iproc = mcs51_ljmp, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xe8, 
+		.mask = 0xf8, 
+		.name = "mcs51_movarn", 
+		.iproc = mcs51_movarn, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xe5, 
+		.mask = 0xff, 
+		.name = "mcs51_movadir", 
+		.iproc = mcs51_movadir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xe6, 
+		.mask = 0xfe, 
+		.name = "mcs51_movaari", 
+		.iproc = mcs51_movaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x74, 
+		.mask = 0xff, 
+		.name = "mcs51_movadata", 
+		.iproc = mcs51_movadata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xf8, 
+		.mask = 0xf8, 
+		.name = "mcs51_movra", 
+		.iproc = mcs51_movra, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xa8, 
+		.mask = 0xf8, 
+		.name = "mcs51_movrdir", 
+		.iproc = mcs51_movrdir, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x78, 
+		.mask = 0xf8, 
+		.name = "mcs51_movrdata", 
+		.iproc = mcs51_movrdata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xf5, 
+		.mask = 0xff, 
+		.name = "mcs51_movdira", 
+		.iproc = mcs51_movdira, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x88, 
+		.mask = 0xf8, 
+		.name = "mcs51_movdirr", 
+		.iproc = mcs51_movdirr, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x85, 
+		.mask = 0xff, 
+		.name = "mcs51_movdirdir", 
+		.iproc = mcs51_movdirdir, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x86, 
+		.mask = 0xfe, 
+		.name = "mcs51_movdirari", 
+		.iproc = mcs51_movdirari, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x75, 
+		.mask = 0xff, 
+		.name = "mcs51_movdirdata", 
+		.iproc = mcs51_movdirdata, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xf6, 
+		.mask = 0xfe, 
+		.name = "mcs51_movaria", 
+		.iproc = mcs51_movaria, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xa6, 
+		.mask = 0xfe, 
+		.name = "mcs51_movaridir", 
+		.iproc = mcs51_movaridir, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x76, 
+		.mask = 0xfe, 
+		.name = "mcs51_movaridata", 
+		.iproc = mcs51_movaridata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xa2, 
+		.mask = 0xff, 
+		.name = "mcs51_movcbit", 
+		.iproc = mcs51_movcbit, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x92, 
+		.mask = 0xff, 
+		.name = "mcs51_movbitc", 
+		.iproc = mcs51_movbitc, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x90, 
+		.mask = 0xff, 
+		.name = "mcs51_movdptrdata", 
+		.iproc = mcs51_movdptrdata, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x93, 
+		.mask = 0xff, 
+		.name = "mcs51_movcaadptr", 
+		.iproc = mcs51_movcaadptr, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x83, 
+		.mask = 0xff, 
+		.name = "mcs51_movaapc", 
+		.iproc = mcs51_movaapc, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xe2, 
+		.mask = 0xfe, 
+		.name = "mcs51_movxaari", 
+		.iproc = mcs51_movxaari, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xe0, 
+		.mask = 0xff, 
+		.name = "mcs51_movxaadptr", 
+		.iproc = mcs51_movxaadptr, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xf2, 
+		.mask = 0xfe, 
+		.name = "mcs51_movxara", 
+		.iproc = mcs51_movxara, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xf0, 
+		.mask = 0xff, 
+		.name = "mcs51_movxadptra", 
+		.iproc = mcs51_movxadptra, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xa4, 
+		.mask = 0xff, 
+		.name = "mcs51_mulab", 
+		.iproc = mcs51_mulab, 
+		.len = 1, 
+		.cycles = 4
+	},
+	{
+		.icode = 0x00, 
+		.mask = 0xff, 
+		.name = "mcs51_nop", 
+		.iproc = mcs51_nop, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x48, 
+		.mask = 0xf8, 
+		.name = "mcs51_orlar", 
+		.iproc = mcs51_orlar, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x45, 
+		.mask = 0xff, 
+		.name = "mcs51_orladir", 
+		.iproc = mcs51_orladir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x46, 
+		.mask = 0xfe, 
+		.name = "mcs51_orlaari", 
+		.iproc = mcs51_orlaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x44, 
+		.mask = 0xff, 
+		.name = "mcs51_orladata", 
+		.iproc = mcs51_orladata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x42, 
+		.mask = 0xff, 
+		.name = "mcs51_orldira", 
+		.iproc = mcs51_orldira, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x43, 
+		.mask = 0xff, 
+		.name = "mcs51_orldirdata", 
+		.iproc = mcs51_orldirdata, 
+		.len = 3, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x72, 
+		.mask = 0xff, 
+		.name = "mcs51_orlcbit", 
+		.iproc = mcs51_orlcbit, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xa0, 
+		.mask = 0xff, 
+		.name = "mcs51_orlcnbit", 
+		.iproc = mcs51_orlcnbit, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xd0, 
+		.mask = 0xff, 
+		.name = "mcs51_popdir", 
+		.iproc = mcs51_popdir, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0xc0, 
+		.mask = 0xff, 
+		.name = "mcs51_pusdir", 
+		.iproc = mcs51_pushdir, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x22, 
+		.mask = 0xff, 
+		.name = "mcs51_ret", 
+		.iproc = mcs51_ret, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x32, 
+		.mask = 0xff, 
+		.name = "mcs51_reti", 
+		.iproc = mcs51_reti, 
+		.len = 1, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x23, 
+		.mask = 0xff, 
+		.name = "mcs51_rla", 
+		.iproc = mcs51_rla, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x33, 
+		.mask = 0xff, 
+		.name = "mcs51_rlca", 
+		.iproc = mcs51_rlca, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x03, 
+		.mask = 0xff, 
+		.name = "mcs51_rra", 
+		.iproc = mcs51_rra, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x13, 
+		.mask = 0xff, 
+		.name = "mcs51_rrca", 
+		.iproc = mcs51_rrca, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xd3, 
+		.mask = 0xff, 
+		.name = "mcs51_setbc", 
+		.iproc = mcs51_setbc, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xd2, 
+		.mask = 0xff, 
+		.name = "mcs51_setbbit", 
+		.iproc = mcs51_setbbit, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x80, 
+		.mask = 0xff, 
+		.name = "mcs51_sjmprel", 
+		.iproc = mcs51_sjmprel, 
+		.len = 2, 
+		.cycles = 2
+	},
+	{
+		.icode = 0x98, 
+		.mask = 0xf8, 
+		.name = "mcs51_subbar", 
+		.iproc = mcs51_subbar, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x95, 
+		.mask = 0xff, 
+		.name = "mcs51_subbadir", 
+		.iproc = mcs51_subbadir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x96, 
+		.mask = 0xfe, 
+		.name = "mcs51_subbaari", 
+		.iproc = mcs51_subbaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x94, 
+		.mask = 0xff, 
+		.name = "mcs51_subbadata", 
+		.iproc = mcs51_subbadata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xc4, 
+		.mask = 0xff, 
+		.name = "mcs51_swapa", 
+		.iproc = mcs51_swapa, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xc8, 
+		.mask = 0xf8, 
+		.name = "mcs51_xchar", 
+		.iproc = mcs51_xchar, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xc5, 
+		.mask = 0xff, 
+		.name = "mcs51_xchadir", 
+		.iproc = mcs51_xchadir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xc6, 
+		.mask = 0xfe, 
+		.name = "mcs51_xchaari", 
+		.iproc = mcs51_xchaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0xd6, 
+		.mask = 0xfe, 
+		.name = "mcs51_xchdaari",
+		.iproc = mcs51_xchdaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x68, 
+		.mask = 0xf8, 
+		.name = "mcs51_xrlar", 
+		.iproc = mcs51_xrlar, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x65, 
+		.mask = 0xff, 
+		.name ="mcs51_xrladir", 
+		.iproc = mcs51_xrladir, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x66, 
+		.mask = 0xfe, 
+		.name = "mcs51_xrlaari", 
+		.iproc = mcs51_xrlaari, 
+		.len = 1, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x64, 
+		.mask = 0xff, 
+		.name = "mcs51_xrladata", 
+		.iproc = mcs51_xrladata, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x62, 
+		.mask = 0xff, 
+		.name = "mcs51_xrldira", 
+		.iproc = mcs51_xrldira, 
+		.len = 2, 
+		.cycles = 1
+	},
+	{
+		.icode = 0x63, 
+		.mask = 0xff, 
+		.name = "mcs51_xrldirdata", 
+		.iproc = mcs51_xrldirdata, 
+		.len = 3, 
+		.cycles = 1
+	},
 };
 
 void
-MCS51_IDecoderNew()
+MCS51_IDecoderNew(unsigned int cycles_multiplicator)
 {
-        uint32_t icode;
-        int j;
-        int num_instr = sizeof(instrlist) / sizeof(MCS51_Instruction);
-        mcs51_iProcTab = sg_calloc(sizeof(MCS51_InstructionProc *) * 0x100);
-        mcs51_instrTab =  sg_calloc(sizeof(MCS51_Instruction *) * 0x100);
-        for(icode=0;icode<256;icode++) {
-                for(j=num_instr-1;j>=0;j--) {
-                        MCS51_Instruction *instr = &instrlist[j];
-                        if((icode & instr->mask) == instr->opcode) {
-                                if(mcs51_iProcTab[icode]) {
-                                        fprintf(stdout,"conflict at %04x %s\n",icode,instr->name);
-                                } else {
-					//fprintf(stderr,"icode %d: %s\n",icode,instr->name);	
-                                        mcs51_iProcTab[icode] = instr->iproc;
-                                        mcs51_instrTab[icode] = instr;
-                                }
-                        }
-                }
-                if(mcs51_iProcTab[icode] == NULL) {
-                        mcs51_iProcTab[icode] =  mcs51_undef;
-                }
-        }
-        fprintf(stderr,"MCS51 instruction decoder with %d Instructions created\n",num_instr);
+	uint32_t icode;
+	int j;
+	int num_instr = array_size(instrlist); 
+	mcs51_iProcTab = sg_calloc(sizeof(MCS51_InstructionProc *) * 0x100);
+	mcs51_instrTab = sg_calloc(sizeof(MCS51_Instruction *) * 0x100);
+	for (icode = 0; icode < 256; icode++) {
+		for (j = num_instr - 1; j >= 0; j--) {
+			MCS51_Instruction *instr = &instrlist[j];
+			if ((icode & instr->mask) == instr->icode) {
+				if (mcs51_iProcTab[icode]) {
+					fprintf(stdout, "conflict at %04x %s %s\n", icode,
+						instr->name, mcs51_instrTab[icode]->name);
+					exit(1);
+				} else {
+					//fprintf(stderr,"icode %d: %s\n",icode,instr->name);   
+					mcs51_iProcTab[icode] = instr->iproc;
+					mcs51_instrTab[icode] = instr;
+				}
+			}
+		}
+		if (mcs51_iProcTab[icode] == NULL) {
+			mcs51_iProcTab[icode] = mcs51_undef;
+		}
+	}
+	for (j = num_instr - 1; j >= 0; j--) {
+		MCS51_Instruction *instr = &instrlist[j];
+		instr->cycles *= cycles_multiplicator;
+	}
+	fprintf(stderr, "MCS51 instruction decoder with %d Instructions created\n", num_instr);
 }
-

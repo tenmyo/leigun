@@ -228,7 +228,6 @@
 #define SFR_P6		(0xe6)
 #define SFR_DP6		(0xe7)
 
-
 #define PSW_FLAG_N (1)
 #define PSW_FLAG_C (1<<1)
 #define PSW_FLAG_V (1<<2)
@@ -267,7 +266,7 @@
 
 #if 0
 static inline void
-sfr_set16(uint16_t value,uint16_t reg) 
+sfr_set16(uint16_t value, uint16_t reg)
 {
 
 }
@@ -277,7 +276,7 @@ typedef struct C16x {
 	uint16_t dpp[4];
 	uint16_t cp;
 	uint16_t psw;
-	uint16_t ip; 		/* Instruction Pointer */	
+	uint16_t ip;		/* Instruction Pointer */
 	uint16_t sp;
 	uint16_t csp;
 	uint16_t mdl;
@@ -288,12 +287,11 @@ typedef struct C16x {
 	uint16_t stkov;
 	uint16_t wdtcon;
 
-	int ipl; /* Interrupt privilege level */
+	int ipl;		/* Interrupt privilege level */
 	/* lock for atomic extr extp, exts, extpr and extsr instructions */
 	int lock_counter;
 	uint32_t extmode;
 	uint32_t extaddr;	/* Page/Segment addr during locked sequence */
-
 
 	/* Interrupts and NMIs */
 	uint16_t signals_raw;
@@ -301,112 +299,112 @@ typedef struct C16x {
 	uint16_t signals;
 
 #if 0
-        //cpu->s0rbuf = undefined;
-        //cpu->sscrb = undefined;
-        //cpu->syscon = reset config
-        //cpu->buscon0 = reset config
-        //cpu->rp0h = reset config
-        cpu->ones = 0xffff;
+	//cpu->s0rbuf = undefined;
+	//cpu->sscrb = undefined;
+	//cpu->syscon = reset config
+	//cpu->buscon0 = reset config
+	//cpu->rp0h = reset config
+	 cpu->ones = 0xffff;
 #endif
 } C16x;
 
 extern C16x gc16x;
 
-static inline uint32_t 
-C16x_reg_address16(uint32_t reg) 
+static inline uint32_t
+C16x_reg_address16(uint32_t reg)
 {
-	if(reg>=0xf0) {
-		return REG_CP + ((reg&0xf)<<1);
+	if (reg >= 0xf0) {
+		return REG_CP + ((reg & 0xf) << 1);
 	}
-	if(gc16x.extmode & EXTMODE_ESFR) {
-		return 0xf000+(reg<<1);
+	if (gc16x.extmode & EXTMODE_ESFR) {
+		return 0xf000 + (reg << 1);
 	} else {
-		return 0xfe00+(reg<<1);
+		return 0xfe00 + (reg << 1);
 	}
-}
-
-static inline uint32_t 
-C16x_reg_address8(uint32_t reg) 
-{
-	if(reg>=0xf0) {
-		return REG_CP + (reg&0xf);
-	}
-	if(gc16x.extmode & EXTMODE_ESFR) {
-		return 0xf000+(reg<<1);
-	} else {
-		return 0xfe00+(reg<<1);
-	}
-}
-
-static inline uint16_t
-C16x_ReadReg16(uint8_t reg) 
-{
-	uint32_t addr= C16x_reg_address16(reg);
-	return Bus_Read16(addr);
-}
-
-static inline void  
-C16x_SetReg16(uint16_t value,uint8_t reg) 
-{
-	uint32_t addr= C16x_reg_address16(reg);
-	Bus_Write16(value,addr);
-}
-
-static inline uint8_t
-C16x_ReadReg8(uint8_t reg) 
-{
-	uint32_t addr= C16x_reg_address8(reg);
-	return Bus_Read8(addr);
-}
-
-static inline void  
-C16x_SetReg8(uint8_t value,uint8_t reg) 
-{
-	uint32_t addr= C16x_reg_address8(reg);
-	Bus_Write8(value,addr);
 }
 
 static inline uint32_t
-C16x_BitoffAddr(uint8_t bitoff) 
+C16x_reg_address8(uint32_t reg)
 {
-	int use_esfr = 0; /* complete this one day */ 
-	if(bitoff>=0xf0) {
-		return REG_CP + ((bitoff&0xf)<<1);
+	if (reg >= 0xf0) {
+		return REG_CP + (reg & 0xf);
 	}
-	if(bitoff<0x80) {
-		return 0xfd00 + (bitoff<<1);
-	} 
-	if(use_esfr) {
-		return 0xf100 +((bitoff&0x7f)<<1);
+	if (gc16x.extmode & EXTMODE_ESFR) {
+		return 0xf000 + (reg << 1);
 	} else {
-		return 0xff00 +((bitoff&0x7f)<<1);
+		return 0xfe00 + (reg << 1);
 	}
 }
 
 static inline uint16_t
-C16x_ReadBitoff(uint8_t bitoff) 
+C16x_ReadReg16(uint8_t reg)
+{
+	uint32_t addr = C16x_reg_address16(reg);
+	return Bus_Read16(addr);
+}
+
+static inline void
+C16x_SetReg16(uint16_t value, uint8_t reg)
+{
+	uint32_t addr = C16x_reg_address16(reg);
+	Bus_Write16(value, addr);
+}
+
+static inline uint8_t
+C16x_ReadReg8(uint8_t reg)
+{
+	uint32_t addr = C16x_reg_address8(reg);
+	return Bus_Read8(addr);
+}
+
+static inline void
+C16x_SetReg8(uint8_t value, uint8_t reg)
+{
+	uint32_t addr = C16x_reg_address8(reg);
+	Bus_Write8(value, addr);
+}
+
+static inline uint32_t
+C16x_BitoffAddr(uint8_t bitoff)
+{
+	int use_esfr = 0;	/* complete this one day */
+	if (bitoff >= 0xf0) {
+		return REG_CP + ((bitoff & 0xf) << 1);
+	}
+	if (bitoff < 0x80) {
+		return 0xfd00 + (bitoff << 1);
+	}
+	if (use_esfr) {
+		return 0xf100 + ((bitoff & 0x7f) << 1);
+	} else {
+		return 0xff00 + ((bitoff & 0x7f) << 1);
+	}
+}
+
+static inline uint16_t
+C16x_ReadBitoff(uint8_t bitoff)
 {
 	uint32_t addr = C16x_BitoffAddr(bitoff);
 	return Bus_Read16(addr);
 }
 
 static inline void
-C16x_WriteBitoff(uint16_t value,uint8_t bitoff) 
+C16x_WriteBitoff(uint16_t value, uint8_t bitoff)
 {
 	uint32_t addr = C16x_BitoffAddr(bitoff);
-	Bus_Write16(value,addr);
+	Bus_Write16(value, addr);
 }
 
 static inline uint16_t
-C16x_ReadBitaddr(uint8_t bitaddr) 
+C16x_ReadBitaddr(uint8_t bitaddr)
 {
-	return  C16x_ReadBitoff(bitaddr);
+	return C16x_ReadBitoff(bitaddr);
 }
 
 static inline void
-C16x_WriteBitaddr(uint16_t value,uint8_t bitaddr) 
+C16x_WriteBitaddr(uint16_t value, uint8_t bitaddr)
 {
-	C16x_WriteBitoff(value,bitaddr);
+	C16x_WriteBitoff(value, bitaddr);
 }
 
 /*
@@ -416,73 +414,75 @@ C16x_WriteBitaddr(uint16_t value,uint8_t bitaddr)
  * --------------------------------------------------
  */
 static inline uint32_t
-C16x_TranslateAddr(uint16_t addr) 
+C16x_TranslateAddr(uint16_t addr)
 {
 	C16x *c16x = &gc16x;
 	uint16_t dpp;
-	int dppnr = (addr>>14)&3;
-	if(c16x->extmode & EXTMODE_PAGE) {
+	int dppnr = (addr >> 14) & 3;
+	if (c16x->extmode & EXTMODE_PAGE) {
 		return (addr & 0x3fff) | c16x->extaddr;
-	} else if(c16x->extmode & EXTMODE_SEG) {
+	} else if (c16x->extmode & EXTMODE_SEG) {
 		return (addr & 0xffff) | c16x->extaddr;
 	} else {
-		dpp=REG_DPP(dppnr);
-		if(SYSCON_SGTDIS) {
-			return (addr & 0x3fff) | ((dppnr&0x3)<<14);
+		dpp = REG_DPP(dppnr);
+		if (SYSCON_SGTDIS) {
+			return (addr & 0x3fff) | ((dppnr & 0x3) << 14);
 		} else {
-			return (addr & 0x3fff) | ((dpp&0x3ff)<<14);
+			return (addr & 0x3fff) | ((dpp & 0x3ff) << 14);
 		}
 	}
 }
 
 static inline uint16_t
-C16x_MemRead16(uint16_t addr) 
+C16x_MemRead16(uint16_t addr)
 {
 	uint32_t taddr = C16x_TranslateAddr(addr);
 	return Bus_Read16(taddr);
 }
 
 static inline uint8_t
-C16x_MemRead8(uint16_t addr) 
+C16x_MemRead8(uint16_t addr)
 {
 	uint32_t taddr = C16x_TranslateAddr(addr);
 	return Bus_Read8(taddr);
 }
-static inline void
-C16x_MemWrite16(uint16_t value,uint32_t addr) 
-{
-	uint32_t taddr = C16x_TranslateAddr(addr);
-	Bus_Write16(value,taddr);
-}
 
 static inline void
-C16x_MemWrite8(uint8_t value,uint32_t addr) 
+C16x_MemWrite16(uint16_t value, uint32_t addr)
 {
 	uint32_t taddr = C16x_TranslateAddr(addr);
-	Bus_Write8(value,taddr);
+	Bus_Write16(value, taddr);
 }
 
-static inline uint16_t  
-C16x_ReadGpr16(int reg) 
+static inline void
+C16x_MemWrite8(uint8_t value, uint32_t addr)
 {
-	return C16x_MemRead16(REG_CP+(reg<<1));		
-}
-static inline uint16_t  
-C16x_ReadGpr8(int reg) 
-{
-	return C16x_MemRead8(REG_CP+reg);		
+	uint32_t taddr = C16x_TranslateAddr(addr);
+	Bus_Write8(value, taddr);
 }
 
-static inline void  
-C16x_SetGpr16(uint16_t value,int reg) 
+static inline uint16_t
+C16x_ReadGpr16(int reg)
 {
-	return C16x_MemWrite16(value,REG_CP+(reg<<1));		
+	return C16x_MemRead16(REG_CP + (reg << 1));
 }
 
-static inline void  
-C16x_SetGpr8(uint8_t value,int reg) 
+static inline uint16_t
+C16x_ReadGpr8(int reg)
 {
-	return C16x_MemWrite8(value,REG_CP+reg);		
+	return C16x_MemRead8(REG_CP + reg);
+}
+
+static inline void
+C16x_SetGpr16(uint16_t value, int reg)
+{
+	return C16x_MemWrite16(value, REG_CP + (reg << 1));
+}
+
+static inline void
+C16x_SetGpr8(uint8_t value, int reg)
+{
+	return C16x_MemWrite8(value, REG_CP + reg);
 }
 
 /*

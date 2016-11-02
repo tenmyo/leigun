@@ -40,11 +40,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "sgstring.h" 
+#include "sgstring.h"
 #include "cpu_sh4.h"
 
 #define REG_PTEH(base)	((base) + 0)
-#define 	PTEH_VPN_MASK		(0xfffffc00);	
+#define 	PTEH_VPN_MASK		(0xfffffc00);
 #define		PTEH_VPN_SHIFT		(10)
 #define		PTEH_ASID_MASK		(0xff)
 
@@ -79,17 +79,16 @@
 #define		MMUCR_LRUI_MASK		(0x3f << 26)
 #define		MMUCR_LRUI_SHIFT	(26)
 
-/* PTEA is in Renesas SH4 manual Section 3.2 */ 
+/* PTEA is in Renesas SH4 manual Section 3.2 */
 #define REG_PTEA(base)	((base) + 0x34)
 #define		PTEA_SA_MASK	(0x7)
 #define		PTEA_TC		(1 << 3)
 
-
 /* Flag Bits in stucture taken from memory mapped representation in 3.7.2 */
-#define TLBE_SH(tlbe) ((tlbe)->flags & PTEL_SH) 
-#define TLBE_D(tlbe) ((tlbe)->flags & PTEL_D) 
-#define TLBE_PR(tlbe) ((tlbe)->flags & PTEL_PR_MASK) 
-#define ITLBE_PR(tlbe) ((tlbe)->flags & (1 << 6)) 
+#define TLBE_SH(tlbe) ((tlbe)->flags & PTEL_SH)
+#define TLBE_D(tlbe) ((tlbe)->flags & PTEL_D)
+#define TLBE_PR(tlbe) ((tlbe)->flags & PTEL_PR_MASK)
+#define ITLBE_PR(tlbe) ((tlbe)->flags & (1 << 6))
 
 typedef struct SH4_TLBE {
 	uint32_t va;
@@ -108,7 +107,7 @@ typedef struct SH4MMU {
 	uint32_t reg_ttb;
 	uint32_t reg_tea;
 	uint32_t reg_mmucr;
-	SH4_TLBE itlb_entry[4];	
+	SH4_TLBE itlb_entry[4];
 	SH4_TLBE utlb_entry[64];
 } SH4MMU;
 
@@ -120,19 +119,21 @@ static SH4MMU g_sh4mmu;
  ***********************************************************
  */
 static void
-record_tlbe_itlb(SH4_TLBE *tlbe) {
+record_tlbe_itlb(SH4_TLBE * tlbe)
+{
 	SH4MMU *mmu = &g_sh4mmu;
 	static int cnt;
 	cnt++;
-	mmu->itlb_entry[cnt & 3] = *tlbe;	
+	mmu->itlb_entry[cnt & 3] = *tlbe;
 }
 
 bool
-match_tlbe(SH4_TLBE *tlbe,uint32_t va,int check_asid) {
+match_tlbe(SH4_TLBE * tlbe, uint32_t va, int check_asid)
+{
 	SH4MMU *mmu = &g_sh4mmu;
-	if((va & tlbe->addr_mask) == tlbe->va) {
-		if(check_asid && (TLBE_SH(tlbe) == 0)) {
-			if(tlbe->asid == (mmu->reg_pteh & PTEH_ASID_MASK)) {
+	if ((va & tlbe->addr_mask) == tlbe->va) {
+		if (check_asid && (TLBE_SH(tlbe) == 0)) {
+			if (tlbe->asid == (mmu->reg_pteh & PTEH_ASID_MASK)) {
 				return true;
 			}
 		} else {
@@ -142,9 +143,8 @@ match_tlbe(SH4_TLBE *tlbe,uint32_t va,int check_asid) {
 	return false;
 }
 
-
 uint32_t
-SH4_TranslateUtlb(uint32_t va,unsigned int op_write)
+SH4_TranslateUtlb(uint32_t va, unsigned int op_write)
 {
 	SH4MMU *mmu = &g_sh4mmu;
 	SH4_TLBE *tlbe;
@@ -154,108 +154,108 @@ SH4_TranslateUtlb(uint32_t va,unsigned int op_write)
 	uint32_t sr = SH4_GetSR();
 	unsigned int i;
 	int matchcount;
-	if((va >= 0x80000000) && (va < 0xc0000000)) {
-		return va & 0x1fffffff;	
-	} else if(va > 0xe0000000) {
-		if(sr & SR_MD) {
-			return va;	
-		} else if(va < 0xe4000000) {
-			return va;	
+	if ((va >= 0x80000000) && (va < 0xc0000000)) {
+		return va & 0x1fffffff;
+	} else if (va > 0xe0000000) {
+		if (sr & SR_MD) {
+			return va;
+		} else if (va < 0xe4000000) {
+			return va;
 		} else {
 			/* address error exception */
-			if(op_write) {
-        			SH4_Exception(EX_WADDERR);
+			if (op_write) {
+				SH4_Exception(EX_WADDERR);
 				SH4_AbortInstruction();
 			} else {
-			 	SH4_Exception(EX_RADDERR);
+				SH4_Exception(EX_RADDERR);
 				SH4_AbortInstruction();
 			}
 		}
-	} 
-	if((mmu->reg_mmucr & MMUCR_AT) == 0) {
+	}
+	if ((mmu->reg_mmucr & MMUCR_AT) == 0) {
 		return va & 0x1fffffff;
 	}
 	exit(23);
-	matchcount = 0; 
+	matchcount = 0;
 	hit = NULL;
-	check_asid = ((mmu->reg_mmucr & MMUCR_SV) == 0) || ((sr & SR_MD) == 0); 
-	for(i = 0; i < 63; i++) {
+	check_asid = ((mmu->reg_mmucr & MMUCR_SV) == 0) || ((sr & SR_MD) == 0);
+	for (i = 0; i < 63; i++) {
 		tlbe = &mmu->utlb_entry[i];
-		if(match_tlbe(tlbe,va,check_asid)) {
+		if (match_tlbe(tlbe, va, check_asid)) {
 			hit = tlbe;
 			matchcount++;
 		}
 	}
-	if(matchcount == 0) {
-		if(op_write) {	
+	if (matchcount == 0) {
+		if (op_write) {
 			SH4_Exception(EX_WTLBMISS);
 			SH4_AbortInstruction();
 		} else {
 			SH4_Exception(EX_RTLBMISS);
 			SH4_AbortInstruction();
 		}
-		return va;	
+		return va;
 	} else if (matchcount > 1) {
 		/* Data TLB multiple hit exception */
 		SH4_Exception(EX_DTLBMULTIHIT);
 		SH4_AbortInstruction();
-		return va;	
+		return va;
 	}
 	pr = TLBE_PR(hit);
-	if(sr & SR_MD) {
+	if (sr & SR_MD) {
 		/* Privileged */
 		switch (pr) {
-			case PR_0:
-			case PR_2:
-				/* allow read  */
-				if(op_write) {
-					SH4_Exception(EX_WRITEPROT);
-					SH4_AbortInstruction();
-		
-				}
-				break;
-			case PR_1:
-			case PR_3:
-				// allow read and write with initial page write check 
-				if(op_write) {
-					if(TLBE_D(hit) == 0) {
-						/* Initial pw exception */
-						SH4_Exception(EX_FIRSTWRITE);
-						SH4_AbortInstruction();
-					}
-				}
-				break;
-		}	
+		    case PR_0:
+		    case PR_2:
+			    /* allow read  */
+			    if (op_write) {
+				    SH4_Exception(EX_WRITEPROT);
+				    SH4_AbortInstruction();
+
+			    }
+			    break;
+		    case PR_1:
+		    case PR_3:
+			    // allow read and write with initial page write check 
+			    if (op_write) {
+				    if (TLBE_D(hit) == 0) {
+					    /* Initial pw exception */
+					    SH4_Exception(EX_FIRSTWRITE);
+					    SH4_AbortInstruction();
+				    }
+			    }
+			    break;
+		}
 	} else {
 		switch (pr) {
-			case PR_0:
-			case PR_1:
-				/* Nothing is allowed */
-				if(op_write) {
-					SH4_Exception(EX_WRITEPROT);
-					SH4_AbortInstruction();
-				} else {
-					SH4_Exception(EX_READPROT);
-					SH4_AbortInstruction();
-				}
-				break;
-			case PR_2:
-				/* Allow read */
-				if(op_write) {
-					SH4_Exception(EX_WRITEPROT);
-					SH4_AbortInstruction();
-				}
-				break;
-			case PR_3:
-				/* allow read + write with initial page write ex */
-				if(op_write) {
-					if(TLBE_D(hit) == 0) {
-						SH4_Exception(EX_FIRSTWRITE);
-						SH4_AbortInstruction();
-					}
-				}
-				break;
-		}	
+		    case PR_0:
+		    case PR_1:
+			    /* Nothing is allowed */
+			    if (op_write) {
+				    SH4_Exception(EX_WRITEPROT);
+				    SH4_AbortInstruction();
+			    } else {
+				    SH4_Exception(EX_READPROT);
+				    SH4_AbortInstruction();
+			    }
+			    break;
+		    case PR_2:
+			    /* Allow read */
+			    if (op_write) {
+				    SH4_Exception(EX_WRITEPROT);
+				    SH4_AbortInstruction();
+			    }
+			    break;
+		    case PR_3:
+			    /* allow read + write with initial page write ex */
+			    if (op_write) {
+				    if (TLBE_D(hit) == 0) {
+					    SH4_Exception(EX_FIRSTWRITE);
+					    SH4_AbortInstruction();
+				    }
+			    }
+			    break;
+		}
 
 	}
 	return hit->pa | (va & hit->sz_mask);
@@ -271,38 +271,38 @@ SH4_TranslateItlb(uint32_t va)
 	unsigned int i;
 	int check_asid = 0;
 	int matchcount = 0;
-	if((va >= 0x80000000) & (va < 0xc0000000)) {
+	if ((va >= 0x80000000) & (va < 0xc0000000)) {
 		return va & 0x1fffffff;
-	} else if(va > 0xE0000000) {
+	} else if (va > 0xE0000000) {
 		/* I'm not sure if "Acess prohibited" means this: */
-		SH4_Exception(EX_EXECPROT);	
+		SH4_Exception(EX_EXECPROT);
 		SH4_AbortInstruction();
-	} else  if((mmu->reg_mmucr & MMUCR_AT) == 0) {
+	} else if ((mmu->reg_mmucr & MMUCR_AT) == 0) {
 		return va & 0x1fffffff;
 	}
-	if(((mmu->reg_mmucr & MMUCR_SV) == 0) || ((sr & SR_MD) == 0)) {
+	if (((mmu->reg_mmucr & MMUCR_SV) == 0) || ((sr & SR_MD) == 0)) {
 		check_asid = 1;
 	}
-	for(i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) {
 		tlbe = &mmu->itlb_entry[i];
-		if(match_tlbe(tlbe,va,check_asid)) {
+		if (match_tlbe(tlbe, va, check_asid)) {
+			hit = tlbe;
+			matchcount++;
+		}
+	}
+	if (matchcount == 0) {
+		for (i = 0; i < 64; i++) {
+			tlbe = &mmu->utlb_entry[i];
+			if (match_tlbe(tlbe, va, check_asid)) {
 				hit = tlbe;
 				matchcount++;
-		} 
-	}
-	if(matchcount == 0) {
-		for(i = 0; i < 64; i++) {
-			tlbe = &mmu->utlb_entry[i];
-			if(match_tlbe(tlbe,va,check_asid)) {
-					hit = tlbe;
-					matchcount++;
-			} 
+			}
 		}
-		if(matchcount > 1) {
+		if (matchcount > 1) {
 			/* Yes a DTLBMULTIHIT, see 3.7.1 in st40_um vol 3 */
-			SH4_Exception(EX_DTLBMULTIHIT);	
+			SH4_Exception(EX_DTLBMULTIHIT);
 			SH4_AbortInstruction();
-		} else if(matchcount == 0) {
+		} else if (matchcount == 0) {
 			SH4_Exception(EX_ITLBMISS);
 			SH4_AbortInstruction();
 			return 0;
@@ -310,17 +310,18 @@ SH4_TranslateItlb(uint32_t va)
 			record_tlbe_itlb(tlbe);
 		}
 	}
-	if(matchcount > 1) {
+	if (matchcount > 1) {
 		SH4_Exception(EX_ITLBMULTIHIT);
 		SH4_AbortInstruction();
 		return 0;
-	} 
-	if(!(sr & SR_MD) && !(ITLBE_PR(hit))) {
+	}
+	if (!(sr & SR_MD) && !(ITLBE_PR(hit))) {
 		SH4_Exception(EX_EXECPROT);
 		SH4_AbortInstruction();
-	}		
+	}
 	return (hit->pa & hit->addr_mask) | (va & hit->sz_mask);
 }
+
 /*
  ****************************************************************************
  * The PTEH register contains VPN and ASID of the location where 
@@ -328,16 +329,16 @@ SH4_TranslateItlb(uint32_t va)
  ****************************************************************************
  */
 static uint32_t
-pteh_read(void *clientData,uint32_t address,int rqlen)
+pteh_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s: register %s not implemented\n",__FILE__,__func__);
-        return 0;
+	fprintf(stderr, "%s: register %s not implemented\n", __FILE__, __func__);
+	return 0;
 }
 
 static void
-pteh_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pteh_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s: register %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: register %s not implemented\n", __FILE__, __func__);
 }
 
 /*
@@ -357,16 +358,16 @@ pteh_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************************
  */
 static uint32_t
-ptel_read(void *clientData,uint32_t address,int rqlen)
+ptel_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s: register %s not implemented\n",__FILE__,__func__);
-        return 0;
+	fprintf(stderr, "%s: register %s not implemented\n", __FILE__, __func__);
+	return 0;
 }
 
 static void
-ptel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ptel_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s: register %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: register %s not implemented\n", __FILE__, __func__);
 }
 
 /*
@@ -376,18 +377,17 @@ ptel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *********************************************************************************
  */
 static uint32_t
-ptea_read(void *clientData,uint32_t address,int rqlen)
+ptea_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s: register %s not implemented\n",__FILE__,__func__);
-        return 0;
+	fprintf(stderr, "%s: register %s not implemented\n", __FILE__, __func__);
+	return 0;
 }
 
 static void
-ptea_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ptea_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s: register %s not implemented\n",__FILE__,__func__);
+	fprintf(stderr, "%s: register %s not implemented\n", __FILE__, __func__);
 }
-
 
 /**
  *********************************************************************************
@@ -396,14 +396,14 @@ ptea_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ********************************************************************************
  */
 static uint32_t
-ttb_read(void *clientData,uint32_t address,int rqlen)
+ttb_read(void *clientData, uint32_t address, int rqlen)
 {
 	SH4MMU *mmu = (SH4MMU *) clientData;
-        return mmu->reg_ttb;
+	return mmu->reg_ttb;
 }
 
 static void
-ttb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ttb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	SH4MMU *mmu = (SH4MMU *) clientData;
 	mmu->reg_ttb = value;
@@ -417,14 +417,14 @@ ttb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************************
  */
 static uint32_t
-tea_read(void *clientData,uint32_t address,int rqlen)
+tea_read(void *clientData, uint32_t address, int rqlen)
 {
 	SH4MMU *mmu = (SH4MMU *) clientData;
-        return mmu->reg_tea;
+	return mmu->reg_tea;
 }
 
 static void
-tea_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tea_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	SH4MMU *mmu = (SH4MMU *) clientData;
 	mmu->reg_tea = value;
@@ -442,34 +442,33 @@ tea_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************************************
  */
 static uint32_t
-mmucr_read(void *clientData,uint32_t address,int rqlen)
+mmucr_read(void *clientData, uint32_t address, int rqlen)
 {
 	SH4MMU *mmu = (SH4MMU *) clientData;
-        return mmu->reg_mmucr;
+	return mmu->reg_mmucr;
 }
 
 static void
-mmucr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mmucr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	SH4MMU *mmu = (SH4MMU *) clientData;
-        mmu->reg_mmucr = value;
+	mmu->reg_mmucr = value;
 }
 
-
 static void
-MMU_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+MMU_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        SH4MMU *mmu = (SH4MMU *) owner;
-	IOH_New32(REG_PTEH(base),pteh_read,pteh_write,mmu);
-	IOH_New32(REG_PTEL(base),ptel_read,ptel_write,mmu);
-	IOH_New32(REG_PTEA(base),ptea_read,ptea_write,mmu);
-	IOH_New32(REG_TTB(base),ttb_read,ttb_write,mmu);
-	IOH_New32(REG_TEA(base),tea_read,tea_write,mmu);
-	IOH_New32(REG_MMUCR(base),mmucr_read,mmucr_write,mmu);
+	SH4MMU *mmu = (SH4MMU *) owner;
+	IOH_New32(REG_PTEH(base), pteh_read, pteh_write, mmu);
+	IOH_New32(REG_PTEL(base), ptel_read, ptel_write, mmu);
+	IOH_New32(REG_PTEA(base), ptea_read, ptea_write, mmu);
+	IOH_New32(REG_TTB(base), ttb_read, ttb_write, mmu);
+	IOH_New32(REG_TEA(base), tea_read, tea_write, mmu);
+	IOH_New32(REG_MMUCR(base), mmucr_read, mmucr_write, mmu);
 }
 
 static void
-MMU_UnMap(void *owner,uint32_t base,uint32_t mask)
+MMU_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(REG_PTEH(base));
 	IOH_Delete32(REG_PTEL(base));
@@ -480,14 +479,14 @@ MMU_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 BusDevice *
-SH4MMU_New(const char *name) 
+SH4MMU_New(const char *name)
 {
-	SH4MMU *mmu = &g_sh4mmu;/* sg_new(SH4MMU);	*/
-        mmu->bdev.first_mapping = NULL;
-        mmu->bdev.Map = MMU_Map;
-        mmu->bdev.UnMap = MMU_UnMap;
-        mmu->bdev.owner= mmu;
-        mmu->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	fprintf(stderr,"Created SH4 Memory management unit \"%s\"\n",name);
-	return &mmu->bdev;	
+	SH4MMU *mmu = &g_sh4mmu;	/* sg_new(SH4MMU);      */
+	mmu->bdev.first_mapping = NULL;
+	mmu->bdev.Map = MMU_Map;
+	mmu->bdev.UnMap = MMU_UnMap;
+	mmu->bdev.owner = mmu;
+	mmu->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "Created SH4 Memory management unit \"%s\"\n", name);
+	return &mmu->bdev;
 }

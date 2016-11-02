@@ -15,7 +15,7 @@
 #define SR_IMASK_MSK	(0xf0)
 #define SR_IMASK_SHIFT	(4)
 #define SR_Q		(1 << 8)
-#define SR_M		(1 << 9)	
+#define SR_M		(1 << 9)
 #define SR_FD		(1 << 15)	/* FPU disable bit, Disabled when 1 */
 #define SR_BL		(1 << 28)	/* Interrupt/exception block bit */
 #define SR_RB		(1 << 29)	/* Register Bank */
@@ -26,10 +26,10 @@
 #define		RM_NEAREST	(0x00)
 #define		RM_ZERO		(0x01)
 /* FPU exception fields */
-#define	FPSCR_FPUERR_CS		(1 << 17) 
-#define	FPSCR_INVOP_CS		(1 << 16) 
-#define	FPSCR_INVOP_EN		(1 << 11) 
-#define	FPSCR_INVOP_FL		(1 << 6) 
+#define	FPSCR_FPUERR_CS		(1 << 17)
+#define	FPSCR_INVOP_CS		(1 << 16)
+#define	FPSCR_INVOP_EN		(1 << 11)
+#define	FPSCR_INVOP_FL		(1 << 6)
 #define FPSCR_DIVZERO_CS	(1 << 15)
 #define FPSCR_DIVZERO_EN	(1 << 10)
 #define FPSCR_DIVZERO_FL	(1 << 5)
@@ -131,15 +131,15 @@ typedef enum SH4_Exception_e {
 #define SH4_SIG_RESTART_IDEC	(4)
 
 typedef enum SH4_DebugState {
-        SH4DBG_RUNNING = 0,
-        SH4DBG_STOP = 1,
-        SH4DBG_STOPPED = 2,
-        SH4DBG_STEP = 3,
-        SH4DBG_BREAK = 4
+	SH4DBG_RUNNING = 0,
+	SH4DBG_STOP = 1,
+	SH4DBG_STOPPED = 2,
+	SH4DBG_STEP = 3,
+	SH4DBG_BREAK = 4
 } SH4_DebugState;
 
 typedef struct SH4Cpu {
-	uint32_t icode; /* Is only 16 Bit but compiler is better for 32 bit */
+	uint32_t icode;		/* Is only 16 Bit but compiler is better for 32 bit */
 	uint32_t regR[16];
 	uint32_t regRBank0[8];
 	uint32_t regRBank1[8];
@@ -156,7 +156,7 @@ typedef struct SH4Cpu {
 	uint32_t regDBR;
 	/* The floating point registers */
 	SoftFloatContext *sfloat;
-	uint32_t regFPUL;  /* Communication register */
+	uint32_t regFPUL;	/* Communication register */
 	uint32_t regFPSCR;
 	uint32_t regFR[32];
 
@@ -166,65 +166,70 @@ typedef struct SH4Cpu {
 	uint32_t signals;
 
 	uint32_t io_trapa;
-	uint32_t io_expevt; 
-	uint32_t io_intevt; 
+	uint32_t io_expevt;
+	uint32_t io_intevt;
 
 	Debugger *debugger;
-        DebugBackendOps dbgops;
-        jmp_buf restart_idec_jump;
-        SH4_DebugState dbg_state;
-        int dbg_steps;
+	DebugBackendOps dbgops;
+	jmp_buf restart_idec_jump;
+	SH4_DebugState dbg_state;
+	int dbg_steps;
 } SH4Cpu;
 
 extern SH4Cpu gcpu_sh4;
 
-
 static inline void
-SH4_UpdateSignals(void) {
-        gcpu_sh4.signals = gcpu_sh4.signals_raw & gcpu_sh4.signals_mask;
-        if(gcpu_sh4.signals) {
-                mainloop_event_pending = 1;
+SH4_UpdateSignals(void)
+{
+	gcpu_sh4.signals = gcpu_sh4.signals_raw & gcpu_sh4.signals_mask;
+	if (gcpu_sh4.signals) {
+		mainloop_event_pending = 1;
 	}
 }
 
 static inline void
-SH4_PostSignal(uint32_t signal) {
-        gcpu_sh4.signals_raw |= signal;
-	SH4_UpdateSignals(); 
+SH4_PostSignal(uint32_t signal)
+{
+	gcpu_sh4.signals_raw |= signal;
+	SH4_UpdateSignals();
 }
 
 static inline void
-SH4_UnpostSignal(uint32_t signal) {
-        gcpu_sh4.signals_raw &= ~signal;
-        gcpu_sh4.signals = gcpu_sh4.signals_raw & gcpu_sh4.signals_mask;
+SH4_UnpostSignal(uint32_t signal)
+{
+	gcpu_sh4.signals_raw &= ~signal;
+	gcpu_sh4.signals = gcpu_sh4.signals_raw & gcpu_sh4.signals_mask;
 }
 
 static inline void
-SH4_RestartIdecoder(void) {
-        longjmp(gcpu_sh4.restart_idec_jump,1);
+SH4_RestartIdecoder(void)
+{
+	longjmp(gcpu_sh4.restart_idec_jump, 1);
 }
 
 #define ICODE (gcpu_sh4.icode)
 
 static inline void
-SH4_SwitchBank(int new_bank) {
+SH4_SwitchBank(int new_bank)
+{
 	int i;
-	if(new_bank) {
-		for(i=0;i<8;i++) {
+	if (new_bank) {
+		for (i = 0; i < 8; i++) {
 			gcpu_sh4.regRBank0[i] = gcpu_sh4.regR[i];
 			gcpu_sh4.regR[i] = gcpu_sh4.regRBank1[i];
-		} 
+		}
 	} else {
-		for(i=0;i<8;i++) {
+		for (i = 0; i < 8; i++) {
 			gcpu_sh4.regRBank1[i] = gcpu_sh4.regR[i];
 			gcpu_sh4.regR[i] = gcpu_sh4.regRBank0[i];
-		} 
+		}
 	}
 }
 
 static inline void
-SH4_SetTrue(int val) {
-	if(val) {
+SH4_SetTrue(int val)
+{
+	if (val) {
 		gcpu_sh4.regSR |= SR_T;
 	} else {
 		gcpu_sh4.regSR &= ~SR_T;
@@ -232,144 +237,145 @@ SH4_SetTrue(int val) {
 }
 
 static inline int
-SH4_GetTrue(void) {
+SH4_GetTrue(void)
+{
 	return !!(gcpu_sh4.regSR & SR_T);
 }
 
 static inline void
-SH4_SetS(int val) {
-	if(val) {
+SH4_SetS(int val)
+{
+	if (val) {
 		gcpu_sh4.regSR |= SR_S;
 	}
 }
 
-static inline int 
-SH4_GetS(void) {
+static inline int
+SH4_GetS(void)
+{
 	return !!(gcpu_sh4.regSR & SR_S);
 }
 
 static inline void
-SH4_SetSR(uint32_t sr) 
+SH4_SetSR(uint32_t sr)
 {
 	uint32_t diff = sr ^ gcpu_sh4.regSR;
-	if(unlikely(diff & SR_RB)) {
+	if (unlikely(diff & SR_RB)) {
 		SH4_SwitchBank(!!(sr & SR_RB));
 	}
-	if(unlikely(diff & SR_BL)) {
-		if(sr & SR_BL) {
+	if (unlikely(diff & SR_BL)) {
+		if (sr & SR_BL) {
 			gcpu_sh4.signals_mask &= ~SH4_SIG_IRQ;
 		} else {
 			gcpu_sh4.signals_mask |= SH4_SIG_IRQ;
 			SH4_UpdateSignals();
 		}
 	}
-	gcpu_sh4.regSR  = sr;
+	gcpu_sh4.regSR = sr;
 }
 
-static inline uint32_t 
+static inline uint32_t
 SH4_GetSR(void)
 {
 	return gcpu_sh4.regSR;
 }
 
 static inline void
-SH4_SetFPUL(uint32_t fpul) 
+SH4_SetFPUL(uint32_t fpul)
 {
-	gcpu_sh4.regFPUL  = fpul;
+	gcpu_sh4.regFPUL = fpul;
 }
 
-static inline uint32_t 
+static inline uint32_t
 SH4_GetFPUL(void)
 {
 	return gcpu_sh4.regFPUL;
 }
 
 static inline void
-SH4_SetSGR(uint32_t sgr) 
+SH4_SetSGR(uint32_t sgr)
 {
-	gcpu_sh4.regSGR  = sgr;
+	gcpu_sh4.regSGR = sgr;
 }
 
-static inline uint32_t 
+static inline uint32_t
 SH4_GetSGR(void)
 {
 	return gcpu_sh4.regSGR;
 }
 
 static inline void
-SH4_SetSPC(uint32_t spc) 
+SH4_SetSPC(uint32_t spc)
 {
-	gcpu_sh4.regSPC  = spc;
+	gcpu_sh4.regSPC = spc;
 }
 
-static inline uint32_t 
+static inline uint32_t
 SH4_GetSPC(void)
 {
 	return gcpu_sh4.regSPC;
 }
 
 static inline void
-SH4_SetSSR(uint32_t ssr) 
+SH4_SetSSR(uint32_t ssr)
 {
-	gcpu_sh4.regSSR  = ssr;
+	gcpu_sh4.regSSR = ssr;
 }
 
-static inline uint32_t 
+static inline uint32_t
 SH4_GetSSR(void)
 {
 	return gcpu_sh4.regSSR;
 }
 
 static inline void
-SH4_SetDBR(uint32_t dbr) 
+SH4_SetDBR(uint32_t dbr)
 {
-	gcpu_sh4.regDBR  = dbr;
+	gcpu_sh4.regDBR = dbr;
 }
 
-static inline uint32_t 
+static inline uint32_t
 SH4_GetDBR(void)
 {
 	return gcpu_sh4.regDBR;
 }
 
 static inline void
-SH4_SetVBR(uint32_t vbr) 
+SH4_SetVBR(uint32_t vbr)
 {
-	gcpu_sh4.regVBR  = vbr;
+	gcpu_sh4.regVBR = vbr;
 }
-static inline uint32_t 
-SH4_GetVBR(void) 
+
+static inline uint32_t
+SH4_GetVBR(void)
 {
 	return gcpu_sh4.regVBR;
 }
 
-
-static inline uint32_t 
+static inline uint32_t
 SH4_GetSRFlag(uint32_t flag)
 {
 	return !!(gcpu_sh4.regSR & flag);
 }
 
 static inline void
-SH4_ModSRFlags(int value,uint32_t flags) 
+SH4_ModSRFlags(int value, uint32_t flags)
 {
-	if(value) {
+	if (value) {
 		gcpu_sh4.regSR |= flags;
 	} else {
 		gcpu_sh4.regSR &= ~flags;
 	}
 }
 
-
 static inline void
-SH4_SetGpr(uint32_t value,int reg) 
+SH4_SetGpr(uint32_t value, int reg)
 {
 	gcpu_sh4.regR[reg] = value;
 }
 
-
-static inline uint32_t 
-SH4_GetGpr(int reg) 
+static inline uint32_t
+SH4_GetGpr(int reg)
 {
 	return gcpu_sh4.regR[reg];
 }
@@ -378,31 +384,29 @@ SH4_GetGpr(int reg)
  * Floating point registers
  */
 static inline void
-SH4_SetFpr(uint32_t value,int reg) 
+SH4_SetFpr(uint32_t value, int reg)
 {
 	gcpu_sh4.regFR[reg] = value;
 }
 
-
-static inline uint32_t 
-SH4_GetFpr(int reg) 
+static inline uint32_t
+SH4_GetFpr(int reg)
 {
 	return gcpu_sh4.regFR[reg];
 }
 
 static inline void
-SH4_SetDpr(uint64_t value,int reg) 
+SH4_SetDpr(uint64_t value, int reg)
 {
 	gcpu_sh4.regFR[reg << 1] = value >> 32;
 	gcpu_sh4.regFR[(reg << 1) + 1] = value;
 }
 
-static inline uint64_t 
-SH4_GetDpr(int reg) 
+static inline uint64_t
+SH4_GetDpr(int reg)
 {
 	uint64_t dpr;
-	dpr = (uint64_t)gcpu_sh4.regFR[reg << 1] << 32
-		| gcpu_sh4.regFR[(reg << 1) + 1];
+	dpr = (uint64_t) gcpu_sh4.regFR[reg << 1] << 32 | gcpu_sh4.regFR[(reg << 1) + 1];
 	return dpr;
 }
 
@@ -412,32 +416,37 @@ SH4_GetDpr(int reg)
  ****************************************+
  */
 static inline void
-SH4_SetXF(uint32_t value,int xi) {
+SH4_SetXF(uint32_t value, int xi)
+{
 
 }
+
 static inline uint32_t
-SH4_GetXF(int xi) {
+SH4_GetXF(int xi)
+{
 	return 0;
 }
 
 static inline void
-SH4_SetXD(uint64_t value,int xi) {
+SH4_SetXD(uint64_t value, int xi)
+{
 
 }
+
 static inline uint64_t
-SH4_GetXD(int xi) {
+SH4_GetXD(int xi)
+{
 	return 0;
 }
 
 static inline void
-SH4_SetFPSCR(uint32_t value) 
+SH4_SetFPSCR(uint32_t value)
 {
 	gcpu_sh4.regFPSCR = value;
 }
 
-
-static inline uint32_t 
-SH4_GetFPSCR(void) 
+static inline uint32_t
+SH4_GetFPSCR(void)
 {
 	return gcpu_sh4.regFPSCR;
 }
@@ -452,14 +461,14 @@ SH4_GetSFloat(void)
  ******************************************************
  * Other Bank access: Write to the NON-current bank
  ******************************************************
- */ 
+ */
 static inline void
-SH4_SetGprBank(uint32_t value,int reg) 
+SH4_SetGprBank(uint32_t value, int reg)
 {
-	if(gcpu_sh4.regSR & SR_RB) {
-		gcpu_sh4.regRBank0[reg] = value;	
+	if (gcpu_sh4.regSR & SR_RB) {
+		gcpu_sh4.regRBank0[reg] = value;
 	} else {
-		gcpu_sh4.regRBank1[reg] = value;	
+		gcpu_sh4.regRBank1[reg] = value;
 	}
 }
 
@@ -467,82 +476,93 @@ SH4_SetGprBank(uint32_t value,int reg)
  ******************************************************
  * Other Bank access: Read from NON-current bank
  ******************************************************
- */ 
-static inline uint32_t 
-SH4_GetGprBank(int reg) 
+ */
+static inline uint32_t
+SH4_GetGprBank(int reg)
 {
-	if(gcpu_sh4.regSR & SR_RB) {
-		return gcpu_sh4.regRBank0[reg];	
+	if (gcpu_sh4.regSR & SR_RB) {
+		return gcpu_sh4.regRBank0[reg];
 	} else {
-		return gcpu_sh4.regRBank1[reg];	
+		return gcpu_sh4.regRBank1[reg];
 	}
 }
 
-static inline uint32_t 
-SH4_GetGBR(void) {
+static inline uint32_t
+SH4_GetGBR(void)
+{
 	return gcpu_sh4.regGBR;
 }
 
 static inline void
-SH4_SetGBR(uint32_t gbr) {
+SH4_SetGBR(uint32_t gbr)
+{
 	gcpu_sh4.regGBR = gbr;
 }
 
 static inline void
-SH4_SetPR(uint32_t pr) {
+SH4_SetPR(uint32_t pr)
+{
 	gcpu_sh4.regPR = pr;
 }
 
 static inline uint32_t
-SH4_GetPR(void) {
+SH4_GetPR(void)
+{
 	return gcpu_sh4.regPR;
 }
 
 static inline void
-SH4_SetRegPC(uint32_t value) {
+SH4_SetRegPC(uint32_t value)
+{
 	gcpu_sh4.regPC = value;
 }
 
 /* Power PC style access to Programm counter */
 #define SH4_CIA		(gcpu_sh4.regPC - 2)	/* Current instruction address */
-#define SH4_NIA		(gcpu_sh4.regPC)	/* Next instruction address 	*/
-#define SH4_NNIA	(gcpu_sh4.regPC + 2)	/* Next instruction address 	*/
+#define SH4_NIA		(gcpu_sh4.regPC)	/* Next instruction address     */
+#define SH4_NNIA	(gcpu_sh4.regPC + 2)	/* Next instruction address     */
 
-static inline uint32_t 
-SH4_GetRegPC(void) {
+static inline uint32_t
+SH4_GetRegPC(void)
+{
 	return gcpu_sh4.regPC;
 }
 
-
 static inline void
-SH4_SetMacH(uint32_t mach) {
+SH4_SetMacH(uint32_t mach)
+{
 	gcpu_sh4.regMACH = mach;
 }
 
-static inline uint32_t 
-SH4_GetMacH(void) {
+static inline uint32_t
+SH4_GetMacH(void)
+{
 	return gcpu_sh4.regMACH;
 }
 
 static inline void
-SH4_SetMacL(uint32_t macl) {
+SH4_SetMacL(uint32_t macl)
+{
 	gcpu_sh4.regMACL = macl;
 }
 
-static inline uint32_t 
-SH4_GetMacL(void) {
+static inline uint32_t
+SH4_GetMacL(void)
+{
 	return gcpu_sh4.regMACL;
 }
 
 static inline uint64_t
-SH4_GetMac(void) {
-	return gcpu_sh4.regMACL | ((uint64_t)gcpu_sh4.regMACH  << 32);
+SH4_GetMac(void)
+{
+	return gcpu_sh4.regMACL | ((uint64_t) gcpu_sh4.regMACH << 32);
 }
 
 static inline void
-SH4_SetMac(uint64_t mac) {
-	gcpu_sh4.regMACL  = (uint32_t)mac; 
-	gcpu_sh4.regMACH  = mac >> 32; 
+SH4_SetMac(uint64_t mac)
+{
+	gcpu_sh4.regMACL = (uint32_t) mac;
+	gcpu_sh4.regMACH = mac >> 32;
 }
 
 /* 
@@ -563,19 +583,21 @@ void SH4_ExecuteDelaySlot(void);
  ********************************************************************
  */
 static inline void __NORETURN__
-SH4_AbortInstruction(void) {
-        longjmp(gcpu_sh4.restart_idec_jump,1);
+SH4_AbortInstruction(void)
+{
+	longjmp(gcpu_sh4.restart_idec_jump, 1);
 }
 
 static inline void
-SH4_Break() {
-        gcpu_sh4.dbg_state = SH4DBG_BREAK;
-        SH4_SetRegPC(SH4_GetRegPC() - 2);
-        SH4_PostSignal(SH4_SIG_DBG);
-	SH4_RestartIdecoder(); 
+SH4_Break()
+{
+	gcpu_sh4.dbg_state = SH4DBG_BREAK;
+	SH4_SetRegPC(SH4_GetRegPC() - 2);
+	SH4_PostSignal(SH4_SIG_DBG);
+	SH4_RestartIdecoder();
 }
 
-void SH4_Init(const char *instancename); 
+void SH4_Init(const char *instancename);
 void SH4_Run();
 void SH4_Exception(SH4_Exception_e exindex);
 

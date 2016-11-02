@@ -31,7 +31,7 @@
 
 typedef struct Spi_Device Spi_Device;
 
-typedef void SpiDev_XmitEventProc(void *dev,uint8_t *data,int bits);
+typedef void SpiDev_XmitEventProc(void *dev, uint8_t * data, int bits);
 
 #if 0
 typedef struct SpiDev_Operations {
@@ -39,6 +39,6 @@ typedef struct SpiDev_Operations {
 } SpiDev_Operations;
 #endif
 
-Spi_Device *SpiDev_New(const char *name,SpiDev_XmitEventProc *proc,void *owner);
-void SpiDev_Configure(Spi_Device *spidev,uint32_t config);
-void SpiDev_StartXmit(Spi_Device *spi,uint8_t *firstdata,int bits);
+Spi_Device *SpiDev_New(const char *name, SpiDev_XmitEventProc * proc, void *owner);
+void SpiDev_Configure(Spi_Device * spidev, uint32_t config);
+void SpiDev_StartXmit(Spi_Device * spi, uint8_t * firstdata, int bits);

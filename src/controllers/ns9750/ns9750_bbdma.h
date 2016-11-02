@@ -5,7 +5,7 @@
 typedef struct BBusDMACtrl BBusDMACtrl;
 typedef struct BBusDMA_Channel BBusDMA_Channel;
 
-typedef int BBDMA_FbrProc(BBusDMA_Channel *chan,uint8_t *buf,int len,void *clientData);
+typedef int BBDMA_FbrProc(BBusDMA_Channel * chan, uint8_t * buf, int len, void *clientData);
 
 #define BBDMA_CHAN_1  (0)
 #define BBDMA_CHAN_2  (1)
@@ -25,15 +25,15 @@ typedef int BBDMA_FbrProc(BBusDMA_Channel *chan,uint8_t *buf,int len,void *clien
 #define BBDMA_CHAN_16 (15)
 
 typedef struct BBDMA_SlaveOps {
-	void (*io_event)(BBusDMA_Channel *chan);
+	void (*io_event) (BBusDMA_Channel * chan);
 } BBDMA_SlaveOps;
 
-BBusDMACtrl * NS9750_BBusDMA_New(char *name);
+BBusDMACtrl *NS9750_BBusDMA_New(char *name);
 
-int BBDMA_Fbw(BBusDMA_Channel *chan,uint8_t *buf,int count);
+int BBDMA_Fbw(BBusDMA_Channel * chan, uint8_t * buf, int count);
 //int BBDMA_Read(BBusDMA_Channel *chan,uint8_t *buf,int maxlen);
-void BBDMA_CloseBuf(BBusDMA_Channel *chan);
+void BBDMA_CloseBuf(BBusDMA_Channel * chan);
 
-BBusDMA_Channel * BBDMA_Connect(BBusDMACtrl *bbdma,unsigned int channel) ;
-void BBDMA_SetDataSink(BBusDMA_Channel *chan,BBDMA_FbrProc *proc,void *clientData);
+BBusDMA_Channel *BBDMA_Connect(BBusDMACtrl * bbdma, unsigned int channel);
+void BBDMA_SetDataSink(BBusDMA_Channel * chan, BBDMA_FbrProc * proc, void *clientData);
 #endif

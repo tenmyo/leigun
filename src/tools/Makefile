@@ -4,7 +4,7 @@ all: sg_tunctl
 
 ifeq ($(shell uname),Linux) 
 sg_tunctl: tunctl.c
-	$(CC) $(CFLAGS) tunctl.c -o sg_tunctl
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
 
 install:
 	install -m 0755 sg_tunctl $(bindir)	
@@ -16,12 +16,12 @@ install:
 endif
 
 to_c_array: to_c_array.c
-	$(CC) $(CFLAGS) to_c_array.c -o to_c_array 
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
 
-# Should be compiled with target compiler
+# Should be compiled with target compiler 
 
 romdump: romdump.c
-	$(CC) $(CFLAGS) $< -o $@ 
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:
 	rm -f *.o sg_tunctl

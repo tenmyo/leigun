@@ -71,7 +71,7 @@ void SJA_Init();
 #define SJA_BC_CMR	(1)
 #define SJA_BC_SR	(2)
 #define SJA_BC_IR	(3)
-#define		SJA_BC_IR_RI 	(1) 
+#define		SJA_BC_IR_RI 	(1)
 #define 	SJA_BC_IR_TI	(1<<1)
 #define		SJA_BC_IR_EI	(1<<2)
 #define		SJA_BC_IR_DOI	(1<<3)
@@ -103,10 +103,9 @@ void SJA_Init();
 #define  	SJA_PC_CMR_CDO	(1<<3)
 #define	        SJA_PC_CMR_SRR	(1<<4)
 
-
 #define SJA_PC_SR	(2)
 #define SJA_PC_IR 	(3)
-#define		SJA_PC_IR_RI 	(1) 
+#define		SJA_PC_IR_RI 	(1)
 #define 	SJA_PC_IR_TI	(1<<1)
 #define		SJA_PC_IR_EI	(1<<2)
 #define		SJA_PC_IR_DOI	(1<<3)
@@ -115,7 +114,7 @@ void SJA_Init();
 #define		SJA_PC_IR_ALI	(1<<6)
 #define		SJA_PC_IR_BEI	(1<<7)
 #define SJA_PC_IER 	(4)
-#define         SJA_PC_IER_RIE   (1) 
+#define         SJA_PC_IER_RIE   (1)
 #define         SJA_PC_IER_TIE   (1<<1)
 #define         SJA_PC_IER_EIE   (1<<2)
 #define         SJA_PC_IER_DOIE  (1<<3)
@@ -209,6 +208,6 @@ void SJA_Init();
 #define SJA_PCR_CANRAM	(32)
 
 typedef struct SJA1000 SJA1000;
-void SJA1000_UnMap(SJA1000 *sja,uint32_t base); 
-void SJA1000_Map(SJA1000 *sja,uint32_t base);
-SJA1000 * SJA1000_New(BusDevice *dev,const char *name);
+void SJA1000_UnMap(SJA1000 * sja, uint32_t base);
+void SJA1000_Map(SJA1000 * sja, uint32_t base);
+SJA1000 *SJA1000_New(BusDevice * dev, const char *name);

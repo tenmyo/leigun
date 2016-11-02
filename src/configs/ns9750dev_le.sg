@@ -31,8 +31,11 @@ chips: 2
 host: 127.0.0.1
 port: 4711
 
+[serialA]
+type: file
+file: stdin
+
 [ns9750]
-serialA:	stdin
 #serialB: 	/dev/ttyS0
 Revision:	0
 rtck:	  	1	# PCI Arbiter

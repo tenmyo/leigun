@@ -9,6 +9,6 @@
 
 #include "bus.h"
 #include "mmcdev.h"
-BusDevice * IMX21_SdhcNew(const char *name);
-int IMX21Sdhc_InsertCard(BusDevice *dev,MMCDev *card);
-int IMX21Sdhc_RemoveCard(BusDevice *dev,MMCDev *card);
+BusDevice *IMX21_SdhcNew(const char *name);
+int IMX21Sdhc_InsertCard(BusDevice * dev, MMCDev * card);
+int IMX21Sdhc_RemoveCard(BusDevice * dev, MMCDev * card);

@@ -54,11 +54,11 @@
 #define	REG_CMCOR(base)	((base) + 4)
 
 typedef struct CMT CMT;
-typedef struct CMTMod CMTMod; 
+typedef struct CMTMod CMTMod;
 
 struct CMT {
 	CMTMod *cmtmod;
-	uint16_t  cmtstrSTR;
+	uint16_t cmtstrSTR;
 	uint16_t regCMCR;
 	uint16_t regCMCNT;
 	uint16_t regCMCOR;
@@ -77,7 +77,7 @@ struct CMTMod {
 };
 
 static void
-actualize_counter(CMT *cmt) 
+actualize_counter(CMT * cmt)
 {
 	CycleCounter_t now = CycleCounter_Get();
 	FractionU64_t frac;
@@ -86,109 +86,110 @@ actualize_counter(CMT *cmt)
 	uint64_t ctrCycles;
 	uint16_t nto;
 	cmt->lastUpdate = now;
-	if(!cmt->cmtstrSTR) {
+	if (!cmt->cmtstrSTR) {
 		return;
 	}
 	acc = cmt->accCycles + cycles;
 	frac = Clock_MasterRatio(cmt->clkCntr);
-        if((frac.nom == 0) || (frac.denom == 0)) {
-                fprintf(stderr,"Warning, No clock for timer module\n");
-                return;
-        }
-        ctrCycles = acc * frac.nom / frac.denom;
-        acc -= ctrCycles * frac.denom / frac.nom;
+	if ((frac.nom == 0) || (frac.denom == 0)) {
+		fprintf(stderr, "Warning, No clock for timer module\n");
+		return;
+	}
+	ctrCycles = acc * frac.nom / frac.denom;
+	acc -= ctrCycles * frac.denom / frac.nom;
 	cmt->accCycles = acc;
 	/* Now calculate the time to the next timeout */
-	nto = cmt->regCMCOR - cmt->regCMCNT;	
+	nto = cmt->regCMCOR - cmt->regCMCNT;
 	//fprintf(stderr,"Ctr cycles %llu, cpu cycles %llu new ack %llu, nto %u\n",ctrCycles,cycles,acc,nto);
-	if(cmt->regCMCOR) {
+	if (cmt->regCMCOR) {
 		cmt->regCMCNT = (ctrCycles + cmt->regCMCNT) % cmt->regCMCOR;
 	}
-	if(ctrCycles >= nto) {
-		if(cmt->regCMCR & CMCR_CMIE) {
-			SigNode_Set(cmt->sigIrq,SIG_LOW);
-			SigNode_Set(cmt->sigIrq,SIG_HIGH);
+	if (ctrCycles >= nto) {
+		if (cmt->regCMCR & CMCR_CMIE) {
+			SigNode_Set(cmt->sigIrq, SIG_LOW);
+			SigNode_Set(cmt->sigIrq, SIG_HIGH);
 		}
 	}
 }
 
 static void
-update_timeout(CMT *cmt) 
-{ /* next Timeout: Intentional wrap */
+update_timeout(CMT * cmt)
+{				/* next Timeout: Intentional wrap */
 	FractionU64_t frac;
-	uint16_t nto; 
-	CycleCounter_t cpu_cycles;	
-	if(!cmt->cmtstrSTR) {
+	uint16_t nto;
+	CycleCounter_t cpu_cycles;
+	if (!cmt->cmtstrSTR) {
 		CycleTimer_Remove(&cmt->eventTimer);
 		return;
 	}
 	nto = cmt->regCMCOR - cmt->regCMCNT;
 	frac = Clock_MasterRatio(cmt->clkCntr);
-        if((frac.nom == 0) || (frac.denom == 0)) {
-                fprintf(stderr,"Warning, No clock for timer module\n");
-                return;
-        }
+	if ((frac.nom == 0) || (frac.denom == 0)) {
+		fprintf(stderr, "Warning, No clock for timer module\n");
+		return;
+	}
 	//cpu_cycles = ((uint64_t)nto * frac.denom + (frac.nom - 1)) / frac.nom;
 	//fprintf(stderr,"cpu_cycles %llu\n",cpu_cycles);
-	cpu_cycles = ((uint64_t)nto * frac.denom ) / frac.nom;
-	#if 0
-	fprintf(stderr,"cpu_cycles %llu, %llu / %llu, nto %u CMCOR %u CMCNT %u\n",
-		cpu_cycles,frac.nom,frac.denom,nto,cmt->regCMCOR,cmt->regCMCNT);
-	#endif
-	if(cpu_cycles >= cmt->accCycles) {
+	cpu_cycles = ((uint64_t) nto * frac.denom) / frac.nom;
+#if 0
+	fprintf(stderr, "cpu_cycles %llu, %llu / %llu, nto %u CMCOR %u CMCNT %u\n",
+		cpu_cycles, frac.nom, frac.denom, nto, cmt->regCMCOR, cmt->regCMCNT);
+#endif
+	if (cpu_cycles >= cmt->accCycles) {
 		cpu_cycles -= cmt->accCycles;
-	} else if(cpu_cycles == 0) {
+	} else if (cpu_cycles == 0) {
 		return;
 	} else {
-		fprintf(stderr,"shouldn't happen cy %"PRIu64" ac %"PRIu64"\n",cpu_cycles,cmt->accCycles);
+		fprintf(stderr, "shouldn't happen cy %" PRIu64 " ac %" PRIu64 "\n", cpu_cycles,
+			cmt->accCycles);
 		cpu_cycles = 0;
 	}
-	if(cmt->regCMCR & CMCR_CMIE) {
-		CycleTimer_Mod(&cmt->eventTimer,cpu_cycles);
+	if (cmt->regCMCR & CMCR_CMIE) {
+		CycleTimer_Mod(&cmt->eventTimer, cpu_cycles);
 	} else {
 		CycleTimer_Remove(&cmt->eventTimer);
 	}
 }
 
 static uint32_t
-cmstr_read(void *clientData,uint32_t address,int rqlen)
+cmstr_read(void *clientData, uint32_t address, int rqlen)
 {
 	CMTMod *cmtmod = clientData;
 	return cmtmod->regCMSTR;
 }
 
 static void
-cmstr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cmstr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CMTMod *cmtmod = clientData;
 	uint16_t diff = cmtmod->regCMSTR ^ value;
-	if(diff & 1) {
+	if (diff & 1) {
 		actualize_counter(cmtmod->cmt[0]);
 	}
-	if(diff & 2) {
+	if (diff & 2) {
 		actualize_counter(cmtmod->cmt[1]);
 	}
 	actualize_counter(cmtmod->cmt[1]);
 	cmtmod->regCMSTR = value & 3;
 	cmtmod->cmt[0]->cmtstrSTR = value & 1;
-	cmtmod->cmt[1]->cmtstrSTR = !!(value & 2);
-	if(diff & 1) {
+	cmtmod->cmt[1]->cmtstrSTR = ! !(value & 2);
+	if (diff & 1) {
 		update_timeout(cmtmod->cmt[0]);
 	}
-	if(diff & 2) {
+	if (diff & 2) {
 		update_timeout(cmtmod->cmt[1]);
 	}
 }
 
 static uint32_t
-cmcr_read(void *clientData,uint32_t address,int rqlen)
+cmcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	CMT *cmt = clientData;
 	return cmt->regCMCR;
 }
 
 static void
-cmcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cmcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CMT *cmt = clientData;
 	uint32_t cks = value & 3;
@@ -196,12 +197,12 @@ cmcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 	actualize_counter(cmt);
 	cmt->regCMCR = value;
 	div = 8 << (2 * cks);
-	Clock_MakeDerived(cmt->clkCntr,cmt->clkIn,1,div);
+	Clock_MakeDerived(cmt->clkCntr, cmt->clkIn, 1, div);
 	update_timeout(cmt);
 }
 
 static uint32_t
-cmcnt_read(void *clientData,uint32_t address,int rqlen)
+cmcnt_read(void *clientData, uint32_t address, int rqlen)
 {
 	CMT *cmt = clientData;
 	actualize_counter(cmt);
@@ -209,7 +210,7 @@ cmcnt_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-cmcnt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cmcnt_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CMT *cmt = clientData;
 	actualize_counter(cmt);
@@ -218,14 +219,14 @@ cmcnt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-cmcor_read(void *clientData,uint32_t address,int rqlen)
+cmcor_read(void *clientData, uint32_t address, int rqlen)
 {
 	CMT *cmt = clientData;
 	return cmt->regCMCOR;
 }
 
 static void
-cmcor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cmcor_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CMT *cmt = clientData;
 	actualize_counter(cmt);
@@ -234,7 +235,7 @@ cmcor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static void
-CMT_Unmap(void *owner,uint32_t base,uint32_t mask)
+CMT_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete16(REG_CMCR(base));
 	IOH_Delete16(REG_CMCNT(base));
@@ -242,31 +243,33 @@ CMT_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-CMT_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+CMT_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	CMT *cmt = owner;
-	IOH_New16(REG_CMCR(base),cmcr_read,cmcr_write,cmt);
-	IOH_New16(REG_CMCNT(base),cmcnt_read,cmcnt_write,cmt);
-	IOH_New16(REG_CMCOR(base),cmcor_read,cmcor_write,cmt);
+	IOH_New16(REG_CMCR(base), cmcr_read, cmcr_write, cmt);
+	IOH_New16(REG_CMCNT(base), cmcnt_read, cmcnt_write, cmt);
+	IOH_New16(REG_CMCOR(base), cmcor_read, cmcor_write, cmt);
 }
-static void 
-CMTMod_Unmap(void *owner,uint32_t base,uint32_t mask)
+
+static void
+CMTMod_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
 	CMTMod *cmtmod = owner;
 	IOH_Delete16(REG_CMSTR(base));
-	for(i = 0; i < 2; i ++) {
-		CMT_Unmap(cmtmod->cmt[i],base + 2 + i * 6,mask); 
+	for (i = 0; i < 2; i++) {
+		CMT_Unmap(cmtmod->cmt[i], base + 2 + i * 6, mask);
 	}
 }
-static void 
-CMTMod_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+
+static void
+CMTMod_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	int i;
 	CMTMod *cmtmod = owner;
-	IOH_New16(REG_CMSTR(base),cmstr_read,cmstr_write,cmtmod);
-	for(i = 0; i < 2; i ++) {
-		CMT_Map(cmtmod->cmt[i],base + 2 + i * 6,mask,mapflags); 
+	IOH_New16(REG_CMSTR(base), cmstr_read, cmstr_write, cmtmod);
+	for (i = 0; i < 2; i++) {
+		CMT_Map(cmtmod->cmt[i], base + 2 + i * 6, mask, mapflags);
 	}
 }
 
@@ -274,38 +277,40 @@ static void
 timer_event(void *eventData)
 {
 	CMT *cmt = eventData;
-        actualize_counter(cmt);
-	if(cmt->regCMCNT != 0) {
+	actualize_counter(cmt);
+	if (cmt->regCMCNT != 0) {
 		static int cntr = 0;
 		cntr++;
 		//if(cntr < 20000) {
-			fprintf(stderr,"Cnt not 0 after event %u, acc %"PRIu64"\n",
-				cmt->regCMCNT,cmt->accCycles);
+		fprintf(stderr, "Cnt not 0 after event %u, acc %" PRIu64 "\n",
+			cmt->regCMCNT, cmt->accCycles);
 		//}
 		//exit(1);
 	}
-        update_timeout(cmt);
+	update_timeout(cmt);
 }
 
 static CMT *
 CMT_New(const char *name)
 {
-	CMT *cmt = sg_new(CMT); 
-	cmt->clkIn = Clock_New("%s.clk",name);
-	cmt->clkCntr = Clock_New("%s.clkCntr",name);
+	CMT *cmt = sg_new(CMT);
+	cmt->clkIn = Clock_New("%s.clk", name);
+	cmt->clkCntr = Clock_New("%s.clkCntr", name);
+	Clock_MakeDerived(cmt->clkCntr, cmt->clkIn, 1, 8);
 	/* Only until clocktree exists */
-	cmt->sigIrq = SigNode_New("%s.irq",name);
-	CycleTimer_Init(&cmt->eventTimer,timer_event,cmt);
+	cmt->sigIrq = SigNode_New("%s.irq", name);
+	CycleTimer_Init(&cmt->eventTimer, timer_event, cmt);
 	return cmt;
 }
 
 BusDevice *
-CMTMod_New(const char *name,uint32_t base_nr) {
-	CMTMod *cmtmod = sg_new(CMTMod); 
+CMTMod_New(const char *name, uint32_t base_nr)
+{
+	CMTMod *cmtmod = sg_new(CMTMod);
 	int i;
 	char *cmtname = alloca(strlen(name) + 10);
-	for(i = 0; i < 2;i++) {
-		sprintf(cmtname,"%s%d",name,i + base_nr);
+	for (i = 0; i < 2; i++) {
+		sprintf(cmtname, "%s%d", name, i + base_nr);
 		cmtmod->cmt[i] = CMT_New(cmtname);
 		cmtmod->cmt[i]->cmtmod = cmtmod;
 	}
@@ -313,6 +318,6 @@ CMTMod_New(const char *name,uint32_t base_nr) {
 	cmtmod->bdev.Map = CMTMod_Map;
 	cmtmod->bdev.UnMap = CMTMod_Unmap;
 	cmtmod->bdev.owner = cmtmod;
-	cmtmod->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	cmtmod->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &cmtmod->bdev;
 }

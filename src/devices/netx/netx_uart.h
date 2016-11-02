@@ -1,2 +1,2 @@
 #include "bus.h"
-BusDevice * NetXUart_New(const char *devname);
+BusDevice *NetXUart_New(const char *devname);

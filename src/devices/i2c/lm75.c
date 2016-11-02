@@ -81,73 +81,75 @@ struct LM75 {
  * LM75 Write state machine 
  * ------------------------------------
  */
-static int 
-lm75_write(void *dev,uint8_t data) {
+static int
+lm75_write(void *dev, uint8_t data)
+{
 	LM75 *lm = dev;
-	if(lm->state==LM75_STATE_POINTER) {
-		dbgprintf("LM75 Addr 0x%02x\n",data);
+	if (lm->state == LM75_STATE_POINTER) {
+		dbgprintf("LM75 Addr 0x%02x\n", data);
 		lm->pointer_reg = data & 0x3;
 		lm->state = LM75_STATE_DATA1;
-	} else if(lm->state==LM75_STATE_DATA1) {
-		dbgprintf("LM75 Write 0x%02x to %04x\n",data,lm->pointer_reg);
-		if(lm->pointer_reg == LM75_REG_CONFIG) {
+	} else if (lm->state == LM75_STATE_DATA1) {
+		dbgprintf("LM75 Write 0x%02x to %04x\n", data, lm->pointer_reg);
+		if (lm->pointer_reg == LM75_REG_CONFIG) {
 			lm->conf = data;
 		} else {
-			lm->data=data<<8;
+			lm->data = data << 8;
 			lm->state = LM75_STATE_DATA2;
 		}
-	} else if(lm->state==LM75_STATE_DATA2) {
+	} else if (lm->state == LM75_STATE_DATA2) {
 		lm->data |= data;
-		switch(lm->pointer_reg) {
-			case LM75_REG_TEMP:
-				return I2C_NACK;
-			case LM75_REG_THYST:
-				lm->thyst=data;
-				break;
-			case LM75_REG_TOS:
-				lm->tos=data;
-				break;
+		switch (lm->pointer_reg) {
+		    case LM75_REG_TEMP:
+			    return I2C_NACK;
+		    case LM75_REG_THYST:
+			    lm->thyst = data;
+			    break;
+		    case LM75_REG_TOS:
+			    lm->tos = data;
+			    break;
 		}
 	}
 	return I2C_ACK;
 };
 
-static int 
-lm75_read(void *dev,uint8_t *data) 
+static int
+lm75_read(void *dev, uint8_t * data)
 {
 	LM75 *lm = dev;
-	dbgprintf("LM75 read 0x%02x from %04x\n",*data,lm->pointer_reg);
-	if(lm->state==LM75_STATE_DATA1) {
-		switch(lm->pointer_reg) {
-			case LM75_REG_CONFIG:
-				*data=lm->conf;
-				return I2C_DONE;
-			case LM75_REG_TEMP:
-				lm->data = lm->temp;
-				break;
-			case LM75_REG_THYST:
-				lm->data = lm->thyst;
-				break;
-			case LM75_REG_TOS:
-				lm->data = lm->tos;
-				break;
+	dbgprintf("LM75 read 0x%02x from %04x\n", *data, lm->pointer_reg);
+	if (lm->state == LM75_STATE_DATA1) {
+		switch (lm->pointer_reg) {
+		    case LM75_REG_CONFIG:
+			    *data = lm->conf;
+			    return I2C_DONE;
+		    case LM75_REG_TEMP:
+			    lm->data = lm->temp;
+			    break;
+		    case LM75_REG_THYST:
+			    lm->data = lm->thyst;
+			    break;
+		    case LM75_REG_TOS:
+			    lm->data = lm->tos;
+			    break;
 		}
 		lm->state = LM75_STATE_DATA2;
 		*data = lm->data >> 8;
-	} else if(lm->state==LM75_STATE_DATA2) {
-		*data = lm->data; 
+	} else if (lm->state == LM75_STATE_DATA2) {
+		*data = lm->data;
 		lm->state = LM75_STATE_PAST_END;
-	} else if(lm->state==LM75_STATE_PAST_END) {
+	} else if (lm->state == LM75_STATE_PAST_END) {
 		*data = 0xff;
 	}
 	return I2C_DONE;
 };
 
 static int
-lm75_start(void *dev,int i2c_addr,int operation) {
+lm75_start(void *dev, int i2c_addr, int operation)
+{
 	LM75 *lm = dev;
 	dbgprintf("LM75 start\n");
-	if(operation == I2C_READ) {
+	if (operation == I2C_READ) {
 		lm->state = LM75_STATE_DATA1;
 	} else if (operation == I2C_WRITE) {
 		lm->state = LM75_STATE_POINTER;
@@ -155,30 +157,31 @@ lm75_start(void *dev,int i2c_addr,int operation) {
 	return I2C_ACK;
 }
 
-static void 
-lm75_stop(void *dev) {
+static void
+lm75_stop(void *dev)
+{
 	LM75 *lm = dev;
 	dbgprintf("LM75 stop\n");
-	lm->state =  LM75_STATE_POINTER; 
+	lm->state = LM75_STATE_POINTER;
 }
-
 
 static I2C_SlaveOps lm75_ops = {
 	.start = lm75_start,
-	.stop =  lm75_stop,
-	.read =  lm75_read,	
-	.write = lm75_write	
+	.stop = lm75_stop,
+	.read = lm75_read,
+	.write = lm75_write
 };
 
 I2C_Slave *
-LM75_New(char *name) {
-	LM75 *lm = sg_new(LM75); 
+LM75_New(char *name)
+{
+	LM75 *lm = sg_new(LM75);
 	I2C_Slave *i2c_slave;
 	lm->temp = 20 << 8;
 	i2c_slave = &lm->i2c_slave;
-	i2c_slave->devops = &lm75_ops; 
+	i2c_slave->devops = &lm75_ops;
 	i2c_slave->dev = lm;
 	i2c_slave->speed = I2C_SPEED_FAST;
-	fprintf(stderr,"LM75 Temperature Sensor \"%s\" created\n",name);
+	fprintf(stderr, "LM75 Temperature Sensor \"%s\" created\n", name);
 	return i2c_slave;
 }

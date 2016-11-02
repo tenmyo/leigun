@@ -29,33 +29,30 @@
 #define EXP(op) ((op)->exponent)
 #define MAN(op)	((op)->mantissa)
 
-static inline Float32_t 
-PackFloat32(SFloat32_t *sf)
+static inline Float32_t
+PackFloat32(SFloat32_t * sf)
 {
-        int exponent;
-	Float32_t fl32;
-        exponent = sf->exponent + 127;
-        if((exponent == 1) && !(sf->mantissa & (1 << 23))) {
-                exponent = 0;
-        }
-        fl32 = (sf->mantissa & ((1 << 23) - 1)) |
-                (exponent << 23) |
-                (sf->isneg << 31);
-        return fl32;
+    int exponent;
+    Float32_t fl32;
+    exponent = sf->exponent + 127;
+    if ((exponent == 1) && !(sf->mantissa & (1 << 23))) {
+        exponent = 0;
+    }
+    fl32 = (sf->mantissa & ((1 << 23) - 1)) | (exponent << 23) | (sf->isneg << 31);
+    return fl32;
 }
 
-
 static inline void
-UnpackFloat32(SFloat32_t *sf,Float32_t fl)
+UnpackFloat32(SFloat32_t * sf, Float32_t fl)
 {
-        sf->exponent = ((fl >> 23) & 0xff) - 127;
-        sf->mantissa = fl & 0x7fffff;
-        if(sf->exponent == -127) {
-                sf->exponent++;
-        } else {
-                sf->mantissa |= (1 << 23);
-        }
-        sf->isneg = ((int32_t)fl) < 0;
+    sf->exponent = ((fl >> 23) & 0xff) - 127;
+    sf->mantissa = fl & 0x7fffff;
+    if (sf->exponent == -127) {
+        sf->exponent++;
+    } else if(sf->exponent != 128) {
+        sf->mantissa |= (1 << 23);
+    }
+    sf->isneg = ((int32_t) fl) < 0;
 }
 
 /**
@@ -66,18 +63,17 @@ UnpackFloat32(SFloat32_t *sf,Float32_t fl)
  ******************************************************************
  */
 static inline Float64_t
-PackFloat64(SFloat64_t *sf)
+PackFloat64(SFloat64_t * sf)
 {
-        int exponent;
-	Float64_t dbl;
-        exponent = sf->exponent + 1023;
-        if((exponent == 1) && !(sf->mantissa & (UINT64_C(1) << 52))) {
-                exponent = 0;
-        }
-        dbl = (sf->mantissa & ((UINT64_C(1) << 52) - 1))  |
-                ((uint64_t)exponent << 52) |
-                ((uint64_t)sf->isneg << 63);
-        return dbl;
+    int exponent;
+    Float64_t dbl;
+    exponent = sf->exponent + 1023;
+    if ((exponent == 1) && !(sf->mantissa & (UINT64_C(1) << 52))) {
+        exponent = 0;
+    }
+    dbl = (sf->mantissa & ((UINT64_C(1) << 52) - 1)) |
+        ((uint64_t) exponent << 52) | ((uint64_t) sf->isneg << 63);
+    return dbl;
 }
 
 /**
@@ -88,19 +84,20 @@ PackFloat64(SFloat64_t *sf)
  **************************************************************
  */
 static inline void
-UnpackFloat64(SFloat64_t *sf,Float64_t dbl) {
-        sf->exponent = ((dbl >> 52) & 0x7ff) - 1023;
-        sf->mantissa = dbl & ((UINT64_C(1) << 52) - 1);
-        if(sf->exponent == -1023) {
-                sf->exponent++;
-        } else {
-                sf->mantissa |= (UINT64_C(1) << 52);
-        }
-        sf->isneg = ((int64_t)dbl) < 0;
+UnpackFloat64(SFloat64_t * sf, Float64_t dbl)
+{
+    sf->exponent = ((dbl >> 52) & 0x7ff) - 1023;
+    sf->mantissa = dbl & ((UINT64_C(1) << 52) - 1);
+    if (sf->exponent == -1023) {
+        sf->exponent++;
+    } else if(sf->exponent != 1024) {
+        sf->mantissa |= (UINT64_C(1) << 52);
+    }
+    sf->isneg = ((int64_t) dbl) < 0;
 }
 
 static inline void
-SF_PostException(SoftFloatContext *sf,uint32_t exception) {
-        sf->exceptions |= exception;
+SF_PostException(SoftFloatContext * sf, uint32_t exception)
+{
+    sf->exceptions |= exception;
 }
-

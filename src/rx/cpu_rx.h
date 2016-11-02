@@ -35,6 +35,7 @@
 #define _CPU_RX_H
 #include <stdint.h>
 #include <setjmp.h>
+#include <inttypes.h>
 #include "byteorder.h"
 #include "bus.h"
 #include "softfloat.h"
@@ -45,38 +46,39 @@
 #include "throttle.h"
 
 #define RX_SIG_IRQ	(1 << 0)
-#define RX_SIG_DBG	(1 << 1)
+#define RX_SIG_FIRQ	(1 << 1)
+#define RX_SIG_DBG	(1 << 2)
 
 typedef void RX_InstructionProc(void);
 
 typedef struct RX_Instruction {
-        RX_InstructionProc *proc;
-        struct RX_Instruction **subTab;
-        uint32_t mask;
-        uint32_t icode;
-        uint32_t *pRs;
-        uint32_t *pRs2;
-        uint32_t *pRd;
-        uint32_t arg1;
-        uint32_t arg2;
-        uint32_t arg3;
-        char *name;
-        uint32_t len;
+	RX_InstructionProc *proc;
+	struct RX_Instruction **subTab;
+	uint32_t mask;
+	uint32_t icode;
+	uint32_t *pRs;
+	uint32_t *pRs2;
+	uint32_t *pRd;
+	uint32_t arg1;
+	uint32_t arg2;
+	uint32_t arg3;
+	char *name;
+	uint32_t len;
 } RX_Instruction;
 
 typedef enum RX_DebugState {
-        RXDBG_RUNNING = 0,
-        RXDBG_STOP = 1,
-        RXDBG_STOPPED = 2,
-        RXDBG_STEP = 3,
-        RXDBG_BREAK = 4
+	RXDBG_RUNNING = 0,
+	RXDBG_STOP = 1,
+	RXDBG_STOPPED = 2,
+	RXDBG_STEP = 3,
+	RXDBG_BREAK = 4
 } RX_DebugState;
 
 typedef struct RX_Cpu {
 	RX_Instruction *instr;
 	uint32_t icode;
 	uint32_t regR[16];
-	uint32_t regISP;	
+	uint32_t regISP;
 	uint32_t regUSP;
 	uint32_t regINTB;
 	uint32_t regPC;
@@ -88,15 +90,16 @@ typedef struct RX_Cpu {
 	uint64_t regACC;
 	uint32_t pendingIpl;
 	uint32_t pendingIrqNo;
+    uint32_t pendingFirqNo;
 	uint32_t signals;
 	SoftFloatContext *floatContext;
-	SigNode *sigIrqAck; /* Acknowledge output for the Interrupt controller */
+	SigNode *sigIrqAck;	/* Acknowledge output for the Interrupt controller */
 	Debugger *debugger;
-        DebugBackendOps dbgops;
+	DebugBackendOps dbgops;
 	jmp_buf restart_idec_jump;
-        RX_DebugState dbg_state;
-        int dbg_steps;
-	 /* Throttling cpu to real speed */
+	RX_DebugState dbg_state;
+	int dbg_steps;
+	/* Throttling cpu to real speed */
 	Throttle *throttle;
 } RX_Cpu;
 
@@ -136,14 +139,14 @@ extern RX_Cpu g_RXCpu;
 #if 1
 #define ICODE8()  (be32_to_host(ICODE) >> 24)
 #define ICODE16() (be32_to_host(ICODE) >> 16)
-#define ICODE24() (be32_to_host(ICODE) >> 8) 
-#define ICODE32() (be32_to_host(ICODE)) 
+#define ICODE24() (be32_to_host(ICODE) >> 8)
+#define ICODE32() (be32_to_host(ICODE))
 #define ICODE_BE (ICODE);
 #else
 #define ICODE8()  (ICODE >> 24)
 #define ICODE16() (ICODE >> 16)
-#define ICODE24() (ICODE >> 8) 
-#define ICODE32() (ICODE >> 0) 
+#define ICODE24() (ICODE >> 8)
+#define ICODE32() (ICODE >> 0)
 #endif
 #define INSTR   (g_RXCpu.instr)
 
@@ -159,19 +162,19 @@ extern RX_Cpu g_RXCpu;
 static inline void
 RX_UpdateIrqSignal(void)
 {
-        uint32_t ipl = (RX_REG_PSW & PSW_IPL_MSK) >> PSW_IPL_SHIFT;
-        if((RX_REG_PSW & PSW_I) && (g_RXCpu.pendingIpl > ipl)) {
-                g_RXCpu.signals |= RX_SIG_IRQ;
-                mainloop_event_pending = 1;
-        } else {
-                g_RXCpu.signals &= ~RX_SIG_IRQ;
-        }
+	uint32_t ipl = (RX_REG_PSW & PSW_IPL_MSK) >> PSW_IPL_SHIFT;
+	if ((RX_REG_PSW & PSW_I) && (g_RXCpu.pendingIpl > ipl)) {
+		g_RXCpu.signals |= RX_SIG_IRQ;
+		mainloop_event_pending = 1;
+	} else {
+		g_RXCpu.signals &= ~RX_SIG_IRQ;
+	}
 }
 
-
 static inline void
-RX_SigDebugMode(uint32_t value) {
-	if(value) {
+RX_SigDebugMode(uint32_t value)
+{
+	if (value) {
 		g_RXCpu.signals |= RX_SIG_DBG;
 		mainloop_event_pending = 1;
 	} else {
@@ -180,23 +183,31 @@ RX_SigDebugMode(uint32_t value) {
 }
 
 static inline void
-RX_RestartIdecoder(void) {
-	longjmp(g_RXCpu.restart_idec_jump,1);
+RX_RestartIdecoder(void)
+{
+	longjmp(g_RXCpu.restart_idec_jump, 1);
 }
 
 static inline void
-RX_Break(void) {
-        g_RXCpu.dbg_state = RXDBG_BREAK;
-        RX_SigDebugMode(1);
-        RX_RestartIdecoder();
+RX_Break(void)
+{
+	static uint64_t last;
+	g_RXCpu.dbg_state = RXDBG_BREAK;
+	RX_SigDebugMode(1);
+	fprintf(stderr,"Cyclecounter  diff %" PRIu64 " at 0x%08x, psw %08x\n",CycleCounter_Get() - last, RX_REG_PC, RX_REG_PSW);
+	last = CycleCounter_Get();
+    if (RX_REG_PC == 2) {
+        exit(1);
+    }
+	RX_RestartIdecoder();
 }
 
-static inline void 
+static inline void
 RX_SET_REG_PSW(uint32_t value)
 {
 	uint32_t diff = value ^ g_RXCpu.regPSW;
-	if(diff & PSW_U) {
-		if(value & PSW_U) {
+	if (diff & PSW_U) {
+		if (value & PSW_U) {
 			g_RXCpu.regISP = g_RXCpu.regR[0];
 			g_RXCpu.regR[0] = g_RXCpu.regUSP;
 		} else {
@@ -204,8 +215,16 @@ RX_SET_REG_PSW(uint32_t value)
 			g_RXCpu.regR[0] = g_RXCpu.regISP;
 		}
 	}
+#if 0
+    static CycleCounter_t tStamp;
+	if ((value & PSW_IPL_MSK) == (0xf << PSW_IPL_SHIFT)) {
+        tStamp = CycleCounter_Get();
+	} else { 
+        fprintf(stderr, "%lu\n", CycleCounter_Get() - tStamp);
+    }
+#endif
 	g_RXCpu.regPSW = value;
-	if(diff & (PSW_I | PSW_IPL_MSK)) {
+	if (diff & (PSW_I | PSW_IPL_MSK)) {
 		RX_UpdateIrqSignal();
 	}
 }
@@ -224,48 +243,52 @@ RX_SET_IPL(uint32_t value)
 }
 
 static inline uint32_t
-RX_GET_REG_USP(void) {
-	if(RX_REG_PSW & PSW_U) {
+RX_GET_REG_USP(void)
+{
+	if (RX_REG_PSW & PSW_U) {
 		return g_RXCpu.regR[0];
-	} else { 
+	} else {
 		return g_RXCpu.regUSP;
-	} 
+	}
 }
 
-static inline uint32_t 
-RX_GET_REG_ISP(void) { 
-	if(RX_REG_PSW & PSW_U) {
+static inline uint32_t
+RX_GET_REG_ISP(void)
+{
+	if (RX_REG_PSW & PSW_U) {
 		return g_RXCpu.regISP;
-	} else { 
+	} else {
 		return g_RXCpu.regR[0];
-	} 
+	}
 }
 
 static inline void
-RX_SET_REG_USP(uint32_t value) { 
-	if(RX_REG_PSW & PSW_U) {
+RX_SET_REG_USP(uint32_t value)
+{
+	if (RX_REG_PSW & PSW_U) {
 		g_RXCpu.regR[0] = value;
-	} else { 
+	} else {
 		g_RXCpu.regUSP = value;
-	} 
+	}
 }
 
-static inline void 
-RX_SET_REG_ISP(uint32_t value) { 
-	if(RX_REG_PSW & PSW_U) {
+static inline void
+RX_SET_REG_ISP(uint32_t value)
+{
+	if (RX_REG_PSW & PSW_U) {
 		g_RXCpu.regISP = value;
-	} else { 
+	} else {
 		g_RXCpu.regR[0] = value;
-	} 
+	}
 }
 
-static inline uint32_t 
+static inline uint32_t
 RX_ReadReg(unsigned int reg)
 {
 	return g_RXCpu.regR[reg];
 }
 
-static inline uint32_t* 
+static inline uint32_t *
 RX_RegP(unsigned int reg)
 {
 	return &g_RXCpu.regR[reg];
@@ -276,24 +299,24 @@ RX_RegP(unsigned int reg)
  * \fn static inline void RX_WriteReg(uint32_t value,unsigned int reg)
  **************************************************************************
  */
-static inline void 
-RX_WriteReg(uint32_t value,unsigned int reg)
+static inline void
+RX_WriteReg(uint32_t value, unsigned int reg)
 {
 	g_RXCpu.regR[reg] = value;
 }
 
-
-static inline uint64_t 
+static inline uint64_t
 RX_ReadACC(void)
 {
 	return g_RXCpu.regACC;
 }
 
 static inline void
-RX_WriteACC(uint64_t value) 
+RX_WriteACC(uint64_t value)
 {
 	g_RXCpu.regACC = value;
 }
+
 /*
  ****************************************************************
  * Always fetch a full 32 Bit word with no alignment check.
@@ -302,20 +325,22 @@ RX_WriteACC(uint64_t value)
  ****************************************************************
  */
 static inline uint32_t
-RX_IFetch(uint32_t addr) {
-        uint32_t icode;
+RX_IFetch(uint32_t addr)
+{
+	uint32_t icode;
 #if 0
 	icode = be32_to_host(Bus_FastRead32(addr));
 #else
 	icode = Bus_FastRead32(addr);
 #endif
-        return icode;
+	return icode;
 }
 
 static inline uint32_t
-RX_Read32(uint32_t addr) {
-        uint32_t data = Bus_Read32(addr);
-        return data;
+RX_Read32(uint32_t addr)
+{
+	uint32_t data = Bus_Read32(addr);
+	return data;
 }
 
 /*
@@ -323,90 +348,101 @@ RX_Read32(uint32_t addr) {
  * Typecast ! not conversion
  *********************************************
  */
-static inline Float32_t 
+static inline Float32_t
 RX_CastToFloat32(uint32_t value)
 {
-	return (Float32_t)value;
-}
-
-static inline uint32_t 
-RX_CastFromFloat32(Float32_t value)
-{
-	return (Float32_t)value;
-}
-
-static inline uint16_t
-RX_Read16(uint32_t addr) {
-        uint16_t data = Bus_Read16(addr);
-        return data;
+	return (Float32_t) value;
 }
 
 static inline uint32_t
-RX_Read24(uint32_t addr) {
+RX_CastFromFloat32(Float32_t value)
+{
+	return (Float32_t) value;
+}
+
+static inline uint16_t
+RX_Read16(uint32_t addr)
+{
+	uint16_t data = Bus_Read16(addr);
+	return data;
+}
+
+static inline uint32_t
+RX_Read24(uint32_t addr)
+{
 	uint32_t data = Bus_Read8(addr);
-        data |= Bus_Read8(addr + 1) << 8;
-        data |= Bus_Read8(addr + 2) << 16;
-        return data;
+	data |= Bus_Read8(addr + 1) << 8;
+	data |= Bus_Read8(addr + 2) << 16;
+	return data;
 }
 
 static inline uint8_t
-RX_Read8(uint32_t addr) {
-        uint8_t data = Bus_Read8(addr);
-        return data;
+RX_Read8(uint32_t addr)
+{
+	uint8_t data = Bus_Read8(addr);
+	return data;
 }
 
 static inline void
-RX_Write32(uint32_t value,uint32_t addr) {
-        Bus_Write32(value,addr);
+RX_Write32(uint32_t value, uint32_t addr)
+{
+	Bus_Write32(value, addr);
 }
 
-static inline void 
-RX_Write16(uint16_t value,uint32_t addr) {
-       Bus_Write16(value,addr);
+static inline void
+RX_Write16(uint16_t value, uint32_t addr)
+{
+	Bus_Write16(value, addr);
 }
 
-static inline void 
-RX_Write24(uint32_t value,uint32_t addr) {
-	Bus_Write8(value,addr);	
-	Bus_Write8(value >> 8,addr + 1);	
-	Bus_Write8(value >> 16,addr + 2);	
+static inline void
+RX_Write24(uint32_t value, uint32_t addr)
+{
+	Bus_Write8(value, addr);
+	Bus_Write8(value >> 8, addr + 1);
+	Bus_Write8(value >> 16, addr + 2);
 }
 
-static inline void 
-RX_Write8(uint8_t value, uint32_t addr) {
-        Bus_Write8(value,addr);
+static inline void
+RX_Write8(uint8_t value, uint32_t addr)
+{
+	Bus_Write8(value, addr);
 }
 
 void RX_Exception(uint32_t vector_addr);
-void RX_Interrupt(unsigned int irq_no,unsigned int ipl);
+//void RX_Interrupt(unsigned int irq_no, unsigned int ipl);
 void RX_Trap(unsigned int trap_nr);
 
-
 static inline void
-RX_FloatingPointException(void) {
-        RX_Exception(0xffffffe4);
+RX_FloatingPointException(void)
+{
+	RX_Exception(0xffffffe4);
 }
 
 static inline void
-RX_AccessException(void) {
-        RX_Exception(0xffffffd4);
+RX_AccessException(void)
+{
+	RX_Exception(0xffffffd4);
 }
 
 static inline void
-RX_PrivilegedInstructionException(void) {
-        RX_Exception(0xffffffd0);
+RX_PrivilegedInstructionException(void)
+{
+	RX_Exception(0xffffffd0);
 }
+
 static inline void
-RX_UndefinedInstructionException(void) {
-        RX_Exception(0xffffffdc);
+RX_UndefinedInstructionException(void)
+{
+	RX_Exception(0xffffffdc);
 }
 
 bool RX_CheckForFloatingPointException(void);
 
 bool RX_CheckForUnimplementedException(void);
 
-RX_Cpu * RX_CpuNew(const char *instancename);
+RX_Cpu *RX_CpuNew(const char *instancename);
 void RX_Run(void);
-void RX_PostInterrupt(uint8_t ipl,uint8_t irqNo);
+void RX_PostInterrupt(uint8_t ipl, uint8_t irqNo);
 
 #endif

@@ -46,7 +46,6 @@
 #include "usbhub.h.h"
 #include "sgstring.h"
 
-
 #define         HUBFEAT_C_HUB_LOCAL_POWER       (0)
 #define         HUBFEAT_C_HUB_OVER_CURRENT      (1)
 
@@ -83,15 +82,15 @@
 #define	UHUBRQ_STOP_TT		(11)
 
 typedef struct UsbHub {
-        UsbDevice *udev;
+	UsbDevice *udev;
 } UsbHub;
 
 UsbDevice *
-UsbHub_New(const char *name) 
+UsbHub_New(const char *name)
 {
 	UsbHub *hub = sg_new(UsbHub);
-        UsbDevice *udev;
-        int i;
-	udev = hub->udev = UsbDev_New(hub,USB_SPEED_FULL);
+	UsbDevice *udev;
+	int i;
+	udev = hub->udev = UsbDev_New(hub, USB_SPEED_FULL);
 	return udev;
 }

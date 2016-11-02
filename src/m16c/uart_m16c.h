@@ -7,4 +7,4 @@
 #define M16C65_REGSET_UART6	(4)
 #define M16C65_REGSET_UART7	(5)
 
-BusDevice * M16C_UartNew(const char *name,unsigned int register_set);
+BusDevice *M16C_UartNew(const char *name, unsigned int register_set);

@@ -68,249 +68,267 @@ typedef struct IMX21Pcmcia {
 } IMX21Pcmcia;
 
 static uint32_t
-pipr_read(void *clientData,uint32_t address,int rqlen)
+pipr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pipr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-pscr_read(void *clientData,uint32_t address,int rqlen)
+pscr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pscr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pscr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-per_read(void *clientData,uint32_t address,int rqlen)
+per_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-per_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+per_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pbr0_read(void *clientData,uint32_t address,int rqlen)
+pbr0_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pbr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pbr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pbr1_read(void *clientData,uint32_t address,int rqlen)
+pbr1_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pbr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pbr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pbr2_read(void *clientData,uint32_t address,int rqlen)
+pbr2_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pbr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pbr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pbr3_read(void *clientData,uint32_t address,int rqlen)
+pbr3_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pbr3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pbr3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pbr4_read(void *clientData,uint32_t address,int rqlen)
+pbr4_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pbr4_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pbr4_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-por0_read(void *clientData,uint32_t address,int rqlen)
+por0_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-por0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+por0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-por1_read(void *clientData,uint32_t address,int rqlen)
+por1_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-por1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+por1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-por2_read(void *clientData,uint32_t address,int rqlen)
+por2_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-por2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+por2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-por3_read(void *clientData,uint32_t address,int rqlen)
+por3_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-por3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+por3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-por4_read(void *clientData,uint32_t address,int rqlen)
+por4_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-por4_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+por4_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pofr0_read(void *clientData,uint32_t address,int rqlen)
+pofr0_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pofr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pofr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pofr1_read(void *clientData,uint32_t address,int rqlen)
+pofr1_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pofr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pofr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pofr2_read(void *clientData,uint32_t address,int rqlen)
+pofr2_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pofr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pofr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pofr3_read(void *clientData,uint32_t address,int rqlen)
+pofr3_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pofr3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pofr3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pofr4_read(void *clientData,uint32_t address,int rqlen)
+pofr4_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pofr4_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pofr4_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pgcr_read(void *clientData,uint32_t address,int rqlen)
+pgcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pgcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pgcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
+
 static uint32_t
-pgsr_read(void *clientData,uint32_t address,int rqlen)
+pgsr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: register 0x%08x not implemented\n", address);
 	return 0;
 }
 
 static void
-pgsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pgsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PCMCIA: write register 0x%08x not implemented\n",address);
+	fprintf(stderr, "PCMCIA: write register 0x%08x not implemented\n", address);
 }
 
 static void
-IMXPcmcia_Unmap(void *owner,uint32_t base,uint32_t mask)
+IMXPcmcia_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(PCMCIA_PIPR(base));
 	IOH_Delete32(PCMCIA_PSCR(base));
@@ -335,40 +353,40 @@ IMXPcmcia_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-IMXPcmcia_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+IMXPcmcia_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	IMX21Pcmcia *pc = (IMX21Pcmcia *) owner;
-	IOH_New32(PCMCIA_PIPR(base),pipr_read,pipr_write,pc);
-	IOH_New32(PCMCIA_PSCR(base),pscr_read,pscr_write,pc);
-	IOH_New32(PCMCIA_PER(base),per_read,per_write,pc);
-	IOH_New32(PCMCIA_PBR0(base),pbr0_read,pbr0_write,pc);
-	IOH_New32(PCMCIA_PBR1(base),pbr1_read,pbr1_write,pc);
-	IOH_New32(PCMCIA_PBR2(base),pbr2_read,pbr2_write,pc);
-	IOH_New32(PCMCIA_PBR3(base),pbr3_read,pbr3_write,pc);
-	IOH_New32(PCMCIA_PBR4(base),pbr4_read,pbr4_write,pc);
-	IOH_New32(PCMCIA_POR0(base),por0_read,por0_write,pc);
-	IOH_New32(PCMCIA_POR1(base),por1_read,por1_write,pc);
-	IOH_New32(PCMCIA_POR2(base),por2_read,por2_write,pc);
-	IOH_New32(PCMCIA_POR3(base),por3_read,por3_write,pc);
-	IOH_New32(PCMCIA_POR4(base),por4_read,por4_write,pc);
-	IOH_New32(PCMCIA_POFR0(base),pofr0_read,pofr0_write,pc);
-	IOH_New32(PCMCIA_POFR1(base),pofr1_read,pofr1_write,pc);
-	IOH_New32(PCMCIA_POFR2(base),pofr2_read,pofr2_write,pc);
-	IOH_New32(PCMCIA_POFR3(base),pofr3_read,pofr3_write,pc);
-	IOH_New32(PCMCIA_POFR4(base),pofr4_read,pofr4_write,pc);
-	IOH_New32(PCMCIA_PGCR(base),pgcr_read,pgcr_write,pc);
-	IOH_New32(PCMCIA_PGSR(base),pgsr_read,pgsr_write,pc);
+	IOH_New32(PCMCIA_PIPR(base), pipr_read, pipr_write, pc);
+	IOH_New32(PCMCIA_PSCR(base), pscr_read, pscr_write, pc);
+	IOH_New32(PCMCIA_PER(base), per_read, per_write, pc);
+	IOH_New32(PCMCIA_PBR0(base), pbr0_read, pbr0_write, pc);
+	IOH_New32(PCMCIA_PBR1(base), pbr1_read, pbr1_write, pc);
+	IOH_New32(PCMCIA_PBR2(base), pbr2_read, pbr2_write, pc);
+	IOH_New32(PCMCIA_PBR3(base), pbr3_read, pbr3_write, pc);
+	IOH_New32(PCMCIA_PBR4(base), pbr4_read, pbr4_write, pc);
+	IOH_New32(PCMCIA_POR0(base), por0_read, por0_write, pc);
+	IOH_New32(PCMCIA_POR1(base), por1_read, por1_write, pc);
+	IOH_New32(PCMCIA_POR2(base), por2_read, por2_write, pc);
+	IOH_New32(PCMCIA_POR3(base), por3_read, por3_write, pc);
+	IOH_New32(PCMCIA_POR4(base), por4_read, por4_write, pc);
+	IOH_New32(PCMCIA_POFR0(base), pofr0_read, pofr0_write, pc);
+	IOH_New32(PCMCIA_POFR1(base), pofr1_read, pofr1_write, pc);
+	IOH_New32(PCMCIA_POFR2(base), pofr2_read, pofr2_write, pc);
+	IOH_New32(PCMCIA_POFR3(base), pofr3_read, pofr3_write, pc);
+	IOH_New32(PCMCIA_POFR4(base), pofr4_read, pofr4_write, pc);
+	IOH_New32(PCMCIA_PGCR(base), pgcr_read, pgcr_write, pc);
+	IOH_New32(PCMCIA_PGSR(base), pgsr_read, pgsr_write, pc);
 }
 
 BusDevice *
 IMX21Pcmcia_New(const char *name)
 {
-	IMX21Pcmcia *pc = sg_new(IMX21Pcmcia);	
-	pc->bdev.first_mapping=NULL;
-        pc->bdev.Map=IMXPcmcia_Map;
-        pc->bdev.UnMap=IMXPcmcia_Unmap;
-       	pc->bdev.owner=pc;
-        pc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &pc->bdev;
+	IMX21Pcmcia *pc = sg_new(IMX21Pcmcia);
+	pc->bdev.first_mapping = NULL;
+	pc->bdev.Map = IMXPcmcia_Map;
+	pc->bdev.UnMap = IMXPcmcia_Unmap;
+	pc->bdev.owner = pc;
+	pc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &pc->bdev;
 
 }

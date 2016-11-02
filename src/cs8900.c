@@ -53,13 +53,12 @@
 
 #define IO_RXTXDATA0(base)	((base) + 0x00)
 #define IO_RXTXDATA1(base)	((base) + 0x02)
-#define IO_TXCMD(base)		((base) + 0x04) 
+#define IO_TXCMD(base)		((base) + 0x04)
 #define IO_TXLENGTH(base)	((base) + 0x06)
 #define IO_ISQ(base)		((base) + 0x08)
 #define IO_PPTR(base)		((base) + 0x0a)
 #define IO_PDATA0(base)		((base) + 0x0c)
 #define IO_PDATA1(base)		((base) + 0x0e)
-
 
 #define MEM_PROD_ID(base) 		((base)+0x00)
 #define MEM_IOBASE(base)		((base)+0x20)
@@ -171,7 +170,6 @@
 #define		RXEVENT_RUNT		(1<<13)
 #define		RXEVENT_EXTRADATA	(1<<14)
 
-
 #define MEM_BUFEVENT(base)		((base)+0x12c)
 #define		BUFEVENT_ADDR		(0xc)
 #define		BUFEVENT_SWINT		(1<<6)
@@ -189,7 +187,7 @@
 #define 	TXEVENT_ADDR		(8)
 #define		TXEVENT_LOSS_OF_CRS	(1<<6)
 #define		TXEVENT_SQERR		(1<<7)
-#define		TXEVENT_TXOK		(1<<8)	
+#define		TXEVENT_TXOK		(1<<8)
 #define		TXEVENT_OOW		(1<<9)
 #define		TXEVENT_JABBER		(1<<10)
 #define		TXEVENT_NUMCOLS_MASK	(0xf<<11)
@@ -201,7 +199,7 @@
 #define		LINEST_AUI		(1<<8)
 #define		LINEST_10BT		(1<<9)
 #define		LINEST_POLOK		(1<<0xc)
-#define		LINEST_CRS		(1<<0xe)	
+#define		LINEST_CRS		(1<<0xe)
 #define	MEM_SELFST(base)		((base)+0x136)
 #define		SELFST_ADDR		(0x16)
 #define		SELFST_3V3_ACT		(1<<6)
@@ -233,11 +231,11 @@ typedef struct CS8900 {
 	BusDevice bdev;
 	int ether_fd;
 	FIO_FileHandler input_fh;
-        int pktsrc_is_enabled;
-        int interrupt_posted;
+	int pktsrc_is_enabled;
+	int interrupt_posted;
 	M93C46 *eeprom;
 	int ee_write_enabled;
-	
+
 	uint16_t iobase;
 	uint16_t intsel;
 	uint16_t dmachan;
@@ -268,15 +266,15 @@ typedef struct CS8900 {
 	uint16_t selfctl;
 	uint16_t busctl;
 	uint16_t testctl;
-	uint16_t txlength;	
+	uint16_t txlength;
 	uint8_t laf[8];
 	uint8_t indaddr[6];
-	
+
 	/* For IO mode */
 	uint16_t pptr;
 	uint16_t pdata1;
 
-	uint8_t memwin[3*1024];
+	uint8_t memwin[3 * 1024];
 	unsigned int tx_fifo_wp;
 	unsigned int rx_fifo_rp;
 	unsigned int rx_fifo_wp;
@@ -284,54 +282,55 @@ typedef struct CS8900 {
 	SigNode *intrqNode[4];
 } CS8900;
 
-
-static void enable_pktsrc(CS8900 *cs); 
-static void disable_pktsrc(CS8900 *cs);
+static void enable_pktsrc(CS8900 * cs);
+static void disable_pktsrc(CS8900 * cs);
 
 static void
-update_interrupts(CS8900 *cs) 
+update_interrupts(CS8900 * cs)
 {
 	int interrupt = 0;
-	uint16_t tx_ints = TXEVENT_LOSS_OF_CRS | TXEVENT_SQERR | TXEVENT_TXOK | TXEVENT_OOW |TXEVENT_JABBER;
+	uint16_t tx_ints =
+	    TXEVENT_LOSS_OF_CRS | TXEVENT_SQERR | TXEVENT_TXOK | TXEVENT_OOW | TXEVENT_JABBER;
 	uint16_t rx_ints = RXEVENT_RXOK | RXEVENT_CRCERROR | RXEVENT_RUNT | RXEVENT_EXTRADATA;
 	uint16_t buf_ints = BUFEVENT_RX128 | BUFEVENT_RDY4TX | BUFEVENT_RXDEST | BUFEVENT_SWINT;
 	//fprintf(stderr,"update ints with busctl %08x, rxev %08x, rxcfg %08x\n",cs->busctl,cs->rxevent,cs->rxcfg);
 
-	if(cs->busctl & BUSCTL_ENABLEIRQ) {
-		if(cs->rxevent & cs->rxcfg & rx_ints) {
-			interrupt = 1;
-		} 
-		if(cs->txevent & cs->txcfg & tx_ints) {
+	if (cs->busctl & BUSCTL_ENABLEIRQ) {
+		if (cs->rxevent & cs->rxcfg & rx_ints) {
 			interrupt = 1;
 		}
-		if(cs->bufevent & cs->bufcfg & buf_ints) {
+		if (cs->txevent & cs->txcfg & tx_ints) {
 			interrupt = 1;
 		}
-	} 
-	if(interrupt && !cs->interrupt_posted && (cs->intsel < 4)) {
+		if (cs->bufevent & cs->bufcfg & buf_ints) {
+			interrupt = 1;
+		}
+	}
+	if (interrupt && !cs->interrupt_posted && (cs->intsel < 4)) {
 		//fprintf(stderr,"CS8900 poste interrupt\n");
-		SigNode_Set(cs->intrqNode[cs->intsel],SIG_HIGH);
+		SigNode_Set(cs->intrqNode[cs->intsel], SIG_HIGH);
 		cs->interrupt_posted = 1;
-	} 
-	if(!interrupt && cs->interrupt_posted && (cs->intsel < 4)) {
+	}
+	if (!interrupt && cs->interrupt_posted && (cs->intsel < 4)) {
 		//fprintf(stderr,"CS8900 unposte interrupt\n");
-		SigNode_Set(cs->intrqNode[cs->intsel],SIG_LOW);
+		SigNode_Set(cs->intrqNode[cs->intsel], SIG_LOW);
 		cs->interrupt_posted = 0;
 	}
 }
+
 /*
  * --------------------------------
  * MAC Address checks
  * --------------------------------
  */
 static inline int
-is_broadcast(uint8_t *mac) {
-        if(mac[0] & 1) {
-                return 1;
-        }
-        return 0;
+is_broadcast(uint8_t * mac)
+{
+	if (mac[0] & 1) {
+		return 1;
+	}
+	return 0;
 }
-
 
 /*
  * ----------------------------------------------
@@ -339,68 +338,70 @@ is_broadcast(uint8_t *mac) {
  * ----------------------------------------------
  */
 static int
-is_individual_address(CS8900 *cs,uint8_t *mac) {
-        if(memcmp(mac,cs->indaddr,6)!=0) {
-                return 0;
-        }
-        return 1;
+is_individual_address(CS8900 * cs, uint8_t * mac)
+{
+	if (memcmp(mac, cs->indaddr, 6) != 0) {
+		return 0;
+	}
+	return 1;
 }
-
 
 /*
  * cs8900 moves to next frame on reading rxevent
  */
 static void
-update_receiver(CS8900 * cs) 
+update_receiver(CS8900 * cs)
 {
 
-	if(cs->rx_fifo_wp) {
+	if (cs->rx_fifo_wp) {
 		disable_pktsrc(cs);
-	} else if(!(cs->linectl & LINECTL_SERRXON)) {
+	} else if (!(cs->linectl & LINECTL_SERRXON)) {
 		disable_pktsrc(cs);
 	} else {
 		enable_pktsrc(cs);
 	}
 }
+
 /*
  * ------------------------------------------------------------------
  * Handler for receiving packets from the tunneling filedescriptor 
  * ------------------------------------------------------------------
  */
-static void 
-input_event(void *cd,int mask) {
-        CS8900 *cs = (CS8900*)cd;
+static void
+input_event(void *cd, int mask)
+{
+	CS8900 *cs = (CS8900 *) cd;
 	uint8_t *rxbuf = cs->memwin + 4;
-        int result;
-       	result=read(cs->ether_fd,rxbuf,1532);
-       	if(result > 0) {
-		uint16_t rxev; 
+	int result;
+	result = read(cs->ether_fd, rxbuf, 1532);
+	if (result > 0) {
+		uint16_t rxev;
 		int broad = is_broadcast(rxbuf);
-		int indiv = is_individual_address(cs,rxbuf); 
+		int indiv = is_individual_address(cs, rxbuf);
 		int promisca = cs->rxctl & RXCTL_PROMISCUOSA;
 		int indiva = cs->rxctl & RXCTL_INDIVIDUALA;
 		int broada = cs->rxctl & RXCTL_BROADCASTA;
 		int rxoka = cs->rxctl & RXCTL_RXOKA;
-		rxev = cs->rxevent; 
+		rxev = cs->rxevent;
 		//fprintf(stderr,"RX event ind %d bc %d prom %d\n",indiv,broadcast,promisc);
-		if(result<64) {
+		if (result < 64) {
 			/* pad */
-			memset(rxbuf+result,0,64-result);
-			result = 64; 
+			memset(rxbuf + result, 0, 64 - result);
+			result = 64;
 		}
-		if(broad) {
+		if (broad) {
 			rxev |= RXEVENT_BROADCAST;
 		}
-		if(indiv) {
+		if (indiv) {
 			rxev |= RXEVENT_INDADDR;
 		}
-		if(!rxoka) {
+		if (!rxoka) {
 			return;
 		}
-		if((indiv && indiva) || (broad && broada) || promisca) {
+		if ((indiv && indiva) || (broad && broada) || promisca) {
 			rxev |= RXEVENT_RXOK;
 			cs->bufevent |= BUFEVENT_RXDEST;
-			if(result>=128) {
+			if (result >= 128) {
 				cs->bufevent |= BUFEVENT_RX128;
 			}
 			cs->rxevent = rxev;
@@ -408,14 +409,14 @@ input_event(void *cd,int mask) {
 			cs->rx_fifo_rp = 0;
 			cs->rx_fifo_wp = 4 + result;
 			cs->memwin[0] = rxev & 0xff;
-			cs->memwin[1] = (rxev>>8) & 0xff;
-			cs->memwin[2] = result & 0xff;	
-			cs->memwin[3] = (result >> 8) & 0xff;	
+			cs->memwin[1] = (rxev >> 8) & 0xff;
+			cs->memwin[2] = result & 0xff;
+			cs->memwin[3] = (result >> 8) & 0xff;
 			update_receiver(cs);
 			update_interrupts(cs);
 		}
-        }
-        return;
+	}
+	return;
 }
 
 /*
@@ -424,67 +425,73 @@ input_event(void *cd,int mask) {
  * ------------------------------------------------------------------
  */
 static void
-clear_pktsrc(CS8900 *cs) {
+clear_pktsrc(CS8900 * cs)
+{
 	uint8_t buf[100];
 	int count;
 	int i;
-	for(i=0;i<500;i++)  {
-		count = read(cs->ether_fd,buf,100);
-		if(count<=0) {
+	for (i = 0; i < 500; i++) {
+		count = read(cs->ether_fd, buf, 100);
+		if (count <= 0) {
 			break;
 		}
-	}; 
-}
-static void
-enable_pktsrc(CS8900 *cs) {
-        if((cs->pktsrc_is_enabled==0) && (cs->ether_fd >=0)) {
-//                fprintf(stderr,"CS8900A: enable receiver\n");
-                FIO_AddFileHandler(&cs->input_fh,cs->ether_fd,FIO_READABLE,input_event,cs);
-                cs->pktsrc_is_enabled=1;
-        }
+	};
 }
 
 static void
-disable_pktsrc(CS8900 *cs) {
- //       fprintf(stderr,"CS8900A: disable receiver\n");
-        if(cs->pktsrc_is_enabled) {
-                FIO_RemoveFileHandler(&cs->input_fh);
-                cs->pktsrc_is_enabled=0;
-        }
+enable_pktsrc(CS8900 * cs)
+{
+	if ((cs->pktsrc_is_enabled == 0) && (cs->ether_fd >= 0)) {
+//                fprintf(stderr,"CS8900A: enable receiver\n");
+		FIO_AddFileHandler(&cs->input_fh, cs->ether_fd, FIO_READABLE, input_event, cs);
+		cs->pktsrc_is_enabled = 1;
+	}
 }
+
 static void
-transmit(CS8900 *cs) 
+disable_pktsrc(CS8900 * cs)
+{
+	//       fprintf(stderr,"CS8900A: disable receiver\n");
+	if (cs->pktsrc_is_enabled) {
+		FIO_RemoveFileHandler(&cs->input_fh);
+		cs->pktsrc_is_enabled = 0;
+	}
+}
+
+static void
+transmit(CS8900 * cs)
 {
 	int result;
 	//fprintf(stderr,"CS8900 transmit\n");
-	if(!(cs->linectl & LINECTL_SERTXON)) {
-		goto out;	
-	}
-	if(cs->txlength > 1518) {
-		fprintf(stderr,"CS8900 emulator: Paket to big: %d bytes\n",cs->txlength);
+	if (!(cs->linectl & LINECTL_SERTXON)) {
 		goto out;
 	}
-	if(cs->txlength > cs->tx_fifo_wp) {
-		fprintf(stderr,"CS8900 emulator: transmit, but not enough data %d wp %d\n",cs->txlength, cs->tx_fifo_wp);
+	if (cs->txlength > 1518) {
+		fprintf(stderr, "CS8900 emulator: Paket to big: %d bytes\n", cs->txlength);
+		goto out;
+	}
+	if (cs->txlength > cs->tx_fifo_wp) {
+		fprintf(stderr, "CS8900 emulator: transmit, but not enough data %d wp %d\n",
+			cs->txlength, cs->tx_fifo_wp);
 		goto out;
 	}
 	//fcntl(cs->ether_fd,F_SETFL,0);
-	result=write(cs->ether_fd,cs->txbuf,cs->txlength);
+	result = write(cs->ether_fd, cs->txbuf, cs->txlength);
 	//fcntl(cs->ether_fd,F_SETFL,O_NONBLOCK);
 	cs->txevent |= TXEVENT_TXOK;
 	cs->bufevent |= BUFEVENT_RDY4TX;
 	update_interrupts(cs);
-out:
-	cs->txlength = 0;	
+ out:
+	cs->txlength = 0;
 	cs->tx_fifo_wp = 0;
 }
 
 static void
-cs8900_reset(CS8900 *cs) 
+cs8900_reset(CS8900 * cs)
 {
 	cs->iobase = 0x300;
-	cs->intsel = 4; 	/* No irq pin selected */
-	cs->dmachan = 3; 	/* No dmachan */
+	cs->intsel = 4;		/* No irq pin selected */
+	cs->dmachan = 3;	/* No dmachan */
 	cs->dmasof = 0;
 	cs->dmafc = 0;
 	cs->rxdmabc = 0;
@@ -492,7 +499,7 @@ cs8900_reset(CS8900 *cs)
 	cs->bprombase = 0;
 	cs->rxcfg = 0x3;
 	cs->rxevent = 0x4;
-	cs->rxctl = 0x5;	
+	cs->rxctl = 0x5;
 	cs->txcfg = 0x7;
 	cs->txevent = 0x8;
 	cs->txcmdstat = 0x9;
@@ -508,10 +515,9 @@ cs8900_reset(CS8900 *cs)
 	cs->busst = 0x18;
 	cs->testctl = 0x19;
 	cs->auitdr = 0x1c;
-	cs->busst = BUSST_RDY4TXNOW; /* currently always ready */
-	cs->linest = LINEST_LINKOK | LINEST_10BT | LINEST_POLOK; 
-	cs->selfst = SELFST_3V3_ACT | SELFST_INITD | SELFST_EEPRESENT |
-		     SELFST_EEOK | SELFST_EESIZE; 
+	cs->busst = BUSST_RDY4TXNOW;	/* currently always ready */
+	cs->linest = LINEST_LINKOK | LINEST_10BT | LINEST_POLOK;
+	cs->selfst = SELFST_3V3_ACT | SELFST_INITD | SELFST_EEPRESENT | SELFST_EEOK | SELFST_EESIZE;
 	cs->selfctl = 0;
 	cs->rx_fifo_wp = cs->rx_fifo_rp = 0;
 	cs->rcvfbc = 0;
@@ -520,42 +526,44 @@ cs8900_reset(CS8900 *cs)
 }
 
 static uint32_t
-mem_prod_id_read(void *clientData,uint32_t address,int rqlen)
+mem_prod_id_read(void *clientData, uint32_t address, int rqlen)
 {
-	uint8_t id[] = { 0x0e,0x63,0x00,0x0a};
+	uint8_t id[] = { 0x0e, 0x63, 0x00, 0x0a };
 	uint32_t value = 0;
 	int ofs = address & 3;
+	unsigned int index;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if((ofs + i) < 4) {
-			value = value | (id[ofs+i]<<(i*8));	
+	for (i = 0; i < rqlen; i++) {
+		index = ofs * i;
+		if (index < 4) {
+			value = value | (id[index] << (i * 8));
 		}
 	}
-	return  value;
+	return value;
 }
 
 static void
-mem_prod_id_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_prod_id_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: Product id is not writable\n");
+	fprintf(stderr, "CS8900: Product id is not writable\n");
 	return;
 }
 
 static uint32_t
-mem_iobase_read(void *clientData,uint32_t address,int rqlen)
+mem_iobase_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->iobase;
 }
 
 static void
-mem_iobase_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_iobase_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	//IO_Unmap	
+	CS8900 *cs = (CS8900 *) clientData;
+	//IO_Unmap      
 	cs->iobase = value;
 	//IO_Map
-	fprintf(stderr,"CS8900: iobase write not complete\n");
+	fprintf(stderr, "CS8900: iobase write not complete\n");
 	return;
 }
 
@@ -565,19 +573,19 @@ mem_iobase_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------
  */
 static uint32_t
-mem_intsel_read(void *clientData,uint32_t address,int rqlen)
+mem_intsel_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->intsel;
 }
 
 static void
-mem_intsel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_intsel_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	if(value != cs->intsel) {
-		if(cs->intsel < 4) {
-			SigNode_Set(cs->intrqNode[cs->intsel],SIG_OPEN);
+	CS8900 *cs = (CS8900 *) clientData;
+	if (value != cs->intsel) {
+		if (cs->intsel < 4) {
+			SigNode_Set(cs->intrqNode[cs->intsel], SIG_OPEN);
 		}
 		cs->intsel = value;
 		cs->interrupt_posted = 0;
@@ -588,182 +596,182 @@ mem_intsel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-mem_dmachan_read(void *clientData,uint32_t address,int rqlen)
+mem_dmachan_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->dmachan;
 }
 
 static void
-mem_dmachan_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_dmachan_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->dmachan = value;
 	return;
 }
 
 static uint32_t
-mem_dmasof_read(void *clientData,uint32_t address,int rqlen)
+mem_dmasof_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: register %08x not implemented \n",address);
+	fprintf(stderr, "CS8900: register %08x not implemented \n", address);
 	return 0;
 }
 
 static void
-mem_dmasof_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_dmasof_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: register %08x not implemented \n",address);
+	fprintf(stderr, "CS8900: register %08x not implemented \n", address);
 	return;
 }
 
 static uint32_t
-mem_dmafc_read(void *clientData,uint32_t address,int rqlen)
+mem_dmafc_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: register %08x not implemented \n",address);
+	fprintf(stderr, "CS8900: register %08x not implemented \n", address);
 	return 0;
 }
 
 static void
-mem_dmafc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_dmafc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: register %08x not implemented \n",address);
+	fprintf(stderr, "CS8900: register %08x not implemented \n", address);
 	return;
 }
 
 static uint32_t
-mem_rxdmabc_read(void *clientData,uint32_t address,int rqlen)
+mem_rxdmabc_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: register %08x not implemented \n",address);
+	fprintf(stderr, "CS8900: register %08x not implemented \n", address);
 	return 0;
 }
 
 static void
-mem_rxdmabc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_rxdmabc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: register %08x not implemented \n",address);
+	fprintf(stderr, "CS8900: register %08x not implemented \n", address);
 	return;
 }
 
 static uint32_t
-mem_membase_read(void *clientData,uint32_t address,int rqlen)
+mem_membase_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->membase;
 }
 
 static void
-mem_membase_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_membase_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	// MemUnmap
-	fprintf(stderr,"CS8900: Membase write not complete\n");
-	cs->membase = value;	
+	fprintf(stderr, "CS8900: Membase write not complete\n");
+	cs->membase = value;
 	// MemMap
 	return;
 }
 
 static uint32_t
-mem_bprombase_read(void *clientData,uint32_t address,int rqlen)
+mem_bprombase_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->bprombase;
 }
 
 static void
-mem_bprombase_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_bprombase_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->bprombase = value;
 	return;
 }
 
 static uint32_t
-mem_bpromamask_read(void *clientData,uint32_t address,int rqlen)
+mem_bpromamask_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->bpromamask;
 }
 
 static void
-mem_bpromamask_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_bpromamask_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->bpromamask = value;
 	return;
 }
 
 static uint32_t
-mem_eepromcmd_read(void *clientData,uint32_t address,int rqlen)
+mem_eepromcmd_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: EEPROM command register is not readable \n");
+	fprintf(stderr, "CS8900: EEPROM command register is not readable \n");
 	return 0;
 }
 
 static void
-mem_eepromcmd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_eepromcmd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	int i;
 	int ob = (value >> 8) & 3;
 	int addr = value & 0xff;
 	//int elsel = (value >> 10) & 1;
-	switch(ob) {
-		case 0:
-			switch(addr & 0x30) {
-				case 0:
-					cs->ee_write_enabled = 0;
-					break;
-				case 0x10:
-					if(cs->ee_write_enabled) {
-						for(i=0;i<64;i++) {
-							m93c46_writew(cs->eeprom,cs->eepromdata,i); 
-						}
+	switch (ob) {
+	    case 0:
+		    switch (addr & 0x30) {
+			case 0:
+				cs->ee_write_enabled = 0;
+				break;
+			case 0x10:
+				if (cs->ee_write_enabled) {
+					for (i = 0; i < 64; i++) {
+						m93c46_writew(cs->eeprom, cs->eepromdata, i);
 					}
-					break;
-					
-				case 0x20:
-					if(cs->ee_write_enabled) {
-						for(i=0;i<64;i++) {
-							m93c46_writew(cs->eeprom,0xff,i); 
-						}
+				}
+				break;
+
+			case 0x20:
+				if (cs->ee_write_enabled) {
+					for (i = 0; i < 64; i++) {
+						m93c46_writew(cs->eeprom, 0xff, i);
 					}
-					break;
-				case 0x30:
-					cs->ee_write_enabled = 1;
-					break;
-			} 
-			break;
-		case 1:	
-			if(cs->ee_write_enabled) {
-				m93c46_writew(cs->eeprom,cs->eepromdata,addr & 0x3f); 
-			}
-			break;
-		case 2:
-			cs->eepromdata = m93c46_readw(cs->eeprom,addr & 0x3f);
-			break;
-			
-		case 3:
-			if(cs->ee_write_enabled) {
-				m93c46_writew(cs->eeprom,0xff,addr & 0x3f); 
-			}
-			break;
-		default:
-			fprintf(stderr,"unreachable code\n");
+				}
+				break;
+			case 0x30:
+				cs->ee_write_enabled = 1;
+				break;
+		    }
+		    break;
+	    case 1:
+		    if (cs->ee_write_enabled) {
+			    m93c46_writew(cs->eeprom, cs->eepromdata, addr & 0x3f);
+		    }
+		    break;
+	    case 2:
+		    cs->eepromdata = m93c46_readw(cs->eeprom, addr & 0x3f);
+		    break;
+
+	    case 3:
+		    if (cs->ee_write_enabled) {
+			    m93c46_writew(cs->eeprom, 0xff, addr & 0x3f);
+		    }
+		    break;
+	    default:
+		    fprintf(stderr, "unreachable code\n");
 	}
 	return;
 }
 
 static uint32_t
-mem_eepromdata_read(void *clientData,uint32_t address,int rqlen)
+mem_eepromdata_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->eepromdata;
 }
 
 static void
-mem_eepromdata_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_eepromdata_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->eepromdata = value;
 	return;
 }
@@ -774,16 +782,16 @@ mem_eepromdata_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------
  */
 static uint32_t
-mem_rcvfbc_read(void *clientData,uint32_t address,int rqlen)
+mem_rcvfbc_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->rcvfbc;
 }
 
 static void
-mem_rcvfbc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_rcvfbc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: RCVFBC not writable\n");
+	fprintf(stderr, "CS8900: RCVFBC not writable\n");
 	return;
 }
 
@@ -802,27 +810,27 @@ mem_rcvfbc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------------
  */
 static uint32_t
-mem_rxcfg_read(void *clientData,uint32_t address,int rqlen)
+mem_rxcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->rxcfg & ~0x3f) | RXCFG_ADDR;
 }
 
 static void
-mem_rxcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_rxcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->rxcfg = value;
 	//fprintf(stderr,"New rxcfg 0x%04x\n",value);
-	if(value & RXCFG_SKIP_1) {
-		cs->rxevent=0;
+	if (value & RXCFG_SKIP_1) {
+		cs->rxevent = 0;
 		cs->rx_fifo_rp = cs->rx_fifo_wp = 0;
 		cs->rcvfbc = 0;
-		memset(cs->memwin,0,4);
+		memset(cs->memwin, 0, 4);
 		update_receiver(cs);
-	} 
-	if(value & (RXCFG_STREAME | RXCFG_RXDMAONLY | RXCFG_AUTORXDMAE)) {
-		fprintf(stderr,"CS8900: DMA modes not supported\n");
+	}
+	if (value & (RXCFG_STREAME | RXCFG_RXDMAONLY | RXCFG_AUTORXDMAE)) {
+		fprintf(stderr, "CS8900: DMA modes not supported\n");
 	}
 	update_interrupts(cs);
 	return;
@@ -843,21 +851,20 @@ mem_rxcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------------------------
  */
 static uint32_t
-mem_rxctl_read(void *clientData,uint32_t address,int rqlen)
+mem_rxctl_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->rxctl & ~0x3f) | RXCTL_ADDR;
 }
 
 static void
-mem_rxctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_rxctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->rxctl = value;
 	update_receiver(cs);
 	return;
 }
-
 
 /* 
  * ---------------------------------------------------------
@@ -874,17 +881,17 @@ mem_rxctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------
  */
 static uint32_t
-mem_txcfg_read(void *clientData,uint32_t address,int rqlen)
+mem_txcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->txcfg & ~0x3f) | TXCFG_ADDR;
 }
 
 static void
-mem_txcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_txcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	cs->txcfg = value;	
+	CS8900 *cs = (CS8900 *) clientData;
+	cs->txcfg = value;
 	update_interrupts(cs);
 	return;
 }
@@ -905,26 +912,26 @@ mem_txcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------------
  */
 static uint32_t
-mem_rxevent_read(void *clientData,uint32_t address,int rqlen)
+mem_rxevent_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t rxevent = cs->rxevent;
 	cs->rxevent = 0;
 	update_interrupts(cs);
 	/* p.72 in manual says if FRAME reading is started it will be skipped on rxevent read */
-	if(cs->rx_fifo_rp > 4) {
+	if (cs->rx_fifo_rp > 4) {
 		cs->rx_fifo_rp = cs->rx_fifo_wp = 0;
 		cs->rcvfbc = 0;
-		memset(cs->memwin,0,4); /* not verified on real chip */
+		memset(cs->memwin, 0, 4);	/* not verified on real chip */
 		update_receiver(cs);
 	}
 	return rxevent | RXEVENT_ADDR;
 }
 
 static void
-mem_rxevent_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_rxevent_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: RXEVENT register: not writable\n");
+	fprintf(stderr, "CS8900: RXEVENT register: not writable\n");
 	return;
 }
 
@@ -941,9 +948,9 @@ mem_rxevent_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------------
  */
 static uint32_t
-mem_bufevent_read(void *clientData,uint32_t address,int rqlen)
+mem_bufevent_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t bufevent = cs->bufevent;
 	cs->bufevent = 0;
 	update_interrupts(cs);
@@ -951,16 +958,16 @@ mem_bufevent_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-mem_bufevent_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_bufevent_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: BUFEVENT register: not writable\n");
+	fprintf(stderr, "CS8900: BUFEVENT register: not writable\n");
 	return;
 }
 
 static uint32_t
-mem_rxmiss_read(void *clientData,uint32_t address,int rqlen)
+mem_rxmiss_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t rxmiss = cs->rxmiss;
 	cs->rxmiss = 0;
 	update_interrupts(cs);
@@ -968,16 +975,16 @@ mem_rxmiss_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-mem_rxmiss_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_rxmiss_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: RXMISS register: not writable\n");
+	fprintf(stderr, "CS8900: RXMISS register: not writable\n");
 	return;
 }
 
 static uint32_t
-mem_txcol_read(void *clientData,uint32_t address,int rqlen)
+mem_txcol_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t txcol = cs->txcol;
 	cs->txcol = 0;
 	update_interrupts(cs);
@@ -985,17 +992,16 @@ mem_txcol_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-mem_txcol_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_txcol_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: TXCOL register: not writable\n");
+	fprintf(stderr, "CS8900: TXCOL register: not writable\n");
 	return;
 }
- 
- 
+
 static uint32_t
-mem_txevent_read(void *clientData,uint32_t address,int rqlen)
+mem_txevent_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t txevent = cs->txevent;
 	cs->txevent = 0;
 	update_interrupts(cs);
@@ -1003,84 +1009,88 @@ mem_txevent_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-mem_txevent_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_txevent_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: TXEVENT register: not writable\n");
+	fprintf(stderr, "CS8900: TXEVENT register: not writable\n");
 	return;
 }
 
 static uint32_t
-mem_linest_read(void *clientData,uint32_t address,int rqlen)
+mem_linest_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->linest & ~0x3f) | LINEST_ADDR;
 }
 
 static void
-mem_linest_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_linest_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: Linestatus not writable\n");
+	fprintf(stderr, "CS8900: Linestatus not writable\n");
 	return;
 }
 
 static uint32_t
-mem_selfst_read(void *clientData,uint32_t address,int rqlen)
+mem_selfst_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->selfst & ~0x3f) | SELFST_ADDR;
 }
 
 static void
-mem_selfst_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_selfst_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: SELFST not writable\n");
+	fprintf(stderr, "CS8900: SELFST not writable\n");
 	return;
 }
+
 static uint32_t
-mem_busst_read(void *clientData,uint32_t address,int rqlen)
+mem_busst_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->busst | BUSST_ADDR;
 }
 
 static void
-mem_busst_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_busst_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Bus status not writable\n");
+	fprintf(stderr, "Bus status not writable\n");
 	return;
 }
+
 static uint32_t
-mem_auitdr_read(void *clientData,uint32_t address,int rqlen)
+mem_auitdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	fprintf(stderr,"CS8900: register %08x not implemented\n",address);
+	CS8900 *cs = (CS8900 *) clientData;
+	fprintf(stderr, "CS8900: register %08x not implemented\n", address);
 	return (cs->auitdr & ~0x3f) | AUITDR_ADDR;
 }
 
 static void
-mem_auitdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_auitdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AUITDR not writable\n");
+	fprintf(stderr, "AUITDR not writable\n");
 	return;
 }
+
 static uint32_t
-mem_txcmdstat_read(void *clientData,uint32_t address,int rqlen)
+mem_txcmdstat_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint32_t value = cs->txcmdstat;
 	cs->txcmdstat = 0;
-	return (value  &  ~0x3f) | TXCMDSTAT_ADDR;
+	return (value & ~0x3f) | TXCMDSTAT_ADDR;
 }
 
 static void
-mem_txcmd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_txcmd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	if((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
+	CS8900 *cs = (CS8900 *) clientData;
+	if ((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
 		transmit(cs);
 	}
 	return;
 }
+
 /*
  * ------------------------------------------------------------------------
  * BUFCFG
@@ -1097,60 +1107,63 @@ mem_txcmd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------
  */
 static uint32_t
-mem_bufcfg_read(void *clientData,uint32_t address,int rqlen)
+mem_bufcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	return (cs->bufcfg & ~0x3f) | BUFCFG_ADDR; 
+	CS8900 *cs = (CS8900 *) clientData;
+	return (cs->bufcfg & ~0x3f) | BUFCFG_ADDR;
 }
 
 static void
-mem_bufcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_bufcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->bufcfg = value;
-	if(value & BUFCFG_SWINTX) {
+	if (value & BUFCFG_SWINTX) {
 		cs->bufevent |= BUFEVENT_SWINT;
-	} 
+	}
 	update_interrupts(cs);
 	return;
 }
+
 static uint32_t
-mem_linectl_read(void *clientData,uint32_t address,int rqlen)
+mem_linectl_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->linectl & ~0x3f) | LINECTL_ADDR;
 }
 
 static void
-mem_linectl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_linectl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint8_t diff = value ^ cs->linectl;
-	if(value & diff & LINECTL_SERRXON) {
+	if (value & diff & LINECTL_SERRXON) {
 		clear_pktsrc(cs);
 	}
 	cs->linectl = value;
 	update_receiver(cs);
 	return;
 }
+
 static uint32_t
-mem_selfctl_read(void *clientData,uint32_t address,int rqlen)
+mem_selfctl_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->selfctl & ~0x3f) | SELFCTL_ADDR;
 }
 
 static void
-mem_selfctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_selfctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->selfctl = value & ~SELFCTL_RESET;
-	if(value & SELFCTL_RESET) {
+	if (value & SELFCTL_RESET) {
 		cs8900_reset(cs);
 		//fprintf(stderr,"selfctl reset not implemented\n");
 	}
 	return;
 }
+
 /*
  * ------------------------------------------------------------
  * RESETRXDMA 	 (6)
@@ -1164,85 +1177,86 @@ mem_selfctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------
 */
 static uint32_t
-mem_busctl_read(void *clientData,uint32_t address,int rqlen)
+mem_busctl_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->busctl & ~0x3f) | BUSCTL_ADDR;
 }
 
 static void
-mem_busctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_busctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->busctl = value & ~0x3f;
 	update_interrupts(cs);
 	return;
 }
 
 static uint32_t
-mem_testctl_read(void *clientData,uint32_t address,int rqlen)
+mem_testctl_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return (cs->testctl & ~0x3f) | TESTCTL_ADDR;
 }
 
 static void
-mem_testctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_testctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->testctl = value;
-	if(value & (TESTCTL_AUI_LOOP | TESTCTL_ENDEC_LOOP)) {
-		fprintf(stderr,"CS8900: ENDEC and AUI LOOP modes not implemented\n");
-	}	
+	if (value & (TESTCTL_AUI_LOOP | TESTCTL_ENDEC_LOOP)) {
+		fprintf(stderr, "CS8900: ENDEC and AUI LOOP modes not implemented\n");
+	}
 	return;
 }
 
 static uint32_t
-mem_txlength_read(void *clientData,uint32_t address,int rqlen)
+mem_txlength_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	static int warned = 0;
-	if(!warned) {
-		fprintf(stderr,"CS8900: reading from writeonly register TXLENGTH\n");
+	if (!warned) {
+		fprintf(stderr, "CS8900: reading from writeonly register TXLENGTH\n");
 		warned = 1;
 	}
 	return cs->txlength;
 }
 
 static void
-mem_txlength_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_txlength_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	cs->txlength = value;
-	if((cs->txlength > 3)  && (cs->tx_fifo_wp >= cs->txlength)) {
+	if ((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
 		transmit(cs);
 	}
 	return;
 }
+
 static uint32_t
-mem_laf_read(void *clientData,uint32_t address,int rqlen)
+mem_laf_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	uint32_t value=0;
+	CS8900 *cs = (CS8900 *) clientData;
+	uint32_t value = 0;
 	int ofs = address & 7;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if((i+ofs)<8) {
-			value |= cs->laf[i+ofs] << (i*8);	
+	for (i = 0; i < rqlen; i++) {
+		if ((i + ofs) < 8) {
+			value |= cs->laf[i + ofs] << (i * 8);
 		}
 	}
 	return value;
 }
 
 static void
-mem_laf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_laf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	int ofs = address & 7;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if((i+ofs) < 8) {
-			cs->laf[i+ofs] = value & 0xff;
+	for (i = 0; i < rqlen; i++) {
+		if ((i + ofs) < 8) {
+			cs->laf[i + ofs] = value & 0xff;
 			value = value >> 8;
 		}
 	}
@@ -1250,15 +1264,15 @@ mem_laf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-mem_indaddr_read(void *clientData,uint32_t address,int rqlen)
+mem_indaddr_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	uint32_t value=0;
+	CS8900 *cs = (CS8900 *) clientData;
+	uint32_t value = 0;
 	int ofs = address & 7;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if((i+ofs)<6) {
-			value |= cs->indaddr[i+ofs] << (i*8);	
+	for (i = 0; i < rqlen; i++) {
+		if ((i + ofs) < 6) {
+			value |= cs->indaddr[i + ofs] << (i * 8);
 		}
 	}
 	//fprintf(stderr,"indaddr %d read: %04x\n",ofs,value);
@@ -1266,21 +1280,20 @@ mem_indaddr_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-mem_indaddr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_indaddr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	int ofs = address & 7;
 	int i;
 	//fprintf(stderr,"Set mac\n");
-	for(i=0;i<rqlen;i++) {
-		if((i+ofs) < 6) {
-			cs->indaddr[i+ofs] = value & 0xff;
+	for (i = 0; i < rqlen; i++) {
+		if ((i + ofs) < 6) {
+			cs->indaddr[i + ofs] = value & 0xff;
 			value = value >> 8;
 		}
 	}
 	return;
 }
-
 
 /*
  * ---------------------------------------------------
@@ -1289,47 +1302,47 @@ mem_indaddr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static void
-mem_txframe_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mem_txframe_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if(cs->tx_fifo_wp < 0x600) {
-			cs->txbuf[cs->tx_fifo_wp++] = value & 0xff;	
-			value = value>>8;
+	for (i = 0; i < rqlen; i++) {
+		if (cs->tx_fifo_wp < 0x600) {
+			cs->txbuf[cs->tx_fifo_wp++] = value & 0xff;
+			value = value >> 8;
 		}
-	}	
-	if((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
+	}
+	if ((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
 		transmit(cs);
 	}
 	return;
 }
 
 static uint32_t
-mem_rxframe_read(void *clientData,uint32_t address,int rqlen)
+mem_rxframe_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t value = 0;
-	unsigned int ofs = (address & 0xfff) - 0x400; 
+	unsigned int ofs = (address & 0xfff) - 0x400;
 	int i;
-	if((ofs+rqlen) > 0x600) {
-		rqlen = 0x600-ofs;
+	if ((ofs + rqlen) > 0x600) {
+		rqlen = 0x600 - ofs;
 	}
-	if(ofs < 118) {
-		for(i=0;i<rqlen;i++) {
-			value |= cs->memwin[ofs + i] <<(i<<3);	
+	if (ofs < 118) {
+		for (i = 0; i < rqlen; i++) {
+			value |= cs->memwin[ofs + i] << (i << 3);
 		}
 		cs->rx_fifo_rp = ofs + rqlen;
 	} else {
-		for(i=0;i<rqlen;i++) {
-			value |= cs->memwin[cs->rx_fifo_rp++] <<(i<<3);	
+		for (i = 0; i < rqlen; i++) {
+			value |= cs->memwin[cs->rx_fifo_rp++] << (i << 3);
 		}
 	}
 	/* Manual says when entire frame has been read it becomes inaccesible (p.72) */
-	if(cs->rx_fifo_rp >= cs->rx_fifo_wp) {
+	if (cs->rx_fifo_rp >= cs->rx_fifo_wp) {
 		cs->rx_fifo_rp = cs->rx_fifo_wp = 0;
 		cs->rcvfbc = 0;
-		memset(cs->memwin,0,4);
+		memset(cs->memwin, 0, 4);
 		update_receiver(cs);
 	}
 	//fprintf(stderr,"rxframe read: ofs %04x, rqlen %d, result %04x, rp %04x\n",ofs,rqlen,value,cs->rx_fifo_rp);
@@ -1337,79 +1350,79 @@ mem_rxframe_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static uint32_t
-io_rxtxdata0_read(void *clientData,uint32_t address,int rqlen)
+io_rxtxdata0_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint32_t value = 0;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if(cs->rx_fifo_rp < cs->rx_fifo_wp) {
-			value = value | (cs->memwin[cs->rx_fifo_rp++] << (i<<3));
+	for (i = 0; i < rqlen; i++) {
+		if (cs->rx_fifo_rp < cs->rx_fifo_wp) {
+			value = value | (cs->memwin[cs->rx_fifo_rp++] << (i << 3));
 		}
 	}
 	//fprintf(stderr,"rxtxdata %04x, rp %04x\n",value,cs->rx_fifo_rp);
 	/* Manual says when entire frame has been read it becomes inaccesible (p.72) */
-	if(cs->rx_fifo_rp >= cs->rx_fifo_wp) {
+	if (cs->rx_fifo_rp >= cs->rx_fifo_wp) {
 		cs->rx_fifo_rp = cs->rx_fifo_wp = 0;
 		cs->rcvfbc = 0;
-		memset(cs->memwin,0,4);
+		memset(cs->memwin, 0, 4);
 		update_receiver(cs);
 	}
 	return value;
 }
 
 static void
-io_rxtxdata0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_rxtxdata0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	int i;
-	for(i=0;i<rqlen;i++) {
-		if(cs->tx_fifo_wp < 0x600) {
-			cs->txbuf[cs->tx_fifo_wp++] = value & 0xff;	
-			value = value>>8;
+	for (i = 0; i < rqlen; i++) {
+		if (cs->tx_fifo_wp < 0x600) {
+			cs->txbuf[cs->tx_fifo_wp++] = value & 0xff;
+			value = value >> 8;
 		}
-	}	
-	if((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
+	}
+	if ((cs->txlength > 3) && (cs->tx_fifo_wp >= cs->txlength)) {
 		transmit(cs);
 	}
 	return;
 }
 
 static uint32_t
-io_rxtxdata1_read(void *clientData,uint32_t address,int rqlen)
+io_rxtxdata1_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	return io_rxtxdata0_read(cs,address,rqlen);
+	CS8900 *cs = (CS8900 *) clientData;
+	return io_rxtxdata0_read(cs, address, rqlen);
 }
 
 static void
-io_rxtxdata1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_rxtxdata1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	io_rxtxdata0_write(cs,value,address,rqlen);
+	CS8900 *cs = (CS8900 *) clientData;
+	io_rxtxdata0_write(cs, value, address, rqlen);
 	return;
 }
 
 static void
-io_txcmd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_txcmd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	mem_txcmd_write(cs,value,address,rqlen);
+	CS8900 *cs = (CS8900 *) clientData;
+	mem_txcmd_write(cs, value, address, rqlen);
 	return;
 }
 
 static uint32_t
-io_txlength_read(void *clientData,uint32_t address,int rqlen)
+io_txlength_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	return mem_txlength_read(cs,address,rqlen);
+	CS8900 *cs = (CS8900 *) clientData;
+	return mem_txlength_read(cs, address, rqlen);
 }
 
 static void
-io_txlength_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_txlength_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	mem_txlength_write(cs,value,address,rqlen);
+	CS8900 *cs = (CS8900 *) clientData;
+	mem_txlength_write(cs, value, address, rqlen);
 	return;
 }
 
@@ -1423,28 +1436,28 @@ io_txlength_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------
  */
 static uint32_t
-io_isq_read(void *clientData,uint32_t address,int rqlen)
+io_isq_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint32_t value = 0;
-	value = mem_rxevent_read(cs,address,rqlen);
-	if(value &  ~0x3f) {
+	value = mem_rxevent_read(cs, address, rqlen);
+	if (value & ~0x3f) {
 		return value;
 	}
-	value = mem_txevent_read(cs,address,rqlen);
-	if(value &  ~0x3f) {
+	value = mem_txevent_read(cs, address, rqlen);
+	if (value & ~0x3f) {
 		return value;
 	}
-	value = mem_bufevent_read(cs,address,rqlen);
-	if(value &  ~0x3f) {
+	value = mem_bufevent_read(cs, address, rqlen);
+	if (value & ~0x3f) {
 		return value;
 	}
-	value = mem_rxmiss_read(cs,address,rqlen);
-	if(value &  ~0x3f) {
+	value = mem_rxmiss_read(cs, address, rqlen);
+	if (value & ~0x3f) {
 		return value;
 	}
-	value = mem_txcol_read(cs,address,rqlen);
-	if(value &  ~0x3f) {
+	value = mem_txcol_read(cs, address, rqlen);
+	if (value & ~0x3f) {
 		return value;
 	}
 	value = 0;
@@ -1454,445 +1467,444 @@ io_isq_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-io_isq_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_isq_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"CS8900: ISQ register is not writable\n");
+	fprintf(stderr, "CS8900: ISQ register is not writable\n");
 	return;
 }
 
 static uint32_t
-io_pptr_read(void *clientData,uint32_t address,int rqlen)
+io_pptr_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	return (cs->pptr & ~(1<<14)) | (3<<12);
+	CS8900 *cs = (CS8900 *) clientData;
+	return (cs->pptr & ~(1 << 14)) | (3 << 12);
 }
 
 static void
-io_pptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_pptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	cs->pptr = value;	
+	CS8900 *cs = (CS8900 *) clientData;
+	cs->pptr = value;
 	return;
 }
 
 static uint32_t
-io_pdata0_read(void *clientData,uint32_t address,int rqlen)
+io_pdata0_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t regaddr = cs->pptr & 0xfff;
 	uint32_t value = 0;
 	int size = 16;
 	int autoinc = (cs->pptr >> 15) & 1;
-	switch(regaddr) {
-		case MEM_PROD_ID(0):
-			value = mem_prod_id_read(cs,regaddr,rqlen);
-			size=32;
-			break;
+	switch (regaddr) {
+	    case MEM_PROD_ID(0):
+		    value = mem_prod_id_read(cs, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_IOBASE(0):
-			value = mem_iobase_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_IOBASE(0):
+		    value = mem_iobase_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_INTSEL(0):
-			value = mem_intsel_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_INTSEL(0):
+		    value = mem_intsel_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_DMACHAN(0):
-			value = mem_dmachan_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_DMACHAN(0):
+		    value = mem_dmachan_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_DMASOF(0):
-			value = mem_dmasof_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_DMASOF(0):
+		    value = mem_dmasof_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_DMAFC(0):
-			value = mem_dmafc_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_DMAFC(0):
+		    value = mem_dmafc_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_RXDMABC(0):
-			value = mem_rxdmabc_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_RXDMABC(0):
+		    value = mem_rxdmabc_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_MEMBASE(0):
-			value = mem_membase_read(cs,regaddr,rqlen);
-			size=32;
-			break;
+	    case MEM_MEMBASE(0):
+		    value = mem_membase_read(cs, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_BPROMBASE(0):
-			value = mem_bprombase_read(cs,regaddr,rqlen);
-			size=32;
-			break;
+	    case MEM_BPROMBASE(0):
+		    value = mem_bprombase_read(cs, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_BPROMAMASK(0):
-			value = mem_bpromamask_read(cs,regaddr,rqlen);
-			size=32;
-			break;
+	    case MEM_BPROMAMASK(0):
+		    value = mem_bpromamask_read(cs, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_EEPROMCMD(0):
-			value = mem_eepromcmd_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_EEPROMCMD(0):
+		    value = mem_eepromcmd_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_EEPROMDATA(0):
-			value = mem_eepromdata_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_EEPROMDATA(0):
+		    value = mem_eepromdata_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_RCVFBC(0):
-			value = mem_rcvfbc_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_RCVFBC(0):
+		    value = mem_rcvfbc_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_RXCFG(0):
-			value = mem_rxcfg_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_RXCFG(0):
+		    value = mem_rxcfg_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_RXCTL(0):
-			value = mem_rxctl_read(cs,regaddr,rqlen);
-			break;
-	
-		case MEM_TXCFG(0):
-			value = mem_txcfg_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_RXCTL(0):
+		    value = mem_rxctl_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_TXCMDSTAT(0):
-			value = mem_txcmdstat_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_TXCFG(0):
+		    value = mem_txcfg_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_BUFCFG(0):
-			value = mem_bufcfg_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_TXCMDSTAT(0):
+		    value = mem_txcmdstat_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_LINECTL(0):
-			value = mem_linectl_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_BUFCFG(0):
+		    value = mem_bufcfg_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_SELFCTL(0):
-			value = mem_selfctl_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_LINECTL(0):
+		    value = mem_linectl_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_BUSCTL(0):
-			value = mem_busctl_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_SELFCTL(0):
+		    value = mem_selfctl_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_TESTCTL(0):
-			value = mem_testctl_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_BUSCTL(0):
+		    value = mem_busctl_read(cs, regaddr, rqlen);
+		    break;
 
+	    case MEM_TESTCTL(0):
+		    value = mem_testctl_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_RXEVENT(0):
-			value = mem_rxevent_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_RXEVENT(0):
+		    value = mem_rxevent_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_BUFEVENT(0):
-			value = mem_bufevent_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_BUFEVENT(0):
+		    value = mem_bufevent_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_RXMISS(0):
-			value = mem_rxmiss_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_RXMISS(0):
+		    value = mem_rxmiss_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_TXCOL(0):
-			value = mem_txcol_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_TXCOL(0):
+		    value = mem_txcol_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_TXEVENT(0):
-			value = mem_txevent_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_TXEVENT(0):
+		    value = mem_txevent_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_LINEST(0):
-			value = mem_linest_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_LINEST(0):
+		    value = mem_linest_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_SELFST(0):
-			value = mem_selfst_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_SELFST(0):
+		    value = mem_selfst_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_BUSST(0):
-			value = mem_busst_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_BUSST(0):
+		    value = mem_busst_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_AUITDR(0):
-			value = mem_auitdr_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_AUITDR(0):
+		    value = mem_auitdr_read(cs, regaddr, rqlen);
+		    break;
 
-		//case MEM_STATEV(0):
+		    //case MEM_STATEV(0):
 
+	    case MEM_TXLENGTH(0):
+		    value = mem_txlength_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_TXLENGTH(0):
-			value = mem_txlength_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_LAF(0):
+	    case MEM_LAF(0) + 1:
+	    case MEM_LAF(0) + 2:
+	    case MEM_LAF(0) + 3:
+	    case MEM_LAF(0) + 4:
+	    case MEM_LAF(0) + 5:
+		    value = mem_laf_read(cs, regaddr + 2, rqlen) << 16;
+	    case MEM_LAF(0) + 6:
+	    case MEM_LAF(0) + 7:
+		    value = mem_laf_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_LAF(0):
-		case MEM_LAF(0) + 1:
-		case MEM_LAF(0) + 2:
-		case MEM_LAF(0) + 3:
-		case MEM_LAF(0) + 4:
-		case MEM_LAF(0) + 5:
-			value = mem_laf_read(cs,regaddr+2,rqlen)<<16;
-		case MEM_LAF(0) + 6:
-		case MEM_LAF(0) + 7:
-			value = mem_laf_read(cs,regaddr,rqlen);
-			break;
+	    case MEM_INDADDR(0):
+	    case MEM_INDADDR(0) + 1:
+	    case MEM_INDADDR(0) + 2:
+	    case MEM_INDADDR(0) + 3:
+		    value |= mem_indaddr_read(cs, regaddr + 2, rqlen) << 16;
+	    case MEM_INDADDR(0) + 4:
+	    case MEM_INDADDR(0) + 5:
+		    value |= mem_indaddr_read(cs, regaddr, rqlen);
+		    break;
 
-		case MEM_INDADDR(0):
-		case MEM_INDADDR(0)+1:
-		case MEM_INDADDR(0)+2:
-		case MEM_INDADDR(0)+3:
-			value |= mem_indaddr_read(cs,regaddr+2,rqlen)<<16;		
-		case MEM_INDADDR(0)+4:
-		case MEM_INDADDR(0)+5:
-			value |= mem_indaddr_read(cs,regaddr,rqlen);		
-			break;
-
-		default:
-			if(regaddr >= 0x400) {
-				value = mem_rxframe_read(cs,regaddr,rqlen);
-			}
-			break;
+	    default:
+		    if (regaddr >= 0x400) {
+			    value = mem_rxframe_read(cs, regaddr, rqlen);
+		    }
+		    break;
 	}
 	cs->pdata1 = value >> 16;
-	if(autoinc) {
+	if (autoinc) {
 		cs->pptr = (cs->pptr + rqlen) & 0x8fff;
 	}
 	return value;
 }
 
 static void
-io_pdata0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_pdata0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	uint16_t regaddr = cs->pptr & 0xfff;
 	int size = 16;
 	int autoinc = (cs->pptr >> 15) & 1;
-	switch(regaddr) {
-		case MEM_PROD_ID(0):
-			mem_prod_id_write(cs,value,regaddr,rqlen);
-			break;
+	switch (regaddr) {
+	    case MEM_PROD_ID(0):
+		    mem_prod_id_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_IOBASE(0):
-			mem_iobase_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_IOBASE(0):
+		    mem_iobase_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_INTSEL(0):
-			mem_intsel_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_INTSEL(0):
+		    mem_intsel_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_DMACHAN(0):
-			mem_dmachan_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_DMACHAN(0):
+		    mem_dmachan_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_DMASOF(0):
-			mem_dmasof_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_DMASOF(0):
+		    mem_dmasof_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_DMAFC(0):
-			mem_dmafc_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_DMAFC(0):
+		    mem_dmafc_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_RXDMABC(0):
-			mem_rxdmabc_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_RXDMABC(0):
+		    mem_rxdmabc_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_MEMBASE(0):
-			mem_membase_write(cs,value,regaddr,rqlen);
-			size=32;
-			break;
+	    case MEM_MEMBASE(0):
+		    mem_membase_write(cs, value, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_BPROMBASE(0):
-			mem_bprombase_write(cs,value,regaddr,rqlen);
-			size=32;
-			break;
+	    case MEM_BPROMBASE(0):
+		    mem_bprombase_write(cs, value, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_BPROMAMASK(0):
-			mem_bpromamask_write(cs,value,regaddr,rqlen);
-			size=32;
-			break;
+	    case MEM_BPROMAMASK(0):
+		    mem_bpromamask_write(cs, value, regaddr, rqlen);
+		    size = 32;
+		    break;
 
-		case MEM_EEPROMCMD(0):
-			mem_eepromcmd_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_EEPROMCMD(0):
+		    mem_eepromcmd_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_EEPROMDATA(0):
-			mem_eepromdata_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_EEPROMDATA(0):
+		    mem_eepromdata_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_RCVFBC(0):
-			mem_rcvfbc_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_RCVFBC(0):
+		    mem_rcvfbc_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_RXCFG(0):
-			mem_rxcfg_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_RXCFG(0):
+		    mem_rxcfg_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_RXCTL(0):
-			mem_rxctl_write(cs,value,regaddr,rqlen);
-			break;
-	
-		case MEM_TXCFG(0):
-			mem_txcfg_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_RXCTL(0):
+		    mem_rxctl_write(cs, value, regaddr, rqlen);
+		    break;
 
+	    case MEM_TXCFG(0):
+		    mem_txcfg_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_RXEVENT(0):
-			mem_rxevent_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_RXEVENT(0):
+		    mem_rxevent_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_BUFEVENT(0):
-			mem_bufevent_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_BUFEVENT(0):
+		    mem_bufevent_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_RXMISS(0):
-			mem_rxmiss_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_RXMISS(0):
+		    mem_rxmiss_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_TXCOL(0):
-			mem_txcol_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_TXCOL(0):
+		    mem_txcol_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_TXEVENT(0):
-			mem_txevent_write(cs,value,regaddr,rqlen);
-			break;
-		case MEM_LINEST(0):
-			mem_linest_write(cs,value,regaddr,rqlen);
-			break;
-		case MEM_SELFST(0):
-			mem_selfst_write(cs,value,regaddr,rqlen);
-			break;
-		case MEM_BUSST(0):
-			mem_busst_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_TXEVENT(0):
+		    mem_txevent_write(cs, value, regaddr, rqlen);
+		    break;
+	    case MEM_LINEST(0):
+		    mem_linest_write(cs, value, regaddr, rqlen);
+		    break;
+	    case MEM_SELFST(0):
+		    mem_selfst_write(cs, value, regaddr, rqlen);
+		    break;
+	    case MEM_BUSST(0):
+		    mem_busst_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_AUITDR(0):
-			mem_auitdr_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_AUITDR(0):
+		    mem_auitdr_write(cs, value, regaddr, rqlen);
+		    break;
 
-		//case MEM_STATEV(0):
+		    //case MEM_STATEV(0):
 
-		case MEM_TXCMD(0):
-			mem_txcmd_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_TXCMD(0):
+		    mem_txcmd_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_BUFCFG(0):
-			mem_bufcfg_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_BUFCFG(0):
+		    mem_bufcfg_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_LINECTL(0):
-			mem_linectl_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_LINECTL(0):
+		    mem_linectl_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_SELFCTL(0):
-			mem_selfctl_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_SELFCTL(0):
+		    mem_selfctl_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_BUSCTL(0):
-			mem_busctl_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_BUSCTL(0):
+		    mem_busctl_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_TESTCTL(0):
-			mem_testctl_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_TESTCTL(0):
+		    mem_testctl_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_TXLENGTH(0):
-			mem_txlength_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_TXLENGTH(0):
+		    mem_txlength_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_LAF(0):
-		case MEM_LAF(0) + 1:
-		case MEM_LAF(0) + 2:
-		case MEM_LAF(0) + 3:
-		case MEM_LAF(0) + 4:
-		case MEM_LAF(0) + 5:
-		case MEM_LAF(0) + 6:
-		case MEM_LAF(0) + 7:
-			mem_laf_write(cs,value,regaddr,rqlen);
-			break;
+	    case MEM_LAF(0):
+	    case MEM_LAF(0) + 1:
+	    case MEM_LAF(0) + 2:
+	    case MEM_LAF(0) + 3:
+	    case MEM_LAF(0) + 4:
+	    case MEM_LAF(0) + 5:
+	    case MEM_LAF(0) + 6:
+	    case MEM_LAF(0) + 7:
+		    mem_laf_write(cs, value, regaddr, rqlen);
+		    break;
 
-		case MEM_INDADDR(0):
-		case MEM_INDADDR(0)+1:
-		case MEM_INDADDR(0)+2:
-		case MEM_INDADDR(0)+3:
-		case MEM_INDADDR(0)+4:
-		case MEM_INDADDR(0)+5:
-			mem_indaddr_write(cs,value,regaddr,rqlen);		
-			break;
+	    case MEM_INDADDR(0):
+	    case MEM_INDADDR(0) + 1:
+	    case MEM_INDADDR(0) + 2:
+	    case MEM_INDADDR(0) + 3:
+	    case MEM_INDADDR(0) + 4:
+	    case MEM_INDADDR(0) + 5:
+		    mem_indaddr_write(cs, value, regaddr, rqlen);
+		    break;
 
-		default:
-			if(regaddr >= 0xa00) {
-				/* ???? is rxbuf writable ??? */
-				mem_txframe_write(cs,value,regaddr,rqlen);
-			}
+	    default:
+		    if (regaddr >= 0xa00) {
+			    /* ???? is rxbuf writable ??? */
+			    mem_txframe_write(cs, value, regaddr, rqlen);
+		    }
 	}
-	if(autoinc) {
+	if (autoinc) {
 		cs->pptr = (cs->pptr + rqlen) & 0x8fff;
 	}
 	return;
 }
 
 static uint32_t
-io_pdata1_read(void *clientData,uint32_t address,int rqlen)
+io_pdata1_read(void *clientData, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
+	CS8900 *cs = (CS8900 *) clientData;
 	return cs->pdata1;
 }
 
 static void
-io_pdata1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_pdata1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        CS8900 *cs = (CS8900 *) clientData;
-	return io_pdata0_write(cs,value,address+2,rqlen);
+	CS8900 *cs = (CS8900 *) clientData;
+	return io_pdata0_write(cs, value, address + 2, rqlen);
 }
 
 #if 0
 static void
-CS8900_MemMap(CS8900 *cs,uint32_t base)
+CS8900_MemMap(CS8900 * cs, uint32_t base)
 {
 	int i;
 	uint32_t flags;
-	IOH_New32(MEM_PROD_ID(base),mem_prod_id_read,mem_prod_id_write,cs);
-	IOH_New16(MEM_IOBASE(base),mem_iobase_read,mem_iobase_write,cs);
-	IOH_New16(MEM_IOBASE(base),mem_intsel_read,mem_intsel_write,cs);
-	IOH_New16(MEM_DMACHAN(base),mem_dmachan_read,mem_dmachan_write,cs);
-	IOH_New16(MEM_DMASOF(base),mem_dmasof_read,mem_dmasof_write,cs);
-	IOH_New16(MEM_DMAFC(base),mem_dmafc_read,mem_dmafc_write,cs);
-	IOH_New16(MEM_RXDMABC(base),mem_rxdmabc_read,mem_rxdmabc_write,cs);
-	IOH_New32(MEM_MEMBASE(base),mem_membase_read,mem_membase_write,cs);
-	IOH_New32(MEM_BPROMBASE(base),mem_bprombase_read,mem_bprombase_write,cs);
-	IOH_New32(MEM_BPROMAMASK(base),mem_bpromamask_read,mem_bpromamask_write,cs);
-	IOH_New16(MEM_EEPROMCMD(base),mem_eepromcmd_read,mem_eepromcmd_write,cs);
-	IOH_New16(MEM_EEPROMDATA(base),mem_eepromdata_read,mem_eepromdata_write,cs);
-	IOH_New16(MEM_RCVFBC(base),mem_rcvfbc_read,mem_rcvfbc_write,cs);
-	IOH_New16(MEM_RXCFG(base),mem_rxcfg_read,mem_rxcfg_write,cs);
-	IOH_New16(MEM_RXCTL(base),mem_rxctl_read,mem_rxctl_write,cs);
-	IOH_New16(MEM_TXCFG(base),mem_txcfg_read,mem_txcfg_write,cs);
-	IOH_New16(MEM_TXCMDSTAT(base),mem_txcmdstat_read,NULL,cs);
-	IOH_New16(MEM_BUFCFG(base),mem_bufcfg_read,mem_bufcfg_write,cs);
-	IOH_New16(MEM_LINECTL(base),mem_linectl_read,mem_linectl_write,cs);
-	IOH_New16(MEM_SELFCTL(base),mem_selfctl_read,mem_selfctl_write,cs);
-	IOH_New16(MEM_BUSCTL(base),mem_busctl_read,mem_busctl_write,cs);
-	IOH_New16(MEM_TESTCTL(base),mem_testctl_read,mem_testctl_write,cs);
+	IOH_New32(MEM_PROD_ID(base), mem_prod_id_read, mem_prod_id_write, cs);
+	IOH_New16(MEM_IOBASE(base), mem_iobase_read, mem_iobase_write, cs);
+	IOH_New16(MEM_IOBASE(base), mem_intsel_read, mem_intsel_write, cs);
+	IOH_New16(MEM_DMACHAN(base), mem_dmachan_read, mem_dmachan_write, cs);
+	IOH_New16(MEM_DMASOF(base), mem_dmasof_read, mem_dmasof_write, cs);
+	IOH_New16(MEM_DMAFC(base), mem_dmafc_read, mem_dmafc_write, cs);
+	IOH_New16(MEM_RXDMABC(base), mem_rxdmabc_read, mem_rxdmabc_write, cs);
+	IOH_New32(MEM_MEMBASE(base), mem_membase_read, mem_membase_write, cs);
+	IOH_New32(MEM_BPROMBASE(base), mem_bprombase_read, mem_bprombase_write, cs);
+	IOH_New32(MEM_BPROMAMASK(base), mem_bpromamask_read, mem_bpromamask_write, cs);
+	IOH_New16(MEM_EEPROMCMD(base), mem_eepromcmd_read, mem_eepromcmd_write, cs);
+	IOH_New16(MEM_EEPROMDATA(base), mem_eepromdata_read, mem_eepromdata_write, cs);
+	IOH_New16(MEM_RCVFBC(base), mem_rcvfbc_read, mem_rcvfbc_write, cs);
+	IOH_New16(MEM_RXCFG(base), mem_rxcfg_read, mem_rxcfg_write, cs);
+	IOH_New16(MEM_RXCTL(base), mem_rxctl_read, mem_rxctl_write, cs);
+	IOH_New16(MEM_TXCFG(base), mem_txcfg_read, mem_txcfg_write, cs);
+	IOH_New16(MEM_TXCMDSTAT(base), mem_txcmdstat_read, NULL, cs);
+	IOH_New16(MEM_BUFCFG(base), mem_bufcfg_read, mem_bufcfg_write, cs);
+	IOH_New16(MEM_LINECTL(base), mem_linectl_read, mem_linectl_write, cs);
+	IOH_New16(MEM_SELFCTL(base), mem_selfctl_read, mem_selfctl_write, cs);
+	IOH_New16(MEM_BUSCTL(base), mem_busctl_read, mem_busctl_write, cs);
+	IOH_New16(MEM_TESTCTL(base), mem_testctl_read, mem_testctl_write, cs);
 
-	IOH_New16(MEM_TXCMD(base),NULL,mem_txcmd_write,cs);
-	IOH_New16(MEM_TXLENGTH(base),mem_txlength_read,mem_txlength_write,cs);
-	IOH_New16(MEM_RXEVENT(base),mem_rxevent_read,mem_rxevent_write,cs);
-	IOH_New16(MEM_BUFEVENT(base),mem_bufevent_read,mem_bufevent_write,cs);
-	IOH_New16(MEM_RXMISS(base),mem_rxmiss_read,mem_rxmiss_write,cs);
-	IOH_New16(MEM_TXCOL(base),mem_txcol_read,mem_txcol_write,cs);
-	IOH_New16(MEM_TXEVENT(base),mem_txevent_read,mem_txevent_write,cs);
-	IOH_New16(MEM_LINEST(base),mem_linest_read,mem_linest_write,cs);
-	IOH_New16(MEM_SELFST(base),mem_selfst_read,mem_selfst_write,cs);
-	IOH_New16(MEM_BUSST(base),mem_busst_read,mem_busst_write,cs);
-	IOH_New16(MEM_AUITDR(base),mem_auitdr_read,mem_auitdr_write,cs);
+	IOH_New16(MEM_TXCMD(base), NULL, mem_txcmd_write, cs);
+	IOH_New16(MEM_TXLENGTH(base), mem_txlength_read, mem_txlength_write, cs);
+	IOH_New16(MEM_RXEVENT(base), mem_rxevent_read, mem_rxevent_write, cs);
+	IOH_New16(MEM_BUFEVENT(base), mem_bufevent_read, mem_bufevent_write, cs);
+	IOH_New16(MEM_RXMISS(base), mem_rxmiss_read, mem_rxmiss_write, cs);
+	IOH_New16(MEM_TXCOL(base), mem_txcol_read, mem_txcol_write, cs);
+	IOH_New16(MEM_TXEVENT(base), mem_txevent_read, mem_txevent_write, cs);
+	IOH_New16(MEM_LINEST(base), mem_linest_read, mem_linest_write, cs);
+	IOH_New16(MEM_SELFST(base), mem_selfst_read, mem_selfst_write, cs);
+	IOH_New16(MEM_BUSST(base), mem_busst_read, mem_busst_write, cs);
+	IOH_New16(MEM_AUITDR(base), mem_auitdr_read, mem_auitdr_write, cs);
 	flags = IOH_FLG_OSZR_NEXT | IOH_FLG_OSZW_NEXT | IOH_FLG_PWR_RMW | IOH_FLG_PRD_RARP;
-	for(i=0;i<8;i+=2) {
-		IOH_New8f(MEM_LAF(base)+i,mem_laf_read,mem_laf_write,cs,flags);
+	for (i = 0; i < 8; i += 2) {
+		IOH_New8f(MEM_LAF(base) + i, mem_laf_read, mem_laf_write, cs, flags);
 	}
-	for(i=0;i<6;i+=2) {
-		IOH_New16f(MEM_INDADDR(base)+i,mem_indaddr_read,mem_indaddr_write,cs,flags);	
+	for (i = 0; i < 6; i += 2) {
+		IOH_New16f(MEM_INDADDR(base) + i, mem_indaddr_read, mem_indaddr_write, cs, flags);
 	}
-	IOH_New16(MEM_RXSTAT(base),mem_rxstat_read,mem_rxstat_write,cs,flags);
-	IOH_New16(MEM_RXLENGTH(base),mem_rxlength_read,mem_rxlength_write,cs,flags);
+	IOH_New16(MEM_RXSTAT(base), mem_rxstat_read, mem_rxstat_write, cs, flags);
+	IOH_New16(MEM_RXLENGTH(base), mem_rxlength_read, mem_rxlength_write, cs, flags);
 
 	/* regions only can start aligned to multiple of 256 bytes */
-	IOH_NewRegion(MEM_RXSTAT(base),0x600,mem_rxframe_read,mem_rxframe_write,HOST_BYTEORDER,cs);
-	IOH_NewRegion(MEM_TXFRAME(base),0x600,mem_txframe_read,mem_txframe_write,HOST_BYTEORDER,cs);
+	IOH_NewRegion(MEM_RXSTAT(base), 0x600, mem_rxframe_read, mem_rxframe_write, HOST_BYTEORDER,
+		      cs);
+	IOH_NewRegion(MEM_TXFRAME(base), 0x600, mem_txframe_read, mem_txframe_write, HOST_BYTEORDER,
+		      cs);
 	/* Map memory block with rx and tx frame here */
 }
 
@@ -1900,7 +1912,7 @@ CS8900_MemMap(CS8900 *cs,uint32_t base)
  * Warning ! currently incomplete !!!
  */
 static void
-CS8900_MemUnmap(CS8900 *cs,uint32_t base)
+CS8900_MemUnmap(CS8900 * cs, uint32_t base)
 {
 	int i;
 	IOH_Delete32(MEM_PROD_ID(base));
@@ -1921,21 +1933,21 @@ CS8900_MemUnmap(CS8900 *cs,uint32_t base)
 	IOH_Delete16(MEM_TXCFG(base));
 	IOH_Delete16(MEM_TXCMD(base));
 	IOH_Delete16(MEM_TXLENGTH(base));
-	for(i=0;i<8;i+=2) {
-		IOH_Delete16(MEM_LAF(base)+i);	
+	for (i = 0; i < 8; i += 2) {
+		IOH_Delete16(MEM_LAF(base) + i);
 	}
-	for(i=0;i<6;i+=2) {
-		IOH_Delete8(MEM_INDADDR(base)+i);	
+	for (i = 0; i < 6; i += 2) {
+		IOH_Delete8(MEM_INDADDR(base) + i);
 	}
 	IOH_Delete16(MEM_RXSTAT(base));
 	IOH_Delete16(MEM_RXLENGTH(base));
 	/* Unap memory block with rx and tx frame here */
-	IOH_DeleteRegion(MEM_RXSTAT(base),0x600);
-	IOH_DeleteRegion(MEM_TXFRAME(base),0x600);
+	IOH_DeleteRegion(MEM_RXSTAT(base), 0x600);
+	IOH_DeleteRegion(MEM_TXFRAME(base), 0x600);
 }
 #endif
 static void
-CS8900_IoUnmap(CS8900 *cs,uint32_t base)
+CS8900_IoUnmap(CS8900 * cs, uint32_t base)
 {
 	IOH_Delete16(IO_RXTXDATA0(base));
 	IOH_Delete16(IO_RXTXDATA1(base));
@@ -1945,79 +1957,76 @@ CS8900_IoUnmap(CS8900 *cs,uint32_t base)
 	IOH_Delete16(IO_PPTR(base));
 	IOH_Delete16(IO_PDATA0(base));
 	IOH_Delete16(IO_PDATA1(base));
-  
+
 }
 
 static void
-CS8900_IoMap(CS8900 * cs,uint32_t base)
+CS8900_IoMap(CS8900 * cs, uint32_t base)
 {
 	uint32_t flags;
-	IOH_New16(IO_RXTXDATA0(base),io_rxtxdata0_read,io_rxtxdata0_write,cs);
-	IOH_New16(IO_RXTXDATA1(base),io_rxtxdata1_read,io_rxtxdata1_write,cs);
-	IOH_New16(IO_TXCMD(base),NULL,io_txcmd_write,cs);
-	IOH_New16(IO_TXLENGTH(base),io_txlength_read,io_txlength_write,cs);
-	IOH_New16(IO_ISQ(base),io_isq_read,io_isq_write,cs);
-	IOH_New16(IO_PPTR(base),io_pptr_read,io_pptr_write,cs);
+	IOH_New16(IO_RXTXDATA0(base), io_rxtxdata0_read, io_rxtxdata0_write, cs);
+	IOH_New16(IO_RXTXDATA1(base), io_rxtxdata1_read, io_rxtxdata1_write, cs);
+	IOH_New16(IO_TXCMD(base), NULL, io_txcmd_write, cs);
+	IOH_New16(IO_TXLENGTH(base), io_txlength_read, io_txlength_write, cs);
+	IOH_New16(IO_ISQ(base), io_isq_read, io_isq_write, cs);
+	IOH_New16(IO_PPTR(base), io_pptr_read, io_pptr_write, cs);
 	flags = IOH_FLG_OSZR_NEXT | IOH_FLG_OSZW_NEXT;
-	IOH_New16f(IO_PDATA0(base),io_pdata0_read,io_pdata0_write,cs,flags);
-	IOH_New16f(IO_PDATA1(base),io_pdata1_read,io_pdata1_write,cs,flags);
+	IOH_New16f(IO_PDATA0(base), io_pdata0_read, io_pdata0_write, cs, flags);
+	IOH_New16f(IO_PDATA1(base), io_pdata1_read, io_pdata1_write, cs, flags);
 }
 
 static void
-CS8900_Unmap(void *owner,uint32_t base,uint32_t mask)
+CS8900_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
-	CS8900 *cs = (CS8900*) owner;
-	CS8900_IoUnmap(cs,base);
-  
+	CS8900 *cs = (CS8900 *) owner;
+	CS8900_IoUnmap(cs, base);
+
 }
 
 static void
-CS8900_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+CS8900_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-	CS8900 *cs = (CS8900*) owner;
-	CS8900_IoMap(cs,base);
+	CS8900 *cs = (CS8900 *) owner;
+	CS8900_IoMap(cs, base);
 }
 
 static void
-generate_random_hwaddr(uint8_t *hwaddr) {
-        int i;
-        struct timeval tv;
-        gettimeofday(&tv,NULL);
-        srand48(tv.tv_usec + (tv.tv_sec<<20));
-        for(i=0;i<6;i++) {
-                  hwaddr[i]=lrand48()&0xff;
-        }
-        /* Make locally assigned unicast address from it */
-        hwaddr[0]=(hwaddr[0] & 0xfe) | 0x02;
+generate_random_hwaddr(uint8_t * hwaddr)
+{
+	int i;
+	for (i = 0; i < 6; i++) {
+		hwaddr[i] = lrand48() & 0xff;
+	}
+	/* Make locally assigned unicast address from it */
+	hwaddr[0] = (hwaddr[0] & 0xfe) | 0x02;
 }
-
 
 BusDevice *
-CS8900_New(const char *devname) 
+CS8900_New(const char *devname)
 {
 	CS8900 *cs;
 	int i;
-	char *eepromname = alloca(strlen(devname)+20);
-        cs = sg_new(CS8900);
-	for(i=0;i<4;i++) {
-		cs->intrqNode[i] = SigNode_New("%s.intrq%d",devname,i);
-		if(!cs->intrqNode[i]) {
-			fprintf(stderr,"CS8900: can not create interrupt request node\n");
+	char *eepromname = alloca(strlen(devname) + 20);
+	cs = sg_new(CS8900);
+	for (i = 0; i < 4; i++) {
+		cs->intrqNode[i] = SigNode_New("%s.intrq%d", devname, i);
+		if (!cs->intrqNode[i]) {
+			fprintf(stderr, "CS8900: can not create interrupt request node\n");
 			exit(1);
 		}
 	}
-	cs->txbuf = cs->memwin+0x600;
+	cs->txbuf = cs->memwin + 0x600;
 	cs->ether_fd = Net_CreateInterface(devname);
-	fcntl(cs->ether_fd,F_SETFL,O_NONBLOCK);
-	sprintf(eepromname,"%s.eeprom",devname);
+	fcntl(cs->ether_fd, F_SETFL, O_NONBLOCK);
+	sprintf(eepromname, "%s.eeprom", devname);
 	cs->eeprom = m93c46_New(eepromname);
 	cs8900_reset(cs);
-	cs->bdev.first_mapping=NULL;
-        cs->bdev.Map=CS8900_Map;
-        cs->bdev.UnMap=CS8900_Unmap;
-        cs->bdev.owner=cs;
-        cs->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	generate_random_hwaddr(cs->indaddr); /* Until eeprom reading works */
-        fprintf(stderr,"Crystal LAN CS8900 Ethernet controller created\n");
-        return &cs->bdev;
+	cs->bdev.first_mapping = NULL;
+	cs->bdev.Map = CS8900_Map;
+	cs->bdev.UnMap = CS8900_Unmap;
+	cs->bdev.owner = cs;
+	cs->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	generate_random_hwaddr(cs->indaddr);	/* Until eeprom reading works */
+	fprintf(stderr, "Crystal LAN CS8900 Ethernet controller created\n");
+	return &cs->bdev;
 }

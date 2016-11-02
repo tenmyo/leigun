@@ -63,11 +63,11 @@ typedef struct RxClk {
 	Clock_t *clkPCLK;
 	Clock_t *clkBCLK;
 	Clock_t *clkBCLKPin;
-	
+
 	uint32_t regSCKCR;
-	uint8_t  regBCKCR;
+	uint8_t regBCKCR;
 	uint16_t regOSTDCR;
-	uint8_t  regSUBOSCCR;
+	uint8_t regSUBOSCCR;
 } RxClk;
 
 /**
@@ -76,110 +76,110 @@ typedef struct RxClk {
  **********************************************************************************************
  */
 static void
-sckcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sckcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
-	uint32_t ick,bck,pck; 
+	uint32_t ick, bck, pck;
 	clk->regSCKCR = value & 0x0fcf0f00;
 	ick = (value >> 24) & 0xf;
 	bck = (value >> 16) & 0xf;
 	pck = (value >> 8) & 0xf;
-	switch(ick) {
-		case 0:
-			Clock_MakeDerived(clk->clkICLK,clk->clk8,1,1);
-			break;
-		case 1:
-			Clock_MakeDerived(clk->clkICLK,clk->clk4,1,1);
-			break;
-		case 2:
-			Clock_MakeDerived(clk->clkICLK,clk->clk2,1,1);
-			break;
-		case 3:
-			Clock_MakeDerived(clk->clkICLK,clk->clk1,1,1);
-			break;
-		default:
-			fprintf(stderr,"Illegal ICLK selection in SCKCR\n"); 
-			Clock_MakeDerived(clk->clkICLK,clk->clk1,0,1);
-			break;
+	switch (ick) {
+	    case 0:
+		    Clock_MakeDerived(clk->clkICLK, clk->clk8, 1, 1);
+		    break;
+	    case 1:
+		    Clock_MakeDerived(clk->clkICLK, clk->clk4, 1, 1);
+		    break;
+	    case 2:
+		    Clock_MakeDerived(clk->clkICLK, clk->clk2, 1, 1);
+		    break;
+	    case 3:
+		    Clock_MakeDerived(clk->clkICLK, clk->clk1, 1, 1);
+		    break;
+	    default:
+		    fprintf(stderr, "Illegal ICLK selection in SCKCR\n");
+		    Clock_MakeDerived(clk->clkICLK, clk->clk1, 0, 1);
+		    break;
 	}
-	switch(bck) {
-		case 0:
-			Clock_MakeDerived(clk->clkBCLK,clk->clk8,1,1);
-			break;
-		case 1:
-			Clock_MakeDerived(clk->clkBCLK,clk->clk4,1,1);
-			break;
-		case 2:
-			Clock_MakeDerived(clk->clkBCLK,clk->clk2,1,1);
-			break;
-		case 3:
-			Clock_MakeDerived(clk->clkBCLK,clk->clk1,1,1);
-			break;
-		default:
-			fprintf(stderr,"Illegal BCLK selection in SCKCR\n"); 
-			Clock_MakeDerived(clk->clkBCLK,clk->clk1,0,1);
-			break;
+	switch (bck) {
+	    case 0:
+		    Clock_MakeDerived(clk->clkBCLK, clk->clk8, 1, 1);
+		    break;
+	    case 1:
+		    Clock_MakeDerived(clk->clkBCLK, clk->clk4, 1, 1);
+		    break;
+	    case 2:
+		    Clock_MakeDerived(clk->clkBCLK, clk->clk2, 1, 1);
+		    break;
+	    case 3:
+		    Clock_MakeDerived(clk->clkBCLK, clk->clk1, 1, 1);
+		    break;
+	    default:
+		    fprintf(stderr, "Illegal BCLK selection in SCKCR\n");
+		    Clock_MakeDerived(clk->clkBCLK, clk->clk1, 0, 1);
+		    break;
 	}
-	switch(pck) {
-		case 0:
-			Clock_MakeDerived(clk->clkPCLK,clk->clk8,1,1);
-			break;
-		case 1:
-			Clock_MakeDerived(clk->clkPCLK,clk->clk4,1,1);
-			break;
-		case 2:
-			Clock_MakeDerived(clk->clkPCLK,clk->clk2,1,1);
-			break;
-		case 3:
-			Clock_MakeDerived(clk->clkPCLK,clk->clk1,1,1);
-			break;
-		default:
-			fprintf(stderr,"Illegal PCLK selection in SCKCR\n"); 
-			Clock_MakeDerived(clk->clkPCLK,clk->clk1,0,1);
-			break;
+	switch (pck) {
+	    case 0:
+		    Clock_MakeDerived(clk->clkPCLK, clk->clk8, 1, 1);
+		    break;
+	    case 1:
+		    Clock_MakeDerived(clk->clkPCLK, clk->clk4, 1, 1);
+		    break;
+	    case 2:
+		    Clock_MakeDerived(clk->clkPCLK, clk->clk2, 1, 1);
+		    break;
+	    case 3:
+		    Clock_MakeDerived(clk->clkPCLK, clk->clk1, 1, 1);
+		    break;
+	    default:
+		    fprintf(stderr, "Illegal PCLK selection in SCKCR\n");
+		    Clock_MakeDerived(clk->clkPCLK, clk->clk1, 0, 1);
+		    break;
 	}
 }
 
 static uint32_t
-sckcr_read(void *clientData,uint32_t address,int rqlen)
+sckcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
 	return clk->regSCKCR;
 }
 
 static void
-bckcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bckcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
-	if(value & 1) {
-		Clock_MakeDerived(clk->clkBCLKPin,clk->clkBCLK,1,2);
+	if (value & 1) {
+		Clock_MakeDerived(clk->clkBCLKPin, clk->clkBCLK, 1, 2);
 	} else {
-		Clock_MakeDerived(clk->clkBCLKPin,clk->clkBCLK,1,1);
+		Clock_MakeDerived(clk->clkBCLKPin, clk->clkBCLK, 1, 1);
 	}
-	clk->regBCKCR = value & 1;	
+	clk->regBCKCR = value & 1;
 }
 
 static uint32_t
-bckcr_read(void *clientData,uint32_t address,int rqlen)
+bckcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
-	return clk->regBCKCR; 
+	return clk->regBCKCR;
 }
 
 static void
-ostdcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ostdcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
 	uint8_t key = (value >> 8) & 0xff;
-	if(key != 0xAC)  {
-		fprintf(stderr,"%s with wrong KEY\n",__func__);
+	if (key != 0xAC) {
+		fprintf(stderr, "%s with wrong KEY\n", __func__);
 		return;
 	}
 	clk->regOSTDCR = value & 0x80;
 }
 
 static uint32_t
-ostdcr_read(void *clientData,uint32_t address,int rqlen)
+ostdcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
 	return clk->regOSTDCR;
@@ -192,44 +192,43 @@ ostdcr_read(void *clientData,uint32_t address,int rqlen)
  *************************************************************************************************
  */
 static void
-subosccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+subosccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
 	clk->regSUBOSCCR = value & 1;
-	if(value == 0) {
-		Clock_SetFreq(clk->clkSubOsc,0);	
-		fprintf(stderr,"SubClockOscillator stopped\n");
+	if (value == 0) {
+		Clock_SetFreq(clk->clkSubOsc, 0);
+		fprintf(stderr, "SubClockOscillator stopped\n");
 	} else {
-		Clock_SetFreq(clk->clkSubOsc,clk->subOscFreq);	
+		Clock_SetFreq(clk->clkSubOsc, clk->subOscFreq);
 	}
 }
 
 static uint32_t
-subosccr_read(void *clientData,uint32_t address,int rqlen)
+subosccr_read(void *clientData, uint32_t address, int rqlen)
 {
 	RxClk *clk = clientData;
-	return clk->regSUBOSCCR; 
+	return clk->regSUBOSCCR;
 }
 
 static void
-CLK_Unmap(void *owner,uint32_t base,uint32_t mask)
+CLK_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete16(REG_SCKCR(base));
-        IOH_Delete16(REG_BCKCR(base));
-        IOH_Delete16(REG_OSTDCR(base));
-        IOH_Delete16(REG_SUBOSCCR(base));
+	IOH_Delete32(REG_SCKCR(base));
+	IOH_Delete16(REG_BCKCR(base));
+	IOH_Delete16(REG_OSTDCR(base));
+	IOH_Delete16(REG_SUBOSCCR(base));
 }
 
 static void
-CLK_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+CLK_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
-        RxClk *clk = owner;
-        IOH_New16(REG_SCKCR(base),sckcr_read,sckcr_write,clk);
-        IOH_New16(REG_BCKCR(base),bckcr_read,bckcr_write,clk);
-        IOH_New16(REG_OSTDCR(base),ostdcr_read,ostdcr_write,clk);
-        IOH_New16(REG_SUBOSCCR(base),subosccr_read,subosccr_write,clk);
+	RxClk *clk = owner;
+	IOH_New32(REG_SCKCR(base), sckcr_read, sckcr_write, clk);
+	IOH_New16(REG_BCKCR(base), bckcr_read, bckcr_write, clk);
+	IOH_New16(REG_OSTDCR(base), ostdcr_read, ostdcr_write, clk);
+	IOH_New16(REG_SUBOSCCR(base), subosccr_read, subosccr_write, clk);
 }
-
 
 /**
  **************************************************************************************
@@ -243,34 +242,34 @@ Rx62nClk_New(const char *name)
 	RxClk *clk = sg_new(RxClk);
 	uint32_t oscFreq = 12500000;
 	clk->subOscFreq = 32768;
-	Config_ReadUInt32(&oscFreq,"global","crystal");
-	Config_ReadUInt32(&clk->subOscFreq,"global","subclk");
+	Config_ReadUInt32(&oscFreq, "global", "crystal");
+	Config_ReadUInt32(&clk->subOscFreq, "global", "subclk");
 	clk->bdev.first_mapping = NULL;
 	clk->bdev.Map = CLK_Map;
 	clk->bdev.UnMap = CLK_Unmap;
 	clk->bdev.owner = clk;
-	clk->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	clk->clkMainOsc = Clock_New("%s.extal",name);
-	clk->clkSubOsc = Clock_New("%s.subosc",name);
-	clk->clkPllOut = Clock_New("%s.pll",name);
-	clk->clk8 = Clock_New("%s.clk8",name);
-	clk->clk4 = Clock_New("%s.clk4",name);
-	clk->clk2 = Clock_New("%s.clk2",name);
-	clk->clk1 = Clock_New("%s.clk1",name);
+	clk->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	clk->clkMainOsc = Clock_New("%s.extal", name);
+	clk->clkSubOsc = Clock_New("%s.subosc", name);
+	clk->clkPllOut = Clock_New("%s.pll", name);
+	clk->clk8 = Clock_New("%s.clk8", name);
+	clk->clk4 = Clock_New("%s.clk4", name);
+	clk->clk2 = Clock_New("%s.clk2", name);
+	clk->clk1 = Clock_New("%s.clk1", name);
 	/* The output clocks */
-	clk->clkICLK = Clock_New("%s.iclk",name);
-	clk->clkPCLK = Clock_New("%s.pclk",name);
-	clk->clkBCLK = Clock_New("%s.bclk",name);
-	clk->clkBCLKPin = Clock_New("%s.bclkpin",name);
+	clk->clkICLK = Clock_New("%s.iclk", name);
+	clk->clkPCLK = Clock_New("%s.pclk", name);
+	clk->clkBCLK = Clock_New("%s.bclk", name);
+	clk->clkBCLKPin = Clock_New("%s.bclkpin", name);
 	clk->regSUBOSCCR = 1;
-	Clock_SetFreq(clk->clkMainOsc,oscFreq);	
-	Clock_SetFreq(clk->clkSubOsc,clk->subOscFreq);	
-	Clock_MakeDerived(clk->clkPllOut,clk->clkMainOsc,8,1);
-	Clock_MakeDerived(clk->clk8,clk->clkPllOut,1,1);
-	Clock_MakeDerived(clk->clk4,clk->clkPllOut,1,2);
-	Clock_MakeDerived(clk->clk2,clk->clkPllOut,1,4);
-	Clock_MakeDerived(clk->clk1,clk->clkPllOut,1,8);
-	Clock_MakeDerived(clk->clkBCLKPin,clk->clkBCLK,1,1);
-	sckcr_write(clk,0x02020200,REG_SCKCR(0),4);
+	Clock_SetFreq(clk->clkMainOsc, oscFreq);
+	Clock_SetFreq(clk->clkSubOsc, clk->subOscFreq);
+	Clock_MakeDerived(clk->clkPllOut, clk->clkMainOsc, 8, 1);
+	Clock_MakeDerived(clk->clk8, clk->clkPllOut, 1, 1);
+	Clock_MakeDerived(clk->clk4, clk->clkPllOut, 1, 2);
+	Clock_MakeDerived(clk->clk2, clk->clkPllOut, 1, 4);
+	Clock_MakeDerived(clk->clk1, clk->clkPllOut, 1, 8);
+	Clock_MakeDerived(clk->clkBCLKPin, clk->clkBCLK, 1, 1);
+	sckcr_write(clk, 0x02020200, REG_SCKCR(0), 4);
 	return &clk->bdev;
 }

@@ -69,15 +69,16 @@ struct PCF8591 {
  * PCF8591 Write state machine 
  * ------------------------------------
  */
-static int 
-pcf8591_write(void *dev,uint8_t data) {
+static int
+pcf8591_write(void *dev, uint8_t data)
+{
 	PCF8591 *pcf = dev;
-	if(pcf->state==PCF_STATE_CONTROL) {
-		dbgprintf("PCF8591 Addr 0x%02x\n",data);
+	if (pcf->state == PCF_STATE_CONTROL) {
+		dbgprintf("PCF8591 Addr 0x%02x\n", data);
 		pcf->control = data;
 		pcf->state = PCF_STATE_DA;
-	} else if(pcf->state==PCF_STATE_DA) {
-		dbgprintf("PCF8591 Write 0x%02x to %04x\n",data,pcf->reg_address);
+	} else if (pcf->state == PCF_STATE_DA) {
+		dbgprintf("PCF8591 Write 0x%02x to %04x\n", data, pcf->reg_address);
 		pcf->da = data;
 	}
 	return I2C_ACK;
@@ -89,58 +90,60 @@ pcf8591_write(void *dev,uint8_t data) {
 #define PCF_AIN_THREE_DIFF 	(0x10)
 #define PCF_AIN_MIXED 		(0x20)
 #define PCF_AIN_TWO_DIFF 	(0x30)
-static  int 
-pcf8591_read(void *dev,uint8_t *data) 
+static int
+pcf8591_read(void *dev, uint8_t * data)
 {
 	PCF8591 *pcf = dev;
-	*data=pcf->ad;
-	if(pcf->control & PCF_AIN_MODE) {
-		fprintf(stderr,"Warning. AIN mode %02x not implemented\n",pcf->control);
+	*data = pcf->ad;
+	if (pcf->control & PCF_AIN_MODE) {
+		fprintf(stderr, "Warning. AIN mode %02x not implemented\n", pcf->control);
 	}
 	pcf->ad = pcf->ain[pcf->control & 3];
-	if(pcf->control & PCF_AUTO_INC) {
-		pcf->control = (pcf->control & ~3) | ((pcf->control+1)&3);
+	if (pcf->control & PCF_AUTO_INC) {
+		pcf->control = (pcf->control & ~3) | ((pcf->control + 1) & 3);
 	}
-	dbgprintf("PCF8591 read 0x%02x\n",*data);
+	dbgprintf("PCF8591 read 0x%02x\n", *data);
 	return I2C_DONE;
 };
 
 static int
-pcf8591_start(void *dev,int i2c_addr,int operation) {
+pcf8591_start(void *dev, int i2c_addr, int operation)
+{
 	PCF8591 *pcf = dev;
 	dbgprintf("pcf8591 start\n");
 	pcf->state = PCF_STATE_CONTROL;
 	return I2C_ACK;
 }
 
-static void 
-pcf8591_stop(void *dev) {
+static void
+pcf8591_stop(void *dev)
+{
 	PCF8591 *pcf = dev;
 	dbgprintf("pcf8591 stop\n");
-	pcf->state =  PCF_STATE_CONTROL; 
+	pcf->state = PCF_STATE_CONTROL;
 }
-
 
 static I2C_SlaveOps pcf8591_ops = {
 	.start = pcf8591_start,
-	.stop =  pcf8591_stop,
-	.read =  pcf8591_read,	
-	.write = pcf8591_write	
+	.stop = pcf8591_stop,
+	.read = pcf8591_read,
+	.write = pcf8591_write
 };
 
 I2C_Slave *
-PCF8591_New(char *name) {
-	PCF8591 *pcf = sg_new(PCF8591); 
+PCF8591_New(char *name)
+{
+	PCF8591 *pcf = sg_new(PCF8591);
 	I2C_Slave *i2c_slave;
-	pcf->ain[0]= 5000/32;
-	pcf->ain[1]= 5100/32;
-	pcf->ain[2]= 5150/32;
-	pcf->ain[3]= 3300/16;
+	pcf->ain[0] = 5000 / 32;
+	pcf->ain[1] = 5100 / 32;
+	pcf->ain[2] = 5150 / 32;
+	pcf->ain[3] = 3300 / 16;
 	i2c_slave = &pcf->i2c_slave;
-	i2c_slave->devops = &pcf8591_ops; 
+	i2c_slave->devops = &pcf8591_ops;
 	i2c_slave->dev = pcf;
 	i2c_slave->speed = I2C_SPEED_STD;
 	i2c_slave->tolerated_speed = I2C_SPEED_FAST;
-	fprintf(stderr,"PCF8591 A/D D/A Converter \"%s\" created\n",name);
+	fprintf(stderr, "PCF8591 A/D D/A Converter \"%s\" created\n", name);
 	return i2c_slave;
 }

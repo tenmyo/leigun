@@ -14,9 +14,9 @@
 #define IMMR_MASKNUM(immr) (((immr)&0xff))
 typedef struct MPC8xx_MemCo MPC8xx_MemCo;
 
-MPC8xx_MemCo * MPC8xx_MemController_New(PpcCpu *);
+MPC8xx_MemCo *MPC8xx_MemController_New(PpcCpu *);
 /* Register CPU external devices connected to a chip select */
-void MPC8xx_RegisterDevice(MPC8xx_MemCo *memco,BusDevice *bdev,uint32_t cs);
+void MPC8xx_RegisterDevice(MPC8xx_MemCo * memco, BusDevice * bdev, uint32_t cs);
 
 /* Register CPU internal devices mapped into the immr area */
-void MPC8xx_RegisterIntDev(MPC8xx_MemCo *memco,BusDevice *bdev);
+void MPC8xx_RegisterIntDev(MPC8xx_MemCo * memco, BusDevice * bdev);

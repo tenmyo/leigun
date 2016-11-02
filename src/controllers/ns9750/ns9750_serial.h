@@ -1,5 +1,7 @@
-#include <ns9750_bbdma.h>
-void NS9750_SerialInit(BBusDMACtrl *bbdma);
+#include "ns9750_bbdma.h"
+#include "bus.h"
+BusDevice *NS9750Serial_New(const char *serial_name, BBusDMACtrl * bbdma);
+
 #define __REG(x) (x)
 
 #define SER_CTRLA_B                       __REG(0x90200000)
@@ -35,8 +37,6 @@ void NS9750_SerialInit(BBusDMACtrl *bbdma);
 #define                 SER_TIC_EMPTY   (1<<3)
 #define                 SER_TIC_CTS     (1<<4)
 #define         SER_ETXDMA      (1)
-
-
 
 #define SER_CTRLB_B                       __REG(0x90200004)
 #define         SER_RDM                   (0xf<<28)
@@ -140,4 +140,3 @@ void NS9750_SerialInit(BBusDMACtrl *bbdma);
 #define SER_RXMATCH_MASK                  (0x20)
 #define SER_FLOW_CTRL                     (0x34)
 #define SER_FLOW_FORCE                    (0x38)
-

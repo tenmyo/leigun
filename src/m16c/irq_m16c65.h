@@ -1,7 +1,6 @@
 #include "m16c_cpu.h"
-BusDevice * M16C65IntCo_New(const char *name);
-void M16C65_AckIrq(BusDevice *intco_bdev,uint32_t intno);
-
+BusDevice *M16C65IntCo_New(const char *name);
+void M16C65_AckIrq(BusDevice * intco_bdev, uint32_t intno);
 
 #define M16C_INT_BRK			(0)
 #define M16C_INT_INT7			(2)

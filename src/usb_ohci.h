@@ -50,7 +50,7 @@
 #define		HcFmInterval_FI_MASK 		(0x3fff)
 #define		HcFmInterval_FI_SHIFT 		(0)
 #define		HcFmInterval_FSMPS_MASK 	(0x7fff0000)
-#define		HcFmInterval_FSMPS_SHIFT	(16)	
+#define		HcFmInterval_FSMPS_SHIFT	(16)
 #define		HcFmInterval_FSMPS(x)		(((x)>>16)&0x7fff)
 #define		HcFmInterval_FIT		(1<<31)
 
@@ -63,13 +63,13 @@
 #define OHCI_HcRhDescriptorA	(0x48)
 #define		HcRhDescriptorA_NDP_MASK 	(0xff)
 #define		HcRhDescriptorA_NDP_SHIFT 	(0)
-#define		HcRhDescriptorA_NPS		(1<<8)	
-#define		HcRhDescriptorA_PSM		(1<<9)	
-#define		HcRhDescriptorA_DT		(1<<10)	
-#define		HcRhDescriptorA_OCPM		(1<<11)	
-#define		HcRhDescriptorA_NOCP		(1<<12)	
-#define		HcRhDescriptorA_POTPGT_MASK	(0xff<<24)	
-#define		HcRhDescriptorA_POTPGT_SHIFT	(24)	
+#define		HcRhDescriptorA_NPS		(1<<8)
+#define		HcRhDescriptorA_PSM		(1<<9)
+#define		HcRhDescriptorA_DT		(1<<10)
+#define		HcRhDescriptorA_OCPM		(1<<11)
+#define		HcRhDescriptorA_NOCP		(1<<12)
+#define		HcRhDescriptorA_POTPGT_MASK	(0xff<<24)
+#define		HcRhDescriptorA_POTPGT_SHIFT	(24)
 
 #define OHCI_HcRhDescriptorB	(0x4c)
 #define 	HcRhDescriptorB_DR_MASK		(0xffff)
@@ -99,15 +99,15 @@
 #define		HcRhPortStatus_OCIC	(1<<19)
 #define		HcRhPortStatus_PRSC	(1<<20)
 
-typedef struct OhciHC  OhciHC;
+typedef struct OhciHC OhciHC;
 
-BusDevice * OhciHC_New(char *name,Bus *bus);
-void OhciHC_Disable(BusDevice *dev); 
-void OhciHC_Enable(BusDevice *dev); 
+BusDevice *OhciHC_New(char *name, Bus * bus);
+void OhciHC_Disable(BusDevice * dev);
+void OhciHC_Enable(BusDevice * dev);
 
 /* Page 17 of hcir.pdf Definitions for Endpoint Descriptors */
 /* DWORD0 */
-#define ED_FA(ed)		((ed)->hwControl&0x7f)	
+#define ED_FA(ed)		((ed)->hwControl&0x7f)
 #define ED_EN(ed)		(((ed)->hwControl>>7)&0xf)
 #define	ED_D(ed)		(((ed)->hwControl>>11)&0x3)
 #define	ED_S(ed)		(((ed)->hwControl>>13)&1)
@@ -134,7 +134,7 @@ void OhciHC_Enable(BusDevice *dev);
 #define ITD_BE(itd)		((itd)->hwBE)
 
 /* Condition / Completion Codes */
-#define CC_NO_ERROR		 (0) 
+#define CC_NO_ERROR		 (0)
 #define CC_CRC			 (1)
 #define	CC_BIT_STUFFING 	 (2)
 #define CC_DATA_TOGGLE_MISMATCH	 (3)
@@ -152,7 +152,7 @@ void OhciHC_Enable(BusDevice *dev);
 #define GTD_R(gtd)		(((gtd)->hwControl>>18)&1)
 #define	GTD_DP(gtd)		(((gtd)->hwControl>>19)&3)
 #define GTD_DI(gtd)		(((gtd)->hwControl>>21)&3)
-#define	GTD_T(gtd)		(((gtd)->hwControl>>24)&1)	
+#define	GTD_T(gtd)		(((gtd)->hwControl>>24)&1)
 #define GTD_EC(gtd)		(((gtd)->hwControl>>26) & 3)
 #define GTD_CC(gtd)		(((gtd)->hwControl>>28) & 0xf)
 #define GTD_CBP(gtd)		((gtd)->hwCBP)

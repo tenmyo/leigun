@@ -1,5 +1,4 @@
 
-
 /*
  * ------------------------------------------------------------------
  * Standard requests, for the bRequest field of a SETUP packet.
@@ -20,7 +19,7 @@
 #define USBRQ_SET_INTERFACE           0x0B
 #define USBRQ_SYNCH_FRAME             0x0C
 
-#define USBRQ_SET_ENCRYPTION          0x0D    /* Wireless USB */
+#define USBRQ_SET_ENCRYPTION          0x0D	/* Wireless USB */
 #define USBRQ_GET_ENCRYPTION          0x0E
 #define USBRQ_SET_HANDSHAKE           0x0F
 #define USBRQ_GET_HANDSHAKE           0x10
@@ -32,9 +31,8 @@
 #define USBRQ_LOOPBACK_DATA_READ      0x16
 #define USBRQ_SET_INTERFACE_DS        0x17
 
-
 /* The Direction */
-#define USB_RQT_DEVTOHOST	(0x80) /* DevToHost */
+#define USB_RQT_DEVTOHOST	(0x80)	/* DevToHost */
 #define USB_RQT_HOSTTODEV	(0x0)
 
 /* The Type */
@@ -58,9 +56,5 @@
 #endif
 
 //int Usb_DoStdRequest(UsbDevice *udev,UsbTransaction *ta,UsbPacket *reply);
-UsbTaRes 
-UsbStdRq_GetDescriptor(UsbDevice *udev,UsbTransaction *ta,UsbPacket *reply);
-UsbTaRes
-UsbStdRq_SetDescriptor(UsbDevice *udev,UsbTransaction *ta,UsbPacket *reply);
-
-
+UsbTaRes UsbStdRq_GetDescriptor(UsbDevice * udev, UsbTransaction * ta, UsbPacket * reply);
+UsbTaRes UsbStdRq_SetDescriptor(UsbDevice * udev, UsbTransaction * ta, UsbPacket * reply);

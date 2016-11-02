@@ -11,4 +11,4 @@
 #define M16C65_REGSET_TIMERB4	(9)
 #define M16C65_REGSET_TIMERB5	(10)
 
-BusDevice * M16C65_TimerABNew(const char *name,unsigned int regset);
+BusDevice *M16C65_TimerABNew(const char *name, unsigned int regset);

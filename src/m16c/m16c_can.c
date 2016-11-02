@@ -32,7 +32,6 @@
  ************************************************************************************************ 
  */
 
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -63,7 +62,7 @@
 #define CxCTLR(bus) 		(0x210 + (bus) * 0x20)
 #define		CTLR_RESET	(1<<0)
 #define		CTLR_LOOPBACK	(1<<1)
-#define		CTLR_MSG_ORDER  (1<<2)	
+#define		CTLR_MSG_ORDER  (1<<2)
 #define		CTLR_BASIC_CAN	(1<<3)
 #define		CTLR_BUS_ERR_EN (1<<4)
 #define		CTLR_SLEEP 	(1<<5)
@@ -71,7 +70,7 @@
 #define		CTLR_TSPRESCALE_SHIFT	(8)
 #define		CTLR_TSPRESCALE_MASK	(3<<8)
 #define		CTLR_TSRESET		(1<<10)
-#define		CTLR_RET_BUS_OFF	(1<<11)	
+#define		CTLR_RET_BUS_OFF	(1<<11)
 #define		CTLR_RXONLY		(1<<13)
 
 #define CxSTR(bus)		(0x212 + (bus) * 0x20)
@@ -118,7 +117,6 @@
 #define	CxMBR3(bus)		(0x16f + 0x200 * bus)
 #define	CxMBR4(bus)		(0x170 + 0x200 * bus)
 
-
 typedef struct M16C_CAN {
 	int bus_nr;
 	BusDevice bdev;
@@ -130,47 +128,52 @@ typedef struct M16C_CAN {
  * ------------------------------------------------------
  */
 static uint32_t
-ctlr_read(void *clientData,uint32_t address,int rqlen) 
+ctlr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-ctlr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ctlr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
+
 /*
  * ------------------------------------------------------
  *  CAN Status register
  * ------------------------------------------------------
  */
 static uint32_t
-str_read(void *clientData,uint32_t address,int rqlen) 
+str_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-str_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+str_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
+
 /*
  * -------------------------------------------------------
  * CAN Slot Status register
  * -------------------------------------------------------
  */
 static uint32_t
-sstr_read(void *clientData,uint32_t address,int rqlen) 
+sstr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-sstr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sstr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -179,32 +182,34 @@ sstr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------------------------
  */
 static uint32_t
-icr_read(void *clientData,uint32_t address,int rqlen) 
+icr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-icr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
  * -------------------------------------------------------
  * CAN Extended ID register 
  * -------------------------------------------------------
- */ 
+ */
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen) 
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -213,15 +218,16 @@ idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------------
  */
 static uint32_t
-conr_read(void *clientData,uint32_t address,int rqlen) 
+conr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-conr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+conr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -230,15 +236,16 @@ conr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------
  */
 static uint32_t
-recr_read(void *clientData,uint32_t address,int rqlen) 
+recr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-recr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+recr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -248,15 +255,16 @@ recr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-tecr_read(void *clientData,uint32_t address,int rqlen) 
+tecr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-tecr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tecr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -265,32 +273,34 @@ tecr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------
  */
 static uint32_t
-tsr_read(void *clientData,uint32_t address,int rqlen) 
+tsr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-tsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
  * ---------------------------------------------------------------
  * CAN acceptance filter support register
  * ---------------------------------------------------------------
- */ 
+ */
 static uint32_t
-afs_read(void *clientData,uint32_t address,int rqlen) 
+afs_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-afs_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+afs_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -300,15 +310,16 @@ afs_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-msgbox_read(void *clientData,uint32_t address,int rqlen) 
+msgbox_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
+
 static void
-msgbox_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+msgbox_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -317,16 +328,16 @@ msgbox_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------------------------------
  */
 static uint32_t
-mctl_read(void *clientData,uint32_t address,int rqlen) 
+mctl_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-mctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -335,16 +346,16 @@ mctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------
  */
 static uint32_t
-gmr_read(void *clientData,uint32_t address,int rqlen) 
+gmr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-gmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+gmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -353,16 +364,16 @@ gmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------
  */
 static uint32_t
-mar_read(void *clientData,uint32_t address,int rqlen) 
+mar_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-mar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -371,16 +382,16 @@ mar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------
  */
 static uint32_t
-mbr_read(void *clientData,uint32_t address,int rqlen) 
+mbr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-mbr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mbr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"M16C_CAN register 0x%08x not implemented\n",address);
+	fprintf(stderr, "M16C_CAN register 0x%08x not implemented\n", address);
 }
 
 /*
@@ -390,65 +401,64 @@ mbr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------
  */
 static void
-CAN_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags)
+CAN_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
-	M16C_CAN *mcan = (M16C_CAN *)module_owner;
+	M16C_CAN *mcan = (M16C_CAN *) module_owner;
 	int bus = mcan->bus_nr;
 	int slot;
-	
-	IOH_New8(CxCTLR(bus),ctlr_read,ctlr_write,mcan); 
-	IOH_New8(CxSTR(bus),str_read,str_write,mcan);
-	IOH_New8(CxSSTR(bus),sstr_read,sstr_write,mcan);
-	IOH_New8(CxICR(bus),icr_read,icr_write,mcan);
-	IOH_New8(CxIDR(bus),idr_read,idr_write,mcan);
-	IOH_New8(CxCONR(bus),conr_read,conr_write,mcan);
-	IOH_New8(CxRECR(bus),recr_read,recr_write,mcan);
-	IOH_New8(CxTECR(bus),tecr_read,tecr_write,mcan);
-	IOH_New8(CxTSR(bus),tsr_read,tsr_write,mcan);
-	IOH_New8(CxAFS(bus),afs_read,afs_write,mcan);
-	for(slot=0;slot<16;slot++) {
+
+	IOH_New8(CxCTLR(bus), ctlr_read, ctlr_write, mcan);
+	IOH_New8(CxSTR(bus), str_read, str_write, mcan);
+	IOH_New8(CxSSTR(bus), sstr_read, sstr_write, mcan);
+	IOH_New8(CxICR(bus), icr_read, icr_write, mcan);
+	IOH_New8(CxIDR(bus), idr_read, idr_write, mcan);
+	IOH_New8(CxCONR(bus), conr_read, conr_write, mcan);
+	IOH_New8(CxRECR(bus), recr_read, recr_write, mcan);
+	IOH_New8(CxTECR(bus), tecr_read, tecr_write, mcan);
+	IOH_New8(CxTSR(bus), tsr_read, tsr_write, mcan);
+	IOH_New8(CxAFS(bus), afs_read, afs_write, mcan);
+	for (slot = 0; slot < 16; slot++) {
 		int i;
-		for(i=0;i<16;i++) {
-			IOH_New8(CxMSGBOX(bus,slot)+i,msgbox_read,msgbox_write,mcan);
+		for (i = 0; i < 16; i++) {
+			IOH_New8(CxMSGBOX(bus, slot) + i, msgbox_read, msgbox_write, mcan);
 		}
-		IOH_New8(CxMCTL(bus,slot),mctl_read,mctl_write,mcan); 
+		IOH_New8(CxMCTL(bus, slot), mctl_read, mctl_write, mcan);
 	}
-	IOH_New8(CxGMR0(bus),gmr_read,gmr_write,mcan);
-	IOH_New8(CxGMR1(bus),gmr_read,gmr_write,mcan);
-	IOH_New8(CxGMR2(bus),gmr_read,gmr_write,mcan);
-	IOH_New8(CxGMR3(bus),gmr_read,gmr_write,mcan);
-	IOH_New8(CxGMR4(bus),gmr_read,gmr_write,mcan);
+	IOH_New8(CxGMR0(bus), gmr_read, gmr_write, mcan);
+	IOH_New8(CxGMR1(bus), gmr_read, gmr_write, mcan);
+	IOH_New8(CxGMR2(bus), gmr_read, gmr_write, mcan);
+	IOH_New8(CxGMR3(bus), gmr_read, gmr_write, mcan);
+	IOH_New8(CxGMR4(bus), gmr_read, gmr_write, mcan);
 
-	IOH_New8(CxMAR0(bus),mar_read,mar_write,mcan);
-	IOH_New8(CxMAR1(bus),mar_read,mar_write,mcan);
-	IOH_New8(CxMAR2(bus),mar_read,mar_write,mcan);
-	IOH_New8(CxMAR3(bus),mar_read,mar_write,mcan);
-	IOH_New8(CxMAR4(bus),mar_read,mar_write,mcan);
+	IOH_New8(CxMAR0(bus), mar_read, mar_write, mcan);
+	IOH_New8(CxMAR1(bus), mar_read, mar_write, mcan);
+	IOH_New8(CxMAR2(bus), mar_read, mar_write, mcan);
+	IOH_New8(CxMAR3(bus), mar_read, mar_write, mcan);
+	IOH_New8(CxMAR4(bus), mar_read, mar_write, mcan);
 
-	IOH_New8(CxMBR0(bus),mbr_read,mbr_write,mcan);
-	IOH_New8(CxMBR1(bus),mbr_read,mbr_write,mcan);
-	IOH_New8(CxMBR2(bus),mbr_read,mbr_write,mcan);
-	IOH_New8(CxMBR3(bus),mbr_read,mbr_write,mcan);
-	IOH_New8(CxMBR4(bus),mbr_read,mbr_write,mcan);
+	IOH_New8(CxMBR0(bus), mbr_read, mbr_write, mcan);
+	IOH_New8(CxMBR1(bus), mbr_read, mbr_write, mcan);
+	IOH_New8(CxMBR2(bus), mbr_read, mbr_write, mcan);
+	IOH_New8(CxMBR3(bus), mbr_read, mbr_write, mcan);
+	IOH_New8(CxMBR4(bus), mbr_read, mbr_write, mcan);
 }
 
 static void
-CAN_UnMap(void *module_owner,uint32_t base,uint32_t mapsize)
+CAN_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
 {
 }
 
 BusDevice *
-M16CCAN_New(const char *can_name,int bus_nr)
+M16CCAN_New(const char *can_name, int bus_nr)
 {
-        M16C_CAN *mcan = sg_new(M16C_CAN);
+	M16C_CAN *mcan = sg_new(M16C_CAN);
 
 	mcan->bus_nr = bus_nr;
-        mcan->bdev.first_mapping=NULL;
-        mcan->bdev.Map=CAN_Map;
-        mcan->bdev.UnMap=CAN_UnMap;
-        mcan->bdev.owner=mcan;
-        mcan->bdev.hw_flags=MEM_FLAG_READABLE | MEM_FLAG_WRITABLE;
-        fprintf(stderr,"Created M16C CAN controller \"%s\"\n",can_name);
-        return &mcan->bdev;
+	mcan->bdev.first_mapping = NULL;
+	mcan->bdev.Map = CAN_Map;
+	mcan->bdev.UnMap = CAN_UnMap;
+	mcan->bdev.owner = mcan;
+	mcan->bdev.hw_flags = MEM_FLAG_READABLE | MEM_FLAG_WRITABLE;
+	fprintf(stderr, "Created M16C CAN controller \"%s\"\n", can_name);
+	return &mcan->bdev;
 }
-

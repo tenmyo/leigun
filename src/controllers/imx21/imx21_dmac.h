@@ -8,4 +8,4 @@
  */
 
 #include <bus.h>
-BusDevice * IMX21_DmacNew(const char *name); 
+BusDevice *IMX21_DmacNew(const char *name);

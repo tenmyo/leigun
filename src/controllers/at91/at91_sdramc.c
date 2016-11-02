@@ -56,142 +56,140 @@ typedef struct AT91Sdramc {
 } AT91Sdramc;
 
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint32_t
-tr_read(void *clientData,uint32_t address,int rqlen)
+tr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-tr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
-
 static uint32_t
-lpr_read(void *clientData,uint32_t address,int rqlen)
+lpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Sdramc *sd = clientData;
-        return sd->regLPR;
+	return sd->regLPR;
 }
 
 static void
-lpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Sdramc *sd = clientData;
 	sd->regLPR = value & 0x00003F73;
 }
 
-
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-}
-
-static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
-}
-
-static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint32_t
-isr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-isr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint32_t
-mdr_read(void *clientData,uint32_t address,int rqlen)
+isr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-mdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+isr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
+}
+
+static uint32_t
+mdr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-AT91Sdramc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+mdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        AT91Sdramc *sd = owner;
-	IOH_New32(SDRAMC_MR(base),mr_read,mr_write,sd);
-	IOH_New32(SDRAMC_TR(base),tr_read,tr_write,sd);
-	IOH_New32(SDRAMC_CR(base),cr_read,cr_write,sd);
-	IOH_New32(SDRAMC_LPR(base),lpr_read,lpr_write,sd);
-	IOH_New32(SDRAMC_IER(base),ier_read,ier_write,sd);
-	IOH_New32(SDRAMC_IDR(base),idr_read,idr_write,sd);
-	IOH_New32(SDRAMC_IMR(base),imr_read,imr_write,sd);
-	IOH_New32(SDRAMC_ISR(base),isr_read,isr_write,sd);
-	IOH_New32(SDRAMC_MDR(base),mdr_read,mdr_write,sd);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static void
-AT91Sdramc_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Sdramc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
+{
+	AT91Sdramc *sd = owner;
+	IOH_New32(SDRAMC_MR(base), mr_read, mr_write, sd);
+	IOH_New32(SDRAMC_TR(base), tr_read, tr_write, sd);
+	IOH_New32(SDRAMC_CR(base), cr_read, cr_write, sd);
+	IOH_New32(SDRAMC_LPR(base), lpr_read, lpr_write, sd);
+	IOH_New32(SDRAMC_IER(base), ier_read, ier_write, sd);
+	IOH_New32(SDRAMC_IDR(base), idr_read, idr_write, sd);
+	IOH_New32(SDRAMC_IMR(base), imr_read, imr_write, sd);
+	IOH_New32(SDRAMC_ISR(base), isr_read, isr_write, sd);
+	IOH_New32(SDRAMC_MDR(base), mdr_read, mdr_write, sd);
+}
+
+static void
+AT91Sdramc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(SDRAMC_MR(base));
 	IOH_Delete32(SDRAMC_TR(base));
@@ -207,14 +205,13 @@ AT91Sdramc_UnMap(void *owner,uint32_t base,uint32_t mask)
 BusDevice *
 AT91Sdramc_New(const char *name)
 {
-        AT91Sdramc *sd = sg_new(AT91Sdramc);
+	AT91Sdramc *sd = sg_new(AT91Sdramc);
 
-        sd->bdev.first_mapping = NULL;
-        sd->bdev.Map = AT91Sdramc_Map;
-        sd->bdev.UnMap = AT91Sdramc_UnMap;
-        sd->bdev.owner = sd;
-        sd->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"AT91 SDRAM controller \"%s\" created\n",name);
-        return &sd->bdev;
+	sd->bdev.first_mapping = NULL;
+	sd->bdev.Map = AT91Sdramc_Map;
+	sd->bdev.UnMap = AT91Sdramc_UnMap;
+	sd->bdev.owner = sd;
+	sd->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "AT91 SDRAM controller \"%s\" created\n", name);
+	return &sd->bdev;
 }
-

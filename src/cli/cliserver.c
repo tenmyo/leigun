@@ -32,7 +32,6 @@
  *************************************************************************************************
  */
 
-
 #include <fio.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -58,30 +57,30 @@ struct CliServer {
 	TelnetServer *tserv;
 };
 
-static void 
-CliSess_Accept(void *clientData,Channel *chan,char *hostName,int port) 
+static void
+CliSess_Accept(void *clientData, Channel * chan, char *hostName, int port)
 {
 	Interp_New(chan);
 }
 
-
 CliServer *
-CliServer_New(const char *name) {
+CliServer_New(const char *name)
+{
 	CliServer *cserv = sg_new(CliServer);
-	char *host=Config_ReadVar(name,"host");	
-	int port;	
-	if(!cserv) {
-		fprintf(stderr,"Out of memory for debugger\n");
+	char *host = Config_ReadVar(name, "host");
+	int port;
+	if (!cserv) {
+		fprintf(stderr, "Out of memory for debugger\n");
 		return NULL;
 	}
-	if(Config_ReadInt32(&port,name,"port")<0) {
-		fprintf(stderr,"CLI not configured\n");
-		return NULL;
-	} 
-	if(!host) {
-		fprintf(stderr,"No host for TCP server of CLI\n");
+	if (Config_ReadInt32(&port, name, "port") < 0) {
+		fprintf(stderr, "CLI not configured\n");
 		return NULL;
 	}
-	cserv->tserv = TelnetServer_New(host,port,CliSess_Accept,cserv);
+	if (!host) {
+		fprintf(stderr, "No host for TCP server of CLI\n");
+		return NULL;
+	}
+	cserv->tserv = TelnetServer_New(host, port, CliSess_Accept, cserv);
 	return cserv;
 }

@@ -1,3 +1,2 @@
 #include "bus.h"
-BusDevice * RxCrc_New(const char *name);
-
+BusDevice *RxCrc_New(const char *name);

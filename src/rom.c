@@ -47,40 +47,42 @@ typedef struct Rom {
 	DiskImage *diskimage;
 	BusDevice bdev;
 	uint8_t *host_mem;
-	uint32_t  size;
+	uint32_t size;
 	uint32_t flags;
 } Rom;
 
 static void
-Rom_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags) {
+Rom_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
+{
 	Rom *rom = module_owner;
 	flags &= MEM_FLAG_READABLE;
-	Mem_MapRange(base,rom->host_mem,rom->size,mapsize,flags);
+	Mem_MapRange(base, rom->host_mem, rom->size, mapsize, flags);
 }
 
 static void
-Rom_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
-	Mem_UnMapRange(base,mapsize); 
+Rom_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
+{
+	Mem_UnMapRange(base, mapsize);
 }
 
 static uint32_t
-parse_memsize (char *str)
+parse_memsize(char *str)
 {
-        uint32_t size;
-        char c;
-        if(sscanf(str,"%d",&size)!=1) {
-                return 0;
-        }
-        if(sscanf(str,"%d%c",&size,&c)==1) {
-                return size;
-        }
-        switch(tolower((unsigned char)c)) {
-                case 'm':
-                        return size*1024*1024;
-                case 'k':
-                        return size*1024;
-        }
-        return 0;
+	uint32_t size;
+	char c;
+	if (sscanf(str, "%d", &size) != 1) {
+		return 0;
+	}
+	if (sscanf(str, "%d%c", &size, &c) == 1) {
+		return size;
+	}
+	switch (tolower((unsigned char)c)) {
+	    case 'm':
+		    return size * 1024 * 1024;
+	    case 'k':
+		    return size * 1024;
+	}
+	return 0;
 }
 
 /*
@@ -90,42 +92,43 @@ parse_memsize (char *str)
  *****************************************************************
  */
 BusDevice *
-Rom_New(char *rom_name) {
-	char *sizestr,*imagedir;
-	uint32_t size=0;
+Rom_New(char *rom_name)
+{
+	char *sizestr, *imagedir;
+	uint32_t size = 0;
 	Rom *rom;
-	sizestr = Config_ReadVar(rom_name,"size");
-	imagedir = Config_ReadVar("global","imagedir");
-	if(sizestr) {
-		size=parse_memsize(sizestr);
-		if(size == 0) {
-			fprintf(stderr,"ROM bank \"%s\" not present\n",rom_name);
+	sizestr = Config_ReadVar(rom_name, "size");
+	imagedir = Config_ReadVar("global", "imagedir");
+	if (sizestr) {
+		size = parse_memsize(sizestr);
+		if (size == 0) {
+			fprintf(stderr, "ROM bank \"%s\" not present\n", rom_name);
 			return NULL;
 		}
 	} else {
-		fprintf(stderr,"ROM bank \"%s\" not present\n",rom_name);
+		fprintf(stderr, "ROM bank \"%s\" not present\n", rom_name);
 		return NULL;
 	}
 	rom = sg_new(Rom);
 	rom->size = size;
-	if(imagedir) {
-                char *mapfile = alloca(strlen(imagedir) + strlen(rom_name) + 20);
-                sprintf(mapfile,"%s/%s.img",imagedir,rom_name);
-                rom->diskimage = DiskImage_Open(mapfile,rom->size,DI_RDWR | DI_CREAT_FF);
-                if(!rom->diskimage) {
-                        fprintf(stderr,"Open disk image failed\n");
-                        exit(42);
-                }
-                rom->host_mem = DiskImage_Mmap(rom->diskimage);
-        } else {
-                rom->host_mem = sg_calloc(rom->size);
-                memset(rom->host_mem,0xff,rom->size);
-        }
+	if (imagedir) {
+		char *mapfile = alloca(strlen(imagedir) + strlen(rom_name) + 20);
+		sprintf(mapfile, "%s/%s.img", imagedir, rom_name);
+		rom->diskimage = DiskImage_Open(mapfile, rom->size, DI_RDWR | DI_CREAT_FF);
+		if (!rom->diskimage) {
+			fprintf(stderr, "Open disk image failed\n");
+			exit(42);
+		}
+		rom->host_mem = DiskImage_Mmap(rom->diskimage);
+	} else {
+		rom->host_mem = sg_calloc(rom->size);
+		memset(rom->host_mem, 0xff, rom->size);
+	}
 	rom->bdev.first_mapping = NULL;
 	rom->bdev.Map = Rom_Map;
 	rom->bdev.UnMap = Rom_UnMap;
 	rom->bdev.owner = rom;
-	rom->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	fprintf(stderr,"ROM bank \"%s\" with  size %ukB\n",rom_name,size/1024);
+	rom->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "ROM bank \"%s\" with  size %ukB\n", rom_name, size / 1024);
 	return &rom->bdev;
 }

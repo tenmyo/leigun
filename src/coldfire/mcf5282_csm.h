@@ -1,2 +1,2 @@
 #include <bus.h>
-BusDevice * MCF5282_CsmNew(const char *name);
+BusDevice *MCF5282_CsmNew(const char *name);

@@ -48,16 +48,17 @@ typedef struct XPec {
 } XPec;
 
 static void
-XPec_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags) 
+XPec_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
 	XPec *xpec = module_owner;
-	flags &= MEM_FLAG_READABLE|MEM_FLAG_WRITABLE;
-	Mem_MapRange(base,xpec->host_mem,xpec->size,mapsize,flags);
+	flags &= MEM_FLAG_READABLE | MEM_FLAG_WRITABLE;
+	Mem_MapRange(base, xpec->host_mem, xpec->size, mapsize, flags);
 }
 
 static void
-XPec_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
-	Mem_UnMapRange(base,mapsize); 
+XPec_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
+{
+	Mem_UnMapRange(base, mapsize);
 }
 
 /*
@@ -66,16 +67,17 @@ XPec_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
  **************************************
  */
 BusDevice *
-XPec_New(const char *name) {
+XPec_New(const char *name)
+{
 	XPec *xpec;
 	xpec = sg_new(XPec);
 	xpec->size = 0x4000;
-	xpec->host_mem=sg_calloc(xpec->size);
-	xpec->bdev.first_mapping=NULL;
-	xpec->bdev.Map=XPec_Map;
-	xpec->bdev.UnMap=XPec_UnMap;
-	xpec->bdev.owner=xpec;
-	xpec->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	fprintf(stderr,"XPEC \"%s\" created\n",name);
+	xpec->host_mem = sg_calloc(xpec->size);
+	xpec->bdev.first_mapping = NULL;
+	xpec->bdev.Map = XPec_Map;
+	xpec->bdev.UnMap = XPec_UnMap;
+	xpec->bdev.owner = xpec;
+	xpec->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "XPEC \"%s\" created\n", name);
 	return &xpec->bdev;
 }

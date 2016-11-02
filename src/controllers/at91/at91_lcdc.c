@@ -123,9 +123,9 @@ typedef struct AT91Lcdc {
 
 	uint32_t pageSize;
 	uint32_t updateFifo[UPDATE_FIFO_SIZE];
-        uint64_t updateFifoWp;
-        uint64_t updateFifoRp;
-        FbDisplay *display;
+	uint64_t updateFifoWp;
+	uint64_t updateFifoRp;
+	FbDisplay *display;
 	CycleTimer updateTimer;
 	uint32_t traceStart;
 	uint32_t traceLength;
@@ -141,112 +141,113 @@ typedef struct AT91Lcdc {
 static void
 update_display(void *clientData)
 {
-        AT91Lcdc *lcdc = (AT91Lcdc*)clientData;
-        uint32_t addr;
-        uint8_t *data;
-        FbUpdateRequest fbudrq;
-        while(UPDATE_FIFO_COUNT(lcdc) > 0) {
-                addr = lcdc->updateFifo[UPDATE_FIFO_RP(lcdc)];
-                addr &= ~(lcdc->pageSize - 1);
-                Mem_TracePage(addr);
-                lcdc->updateFifoRp++;
-                data = Bus_GetHVARead(addr);
-                if(data) {
+	AT91Lcdc *lcdc = (AT91Lcdc *) clientData;
+	uint32_t addr;
+	uint8_t *data;
+	FbUpdateRequest fbudrq;
+	while (UPDATE_FIFO_COUNT(lcdc) > 0) {
+		addr = lcdc->updateFifo[UPDATE_FIFO_RP(lcdc)];
+		addr &= ~(lcdc->pageSize - 1);
+		Mem_TracePage(addr);
+		lcdc->updateFifoRp++;
+		data = Bus_GetHVARead(addr);
+		if (data) {
 			fbudrq.offset = addr - lcdc->regDMABADDR1;
-                        fbudrq.count = lcdc->pageSize;
-                        fbudrq.fbdata = data;
+			fbudrq.count = lcdc->pageSize;
+			fbudrq.fbdata = data;
 			//fprintf(stderr,"UDRQ, offs %08x\n",fbudrq.offset);
-                        FbDisplay_UpdateRequest(lcdc->display,&fbudrq);
-                }
-        }
+			FbDisplay_UpdateRequest(lcdc->display, &fbudrq);
+		}
+	}
 }
-
 
 static void
-lcdc_mem_trace(void *clientData, uint32_t value,uint32_t addr, int rqlen)
+lcdc_mem_trace(void *clientData, uint32_t value, uint32_t addr, int rqlen)
 {
-        AT91Lcdc *lcdc = (AT91Lcdc *) clientData;
-        if(UPDATE_FIFO_COUNT(lcdc) == UPDATE_FIFO_SIZE) {
-                update_display(lcdc);
-        }
-        lcdc->updateFifo[UPDATE_FIFO_WP(lcdc)] = addr;
-        lcdc->updateFifoWp++;
-        if(!CycleTimer_IsActive(&lcdc->updateTimer)) {
-                CycleTimer_Mod(&lcdc->updateTimer,MillisecondsToCycles(15));
-        }
+	AT91Lcdc *lcdc = (AT91Lcdc *) clientData;
+	if (UPDATE_FIFO_COUNT(lcdc) == UPDATE_FIFO_SIZE) {
+		update_display(lcdc);
+	}
+	lcdc->updateFifo[UPDATE_FIFO_WP(lcdc)] = addr;
+	lcdc->updateFifoWp++;
+	if (!CycleTimer_IsActive(&lcdc->updateTimer)) {
+		CycleTimer_Mod(&lcdc->updateTimer, MillisecondsToCycles(15));
+	}
 }
 
-static uint32_t 
-get_pixelsize(AT91Lcdc *lcdc) 
+static uint32_t
+get_pixelsize(AT91Lcdc * lcdc)
 {
 	int ps = (lcdc->regLCDCON2 >> 5) & 7;
 	unsigned int pixelsize = 0;
-	switch(ps) {
-		case 0:
-			pixelsize = 1;
-			break;
-		case 1:
-			pixelsize = 2;
-			break;
-		case 2:
-			pixelsize = 4;
-			break;
-		case 3: 
-			pixelsize = 8;
-			break;
-		case 4:
-			pixelsize = 16;
-			break;
-		case 5:
-			pixelsize = 24;
-			break;
-		case 6: 
-			pixelsize = 32;
-			break;
-		case 7:
-			break;
+	switch (ps) {
+	    case 0:
+		    pixelsize = 1;
+		    break;
+	    case 1:
+		    pixelsize = 2;
+		    break;
+	    case 2:
+		    pixelsize = 4;
+		    break;
+	    case 3:
+		    pixelsize = 8;
+		    break;
+	    case 4:
+		    pixelsize = 16;
+		    break;
+	    case 5:
+		    pixelsize = 24;
+		    break;
+	    case 6:
+		    pixelsize = 32;
+		    break;
+	    case 7:
+		    break;
 	}
 	return pixelsize;
 }
+
 static void
-update_memory_traces(AT91Lcdc *lcdc)
+update_memory_traces(AT91Lcdc * lcdc)
 {
-	unsigned int height, width;	
-	unsigned int bipp,length;
+	unsigned int height, width;
+	unsigned int bipp, length;
 	uint32_t startAddr;
 	uint32_t i;
 	width = (lcdc->regLCDFRMCFG >> 21 & 0x7ff) + 1;
-	height = (lcdc->regLCDFRMCFG & 0x7ff) + 1; 
+	height = (lcdc->regLCDFRMCFG & 0x7ff) + 1;
 	startAddr = lcdc->regDMABADDR1;
-	bipp = get_pixelsize(lcdc); 
+	bipp = get_pixelsize(lcdc);
 	length = (width * height * bipp + 7) / 8;
-	if((lcdc->traceLength == length) && (lcdc->traceStart == startAddr)) {
+	if ((lcdc->traceLength == length) && (lcdc->traceStart == startAddr)) {
 		return;
 	}
-	if(lcdc->traceLength) {
-                IOH_DeleteRegion(lcdc->traceStart,lcdc->traceLength) ;
-                Mem_UntraceRegion(lcdc->traceStart,lcdc->traceLength);
+	if (lcdc->traceLength) {
+		IOH_DeleteRegion(lcdc->traceStart, lcdc->traceLength);
+		Mem_UntraceRegion(lcdc->traceStart, lcdc->traceLength);
 		lcdc->traceLength = lcdc->traceStart = 0;
-        }
-	fprintf(stderr,"start 0x%08x %ux%u, length %u\n",startAddr,width,height,length);
-	if((height == 1) || (width == 1) || (startAddr < 0x20000000) || ((startAddr + length) > 0x30000000)) {
+	}
+	fprintf(stderr, "start 0x%08x %ux%u, length %u\n", startAddr, width, height, length);
+	if ((height == 1) || (width == 1) || (startAddr < 0x20000000)
+	    || ((startAddr + length) > 0x30000000)) {
 		return;
 	}
-	if(!lcdc->display) {
+	if (!lcdc->display) {
 		return;
-	}	
-	fprintf(stderr,"Tracing memory at %08x, len %u\n",startAddr,length);
+	}
+	fprintf(stderr, "Tracing memory at %08x, len %u\n", startAddr, length);
 	/* Clear all outstanding updates */
 	lcdc->updateFifoRp = lcdc->updateFifoWp;
-	IOH_NewRegion(startAddr,length,NULL,lcdc_mem_trace,0,lcdc);
+	IOH_NewRegion(startAddr, length, NULL, lcdc_mem_trace, 0, lcdc);
 	lcdc->traceLength = length;
 	lcdc->traceStart = startAddr;
 	/* 
 	 * Trigger the trace a first time because all pages are dirty 
 	 * after address change 
 	 */
-	for(i = 0;i < length;i += lcdc->pageSize) {
-		lcdc_mem_trace(lcdc,0,i + startAddr,0);
+	for (i = 0; i < length; i += lcdc->pageSize) {
+		lcdc_mem_trace(lcdc, 0, i + startAddr, 0);
 	}
 }
 
@@ -257,7 +258,8 @@ update_memory_traces(AT91Lcdc *lcdc)
  ************************************************************************
  */
 static void
-update_fbformat(AT91Lcdc *lcdc) {
+update_fbformat(AT91Lcdc * lcdc)
+{
 	FbFormat fbf;
 	fbf.red_bits = 5;
 	fbf.green_bits = 6;
@@ -267,7 +269,7 @@ update_fbformat(AT91Lcdc *lcdc) {
 	fbf.blue_shift = 0;
 	fbf.bits_per_pixel = 16;
 	fbf.depth = 16;
-	FbDisplay_SetFbFormat(lcdc->display,&fbf);
+	FbDisplay_SetFbFormat(lcdc->display, &fbf);
 }
 
 /**
@@ -277,14 +279,14 @@ update_fbformat(AT91Lcdc *lcdc) {
  *******************************************************************************************
  */
 static uint32_t
-dmabaddr1_read(void *clientData,uint32_t address,int rqlen)
+dmabaddr1_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	return lcdc->regDMABADDR1;
 }
 
 static void
-dmabaddr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmabaddr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	lcdc->regDMABADDR1 = value;
@@ -297,14 +299,14 @@ dmabaddr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************************
  */
 static uint32_t
-dmabaddr2_read(void *clientData,uint32_t address,int rqlen)
+dmabaddr2_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	return lcdc->regDMABADDR2;
 }
 
 static void
-dmabaddr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmabaddr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	lcdc->regDMABADDR2 = value;
@@ -317,16 +319,16 @@ dmabaddr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-dmafrmpt1_read(void *clientData,uint32_t address,int rqlen)
+dmafrmpt1_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	return lcdc->regDMAFRMPT1;
 }
 
 static void
-dmafrmpt1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmafrmpt1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC DMA Framepointer is readonly\n");
+	fprintf(stderr, "LCDC DMA Framepointer is readonly\n");
 }
 
 /**
@@ -335,16 +337,16 @@ dmafrmpt1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-dmafrmpt2_read(void *clientData,uint32_t address,int rqlen)
+dmafrmpt2_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	return lcdc->regDMAFRMPT2;
 }
 
 static void
-dmafrmpt2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmafrmpt2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC DMA Framepointer is readonly\n");
+	fprintf(stderr, "LCDC DMA Framepointer is readonly\n");
 }
 
 /**
@@ -353,16 +355,16 @@ dmafrmpt2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************
  */
 static uint32_t
-dmafrmadd1_read(void *clientData,uint32_t address,int rqlen)
+dmafrmadd1_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	return lcdc->regDMAFRMADD1;
 }
 
 static void
-dmafrmadd1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmafrmadd1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC DMA Frame address is not writable\n");
+	fprintf(stderr, "LCDC DMA Frame address is not writable\n");
 }
 
 /**
@@ -371,16 +373,16 @@ dmafrmadd1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************
  */
 static uint32_t
-dmafrmadd2_read(void *clientData,uint32_t address,int rqlen)
+dmafrmadd2_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	return lcdc->regDMAFRMADD2;
 }
 
 static void
-dmafrmadd2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmafrmadd2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC DMA Frame address is not writable\n");
+	fprintf(stderr, "LCDC DMA Frame address is not writable\n");
 }
 
 /**
@@ -390,16 +392,16 @@ dmafrmadd2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-dmafrmcfg_read(void *clientData,uint32_t address,int rqlen)
+dmafrmcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dmafrmcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmafrmcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 /**
@@ -413,16 +415,16 @@ dmafrmcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************************
  */
 static uint32_t
-dmacon_read(void *clientData,uint32_t address,int rqlen)
+dmacon_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dmacon_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dmacon_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 /**
@@ -433,17 +435,17 @@ dmacon_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************************
  */
 static uint32_t
-dma2dcfg_read(void *clientData,uint32_t address,int rqlen)
+dma2dcfg_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
-        return lcdc->regDMA2DCFG;
+	return lcdc->regDMA2DCFG;
 }
 
 static void
-dma2dcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dma2dcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
-        lcdc->regDMA2DCFG = value & 0x1f00ffff;
+	lcdc->regDMA2DCFG = value & 0x1f00ffff;
 }
 
 /**
@@ -455,15 +457,15 @@ dma2dcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *********************************************************************
  */
 static uint32_t
-lcdcon1_read(void *clientData,uint32_t address,int rqlen)
+lcdcon1_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	// update_linecnt();
-        return lcdc->regLCDCON1;
+	return lcdc->regLCDCON1;
 }
 
 static void
-lcdcon1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcdcon1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	lcdc->regLCDCON1 = (value & 0x001FF001) | (lcdc->regLCDCON1 & 0xffe00000);
@@ -484,19 +486,24 @@ lcdcon1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * Bit 15: CLKMOD: 0 = clk only active during display period, 1 = always active
  * Bit 30 - 31: MEMOR Memory Ordering 00 Big Endian 10 Little, 11: Wince format
  **************************************************************************************
- */ 
+ */
 static uint32_t
-lcdcon2_read(void *clientData,uint32_t address,int rqlen)
+lcdcon2_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
-        return lcdc->regLCDCON2;
+	return lcdc->regLCDCON2;
 }
 
 static void
-lcdcon2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcdcon2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
-        lcdc->regLCDCON2 = value & 0xc0009fff;
+	if(value & (1 << 15)) {
+		fprintf(stderr,"****************************************** CLKMOD 1\n");
+	} else {
+		fprintf(stderr,"****************************************** CLKMOD 0\n");
+	}
+	lcdc->regLCDCON2 = value & 0xc0009fff;
 }
 
 /**
@@ -509,16 +516,16 @@ lcdcon2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************************************************
  */
 static uint32_t
-lcdtim1_read(void *clientData,uint32_t address,int rqlen)
+lcdtim1_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-lcdtim1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcdtim1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 /**
@@ -530,16 +537,16 @@ lcdtim1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ********************************************************************************************************
  */
 static uint32_t
-lcdtim2_read(void *clientData,uint32_t address,int rqlen)
+lcdtim2_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-lcdtim2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcdtim2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 /**
@@ -550,14 +557,14 @@ lcdtim2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *************************************************************************************************
  */
 static uint32_t
-lcdfrmcfg_read(void *clientData,uint32_t address,int rqlen)
+lcdfrmcfg_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
-        return lcdc->regLCDFRMCFG;
+	return lcdc->regLCDFRMCFG;
 }
 
 static void
-lcdfrmcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcdfrmcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	lcdc->regLCDFRMCFG = value & 0xffe007ff;
@@ -570,120 +577,120 @@ lcdfrmcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************
  */
 static uint32_t
-lcdfifo_read(void *clientData,uint32_t address,int rqlen)
+lcdfifo_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-lcdfifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcdfifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp1_2_read(void *clientData,uint32_t address,int rqlen)
+dp1_2_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp1_2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp1_2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp4_7_read(void *clientData,uint32_t address,int rqlen)
+dp4_7_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp4_7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp4_7_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp3_5_read(void *clientData,uint32_t address,int rqlen)
+dp3_5_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp3_5_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp3_5_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp2_3_read(void *clientData,uint32_t address,int rqlen)
+dp2_3_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp2_3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp2_3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp5_7_read(void *clientData,uint32_t address,int rqlen)
+dp5_7_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp5_7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp5_7_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp3_4_read(void *clientData,uint32_t address,int rqlen)
+dp3_4_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp3_4_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp3_4_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp4_5_read(void *clientData,uint32_t address,int rqlen)
+dp4_5_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp4_5_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp4_5_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-dp6_7_read(void *clientData,uint32_t address,int rqlen)
+dp6_7_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dp6_7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dp6_7_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 /*
@@ -696,147 +703,147 @@ dp6_7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *********************************************************************************
  */
 static uint32_t
-pwrcon_read(void *clientData,uint32_t address,int rqlen)
+pwrcon_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-pwrcon_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pwrcon_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-contrast_ctr_read(void *clientData,uint32_t address,int rqlen)
+contrast_ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-contrast_ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+contrast_ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-contrast_val_read(void *clientData,uint32_t address,int rqlen)
+contrast_val_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-contrast_val_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+contrast_val_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-isr_read(void *clientData,uint32_t address,int rqlen)
+isr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-isr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+isr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-icr_read(void *clientData,uint32_t address,int rqlen)
+icr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-icr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-itr_read(void *clientData,uint32_t address,int rqlen)
+itr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-itr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+itr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-irr_read(void *clientData,uint32_t address,int rqlen)
+irr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-irr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC_%s not implemented\n",__func__);
+	fprintf(stderr, "LCDC_%s not implemented\n", __func__);
 }
 
 static uint32_t
-lut_entry_read(void *clientData,uint32_t address,int rqlen)
+lut_entry_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	uint32_t index = (address >> 2) & 0xff;
 	uint32_t value;
 	value = lcdc->regLUT[index];
-        return value;
+	return value;
 }
 
 static void
-lut_entry_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lut_entry_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Lcdc *lcdc = clientData;
 	uint32_t index = (address >> 2) & 0xff;
@@ -844,53 +851,53 @@ lut_entry_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static void
-AT91Lcdc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Lcdc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91Lcdc *lcdc = (AT91Lcdc*) owner;
+	AT91Lcdc *lcdc = (AT91Lcdc *) owner;
 	unsigned int i;
-        IOH_New32(LCDC_DMABADDR1(base),dmabaddr1_read,dmabaddr1_write,lcdc);
-	IOH_New32(LCDC_DMABADDR2(base),dmabaddr2_read,dmabaddr2_write,lcdc);
-	IOH_New32(LCDC_DMAFRMPT1(base),dmafrmpt1_read,dmafrmpt1_write,lcdc);
-	IOH_New32(LCDC_DMAFRMPT2(base),dmafrmpt2_read,dmafrmpt2_write,lcdc);
-	IOH_New32(LCDC_DMAFRMADD1(base),dmafrmadd1_read,dmafrmadd1_write,lcdc);
-	IOH_New32(LCDC_DMAFRMADD2(base),dmafrmadd2_read,dmafrmadd2_write,lcdc);
-	IOH_New32(LCDC_DMAFRMCFG(base),dmafrmcfg_read,dmafrmcfg_write,lcdc);
-	IOH_New32(LCDC_DMACON(base),dmacon_read,dmacon_write,lcdc);
-	IOH_New32(LCDC_DMA2DCFG(base),dma2dcfg_read,dma2dcfg_write,lcdc);
-	IOH_New32(LCDC_LCDCON1(base),lcdcon1_read,lcdcon1_write,lcdc);
-	IOH_New32(LCDC_LCDCON2(base),lcdcon2_read,lcdcon2_write,lcdc);
-	IOH_New32(LCDC_LCDTIM1(base),lcdtim1_read,lcdtim1_write,lcdc);
-	IOH_New32(LCDC_LCDTIM2(base),lcdtim2_read,lcdtim2_write,lcdc);
-	IOH_New32(LCDC_LCDFRMCFG(base),lcdfrmcfg_read,lcdfrmcfg_write,lcdc);
-	IOH_New32(LCDC_LCDFIFO(base),lcdfifo_read,lcdfifo_write,lcdc);
-	IOH_New32(LCDC_DP1_2(base),dp1_2_read,dp1_2_write,lcdc);
-	IOH_New32(LCDC_DP4_7(base),dp4_7_read,dp4_7_write,lcdc);
-	IOH_New32(LCDC_DP3_5(base),dp3_5_read,dp3_5_write,lcdc);
-	IOH_New32(LCDC_DP2_3(base),dp2_3_read,dp2_3_write,lcdc);
-	IOH_New32(LCDC_DP5_7(base),dp5_7_read,dp5_7_write,lcdc);
-	IOH_New32(LCDC_DP3_4(base),dp3_4_read,dp3_4_write,lcdc);
-	IOH_New32(LCDC_DP4_5(base),dp4_5_read,dp4_5_write,lcdc);
-	IOH_New32(LCDC_DP6_7(base),dp6_7_read,dp6_7_write,lcdc);
-	IOH_New32(LCDC_PWRCON(base),pwrcon_read,pwrcon_write,lcdc);
-	IOH_New32(LCDC_CONTRAST_CTR(base),contrast_ctr_read,contrast_ctr_write,lcdc);
-	IOH_New32(LCDC_CONTRAST_VAL(base),contrast_val_read,contrast_val_write,lcdc);
-	IOH_New32(LCDC_LCD_IER(base),ier_read,ier_write,lcdc);
-	IOH_New32(LCDC_LCD_IDR(base),idr_read,idr_write,lcdc);
-	IOH_New32(LCDC_LCD_IMR(base),imr_read,imr_write,lcdc);
-	IOH_New32(LCDC_LCD_ISR(base),isr_read,isr_write,lcdc);
-	IOH_New32(LCDC_LCD_ICR(base),icr_read,icr_write,lcdc);
-	IOH_New32(LCDC_LCD_ITR(base),itr_read,itr_write,lcdc);
-	IOH_New32(LCDC_LCD_IRR(base),irr_read,irr_write,lcdc);
-	for(i = 0; i < 256; i++) {
-		IOH_New32(LCDC_LUT_ENTRY(base,i),lut_entry_read,lut_entry_write,lcdc);
+	IOH_New32(LCDC_DMABADDR1(base), dmabaddr1_read, dmabaddr1_write, lcdc);
+	IOH_New32(LCDC_DMABADDR2(base), dmabaddr2_read, dmabaddr2_write, lcdc);
+	IOH_New32(LCDC_DMAFRMPT1(base), dmafrmpt1_read, dmafrmpt1_write, lcdc);
+	IOH_New32(LCDC_DMAFRMPT2(base), dmafrmpt2_read, dmafrmpt2_write, lcdc);
+	IOH_New32(LCDC_DMAFRMADD1(base), dmafrmadd1_read, dmafrmadd1_write, lcdc);
+	IOH_New32(LCDC_DMAFRMADD2(base), dmafrmadd2_read, dmafrmadd2_write, lcdc);
+	IOH_New32(LCDC_DMAFRMCFG(base), dmafrmcfg_read, dmafrmcfg_write, lcdc);
+	IOH_New32(LCDC_DMACON(base), dmacon_read, dmacon_write, lcdc);
+	IOH_New32(LCDC_DMA2DCFG(base), dma2dcfg_read, dma2dcfg_write, lcdc);
+	IOH_New32(LCDC_LCDCON1(base), lcdcon1_read, lcdcon1_write, lcdc);
+	IOH_New32(LCDC_LCDCON2(base), lcdcon2_read, lcdcon2_write, lcdc);
+	IOH_New32(LCDC_LCDTIM1(base), lcdtim1_read, lcdtim1_write, lcdc);
+	IOH_New32(LCDC_LCDTIM2(base), lcdtim2_read, lcdtim2_write, lcdc);
+	IOH_New32(LCDC_LCDFRMCFG(base), lcdfrmcfg_read, lcdfrmcfg_write, lcdc);
+	IOH_New32(LCDC_LCDFIFO(base), lcdfifo_read, lcdfifo_write, lcdc);
+	IOH_New32(LCDC_DP1_2(base), dp1_2_read, dp1_2_write, lcdc);
+	IOH_New32(LCDC_DP4_7(base), dp4_7_read, dp4_7_write, lcdc);
+	IOH_New32(LCDC_DP3_5(base), dp3_5_read, dp3_5_write, lcdc);
+	IOH_New32(LCDC_DP2_3(base), dp2_3_read, dp2_3_write, lcdc);
+	IOH_New32(LCDC_DP5_7(base), dp5_7_read, dp5_7_write, lcdc);
+	IOH_New32(LCDC_DP3_4(base), dp3_4_read, dp3_4_write, lcdc);
+	IOH_New32(LCDC_DP4_5(base), dp4_5_read, dp4_5_write, lcdc);
+	IOH_New32(LCDC_DP6_7(base), dp6_7_read, dp6_7_write, lcdc);
+	IOH_New32(LCDC_PWRCON(base), pwrcon_read, pwrcon_write, lcdc);
+	IOH_New32(LCDC_CONTRAST_CTR(base), contrast_ctr_read, contrast_ctr_write, lcdc);
+	IOH_New32(LCDC_CONTRAST_VAL(base), contrast_val_read, contrast_val_write, lcdc);
+	IOH_New32(LCDC_LCD_IER(base), ier_read, ier_write, lcdc);
+	IOH_New32(LCDC_LCD_IDR(base), idr_read, idr_write, lcdc);
+	IOH_New32(LCDC_LCD_IMR(base), imr_read, imr_write, lcdc);
+	IOH_New32(LCDC_LCD_ISR(base), isr_read, isr_write, lcdc);
+	IOH_New32(LCDC_LCD_ICR(base), icr_read, icr_write, lcdc);
+	IOH_New32(LCDC_LCD_ITR(base), itr_read, itr_write, lcdc);
+	IOH_New32(LCDC_LCD_IRR(base), irr_read, irr_write, lcdc);
+	for (i = 0; i < 256; i++) {
+		IOH_New32(LCDC_LUT_ENTRY(base, i), lut_entry_read, lut_entry_write, lcdc);
 	}
 }
 
 static void
-AT91Lcdc_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Lcdc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	unsigned int i;
-        IOH_Delete32(LCDC_DMABADDR1(base));
+	IOH_Delete32(LCDC_DMABADDR1(base));
 	IOH_Delete32(LCDC_DMABADDR2(base));
 	IOH_Delete32(LCDC_DMAFRMPT1(base));
 	IOH_Delete32(LCDC_DMAFRMPT2(base));
@@ -923,26 +930,25 @@ AT91Lcdc_UnMap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(LCDC_LCD_ICR(base));
 	IOH_Delete32(LCDC_LCD_ITR(base));
 	IOH_Delete32(LCDC_LCD_IRR(base));
-	for(i = 0; i < 256; i++) {
-		IOH_Delete32(LCDC_LUT_ENTRY(base,i));
+	for (i = 0; i < 256; i++) {
+		IOH_Delete32(LCDC_LUT_ENTRY(base, i));
 	}
 }
 
-
 BusDevice *
-AT91Lcdc_New(const char *name,FbDisplay *display)
+AT91Lcdc_New(const char *name, FbDisplay * display)
 {
 	AT91Lcdc *lcdc = sg_new(AT91Lcdc);
 	lcdc->bdev.first_mapping = NULL;
-        lcdc->bdev.Map = AT91Lcdc_Map;
-        lcdc->bdev.UnMap = AT91Lcdc_UnMap;
-        lcdc->bdev.owner = lcdc;
-        lcdc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	lcdc->bdev.Map = AT91Lcdc_Map;
+	lcdc->bdev.UnMap = AT91Lcdc_UnMap;
+	lcdc->bdev.owner = lcdc;
+	lcdc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	lcdc->display = display;
 	lcdc->pageSize = Mem_SmallPageSize();
 	lcdc->traceLength = lcdc->traceStart = 0;
-	CycleTimer_Init(&lcdc->updateTimer,update_display,lcdc);
-	update_fbformat(lcdc); 
-	fprintf(stderr,"AT91 LCD controller \"%s\" created\n",name);
+	CycleTimer_Init(&lcdc->updateTimer, update_display, lcdc);
+	update_fbformat(lcdc);
+	fprintf(stderr, "AT91 LCD controller \"%s\" created\n", name);
 	return &lcdc->bdev;
 }

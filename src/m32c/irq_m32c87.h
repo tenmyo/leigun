@@ -1,5 +1,5 @@
 #include "cpu_m32c.h"
-BusDevice * M32C87IntCo_New(const char *name);
+BusDevice *M32C87IntCo_New(const char *name);
 
 #define M32C_INT_BRK			(0)
 #define M32C_INT_DMA0		(0x20 >> 2)

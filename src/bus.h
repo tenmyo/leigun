@@ -13,7 +13,6 @@
 #include <compiler_extensions.h>
 #include "byteorder.h"
 
-
 /*
  * ----------------------------------------------------
  * We can use maximum of two bits in hva for flags
@@ -24,7 +23,7 @@
 #define PG_FLAG_MASK (1)
 
 /* The one level map */
-extern uint8_t **mem_map_read,**mem_map_write;
+extern uint8_t **mem_map_read, **mem_map_write;
 
 #define IOH_FLG_BIG_ENDIAN	(1)
 #define IOH_FLG_LITTLE_ENDIAN	(2)
@@ -35,14 +34,14 @@ extern uint8_t **mem_map_read,**mem_map_write;
  * IO handlers
  * -----------------------------------------------------------
  */
-#define IOH_FLG_PA_CBSE	        (0x200)	/* Partial accesss: Call base proc 	*/
-#define IOH_FLG_PWR_RMW		(8) 	/* Partial write: Read Modify write 	*/
-#define IOH_FLG_PRD_RARP	(0x10) 	/* Partial read: Read All Return Partial */
+#define IOH_FLG_PA_CBSE	        (0x200)	/* Partial accesss: Call base proc      */
+#define IOH_FLG_PWR_RMW		(8)	/* Partial write: Read Modify write     */
+#define IOH_FLG_PRD_RARP	(0x10)	/* Partial read: Read All Return Partial */
 #define IOH_FLG_OSZR_IGN	(0)	/* Oversized read: ignore */
 #define IOH_FLG_OSZW_IGN	(0)	/* Oversized write: ignore */
-#define IOH_FLG_OSZR_NEXT	(0x20)  /* Oversized read: next */
-#define IOH_FLG_OSZW_NEXT	(0x40)  /* Oversized write: next */
-#define IOH_FLG_OSZR_WRAP	(0x80) 	/* Oversized read: wrap	*/
+#define IOH_FLG_OSZR_NEXT	(0x20)	/* Oversized read: next */
+#define IOH_FLG_OSZW_NEXT	(0x40)	/* Oversized write: next */
+#define IOH_FLG_OSZR_WRAP	(0x80)	/* Oversized read: wrap */
 #define IOH_FLG_OSZW_WRAP	(0x100)	/* Oversized write: wrap */
 
 #define IOH_HASH_SIZE	(16384)
@@ -83,7 +82,6 @@ extern uint8_t **mem_map_read,**mem_map_write;
 #define MEM_MAP_ENTRIES (1 << (32 - MEM_MAP_SHIFT))
 #define MEM_MAP_BLOCKMASK ((MEM_MAP_BLOCKSIZE)-1)
 
-
 /*
  * ---------------------------------------------
  * Two level PA to HVA translation can have
@@ -93,14 +91,14 @@ extern uint8_t **mem_map_read,**mem_map_write;
  */
 
 typedef struct TwoLevelMMap {
-        unsigned int frst_lvl_sz;
-        unsigned long frst_lvl_mask;
-        unsigned int frst_lvl_shift;
-        unsigned int scnd_lvl_sz;
-        unsigned long scnd_lvl_mask;
-        unsigned int scnd_lvl_shift;
-        unsigned int scnd_lvl_blockmask;
-        unsigned int scnd_lvl_blocksize;
+	unsigned int frst_lvl_sz;
+	unsigned long frst_lvl_mask;
+	unsigned int frst_lvl_shift;
+	unsigned int scnd_lvl_sz;
+	unsigned long scnd_lvl_mask;
+	unsigned int scnd_lvl_shift;
+	unsigned int scnd_lvl_blockmask;
+	unsigned int scnd_lvl_blocksize;
 
 	uint8_t ***flvlmap_read;
 	uint32_t *flvl_map_read_use_count;
@@ -110,8 +108,8 @@ typedef struct TwoLevelMMap {
 
 extern TwoLevelMMap twoLevelMMap;
 
-typedef uint32_t IOReadProc(void *clientData,uint32_t address,int rqlen);
-typedef void IOWriteProc(void *clientData,uint32_t value,uint32_t address,int rqlen);
+typedef uint32_t IOReadProc(void *clientData, uint32_t address, int rqlen);
+typedef void IOWriteProc(void *clientData, uint32_t value, uint32_t address, int rqlen);
 typedef struct IOHandler {
 	struct IOHandler *next;
 	uint32_t cpu_addr;
@@ -124,43 +122,47 @@ typedef struct IOHandler {
 } IOHandler;
 extern IOHandler **iohandlerHash;
 
-void IOH_New8f(uint32_t cpu_addr,IOReadProc *readproc,IOWriteProc *writeproc,void *clientData,uint32_t flags);
-void IOH_New32f(uint32_t address,IOReadProc *readproc,IOWriteProc *writeproc,void *clientData,uint32_t flags); 
-void IOH_New16f(uint32_t address,IOReadProc *readproc,IOWriteProc *writeproc,void *clientData,uint32_t flags); 
+void IOH_New8f(uint32_t cpu_addr, IOReadProc * readproc, IOWriteProc * writeproc, void *clientData,
+	       uint32_t flags);
+void IOH_New32f(uint32_t address, IOReadProc * readproc, IOWriteProc * writeproc, void *clientData,
+		uint32_t flags);
+void IOH_New16f(uint32_t address, IOReadProc * readproc, IOWriteProc * writeproc, void *clientData,
+		uint32_t flags);
 void IOH_Delete32(uint32_t address);
 void IOH_Delete16(uint32_t address);
 void IOH_Delete8(uint32_t address);
-void IOH_NewRegion(uint32_t address,uint32_t length,IOReadProc *readproc,IOWriteProc *writeproc,int byteorder,void *clientData); 
-void IOH_DeleteRegion(uint32_t address,uint32_t length); 
+void IOH_NewRegion(uint32_t address, uint32_t length, IOReadProc * readproc,
+		   IOWriteProc * writeproc, int byteorder, void *clientData);
+void IOH_DeleteRegion(uint32_t address, uint32_t length);
 
 static inline void
-IOH_New8(uint32_t cpu_addr,IOReadProc *readproc,IOWriteProc *writeproc,void *clientData)
+IOH_New8(uint32_t cpu_addr, IOReadProc * readproc, IOWriteProc * writeproc, void *clientData)
 {
 	uint32_t flags = IOH_FLG_HOST_ENDIAN | IOH_FLG_PRD_RARP;
-        IOH_New8f(cpu_addr,readproc,writeproc,clientData,flags);
+	IOH_New8f(cpu_addr, readproc, writeproc, clientData, flags);
 }
 
 static inline void
-IOH_New16(uint32_t cpu_addr,IOReadProc *readproc,IOWriteProc *writeproc,void *clientData)
+IOH_New16(uint32_t cpu_addr, IOReadProc * readproc, IOWriteProc * writeproc, void *clientData)
 {
 	uint32_t flags = IOH_FLG_HOST_ENDIAN | IOH_FLG_PRD_RARP;
-        IOH_New16f(cpu_addr,readproc,writeproc,clientData,flags);
+	IOH_New16f(cpu_addr, readproc, writeproc, clientData, flags);
 }
 
 static inline void
-IOH_New32(uint32_t cpu_addr,IOReadProc *readproc,IOWriteProc *writeproc,void *clientData) {
+IOH_New32(uint32_t cpu_addr, IOReadProc * readproc, IOWriteProc * writeproc, void *clientData)
+{
 	uint32_t flags = IOH_FLG_HOST_ENDIAN;
-        IOH_New32f(cpu_addr,readproc,writeproc,clientData,flags);
+	IOH_New32f(cpu_addr, readproc, writeproc, clientData, flags);
 }
 
-
-void IO_Write32(uint32_t value,uint32_t addr); 
-void IO_Write16(uint16_t value,uint32_t addr); 
-void IO_Write8(uint8_t value,uint32_t addr); 
+void IO_Write32(uint32_t value, uint32_t addr);
+void IO_Write16(uint16_t value, uint32_t addr);
+void IO_Write8(uint8_t value, uint32_t addr);
 uint64_t IO_Read64(uint32_t addr);
 uint32_t IO_Read32(uint32_t addr);
 uint16_t IO_Read16(uint32_t addr);
-uint8_t IO_Read8(uint32_t addr); 
+uint8_t IO_Read8(uint32_t addr);
 
 /*
  * ----------------------------------------------
@@ -174,7 +176,7 @@ uint8_t IO_Read8(uint32_t addr);
 
 typedef struct MemMapping {
 	uint32_t base;
-	uint32_t mapsize; /* not the size of the chip if it does not decode all address lines ! */
+	uint32_t mapsize;	/* not the size of the chip if it does not decode all address lines ! */
 	uint32_t flags;
 	struct MemMapping *next;
 } MemMapping;
@@ -182,46 +184,45 @@ typedef struct MemMapping {
 #define BSCMAGIC_DRAM_CMD	(4711)
 
 typedef struct BusSpecialCycle {
-        int magic;
-        uint8_t data[0]; // variable sized
+	int magic;
+	uint8_t data[0];	// variable sized
 } BusSpecialCycle_t;
-
 
 typedef struct BusDevice {
 	/* public */
 	void *owner;
 	uint32_t magic;
-	void (*Map)(void *owner,uint32_t base,uint32_t mask,uint32_t flags); 
-	void (*UnMap)(void *owner,uint32_t base,uint32_t mask);
-	int (*specialCycle)(struct BusDevice *bdev,BusSpecialCycle_t *cycle);
+	void (*Map) (void *owner, uint32_t base, uint32_t mask, uint32_t flags);
+	void (*UnMap) (void *owner, uint32_t base, uint32_t mask);
+	int (*specialCycle) (struct BusDevice * bdev, BusSpecialCycle_t * cycle);
 
-	/* private */	
+	/* private */
 	MemMapping *first_mapping;
 	uint32_t hw_flags;
 
 	/* Service provider functions */
-	void (*postIRQ)(struct BusDevice *,int irq);
-        void (*unPostIRQ)(struct BusDevice *,int irq);
-	uint32_t (*read32)(uint32_t addr);
-	uint16_t (*read16)(uint32_t addr);
-	uint8_t  (*read8)(uint32_t addr);
-	void  (*readblock)(uint8_t *buf,uint32_t addr,uint32_t count);
-	void (*write32)(uint32_t value,uint32_t addr);
-	void (*write16)(uint16_t value,uint32_t addr);
-	void (*write8)(uint8_t value,uint32_t addr);
-	void  (*writeblock)(uint32_t addr,uint8_t *buf,uint32_t count);
+	void (*postIRQ) (struct BusDevice *, int irq);
+	void (*unPostIRQ) (struct BusDevice *, int irq);
+	 uint32_t(*read32) (uint32_t addr);
+	 uint16_t(*read16) (uint32_t addr);
+	 uint8_t(*read8) (uint32_t addr);
+	void (*readblock) (uint8_t * buf, uint32_t addr, uint32_t count);
+	void (*write32) (uint32_t value, uint32_t addr);
+	void (*write16) (uint16_t value, uint32_t addr);
+	void (*write8) (uint8_t value, uint32_t addr);
+	void (*writeblock) (uint32_t addr, uint8_t * buf, uint32_t count);
 
 } BusDevice;
 
 typedef struct Bus {
-	uint32_t (*read32)(uint32_t addr);
-	uint16_t (*read16)(uint32_t addr);
-	uint8_t  (*read8)(uint32_t addr);
-	void  (*readblock)(uint8_t *buf,uint32_t addr,uint32_t count);
-	void (*write32)(uint32_t value,uint32_t addr);
-	void (*write16)(uint16_t value,uint32_t addr);
-	void (*write8)(uint8_t value,uint32_t addr);
-	void  (*writeblock)(uint32_t addr,uint8_t *buf,uint32_t count);
+	uint32_t(*read32) (uint32_t addr);
+	uint16_t(*read16) (uint32_t addr);
+	uint8_t(*read8) (uint32_t addr);
+	void (*readblock) (uint8_t * buf, uint32_t addr, uint32_t count);
+	void (*write32) (uint32_t value, uint32_t addr);
+	void (*write16) (uint16_t value, uint32_t addr);
+	void (*write8) (uint8_t value, uint32_t addr);
+	void (*writeblock) (uint32_t addr, uint8_t * buf, uint32_t count);
 } Bus;
 
 extern Bus *MainBus;
@@ -231,16 +232,15 @@ extern Bus *MainBus;
  * lines
  * -------------------------------------------------------------------------------
  */
-void Mem_AreaAddMapping(BusDevice *dev,uint32_t base,uint32_t mask,uint32_t flags);
-void Mem_AreaDeleteMappings(BusDevice *dev);
+void Mem_AreaAddMapping(BusDevice * dev, uint32_t base, uint32_t mask, uint32_t flags);
+void Mem_AreaDeleteMappings(BusDevice * dev);
 
 /*
  * -------------------------------------------------------------------------------
  * Called by the Chip Emulator whenever it updates its mapping by itself 
  * -------------------------------------------------------------------------------
  */
-void Mem_AreaUpdateMappings(BusDevice *dev);
-
+void Mem_AreaUpdateMappings(BusDevice * dev);
 
 /*
  * ---------------------------------------------
@@ -248,8 +248,9 @@ void Mem_AreaUpdateMappings(BusDevice *dev);
  * ---------------------------------------------
  */
 
-void Mem_MapRange(uint32_t base,uint8_t *start_mem,uint32_t devsize,uint32_t mapsize,uint32_t flags);
-void Mem_UnMapRange(uint32_t base,uint32_t mapsize);
+void Mem_MapRange(uint32_t base, uint8_t * start_mem, uint32_t devsize, uint32_t mapsize,
+		  uint32_t flags);
+void Mem_UnMapRange(uint32_t base, uint32_t mapsize);
 
 /*
  * ----------------------------------------------------------------
@@ -257,165 +258,171 @@ void Mem_UnMapRange(uint32_t base,uint32_t mapsize);
  * ----------------------------------------------------------------
  */
 static inline int
-Bus_DoSpecialCycle(BusDevice *bdev,BusSpecialCycle_t *cycle)
+Bus_DoSpecialCycle(BusDevice * bdev, BusSpecialCycle_t * cycle)
 {
-        if(!bdev->specialCycle) {
-                return -1;
-        }
-        return bdev->specialCycle(bdev,cycle);
+	if (!bdev->specialCycle) {
+		return -1;
+	}
+	return bdev->specialCycle(bdev, cycle);
 }
+
 /*
  * -------------------------------------------------------------
  * Get Host Virtual Addresses for read and Write access
  * -------------------------------------------------------------
  */
 
-
 static inline unsigned char *
-Bus_GetHVAWrite(uint32_t addr) {
-        uint32_t index=(addr>>MEM_MAP_SHIFT);
-        uint8_t *base=mem_map_write[index];
-        if(likely(base)) {
-                return base+(addr&(MEM_MAP_BLOCKMASK));
-        } else {
+Bus_GetHVAWrite(uint32_t addr)
+{
+	uint32_t index = (addr >> MEM_MAP_SHIFT);
+	uint8_t *base = mem_map_write[index];
+	if (likely(base)) {
+		return base + (addr & (MEM_MAP_BLOCKMASK));
+	} else {
 		uint8_t **slvl_map;
-                index = addr >> twoLevelMMap.frst_lvl_shift;
-                if(!(slvl_map = twoLevelMMap.flvlmap_write[index])) {
+		index = addr >> twoLevelMMap.frst_lvl_shift;
+		if (!(slvl_map = twoLevelMMap.flvlmap_write[index])) {
 			return NULL;
-                }
-                index = (addr & twoLevelMMap.scnd_lvl_mask) >> twoLevelMMap.scnd_lvl_shift;
-                base = slvl_map[index];
-                if(likely(base)) {
- 			if(unlikely(((long)base) & PG_TRACED)) {
-                        	base -= PG_TRACED;
-                        	slvl_map[index] = base;
-                        	IO_Write8(0,addr);
+		}
+		index = (addr & twoLevelMMap.scnd_lvl_mask) >> twoLevelMMap.scnd_lvl_shift;
+		base = slvl_map[index];
+		if (likely(base)) {
+			if (unlikely(((long)base) & PG_TRACED)) {
+				base -= PG_TRACED;
+				slvl_map[index] = base;
+				IO_Write8(0, addr);
 			}
-                        return base + (addr & (twoLevelMMap.scnd_lvl_blockmask));
-                } else {
-                	return NULL;
-                }
-        }
+			return base + (addr & (twoLevelMMap.scnd_lvl_blockmask));
+		} else {
+			return NULL;
+		}
+	}
 }
 
-
 static inline unsigned char *
-Bus_GetHVARead(uint32_t addr) {
-        uint32_t index=(addr>>MEM_MAP_SHIFT);
-        uint8_t *base=mem_map_read[index];
-        if(likely(base)) {
-                return base+(addr&(MEM_MAP_BLOCKMASK));
-        } else {
+Bus_GetHVARead(uint32_t addr)
+{
+	uint32_t index = (addr >> MEM_MAP_SHIFT);
+	uint8_t *base = mem_map_read[index];
+	if (likely(base)) {
+		return base + (addr & (MEM_MAP_BLOCKMASK));
+	} else {
 		uint8_t **slvl_map;
-                index = addr >> twoLevelMMap.frst_lvl_shift;
-                if(!(slvl_map = twoLevelMMap.flvlmap_read[index])) {
+		index = addr >> twoLevelMMap.frst_lvl_shift;
+		if (!(slvl_map = twoLevelMMap.flvlmap_read[index])) {
 			return NULL;
-                }
-                index = (addr & twoLevelMMap.scnd_lvl_mask) >> twoLevelMMap.scnd_lvl_shift;
-                base = slvl_map[index];
-                if(likely(base)) {
-			return base+(addr&twoLevelMMap.scnd_lvl_blockmask);
-                } else {
-                	return NULL;
-                }
-        }
+		}
+		index = (addr & twoLevelMMap.scnd_lvl_mask) >> twoLevelMMap.scnd_lvl_shift;
+		base = slvl_map[index];
+		if (likely(base)) {
+			return base + (addr & twoLevelMMap.scnd_lvl_blockmask);
+		} else {
+			return NULL;
+		}
+	}
 }
 
 /* Host Memory access functions */
 static inline uint64_t
-HMemRead64(uint8_t *host_addr) {
-        return host64_to_target(*((uint64_t*)host_addr));
+HMemRead64(uint8_t * host_addr)
+{
+	return host64_to_target(*((uint64_t *) host_addr));
 }
 
 static inline uint32_t
-HMemRead32(uint8_t *host_addr) {
-        return host32_to_target(*((uint32_t*)host_addr));
+HMemRead32(uint8_t * host_addr)
+{
+	return host32_to_target(*((uint32_t *) host_addr));
 }
 
 static inline uint16_t
-HMemRead16(uint8_t *host_addr) {
-        return host16_to_target(*((uint16_t*)host_addr));
+HMemRead16(uint8_t * host_addr)
+{
+	return host16_to_target(*((uint16_t *) host_addr));
 }
 
 static inline uint8_t
-HMemRead8(uint8_t *host_addr) {
-        return *((uint8_t*)host_addr);
+HMemRead8(uint8_t * host_addr)
+{
+	return *((uint8_t *) host_addr);
 }
 
-static inline void 
-HMemWrite64(uint64_t value,uint8_t *addr) {
-	*((uint64_t*)addr) = target64_to_host(value);
+static inline void
+HMemWrite64(uint64_t value, uint8_t * addr)
+{
+	*((uint64_t *) addr) = target64_to_host(value);
 }
 
-static inline void 
-HMemWrite32(uint32_t value,uint8_t *addr) {
-	*((uint32_t*)addr) = target32_to_host(value);
+static inline void
+HMemWrite32(uint32_t value, uint8_t * addr)
+{
+	*((uint32_t *) addr) = target32_to_host(value);
 }
 
-static inline void 
-HMemWrite16(uint16_t value,uint8_t *addr) {
-	*((uint16_t*)addr) = target16_to_host(value);
+static inline void
+HMemWrite16(uint16_t value, uint8_t * addr)
+{
+	*((uint16_t *) addr) = target16_to_host(value);
 }
 
-static inline void 
-HMemWrite8(uint8_t value,uint8_t *addr) {
-	*((uint8_t*)addr) = value;
+static inline void
+HMemWrite8(uint8_t value, uint8_t * addr)
+{
+	*((uint8_t *) addr) = value;
 }
 
 static inline uint32_t
-Bus_FastRead32(uint32_t addr) {
-        uint8_t *base = mem_map_read[addr>>MEM_MAP_SHIFT];
-        if(unlikely(!base)) {
+Bus_FastRead32(uint32_t addr)
+{
+	uint8_t *base = mem_map_read[addr >> MEM_MAP_SHIFT];
+	if (unlikely(!base)) {
 		uint8_t **slvl_map;
 		int index;
-                index = addr >> twoLevelMMap.frst_lvl_shift;
-                if(!(slvl_map = twoLevelMMap.flvlmap_read[index])) {
-                	fprintf(stdout,"No such memory: %08x\n",addr);
-                	exit(163);
-                }
-                index = (addr & twoLevelMMap.scnd_lvl_mask) >> twoLevelMMap.scnd_lvl_shift;
-                base = slvl_map[index];
-                if(base) {
-			return HMemRead32(base+(addr&twoLevelMMap.scnd_lvl_blockmask));
-                } else {
+		index = addr >> twoLevelMMap.frst_lvl_shift;
+		if (!(slvl_map = twoLevelMMap.flvlmap_read[index])) {
+			fprintf(stdout, "1) No such memory: %08x\n", addr);
+			exit(163);
+		}
+		index = (addr & twoLevelMMap.scnd_lvl_mask) >> twoLevelMMap.scnd_lvl_shift;
+		base = slvl_map[index];
+		if (base) {
+			return HMemRead32(base + (addr & twoLevelMMap.scnd_lvl_blockmask));
+		} else {
 			/* Should better trigger External Abort */
-                	fprintf(stdout,"No such memory: %08x\n",addr);
-                	exit(7163);
-                }
+			fprintf(stdout, "2) No such memory: %08x\n", addr);
+			exit(7163);
+		}
 
-        }
-	return HMemRead32(base+(addr&MEM_MAP_BLOCKMASK));
+	}
+	return HMemRead32(base + (addr & MEM_MAP_BLOCKMASK));
 }
 
 uint64_t Bus_Read64(uint32_t addr);
 uint32_t Bus_Read32(uint32_t addr);
 uint16_t Bus_Read16(uint32_t addr);
 uint8_t Bus_Read8(uint32_t addr);
-void Bus_Write64(uint64_t value,uint32_t addr);
-void Bus_Write32(uint32_t value,uint32_t addr);
-void Bus_Write16(uint16_t value,uint32_t addr);
-void Bus_Write8(uint8_t value,uint32_t addr);
-void Bus_Write(uint32_t addr,uint8_t *buf,uint32_t count); 
-void Bus_Read(uint8_t *buf,uint32_t addr,uint32_t count); 
-void Bus_WriteSwap32(uint32_t addr,uint8_t *buf,int count); 
-void Bus_ReadSwap32(uint8_t *buf,uint32_t addr,int count); 
+void Bus_Write64(uint64_t value, uint32_t addr);
+void Bus_Write32(uint32_t value, uint32_t addr);
+void Bus_Write16(uint16_t value, uint32_t addr);
+void Bus_Write8(uint8_t value, uint32_t addr);
+void Bus_Write(uint32_t addr, uint8_t * buf, uint32_t count);
+void Bus_Read(uint8_t * buf, uint32_t addr, uint32_t count);
+void Bus_WriteSwap32(uint32_t addr, uint8_t * buf, int count);
+void Bus_ReadSwap32(uint8_t * buf, uint32_t addr, int count);
 
 typedef void InvalidateCallback(void);
-void Bus_Init(InvalidateCallback *,uint32_t min_blocksize);
+void Bus_Init(InvalidateCallback *, uint32_t min_blocksize);
 uint32_t Bus_GetMinBlockSize(void);
-int Mem_Load(char *filename,uint32_t addr);
+int Mem_Load(char *filename, uint32_t addr);
 void Mem_TracePage(uint32_t pgaddr);
-void Mem_TraceRegion(uint32_t start,uint32_t length);
+void Mem_TraceRegion(uint32_t start, uint32_t length);
 void Mem_UntracePage(uint32_t pgaddr);
-void Mem_UntraceRegion(uint32_t start,uint32_t length);
+void Mem_UntraceRegion(uint32_t start, uint32_t length);
 
-static inline int 
-Mem_SmallPageSize() {
+static inline int
+Mem_SmallPageSize()
+{
 	return twoLevelMMap.scnd_lvl_blocksize;
 }
-
-#define Bus_Write32LE BusWrite32
-#define Bus_Write16LE BusWrite16
-#define Bus_Write8LE  BusWrite8
-
-#endif // BUS_H
+#endif				// BUS_H

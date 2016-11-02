@@ -11,15 +11,16 @@
 #ifndef _SERIAL_H
 #define _SERIAL_H
 #include <stdint.h>
+#include <stdbool.h>
 #include <termios.h>
-
+#include "cycletimer.h"
 
 typedef uint16_t UartChar;
 
 struct UartPort;
 
-typedef void UartRxEventProc(void *dev);
-typedef void UartTxEventProc(void *dev);
+typedef void UartRxEventProc(void *dev, UartChar c);
+typedef bool UartFetchTxCharProc(void *dev, UartChar * c);
 typedef void UartStatChgProc(void *dev);
 
 #define UART_OPC_SET_BAUDRATE	(1)
@@ -38,7 +39,6 @@ typedef void UartStatChgProc(void *dev);
 #define UART_OPC_GET_DSR	(10)
 #define UART_OPC_GET_CTS	(11)
 
-
 typedef struct UartCmd {
 	int opcode;
 	int flush;
@@ -55,24 +55,38 @@ typedef struct UartPort UartPort;
 typedef struct SerialDevice {
 	void *owner;
 	UartPort *uart;
-	int		(*uart_cmd)(struct SerialDevice *,UartCmd *cmd);
-        void            (*stop_tx)(struct SerialDevice *);
-        void            (*start_tx)(struct SerialDevice *);
-        void            (*start_rx)(struct SerialDevice *);
-        void            (*stop_rx)(struct SerialDevice *);
 
-	int		(*write)(struct SerialDevice *,const UartChar *buf,int count);
-	int		(*read)(struct SerialDevice *,UartChar *buf,int count);
+	int (*uart_cmd) (struct SerialDevice *, UartCmd * cmd);
+
+	void (*start_rx) (struct SerialDevice *);
+	void (*stop_rx) (struct SerialDevice *);
+
+	int (*write) (struct SerialDevice *, const UartChar * buf, int count);
+	int (*read) (struct SerialDevice *, UartChar * buf, int count);
+
+	CycleTimer  rxTimer;
+	bool rx_enabled;
 } SerialDevice;
 
 struct UartPort {
 	SerialDevice *serial_device;
 	void *owner;
+	uint32_t rx_baudrate;
+	uint32_t nsPerTxChar;
+	uint32_t tx_baudrate;
+	uint32_t nsPerRxChar;
+	uint16_t tx_csize_mask;
+	uint16_t rx_csize_mask;
+	uint8_t tx_csize;
+	uint8_t rx_csize;
+	uint8_t halfstopbits;
+	CycleTimer txTimer;
 	UartRxEventProc *rxEventProc;
-	UartTxEventProc *txEventProc;
+	UartFetchTxCharProc *txFetchChar;
 	UartStatChgProc *statProc;
+	bool rx_enabled;
+	bool tx_enabled;
 };
-
 
 /*
  * --------------------------------------------------------------------
@@ -81,18 +95,33 @@ struct UartPort {
  * --------------------------------------------------------------------
  */
 static inline void
-Uart_RxEvent(SerialDevice *serdev) {
- 	if(serdev->uart->rxEventProc) {
-                serdev->uart->rxEventProc(serdev->uart->owner);
-        }
+Uart_RxEvent(SerialDevice * serdev)
+{
+	int result;
+	if (serdev->uart->rxEventProc) {
+		UartChar c;
+		if (serdev->uart 
+		    && serdev->read) {
+			result =
+			    serdev->read(serdev->uart->serial_device, &c, 1);
+		} else {
+			return;
+		}
+		if (result == 1) {
+			serdev->uart->rxEventProc(serdev->uart->owner, c);
+		}
+	}
 }
 
+#if 0
 static inline void
-Uart_TxEvent(SerialDevice *serdev) {
- 	if(serdev->uart->txEventProc) {
-                serdev->uart->txEventProc(serdev->uart->owner);
-        }
+Uart_TxEvent(SerialDevice * serdev)
+{
+	if (serdev->uart->txEventProc) {
+		serdev->uart->txEventProc(serdev->uart->owner);
+	}
 }
+#endif
 
 /*
  * -----------------------------------------------------------------------
@@ -100,14 +129,7 @@ Uart_TxEvent(SerialDevice *serdev) {
  * the port->srcProc of the Uart Port when it requires data for sending
  * -----------------------------------------------------------------------
  */
-static inline void 
-SerialDevice_StartTx(UartPort *port) 
-{
-	//fprintf(stderr,"Uart StartTx\n");
-	if(port->serial_device && port->serial_device->start_tx) {
-		port->serial_device->start_tx(port->serial_device);
-	}
-}
+void SerialDevice_StartTx(UartPort * port);
 
 /*
  * -----------------------------------------------------------------------
@@ -115,12 +137,10 @@ SerialDevice_StartTx(UartPort *port)
  * call port->srcProc after this call
  * -----------------------------------------------------------------------
  */
-static inline void 
-SerialDevice_StopTx(UartPort *port)
+static inline void
+SerialDevice_StopTx(UartPort * port)
 {
-	if(port->serial_device && port->serial_device->stop_tx) {
-		port->serial_device->stop_tx(port->serial_device);
-	}
+	port->tx_enabled = false;
 }
 
 /*
@@ -129,10 +149,11 @@ SerialDevice_StopTx(UartPort *port)
  * the uart->sinkProc when data are available. 
  * -----------------------------------------------------------------------
  */
-static inline void 
-SerialDevice_StartRx(UartPort *port) 
+static inline void
+SerialDevice_StartRx(UartPort * port)
 {
-	if(port->serial_device && port->serial_device->start_rx) {
+	port->rx_enabled = true;
+	if (port->serial_device && port->serial_device->start_rx) {
 		port->serial_device->start_rx(port->serial_device);
 	}
 }
@@ -143,14 +164,14 @@ SerialDevice_StartRx(UartPort *port)
  * for incoming data). the uart->sinkProc will not be called again
  * ---------------------------------------------------------------------------------------
  */
-static inline void 
-SerialDevice_StopRx(UartPort *port) 
+static inline void
+SerialDevice_StopRx(UartPort * port)
 {
-	if(port->serial_device && port->serial_device->stop_rx) {
+	port->rx_enabled = false;
+	if (port->serial_device && port->serial_device->stop_rx) {
 		port->serial_device->stop_rx(port->serial_device);
 	}
 }
-
 
 /*
  * -------------------------------------------------------------------------------
@@ -159,33 +180,7 @@ SerialDevice_StopRx(UartPort *port)
  * sizes and parity 
  * -------------------------------------------------------------------------------
  */
-static inline int
-SerialDevice_Cmd(UartPort *port,UartCmd *cmd) 
-{
-	if(port->serial_device && port->serial_device->uart_cmd) {
-		return port->serial_device->uart_cmd(port->serial_device,cmd);
-	} else {
-		return -1;
-	}
-}
-
-/*
- * -------------------------------------------------------------
- * Read the received data from the UART. Typically called
- * in the RX-Event handler. It returns the number of bytes
- * written or <0 on error
- * -------------------------------------------------------------
- */
-
-static inline int 
-SerialDevice_Read(UartPort *port,UartChar *buf,int len)
-{
-	if(port->serial_device && port->serial_device->read) {
-		return port->serial_device->read(port->serial_device,buf,len);
-	} else {
-		return -1;
-	}
-}
+int SerialDevice_Cmd(UartPort * port, UartCmd * cmd);
 
 /*
  * -------------------------------------------------------------
@@ -196,11 +191,11 @@ SerialDevice_Read(UartPort *port,UartChar *buf,int len)
  * of bytes which was written or < 0 on error
  * -------------------------------------------------------------
  */
-static inline int 
-SerialDevice_Write(UartPort *port,const UartChar *buf,int len)
+static inline int
+SerialDevice_Write(UartPort * port, const UartChar * buf, int len)
 {
-	if(port->serial_device && port->serial_device->write) {
-		return port->serial_device->write(port->serial_device,buf,len);
+	if (port->serial_device && port->serial_device->write) {
+		return port->serial_device->write(port->serial_device, buf, len);
 	} else {
 		return -1;
 	}
@@ -216,12 +211,12 @@ typedef SerialDevice *SerialDevice_Constructor(const char *name);
  *	statproc is called when a status change is detected
  * --------------------------------------------------------------------------------
  */
-UartPort *
-Uart_New(const char *uart_name,UartRxEventProc *rxproc,UartTxEventProc *txproc,UartStatChgProc *statproc,void *owner);
+UartPort *Uart_New(const char *uart_name, UartRxEventProc * rxproc, UartFetchTxCharProc * txproc,
+		   UartStatChgProc * statproc, void *owner);
 /*
  * -------------------------------------------------------------------
  * Register new Serial Device emulator modules
  * -------------------------------------------------------------------
  */
-void SerialModule_Register(const char *type,SerialDevice_Constructor *newSerdev);
+void SerialModule_Register(const char *type, SerialDevice_Constructor * newSerdev);
 #endif

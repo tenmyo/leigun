@@ -6,6 +6,6 @@
  **********************************************************************************
  */
 
-#include <i2c.h>
-I2C_Slave * PCF8574_New(char *name);
+#include "i2c.h"
+I2C_Slave *PCF8574_New(char *name);
 typedef struct PCF8574 PCF8574;

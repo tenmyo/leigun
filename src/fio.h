@@ -4,11 +4,10 @@
 #include <sys/time.h>
 #include "xy_tree.h"
 
-
-void FIO_HandleInput(void); 
+void FIO_HandleInput(void);
 void FIO_WaitEventTimeout(struct timespec *timeout);
 
-typedef void FIO_FileProc(void *clientData,int mask);
+typedef void FIO_FileProc(void *clientData, int mask);
 
 /* define the event types */
 #define FIO_READABLE (1)
@@ -21,21 +20,21 @@ typedef void FIO_FileProc(void *clientData,int mask);
  * ----------------------------------------------------------
  */
 typedef struct FIO_FileHandler {
-        int fd;
-        FIO_FileProc *proc;
-        void *clientData;
-        struct FIO_FileHandler *next;
-        struct FIO_FileHandler *prev;
-        char mask;
-        char busy;
+	int fd;
+	FIO_FileProc *proc;
+	void *clientData;
+	struct FIO_FileHandler *next;
+	struct FIO_FileHandler *prev;
+	char mask;
+	char busy;
 } FIO_FileHandler;
 
-typedef void FIO_Accept(int fd,char *host,unsigned short port,void *clientData);
+typedef void FIO_Accept(int fd, char *host, unsigned short port, void *clientData);
 typedef struct FIO_TcpServer {
-        int sock;
-        FIO_FileHandler acc_fh;
-        FIO_Accept *proc;
-        void *clientData;
+	int sock;
+	FIO_FileHandler acc_fh;
+	FIO_Accept *proc;
+	void *clientData;
 } FIO_TcpServer;
 
 /* 
@@ -51,7 +50,6 @@ typedef struct HostTimer {
 	xy_node node;
 } HostTimer;
 
-
 /* 
  * ----------------------------------------------------------
  * AddFileHandler 
@@ -59,8 +57,9 @@ typedef struct HostTimer {
  *	mask happens.
  * ----------------------------------------------------------
  */
-void FIO_AddFileHandler(FIO_FileHandler *fh,int fd,int mask,FIO_FileProc *proc,void *clientData);
-void FIO_RemoveFileHandler(FIO_FileHandler *fh);
+void FIO_AddFileHandler(FIO_FileHandler * fh, int fd, int mask, FIO_FileProc * proc,
+			void *clientData);
+void FIO_RemoveFileHandler(FIO_FileHandler * fh);
 /* 
  * --------------------------------------------------------------
  *  InitTcpServer
@@ -69,9 +68,9 @@ void FIO_RemoveFileHandler(FIO_FileHandler *fh);
  *	TCP-socket.
  * -------------------------------------------------------------
  */
-int FIO_InitTcpServer(FIO_TcpServer *,FIO_Accept *proc, void *clientData,
-                char *host,unsigned short port);
-void FIO_CloseTcpServer(FIO_TcpServer *tserv);
+int FIO_InitTcpServer(FIO_TcpServer *, FIO_Accept * proc, void *clientData,
+		      char *host, unsigned short port);
+void FIO_CloseTcpServer(FIO_TcpServer * tserv);
 
 #define FIO_OPEN_ASYNC (1)
 #define FIO_OPEN_SYNC  (0)

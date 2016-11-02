@@ -7,6 +7,5 @@
  **********************************************************************************
  */
 
-
 #include <bus.h>
-BusDevice * IMX21_SdrcNew(const char *name,BusDevice *dram1, BusDevice *dram2);
+BusDevice *IMX21_SdrcNew(const char *name, BusDevice * dram1, BusDevice * dram2);

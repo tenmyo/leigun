@@ -109,7 +109,7 @@
 #define			RSPTYP_136	(2<<6)
 #define		CMDR_CMDNB		(0x3f)
 #define MCI_BLKR(base)	((base) + 0x18)
-#define MCI_RSPR(base,n)	((base) + 0x20 + ((n) << 2)) /* 4 locations */
+#define MCI_RSPR(base,n)	((base) + 0x20 + ((n) << 2))	/* 4 locations */
 #define	MCI_RDR(base)	((base)	+ 0x30)
 #define	MCI_TDR(base)	((base) + 0x34)
 #define MCI_SR(base)	((base) + 0x40)
@@ -213,84 +213,85 @@ typedef struct AT91Mci {
 	MMCDev *card[2];
 } AT91Mci;
 
-static void 
-update_interrupt(AT91Mci *mci) 
+static void
+update_interrupt(AT91Mci * mci)
 {
-	if(mci->regSR & mci->regIMR) {
-		SigNode_Set(mci->sigIrq,SIG_HIGH);
+	if (mci->regSR & mci->regIMR) {
+		SigNode_Set(mci->sigIrq, SIG_HIGH);
 	} else {
-		SigNode_Set(mci->sigIrq,SIG_PULLDOWN);
+		SigNode_Set(mci->sigIrq, SIG_PULLDOWN);
 	}
 }
 
-static void 
+static void
 do_cmd_delayed(void *clientData)
 {
-        AT91Mci *mci = (AT91Mci*) clientData;
-        MMCResponse resp;
-        int rsptyp = mci->regCMDR  & CMDR_RSPTYP_MASK;
-        int result;
+	AT91Mci *mci = (AT91Mci *) clientData;
+	MMCResponse resp;
+	int rsptyp = mci->regCMDR & CMDR_RSPTYP_MASK;
+	int result;
 	int bus = mci->regSDCR & 1;
 	int cmd = mci->regCMDR & 0x3f;
-        uint32_t arg;
-        int i;
-        if(!mci->card[bus]) {
-		fprintf(stderr,"No card bus %d %s\n",bus,mci->name);
+	uint32_t arg;
+	int i;
+	if (!mci->card[bus]) {
+		fprintf(stderr, "No card bus %d %s\n", bus, mci->name);
 		mci->regSR |= SR_CMDRDY | SR_RTOE;
-                update_interrupt(mci);
-                return;
-        }
-        arg = mci->regARGR;
-        //dbgprintf("Start cmd 0x%02x \n",cmd);
-        fprintf(stderr,"Start cmd 0x%02x \n",cmd);
-        result = MMCDev_DoCmd(mci->card[bus],cmd,arg,&resp);
-        if(result != MMC_ERR_NONE) {
+		update_interrupt(mci);
+		return;
+	}
+	arg = mci->regARGR;
+	//dbgprintf("Start cmd 0x%02x \n",cmd);
+	fprintf(stderr, "Start cmd 0x%02x \n", cmd);
+	result = MMCDev_DoCmd(mci->card[bus], cmd, arg, &resp);
+	if (result != MMC_ERR_NONE) {
 		//fprintf(stderr,"CMD result %d\n",result);
 		mci->regSR |= SR_CMDRDY | SR_RTOE;
-                update_interrupt(mci);
-                return;
-        }
+		update_interrupt(mci);
+		return;
+	}
 	mci->rsprRP = 0;
-        /* Handle the response from SD/MMC card */
-	fprintf(stderr,"RSPTYP %u\n",rsptyp);
-        if((rsptyp == RSPTYP_48)) {
-                for(i = 0;i < 5; i++) {
+	/* Handle the response from SD/MMC card */
+	fprintf(stderr, "RSPTYP %u\n", rsptyp);
+	if (rsptyp == RSPTYP_48) {
+		for (i = 0; i < 5; i++) {
 			mci->rsp[i] = resp.data[i + 1];
-			fprintf(stderr,"%02x\n",resp.data[i]);
-                }
-        } else if (rsptyp == RSPTYP_136) {
-                for(i = 1;i < 16;i++) {
+			fprintf(stderr, "%02x\n", resp.data[i]);
+		}
+	} else if (rsptyp == RSPTYP_136) {
+		for (i = 1; i < 16; i++) {
 			mci->rsp[i] = resp.data[i + 1];
-                }
-        } else if (rsptyp == RSPTYP_NONE) {
-                /* put nothing to fifo */
-        } else {
-                fprintf(stderr,"SDHC emulator: Illegal response type %d\n",rsptyp);
-        }
+		}
+	} else if (rsptyp == RSPTYP_NONE) {
+		/* put nothing to fifo */
+	} else {
+		fprintf(stderr, "SDHC emulator: Illegal response type %d\n", rsptyp);
+	}
 	mci->regSR |= SR_CMDRDY;
 	/*
-         * ----------------------------------------------------------
-         * For the case that the transfer involves a data packet
-         * trigger the data transaction
-         * ----------------------------------------------------------
-         */
-	
-	if(((mci->regCMDR & CMDR_TRDIR) == TRDIR_WRITE) &&
+	 * ----------------------------------------------------------
+	 * For the case that the transfer involves a data packet
+	 * trigger the data transaction
+	 * ----------------------------------------------------------
+	 */
+
+	if (((mci->regCMDR & CMDR_TRDIR) == TRDIR_WRITE) &&
 	    (mci->regCMDR & CMDR_TRCMD_MASK) == TRCMD_START) {
 		//SigNode_Set(mci->nDmaReq,SIG_LOW);
 	}
 #if 0
-	if(sdhc->cmd_dat_cont & CMD_DAT_CONT_DATA_ENABLE) {
-                sdhc->transfer_count = 0;
-                if(sdhc->cmd_dat_cont & CMD_DAT_CONT_WRITE) {
-                        if(sdhc->status & STATUS_CARD_BUS_CLK_RUN) {
-                                CycleTimer_Mod(&sdhc->data_delay_timer,MicrosecondsToCycles(UDELAY_DATA));
-                        } else {
-                                //fprintf(stderr,"Delay Data transaction until clock is running\n");
-                                sdhc->forClockWaitingTimer = &sdhc->data_delay_timer;
-                        }
-                }
-        }
+	if (sdhc->cmd_dat_cont & CMD_DAT_CONT_DATA_ENABLE) {
+		sdhc->transfer_count = 0;
+		if (sdhc->cmd_dat_cont & CMD_DAT_CONT_WRITE) {
+			if (sdhc->status & STATUS_CARD_BUS_CLK_RUN) {
+				CycleTimer_Mod(&sdhc->data_delay_timer,
+					       MicrosecondsToCycles(UDELAY_DATA));
+			} else {
+				//fprintf(stderr,"Delay Data transaction until clock is running\n");
+				sdhc->forClockWaitingTimer = &sdhc->data_delay_timer;
+			}
+		}
+	}
 #endif
 
 }
@@ -301,46 +302,46 @@ do_cmd_delayed(void *clientData)
  **********************************************************************************************
  */
 static int
-data_sink(void *dev,const uint8_t *buf,int len)
+data_sink(void *dev, const uint8_t * buf, int len)
 {
-        AT91Mci *mci = (AT91Mci *)dev;
-        unsigned int i;
+	AT91Mci *mci = (AT91Mci *) dev;
+	unsigned int i;
 	unsigned int bus = mci->regSDCR & 1;
-        /* Read direction */
-        uint32_t room;
+	/* Read direction */
+	uint32_t room;
 	uint32_t blockCnt;
 	uint32_t blockLen;
 	uint64_t expectedBytes;
-        if(!mci->card[bus]) {
-                fprintf(stderr,"Bug: Data for nonexisting Card\n");
-                return 0;
-        }
+	if (!mci->card[bus]) {
+		fprintf(stderr, "Bug: Data for nonexisting Card\n");
+		return 0;
+	}
 	room = RXFIFO_ROOM(mci);
-	if(len > room) {
-		fprintf(stderr,"MCI RX fifo overflow\n");
+	if (len > room) {
+		fprintf(stderr, "MCI RX fifo overflow\n");
 		return len;
 	}
 	blockCnt = mci->regBLKR & 0xffff;
 	blockLen = (mci->regBLKR >> 16) & 0xffff;
-	expectedBytes = (uint64_t)blockCnt * blockLen;	
-	if(blockCnt && ((len + mci->rxCnt) > expectedBytes)) {
+	expectedBytes = (uint64_t) blockCnt *blockLen;
+	if (blockCnt && ((len + mci->rxCnt) > expectedBytes)) {
 		len = expectedBytes - mci->rxCnt;
 	}
-	if(len == 0) {
-		return len;	
+	if (len == 0) {
+		return len;
 	}
-	for(i = 0;i < len; i++) {
-		mci->rxfifo[RXFIFO_WP(mci)] = buf[i];	
+	for (i = 0; i < len; i++) {
+		mci->rxfifo[RXFIFO_WP(mci)] = buf[i];
 		mci->rxfifo_wp++;
 	}
 	mci->rxCnt += len;
 	mci->regSR |= SR_RXRDY;
-	if(blockCnt && (mci->rxCnt == expectedBytes)) {
+	if (blockCnt && (mci->rxCnt == expectedBytes)) {
 		mci->regSR |= SR_ENDRX;
 	}
 	update_interrupt(mci);
-	SigNode_Set(mci->nDmaReq,SIG_LOW);
-	return len;	
+	SigNode_Set(mci->nDmaReq, SIG_LOW);
+	return len;
 }
 
 static void
@@ -356,161 +357,162 @@ do_transfer_write(void *clientData)
 	int result;
 	blockCnt = mci->regBLKR & 0xffff;
 	blockLen = (mci->regBLKR >> 16) & 0xffff;
-	if(blockCnt) {
-		totalBytes = (uint64_t)blockCnt * blockLen;	
+	if (blockCnt) {
+		totalBytes = (uint64_t) blockCnt *blockLen;
 	} else {
-		totalBytes = ~UINT64_C(0); 
+		totalBytes = ~UINT64_C(0);
 	}
 	fifoCnt = TXFIFO_CNT(mci);
-        if((fifoCnt + mci->txCnt) > totalBytes) {
+	if ((fifoCnt + mci->txCnt) > totalBytes) {
 		transferCnt = totalBytes - mci->txCnt;
 	}
-	if((mci->txfifo_rp + transferCnt) > TXFIFO_SIZE) {
-        	result = MMCDev_Write(mci->card[bus],mci->txfifo + TXFIFO_RP(mci),TXFIFO_SIZE - mci->txfifo_rp);
-		transferCnt -=    TXFIFO_SIZE - mci->txfifo_rp;
+	if ((mci->txfifo_rp + transferCnt) > TXFIFO_SIZE) {
+		result =
+		    MMCDev_Write(mci->card[bus], mci->txfifo + TXFIFO_RP(mci),
+				 TXFIFO_SIZE - mci->txfifo_rp);
+		transferCnt -= TXFIFO_SIZE - mci->txfifo_rp;
 		mci->txfifo_rp += TXFIFO_SIZE - mci->txfifo_rp;
 		mci->txCnt += TXFIFO_SIZE - mci->txfifo_rp;
 	}
-	if(mci->txfifo_rp + transferCnt > TXFIFO_SIZE) {
-		fprintf(stderr,"MCI Bug: Fifo more than full\n");
+	if (mci->txfifo_rp + transferCnt > TXFIFO_SIZE) {
+		fprintf(stderr, "MCI Bug: Fifo more than full\n");
 		return;
 	}
-       	result = MMCDev_Write(mci->card[bus],mci->txfifo + TXFIFO_RP(mci),transferCnt);
-	mci->txfifo_rp += transferCnt; 
-	mci->txCnt += transferCnt; 
-	SigNode_Set(mci->nDmaReq,SIG_LOW);
+	result = MMCDev_Write(mci->card[bus], mci->txfifo + TXFIFO_RP(mci), transferCnt);
+	mci->txfifo_rp += transferCnt;
+	mci->txCnt += transferCnt;
+	SigNode_Set(mci->nDmaReq, SIG_LOW);
 	/* TXRDY doesn't care about ENDTX according to figure 39.9 */
 	mci->regSR |= SR_TXRDY;
-	if(mci->txCnt == totalBytes) {
+	if (mci->txCnt == totalBytes) {
 		mci->regSR |= SR_ENDTX;
 	}
 	update_interrupt(mci);
-	
-		
+
 }
 
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Register 0x%08x is writeonly\n",address);
-        return 0;
+	fprintf(stderr, "Register 0x%08x is writeonly\n", address);
+	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = clientData;
 	uint32_t diff = mci->regCR ^ value;
-	if((value & CR_SWRST) || (diff & CR_SWRST)) {
-		
-	} 	
-	fprintf(stderr,"Register 0x%08x not implemented\n",address);
+	if ((value & CR_SWRST) || (diff & CR_SWRST)) {
+
+	}
+	fprintf(stderr, "Register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Register 0x%08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Register 0x%08x not implemented\n", address);
+	return 0;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = clientData;
 	uint32_t clkdiv = value & 0xff;
 	uint32_t psdiv = (value >> 8) & 7;
 	uint32_t div;
-	#if 0
-	if(powersaving) {
+#if 0
+	if (powersaving) {
 		div = 2 * (clkdiv + 1) * ((1 << psdiv) + 1);
 	} else {
-	
+
 	}
-	#endif	
+#endif
 	div = 2 * (clkdiv + 1);
-	Clock_MakeDerived(mci->sdclk,mci->clkIn,1,div);
+	Clock_MakeDerived(mci->sdclk, mci->clkIn, 1, div);
 	mci->regMR = value;
-	fprintf(stderr,"Register 0x%08x not implemented\n",address);
+	fprintf(stderr, "Register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-dtor_read(void *clientData,uint32_t address,int rqlen)
+dtor_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = clientData;
-        return mci->regDTOR;
+	return mci->regDTOR;
 }
 
 static void
-dtor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dtor_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	
+
 	AT91Mci *mci = clientData;
-        mci->regDTOR = value & 0x7f;
+	mci->regDTOR = value & 0x7f;
 }
 
 static uint32_t
-sdcr_read(void *clientData,uint32_t address,int rqlen)
+sdcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = clientData;
 	return mci->regSDCR;
 }
 
 static void
-sdcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = clientData;
-	mci->regSDCR = value & 3;	
-	if(mci->regSDCR > 1) {
-		fprintf(stderr,"MCI: Warning, write reserved value to SDCR\n");
+	mci->regSDCR = value & 3;
+	if (mci->regSDCR > 1) {
+		fprintf(stderr, "MCI: Warning, write reserved value to SDCR\n");
 	}
 }
 
 static uint32_t
-argr_read(void *clientData,uint32_t address,int rqlen)
+argr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
-        return mci->regARGR;
+	return mci->regARGR;
 }
 
 static void
-argr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+argr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
 	mci->regARGR = value;
 }
 
 static uint32_t
-cmdr_read(void *clientData,uint32_t address,int rqlen)
+cmdr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"MCI: Command register is writeonly\n");
-        return 0;
+	fprintf(stderr, "MCI: Command register is writeonly\n");
+	return 0;
 }
 
 static void
-cmdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cmdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
-	if(!(mci->regSR & SR_CMDRDY)) {
-		fprintf(stderr,"MCI CMDR: There is still a command in progress\n");
+	if (!(mci->regSR & SR_CMDRDY)) {
+		fprintf(stderr, "MCI CMDR: There is still a command in progress\n");
 		return;
 	}
-	mci->regCMDR = value;		
+	mci->regCMDR = value;
 	/* Should use a timer here */
 	mci->regSR &= ~SR_CMDRDY;
-	CycleTimer_Mod(&mci->cmdDelayTimer,MicrosecondsToCycles(UDELAY_CMD));
-	fprintf(stderr,"MCI command 0x%02x started\n",value);
+	CycleTimer_Mod(&mci->cmdDelayTimer, MicrosecondsToCycles(UDELAY_CMD));
+	fprintf(stderr, "MCI command 0x%02x started\n", value);
 }
 
 static uint32_t
-blkr_read(void *clientData,uint32_t address,int rqlen)
+blkr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
-	return mci->regBLKR; 
+	return mci->regBLKR;
 }
 
 static void
-blkr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+blkr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
 	mci->regBLKR = value;
@@ -523,30 +525,30 @@ blkr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ************************************************************************************
  */
 static uint32_t
-rspr_read(void *clientData,uint32_t address,int rqlen)
+rspr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
 	uint32_t value = 0;
-	fprintf(stdout,"\nRSPR read, rp %d\n",mci->rsprRP);
-	if(mci->rsprRP <= 12)  {
-		value = be32_to_target(*(uint32_t *)(mci->rsp + mci->rsprRP));
+	fprintf(stdout, "\nRSPR read, rp %d\n", mci->rsprRP);
+	if (mci->rsprRP <= 12) {
+		value = be32_to_target(*(uint32_t *) (mci->rsp + mci->rsprRP));
 		mci->rsprRP += 4;
 	}
-        return value;
+	return value;
 }
 
 static void
-rspr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rspr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"MCI response register is readonly\n");
+	fprintf(stderr, "MCI response register is readonly\n");
 }
 
 static uint32_t
-rdr_read(void *clientData,uint32_t address,int rqlen)
+rdr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
 	uint32_t value;
-	if(RXFIFO_CNT(mci) > 3) {
+	if (RXFIFO_CNT(mci) > 3) {
 		value = mci->rxfifo[RXFIFO_RP(mci)];
 		mci->rxfifo_rp++;
 		value = (value << 8) | mci->rxfifo[RXFIFO_RP(mci)];
@@ -555,53 +557,53 @@ rdr_read(void *clientData,uint32_t address,int rqlen)
 		mci->rxfifo_rp++;
 		value = (value << 8) | mci->rxfifo[RXFIFO_RP(mci)];
 		mci->rxfifo_rp++;
-		fprintf(stderr,"Resp read %08x\n",value);
+		fprintf(stderr, "Resp read %08x\n", value);
 		return be32_to_target(value);
 	}
-        return 0;
+	return 0;
 }
 
 static void
-rdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"MCI: RDR register is readonly\n");
+	fprintf(stderr, "MCI: RDR register is readonly\n");
 }
 
 static uint32_t
-tdr_read(void *clientData,uint32_t address,int rqlen)
+tdr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"MCI: TDR register is writeonly\n");
-        return 0;
+	fprintf(stderr, "MCI: TDR register is writeonly\n");
+	return 0;
 }
 
 static void
-tdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Register 0x%08x not implemented\n",address);
+	fprintf(stderr, "Register 0x%08x not implemented\n", address);
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
-        return mci->regSR;
+	return mci->regSR;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"AT91Mci: SR is readonly\n");
+	fprintf(stderr, "AT91Mci: SR is readonly\n");
 }
 
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"IER Register is writeonly\n");
-        return 0;
+	fprintf(stderr, "IER Register is writeonly\n");
+	return 0;
 }
 
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
 	mci->regIMR |= value & 0xc07fc3ff;
@@ -609,78 +611,78 @@ ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"IDR Register is writeonly\n");
-        return 0;
+	fprintf(stderr, "IDR Register is writeonly\n");
+	return 0;
 }
 
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
 	mci->regIMR &= ~(value & 0xc07fc3ff);
 	update_interrupt(mci);
 }
+
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Mci *mci = (AT91Mci *) clientData;
-        return mci->regIMR;
+	return mci->regIMR;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"IMR register is readonly\n");
+	fprintf(stderr, "IMR register is readonly\n");
 }
 
-
 int
-AT91Mci_InsertCard(BusDevice *dev,MMCDev *card,unsigned int slot)
+AT91Mci_InsertCard(BusDevice * dev, MMCDev * card, unsigned int slot)
 {
 	AT91Mci *mci = (AT91Mci *) dev->owner;
-	if(dev->magic != AT91MCI_MAGIC) {
-		fprintf(stderr,"Type check error: Device is not an AT91 MCI\n");
+	if (dev->magic != AT91MCI_MAGIC) {
+		fprintf(stderr, "Type check error: Device is not an AT91 MCI\n");
 		exit(2);
 	}
-	if(slot > 1) {
-		fprintf(stderr,"Error: AT91Mci has only two MMC/SD card Busses\n");
+	if (slot > 1) {
+		fprintf(stderr, "Error: AT91Mci has only two MMC/SD card Busses\n");
 		return -1;
 	}
 	mci->card[slot] = card;
-        MMCard_AddListener(card,mci,16,data_sink);
+	MMCard_AddListener(card, mci, 16, data_sink);
 	return 0;
 }
 
 static void
-AT91Mci_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Mci_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91Mci *mci = (AT91Mci*) owner;
+	AT91Mci *mci = (AT91Mci *) owner;
 	unsigned int i;
-	IOH_New32(MCI_CR(base),cr_read,cr_write,mci);
-	IOH_New32(MCI_MR(base),mr_read,mr_write,mci);
-	IOH_New32(MCI_DTOR(base),dtor_read,dtor_write,mci);
-	IOH_New32(MCI_SDCR(base),sdcr_read,sdcr_write,mci);
-	IOH_New32(MCI_ARGR(base),argr_read,argr_write,mci);
-	IOH_New32(MCI_CMDR(base),cmdr_read,cmdr_write,mci);
-	IOH_New32(MCI_BLKR(base),blkr_read,blkr_write,mci);
-	for(i = 0; i < 4; i++) {
-		IOH_New32(MCI_RSPR(base,i),rspr_read,rspr_write,mci);
+	IOH_New32(MCI_CR(base), cr_read, cr_write, mci);
+	IOH_New32(MCI_MR(base), mr_read, mr_write, mci);
+	IOH_New32(MCI_DTOR(base), dtor_read, dtor_write, mci);
+	IOH_New32(MCI_SDCR(base), sdcr_read, sdcr_write, mci);
+	IOH_New32(MCI_ARGR(base), argr_read, argr_write, mci);
+	IOH_New32(MCI_CMDR(base), cmdr_read, cmdr_write, mci);
+	IOH_New32(MCI_BLKR(base), blkr_read, blkr_write, mci);
+	for (i = 0; i < 4; i++) {
+		IOH_New32(MCI_RSPR(base, i), rspr_read, rspr_write, mci);
 	}
-	IOH_New32(MCI_RDR(base),rdr_read,rdr_write,mci);
-	IOH_New32(MCI_TDR(base),tdr_read,tdr_write,mci);
-	IOH_New32(MCI_SR(base),sr_read,sr_write,mci);
-	IOH_New32(MCI_IER(base),ier_read,ier_write,mci);	
-	IOH_New32(MCI_IDR(base),idr_read,idr_write,mci);
-	IOH_New32(MCI_IMR(base),imr_read,imr_write,mci);
+	IOH_New32(MCI_RDR(base), rdr_read, rdr_write, mci);
+	IOH_New32(MCI_TDR(base), tdr_read, tdr_write, mci);
+	IOH_New32(MCI_SR(base), sr_read, sr_write, mci);
+	IOH_New32(MCI_IER(base), ier_read, ier_write, mci);
+	IOH_New32(MCI_IDR(base), idr_read, idr_write, mci);
+	IOH_New32(MCI_IMR(base), imr_read, imr_write, mci);
 }
 
 static void
-AT91Mci_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Mci_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	unsigned int i;
-        //IOH_Delete32(TWI_THR(base));
+	//IOH_Delete32(TWI_THR(base));
 	IOH_Delete32(MCI_CR(base));
 	IOH_Delete32(MCI_MR(base));
 	IOH_Delete32(MCI_DTOR(base));
@@ -688,8 +690,8 @@ AT91Mci_UnMap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(MCI_ARGR(base));
 	IOH_Delete32(MCI_CMDR(base));
 	IOH_Delete32(MCI_BLKR(base));
-	for(i = 0; i < 4; i++) {
-		IOH_Delete32(MCI_RSPR(base,i));
+	for (i = 0; i < 4; i++) {
+		IOH_Delete32(MCI_RSPR(base, i));
 	}
 	IOH_Delete32(MCI_RDR(base));
 	IOH_Delete32(MCI_TDR(base));
@@ -700,46 +702,45 @@ AT91Mci_UnMap(void *owner,uint32_t base,uint32_t mask)
 
 }
 
-
-int 
-AT91Mci_RemoveCard(BusDevice *dev,MMCDev *card,unsigned int slot)
+int
+AT91Mci_RemoveCard(BusDevice * dev, MMCDev * card, unsigned int slot)
 {
 	AT91Mci *mci = dev->owner;
-	if(slot > 1) {
+	if (slot > 1) {
 		return -1;
-	}	
-        if(!mci->card[slot]) {
-                fprintf(stderr,"Error: SD Card Slot is already empty, can not remove\n");
-                return -1;
-        }
-        MMCard_RemoveListener(card,mci);
-        mci->card[slot] = NULL;
-        return 0;
+	}
+	if (!mci->card[slot]) {
+		fprintf(stderr, "Error: SD Card Slot is already empty, can not remove\n");
+		return -1;
+	}
+	MMCard_RemoveListener(card, mci);
+	mci->card[slot] = NULL;
+	return 0;
 }
 
 BusDevice *
 AT91Mci_New(const char *name)
 {
-        AT91Mci *mci = sg_new(AT91Mci);
-	mci->sigIrq = SigNode_New("%s.irq",name);
-	mci->nDmaReq = SigNode_New("%s.dma_req",name);
-	if(!mci->sigIrq || !mci->nDmaReq) {
-		fprintf(stderr,"Can not create signal lines for AT91Mci\n");
+	AT91Mci *mci = sg_new(AT91Mci);
+	mci->sigIrq = SigNode_New("%s.irq", name);
+	mci->nDmaReq = SigNode_New("%s.dma_req", name);
+	if (!mci->sigIrq || !mci->nDmaReq) {
+		fprintf(stderr, "Can not create signal lines for AT91Mci\n");
 		exit(1);
 	}
 	mci->name = strdup(name);
-	mci->bdev.first_mapping=NULL;
-        mci->bdev.Map=AT91Mci_Map;
-        mci->bdev.UnMap=AT91Mci_UnMap;
-        mci->bdev.owner=mci;
-        mci->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	mci->bdev.magic = AT91MCI_MAGIC; 
-	mci->clkIn = Clock_New("%s.clk",name);
-	mci->sdclk = Clock_New("%s.sd_clk",name);
+	mci->bdev.first_mapping = NULL;
+	mci->bdev.Map = AT91Mci_Map;
+	mci->bdev.UnMap = AT91Mci_UnMap;
+	mci->bdev.owner = mci;
+	mci->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	mci->bdev.magic = AT91MCI_MAGIC;
+	mci->clkIn = Clock_New("%s.clk", name);
+	mci->sdclk = Clock_New("%s.sd_clk", name);
 	mci->regSR = 0xc0e5;
-	Clock_MakeDerived(mci->sdclk,mci->clkIn,1,1);
-	CycleTimer_Init(&mci->cmdDelayTimer,do_cmd_delayed,mci);
-        update_interrupt(mci);
-        fprintf(stderr,"AT91 MCI \"%s\" created\n",name);
-        return &mci->bdev;
+	Clock_MakeDerived(mci->sdclk, mci->clkIn, 1, 1);
+	CycleTimer_Init(&mci->cmdDelayTimer, do_cmd_delayed, mci);
+	update_interrupt(mci);
+	fprintf(stderr, "AT91 MCI \"%s\" created\n", name);
+	return &mci->bdev;
 }

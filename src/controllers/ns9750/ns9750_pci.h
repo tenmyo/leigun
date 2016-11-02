@@ -6,7 +6,6 @@
 #define  PCI_HEADER_TYPE_BRIDGE 1
 #define  PCI_HEADER_TYPE_CARDBUS 2
 
-
 #define NS9xxx_PARBBASE (0xA0300000)
 
 #define PARB_PARBCFG	(0)
@@ -41,4 +40,4 @@
 #define PARB_CSKTPST	(0x1008)
 #define PARB_CSKTFEV	(0x100C)
 #define PARB_CSKTCTL	(0x1010)
-PCI_Function * NS9750_PciInit(const char *devname,int dev_nr);
+PCI_Function *NS9750_PciInit(const char *devname, int dev_nr);

@@ -16,7 +16,7 @@
 #define		SYSSTS0_IDMON		(1 << 2)
 #define		SYSSTS0_LNST		(3 << 0)
 #define REG_DVSTCTR0(base)	((base) + 0x08)
-#define		DVSTCTR0_NNPBTOA	(1 << 11)	
+#define		DVSTCTR0_NNPBTOA	(1 << 11)
 #define		DVSTCTR0_EXICEN		(1 << 10)
 #define		DVSTCTR0_VBUSEN		(1 << 9)
 #define 	DVSTCTR0_WKUP		(1 << 8)
@@ -97,13 +97,13 @@
 #define		INTSTS0_VALID		(1 << 3)
 #define		INTSTS0_CTSQ_MSK	(7)
 
-#define		CTSQ_IDST	(0) /* Idle or setup stage */
-#define		CTSQ_RDDS	(1) /* Ctrl read data stage */
-#define		CTSQ_RDSS	(2) /* Ctrl read status stage */
-#define   	CTSQ_WRDS	(3) /* Ctrl write data stage */
-#define   	CTSQ_WRSS	(4) /* Ctrl write status stage */
-#define 	CTSQ_WRNDSS	(5) /* Ctrl write (no data) status stage */
-#define		CTSQ_TSQERR	(6) /* Ctrl transfer sequence error */
+#define		CTSQ_IDST	(0)	/* Idle or setup stage */
+#define		CTSQ_RDDS	(1)	/* Ctrl read data stage */
+#define		CTSQ_RDSS	(2)	/* Ctrl read status stage */
+#define   	CTSQ_WRDS	(3)	/* Ctrl write data stage */
+#define   	CTSQ_WRSS	(4)	/* Ctrl write status stage */
+#define 	CTSQ_WRNDSS	(5)	/* Ctrl write (no data) status stage */
+#define		CTSQ_TSQERR	(6)	/* Ctrl transfer sequence error */
 
 #define REG_INTSTS1(base)	((base) + 0x42)
 #define		INTSTS1_OVRCR		(1 << 15)
@@ -139,7 +139,7 @@
 #define		DCPMAXP_DEVSEL_MSK	(0xf << 12)
 #define		DCPMAXP_MXPS_MSK	(0x7f)
 #define REG_DCPCTR(base)	((base) + 0x60)
-#define		DCPCTR_BSTS		(1 << 15)	
+#define		DCPCTR_BSTS		(1 << 15)
 #define		DCPCTR_SUREQ		(1 << 14)
 #define		DCPCTR_SUREQCLR		(1 << 11)
 #define		DCPCTR_SQCLR		(1 << 8)
@@ -254,7 +254,7 @@ typedef struct RXUsbFn {
 	uint16_t regSYSSTS0;
 	uint16_t regDVSTCTR0;
 	uint16_t regCFIFO;
-	
+
 	uint16_t regD0FIFO;
 	uint16_t regD1FIFO;
 	uint16_t regCFIFOSEL;
@@ -281,7 +281,7 @@ typedef struct RXUsbFn {
 	uint16_t regUSBVAL;
 	uint16_t regUSBINDX;
 	uint16_t regUSBLENG;
-	
+
 	uint16_t regDCPCFG;
 	uint16_t regDCPMAXP;
 	uint16_t regDCPCTR;
@@ -327,7 +327,7 @@ typedef struct RXUsbFn {
  */
 #if 0
 static void
-usbe0_function(RXUsbFn *ru) 
+usbe0_function(RXUsbFn * ru)
 {
 	//ru->regSYSSTS0 LNST
 	// RHST
@@ -346,7 +346,7 @@ usbe0_function(RXUsbFn *ru)
  */
 #if 0
 static void
-usbe0_host(RXUsbFn *ru) 
+usbe0_host(RXUsbFn * ru)
 {
 	//RHST
 	//FRNM
@@ -363,13 +363,13 @@ usbe0_host(RXUsbFn *ru)
  *********************************************************************
  */
 static uint32_t
-syscfg_read(void *clientData,uint32_t address,int rqlen)
+syscfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-syscfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+syscfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -384,16 +384,17 @@ syscfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ************************************************************************
  */
 static uint32_t
-syssts0_read(void *clientData,uint32_t address,int rqlen)
+syssts0_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-syssts0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+syssts0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
+
 /**
  **************************************************************************************
  * DVSTCTR0 Device status control register
@@ -409,13 +410,13 @@ syssts0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************************
  */
 static uint32_t
-dvstctr0_read(void *clientData,uint32_t address,int rqlen)
+dvstctr0_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-dvstctr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dvstctr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -427,13 +428,13 @@ dvstctr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *************************************************************************************************
  */
 static uint32_t
-cfifo_read(void *clientData,uint32_t address,int rqlen)
+cfifo_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-cfifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cfifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -446,13 +447,13 @@ cfifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************
  */
 static uint32_t
-d0fifo_read(void *clientData,uint32_t address,int rqlen)
+d0fifo_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-d0fifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+d0fifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -465,13 +466,13 @@ d0fifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************
  */
 static uint32_t
-d1fifo_read(void *clientData,uint32_t address,int rqlen)
+d1fifo_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-d1fifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+d1fifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -489,13 +490,13 @@ d1fifo_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************************************
  */
 static uint32_t
-cfifosel_read(void *clientData,uint32_t address,int rqlen)
+cfifosel_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-cfifosel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cfifosel_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -510,61 +511,61 @@ cfifosel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-cfifoctr_read(void *clientData,uint32_t address,int rqlen)
+cfifoctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-cfifoctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cfifoctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-d0fifosel_read(void *clientData,uint32_t address,int rqlen)
+d0fifosel_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-d0fifosel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+d0fifosel_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-d0fifoctr_read(void *clientData,uint32_t address,int rqlen)
+d0fifoctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-d0fifoctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+d0fifoctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-d1fifosel_read(void *clientData,uint32_t address,int rqlen)
+d1fifosel_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-d1fifosel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+d1fifosel_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-d1fifoctr_read(void *clientData,uint32_t address,int rqlen)
+d1fifoctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-d1fifoctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+d1fifoctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -584,13 +585,13 @@ d1fifoctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************
  */
 static uint32_t
-intenb0_read(void *clientData,uint32_t address,int rqlen)
+intenb0_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-intenb0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intenb0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -609,13 +610,13 @@ intenb0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************
  */
 static uint32_t
-intenb1_read(void *clientData,uint32_t address,int rqlen)
+intenb1_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-intenb1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intenb1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -627,13 +628,13 @@ intenb1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ********************************************************************
  */
 static uint32_t
-brdyenb_read(void *clientData,uint32_t address,int rqlen)
+brdyenb_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-brdyenb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+brdyenb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -645,13 +646,13 @@ brdyenb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ********************************************************************
  */
 static uint32_t
-nrdyenb_read(void *clientData,uint32_t address,int rqlen)
+nrdyenb_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-nrdyenb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+nrdyenb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -662,13 +663,13 @@ nrdyenb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************
  */
 static uint32_t
-bempenb_read(void *clientData,uint32_t address,int rqlen)
+bempenb_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-bempenb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bempenb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -682,13 +683,13 @@ bempenb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ************************************************************************************
  */
 static uint32_t
-sofcfg_read(void *clientData,uint32_t address,int rqlen)
+sofcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-sofcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sofcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -713,13 +714,13 @@ sofcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************
  */
 static uint32_t
-intsts0_read(void *clientData,uint32_t address,int rqlen)
+intsts0_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-intsts0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intsts0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -738,13 +739,13 @@ intsts0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *************************************************************************
  */
 static uint32_t
-intsts1_read(void *clientData,uint32_t address,int rqlen)
+intsts1_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-intsts1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+intsts1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -756,13 +757,13 @@ intsts1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *************************************************************
  */
 static uint32_t
-brdysts_read(void *clientData,uint32_t address,int rqlen)
+brdysts_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-brdysts_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+brdysts_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -773,13 +774,13 @@ brdysts_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************
  */
 static uint32_t
-nrdysts_read(void *clientData,uint32_t address,int rqlen)
+nrdysts_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-nrdysts_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+nrdysts_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -792,13 +793,13 @@ nrdysts_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************
  */
 static uint32_t
-bempsts_read(void *clientData,uint32_t address,int rqlen)
+bempsts_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-bempsts_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bempsts_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -813,13 +814,13 @@ bempsts_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************
  */
 static uint32_t
-frmnum_read(void *clientData,uint32_t address,int rqlen)
+frmnum_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-frmnum_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+frmnum_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -832,13 +833,13 @@ frmnum_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************
  */
 static uint32_t
-dvchgr_read(void *clientData,uint32_t address,int rqlen)
+dvchgr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-dvchgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dvchgr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -851,13 +852,13 @@ dvchgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************
  */
 static uint32_t
-usbaddr_read(void *clientData,uint32_t address,int rqlen)
+usbaddr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-usbaddr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+usbaddr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -869,15 +870,15 @@ usbaddr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************
  */
 static uint32_t
-usbreq_read(void *clientData,uint32_t address,int rqlen)
+usbreq_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-usbreq_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+usbreq_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	
+
 }
 
 /**
@@ -887,13 +888,13 @@ usbreq_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************
  */
 static uint32_t
-usbval_read(void *clientData,uint32_t address,int rqlen)
+usbval_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-usbval_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+usbval_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -904,13 +905,13 @@ usbval_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************
  */
 static uint32_t
-usbindx_read(void *clientData,uint32_t address,int rqlen)
+usbindx_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-usbindx_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+usbindx_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -921,13 +922,13 @@ usbindx_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *******************************************************
  */
 static uint32_t
-usbleng_read(void *clientData,uint32_t address,int rqlen)
+usbleng_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-usbleng_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+usbleng_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -941,13 +942,13 @@ usbleng_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************
  */
 static uint32_t
-dcpcfg_read(void *clientData,uint32_t address,int rqlen)
+dcpcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-dcpcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dcpcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -961,17 +962,16 @@ dcpcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *******************************************************************
  */
 static uint32_t
-dcpmaxp_read(void *clientData,uint32_t address,int rqlen)
+dcpmaxp_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-dcpmaxp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dcpmaxp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
-
 
 /**
  *************************************************************
@@ -988,13 +988,13 @@ dcpmaxp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *************************************************************
  */
 static uint32_t
-dcpctr_read(void *clientData,uint32_t address,int rqlen)
+dcpctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-dcpctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dcpctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -1006,13 +1006,13 @@ dcpctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************
  */
 static uint32_t
-pipesel_read(void *clientData,uint32_t address,int rqlen)
+pipesel_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipesel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipesel_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
@@ -1029,344 +1029,343 @@ pipesel_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************
  */
 static uint32_t
-pipecfg_read(void *clientData,uint32_t address,int rqlen)
+pipecfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipecfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipecfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipemaxp_read(void *clientData,uint32_t address,int rqlen)
+pipemaxp_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipemaxp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipemaxp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipeperi_read(void *clientData,uint32_t address,int rqlen)
+pipeperi_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipeperi_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipeperi_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe1ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe1ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe1ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe1ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe2ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe2ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe2ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe2ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe3ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe3ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe3ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe3ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe4ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe4ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe4ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe4ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe5ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe5ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe5ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe5ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe6ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe6ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe6ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe6ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe7ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe7ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe7ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe7ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe8ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe8ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe8ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe8ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe9ctr_read(void *clientData,uint32_t address,int rqlen)
+pipe9ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe9ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-
-}
-
-
-static uint32_t
-pipe1tre_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-pipe1tre_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe9ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe1trn_read(void *clientData,uint32_t address,int rqlen)
+pipe1tre_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe1trn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe1tre_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe2tre_read(void *clientData,uint32_t address,int rqlen)
+pipe1trn_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe2tre_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe1trn_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe2trn_read(void *clientData,uint32_t address,int rqlen)
+pipe2tre_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe2trn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe2tre_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe3tre_read(void *clientData,uint32_t address,int rqlen)
+pipe2trn_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe3tre_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe2trn_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe3trn_read(void *clientData,uint32_t address,int rqlen)
+pipe3tre_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe3trn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe3tre_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe4tre_read(void *clientData,uint32_t address,int rqlen)
+pipe3trn_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe4tre_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe3trn_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe4trn_read(void *clientData,uint32_t address,int rqlen)
+pipe4tre_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe4trn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe4tre_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe5tre_read(void *clientData,uint32_t address,int rqlen)
+pipe4trn_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe5tre_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe4trn_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-pipe5trn_read(void *clientData,uint32_t address,int rqlen)
+pipe5tre_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-pipe5trn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe5tre_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-devadd0_read(void *clientData,uint32_t address,int rqlen)
+pipe5trn_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-devadd0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pipe5trn_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-devadd1_read(void *clientData,uint32_t address,int rqlen)
+devadd0_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-devadd1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+devadd0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-devadd2_read(void *clientData,uint32_t address,int rqlen)
+devadd1_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-devadd2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+devadd1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-devadd3_read(void *clientData,uint32_t address,int rqlen)
+devadd2_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-devadd3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+devadd2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-devadd4_read(void *clientData,uint32_t address,int rqlen)
+devadd3_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-devadd4_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+devadd3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static uint32_t
-devadd5_read(void *clientData,uint32_t address,int rqlen)
+devadd4_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-devadd5_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+devadd4_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+
+}
+
+static uint32_t
+devadd5_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+devadd5_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 
 }
 
 static void
-RxUsbFun_Unmap(void *owner,uint32_t base,uint32_t mask)
+RxUsbFun_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete16(REG_SYSCFG(base));
 	IOH_Delete16(REG_SYSSTS0(base));
@@ -1437,71 +1436,71 @@ RxUsbFun_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-RxUsbFun_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+RxUsbFun_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	void *usbfn = owner;
-	IOH_New16(REG_SYSCFG(base),syscfg_read,syscfg_write,usbfn);
-	IOH_New16(REG_SYSSTS0(base),syssts0_read,syssts0_write,usbfn);
-	IOH_New16(REG_DVSTCTR0(base),dvstctr0_read,dvstctr0_write,usbfn);
-	IOH_New16(REG_CFIFO(base),cfifo_read,cfifo_write,usbfn);
-	IOH_New16(REG_D0FIFO(base),d0fifo_read,d0fifo_write,usbfn);
-	IOH_New16(REG_D1FIFO(base),d1fifo_read,d1fifo_write,usbfn);
-	IOH_New16(REG_CFIFOSEL(base),cfifosel_read,cfifosel_write,usbfn);
-	IOH_New16(REG_CFIFOCTR(base),cfifoctr_read,cfifoctr_write,usbfn);
-	IOH_New16(REG_D0FIFOSEL(base),d0fifosel_read,d0fifosel_write,usbfn);
-	IOH_New16(REG_D0FIFOCTR(base),d0fifoctr_read,d0fifoctr_write,usbfn);
-	IOH_New16(REG_D1FIFOSEL(base),d1fifosel_read,d1fifosel_write,usbfn);
-	IOH_New16(REG_D1FIFOCTR(base),d1fifoctr_read,d1fifoctr_write,usbfn);
-	IOH_New16(REG_INTENB0(base),intenb0_read,intenb0_write,usbfn);
-	IOH_New16(REG_INTENB1(base),intenb1_read,intenb1_write,usbfn);
-	IOH_New16(REG_BRDYENB(base),brdyenb_read,brdyenb_write,usbfn);
-	IOH_New16(REG_NRDYENB(base),nrdyenb_read,nrdyenb_write,usbfn);
-	IOH_New16(REG_BEMPENB(base),bempenb_read,bempenb_write,usbfn);
-	IOH_New16(REG_SOFCFG(base),sofcfg_read,sofcfg_write,usbfn);
-	IOH_New16(REG_INTSTS0(base),intsts0_read,intsts0_write,usbfn);
-	IOH_New16(REG_INTSTS1(base),intsts1_read,intsts1_write,usbfn);
-	IOH_New16(REG_BRDYSTS(base),brdysts_read,brdysts_write,usbfn);
-	IOH_New16(REG_NRDYSTS(base),nrdysts_read,nrdysts_write,usbfn);
-	IOH_New16(REG_BEMPSTS(base),bempsts_read,bempsts_write,usbfn);
-	IOH_New16(REG_FRMNUM(base),frmnum_read,frmnum_write,usbfn);
-	IOH_New16(REG_DVCHGR(base),dvchgr_read,dvchgr_write,usbfn);
-	IOH_New16(REG_USBADDR(base),usbaddr_read,usbaddr_write,usbfn);
-	IOH_New16(REG_USBREQ(base),usbreq_read,usbreq_write,usbfn);
-	IOH_New16(REG_USBVAL(base),usbval_read,usbval_write,usbfn);
-	IOH_New16(REG_USBINDX(base),usbindx_read,usbindx_write,usbfn);
-	IOH_New16(REG_USBLENG(base),usbleng_read,usbleng_write,usbfn);
-	IOH_New16(REG_DCPCFG(base),dcpcfg_read,dcpcfg_write,usbfn);
-	IOH_New16(REG_DCPMAXP(base),dcpmaxp_read,dcpmaxp_write,usbfn);
-	IOH_New16(REG_DCPCTR(base),dcpctr_read,dcpctr_write,usbfn);
-	IOH_New16(REG_PIPESEL(base),pipesel_read,pipesel_write,usbfn);
-	IOH_New16(REG_PIPECFG(base),pipecfg_read,pipecfg_write,usbfn);
-	IOH_New16(REG_PIPEMAXP(base),pipemaxp_read,pipemaxp_write,usbfn);
-	IOH_New16(REG_PIPEPERI(base),pipeperi_read,pipeperi_write,usbfn);
-	IOH_New16(REG_PIPE1CTR(base),pipe1ctr_read,pipe1ctr_write,usbfn);
-	IOH_New16(REG_PIPE2CTR(base),pipe2ctr_read,pipe2ctr_write,usbfn);
-	IOH_New16(REG_PIPE3CTR(base),pipe3ctr_read,pipe3ctr_write,usbfn);
-	IOH_New16(REG_PIPE4CTR(base),pipe4ctr_read,pipe4ctr_write,usbfn);
-	IOH_New16(REG_PIPE5CTR(base),pipe5ctr_read,pipe5ctr_write,usbfn);
-	IOH_New16(REG_PIPE6CTR(base),pipe6ctr_read,pipe6ctr_write,usbfn);
-	IOH_New16(REG_PIPE7CTR(base),pipe7ctr_read,pipe7ctr_write,usbfn);
-	IOH_New16(REG_PIPE8CTR(base),pipe8ctr_read,pipe8ctr_write,usbfn);
-	IOH_New16(REG_PIPE9CTR(base),pipe9ctr_read,pipe9ctr_write,usbfn);
-	IOH_New16(REG_PIPE1TRE(base),pipe1tre_read,pipe1tre_write,usbfn);
-	IOH_New16(REG_PIPE1TRN(base),pipe1trn_read,pipe1trn_write,usbfn);
-	IOH_New16(REG_PIPE2TRE(base),pipe2tre_read,pipe2tre_write,usbfn);
-	IOH_New16(REG_PIPE2TRN(base),pipe2trn_read,pipe2trn_write,usbfn);
-	IOH_New16(REG_PIPE3TRE(base),pipe3tre_read,pipe3tre_write,usbfn);
-	IOH_New16(REG_PIPE3TRN(base),pipe3trn_read,pipe3trn_write,usbfn);
-	IOH_New16(REG_PIPE4TRE(base),pipe4tre_read,pipe4tre_write,usbfn);
-	IOH_New16(REG_PIPE4TRN(base),pipe4trn_read,pipe4trn_write,usbfn);
-	IOH_New16(REG_PIPE5TRE(base),pipe5tre_read,pipe5tre_write,usbfn);
-	IOH_New16(REG_PIPE5TRN(base),pipe5trn_read,pipe5trn_write,usbfn);
-	IOH_New16(REG_DEVADD0(base),devadd0_read,devadd0_write,usbfn);
-	IOH_New16(REG_DEVADD1(base),devadd1_read,devadd1_write,usbfn);
-	IOH_New16(REG_DEVADD2(base),devadd2_read,devadd2_write,usbfn);
-	IOH_New16(REG_DEVADD3(base),devadd3_read,devadd3_write,usbfn);
-	IOH_New16(REG_DEVADD4(base),devadd4_read,devadd4_write,usbfn);
-	IOH_New16(REG_DEVADD5(base),devadd5_read,devadd5_write,usbfn);
+	IOH_New16(REG_SYSCFG(base), syscfg_read, syscfg_write, usbfn);
+	IOH_New16(REG_SYSSTS0(base), syssts0_read, syssts0_write, usbfn);
+	IOH_New16(REG_DVSTCTR0(base), dvstctr0_read, dvstctr0_write, usbfn);
+	IOH_New16(REG_CFIFO(base), cfifo_read, cfifo_write, usbfn);
+	IOH_New16(REG_D0FIFO(base), d0fifo_read, d0fifo_write, usbfn);
+	IOH_New16(REG_D1FIFO(base), d1fifo_read, d1fifo_write, usbfn);
+	IOH_New16(REG_CFIFOSEL(base), cfifosel_read, cfifosel_write, usbfn);
+	IOH_New16(REG_CFIFOCTR(base), cfifoctr_read, cfifoctr_write, usbfn);
+	IOH_New16(REG_D0FIFOSEL(base), d0fifosel_read, d0fifosel_write, usbfn);
+	IOH_New16(REG_D0FIFOCTR(base), d0fifoctr_read, d0fifoctr_write, usbfn);
+	IOH_New16(REG_D1FIFOSEL(base), d1fifosel_read, d1fifosel_write, usbfn);
+	IOH_New16(REG_D1FIFOCTR(base), d1fifoctr_read, d1fifoctr_write, usbfn);
+	IOH_New16(REG_INTENB0(base), intenb0_read, intenb0_write, usbfn);
+	IOH_New16(REG_INTENB1(base), intenb1_read, intenb1_write, usbfn);
+	IOH_New16(REG_BRDYENB(base), brdyenb_read, brdyenb_write, usbfn);
+	IOH_New16(REG_NRDYENB(base), nrdyenb_read, nrdyenb_write, usbfn);
+	IOH_New16(REG_BEMPENB(base), bempenb_read, bempenb_write, usbfn);
+	IOH_New16(REG_SOFCFG(base), sofcfg_read, sofcfg_write, usbfn);
+	IOH_New16(REG_INTSTS0(base), intsts0_read, intsts0_write, usbfn);
+	IOH_New16(REG_INTSTS1(base), intsts1_read, intsts1_write, usbfn);
+	IOH_New16(REG_BRDYSTS(base), brdysts_read, brdysts_write, usbfn);
+	IOH_New16(REG_NRDYSTS(base), nrdysts_read, nrdysts_write, usbfn);
+	IOH_New16(REG_BEMPSTS(base), bempsts_read, bempsts_write, usbfn);
+	IOH_New16(REG_FRMNUM(base), frmnum_read, frmnum_write, usbfn);
+	IOH_New16(REG_DVCHGR(base), dvchgr_read, dvchgr_write, usbfn);
+	IOH_New16(REG_USBADDR(base), usbaddr_read, usbaddr_write, usbfn);
+	IOH_New16(REG_USBREQ(base), usbreq_read, usbreq_write, usbfn);
+	IOH_New16(REG_USBVAL(base), usbval_read, usbval_write, usbfn);
+	IOH_New16(REG_USBINDX(base), usbindx_read, usbindx_write, usbfn);
+	IOH_New16(REG_USBLENG(base), usbleng_read, usbleng_write, usbfn);
+	IOH_New16(REG_DCPCFG(base), dcpcfg_read, dcpcfg_write, usbfn);
+	IOH_New16(REG_DCPMAXP(base), dcpmaxp_read, dcpmaxp_write, usbfn);
+	IOH_New16(REG_DCPCTR(base), dcpctr_read, dcpctr_write, usbfn);
+	IOH_New16(REG_PIPESEL(base), pipesel_read, pipesel_write, usbfn);
+	IOH_New16(REG_PIPECFG(base), pipecfg_read, pipecfg_write, usbfn);
+	IOH_New16(REG_PIPEMAXP(base), pipemaxp_read, pipemaxp_write, usbfn);
+	IOH_New16(REG_PIPEPERI(base), pipeperi_read, pipeperi_write, usbfn);
+	IOH_New16(REG_PIPE1CTR(base), pipe1ctr_read, pipe1ctr_write, usbfn);
+	IOH_New16(REG_PIPE2CTR(base), pipe2ctr_read, pipe2ctr_write, usbfn);
+	IOH_New16(REG_PIPE3CTR(base), pipe3ctr_read, pipe3ctr_write, usbfn);
+	IOH_New16(REG_PIPE4CTR(base), pipe4ctr_read, pipe4ctr_write, usbfn);
+	IOH_New16(REG_PIPE5CTR(base), pipe5ctr_read, pipe5ctr_write, usbfn);
+	IOH_New16(REG_PIPE6CTR(base), pipe6ctr_read, pipe6ctr_write, usbfn);
+	IOH_New16(REG_PIPE7CTR(base), pipe7ctr_read, pipe7ctr_write, usbfn);
+	IOH_New16(REG_PIPE8CTR(base), pipe8ctr_read, pipe8ctr_write, usbfn);
+	IOH_New16(REG_PIPE9CTR(base), pipe9ctr_read, pipe9ctr_write, usbfn);
+	IOH_New16(REG_PIPE1TRE(base), pipe1tre_read, pipe1tre_write, usbfn);
+	IOH_New16(REG_PIPE1TRN(base), pipe1trn_read, pipe1trn_write, usbfn);
+	IOH_New16(REG_PIPE2TRE(base), pipe2tre_read, pipe2tre_write, usbfn);
+	IOH_New16(REG_PIPE2TRN(base), pipe2trn_read, pipe2trn_write, usbfn);
+	IOH_New16(REG_PIPE3TRE(base), pipe3tre_read, pipe3tre_write, usbfn);
+	IOH_New16(REG_PIPE3TRN(base), pipe3trn_read, pipe3trn_write, usbfn);
+	IOH_New16(REG_PIPE4TRE(base), pipe4tre_read, pipe4tre_write, usbfn);
+	IOH_New16(REG_PIPE4TRN(base), pipe4trn_read, pipe4trn_write, usbfn);
+	IOH_New16(REG_PIPE5TRE(base), pipe5tre_read, pipe5tre_write, usbfn);
+	IOH_New16(REG_PIPE5TRN(base), pipe5trn_read, pipe5trn_write, usbfn);
+	IOH_New16(REG_DEVADD0(base), devadd0_read, devadd0_write, usbfn);
+	IOH_New16(REG_DEVADD1(base), devadd1_read, devadd1_write, usbfn);
+	IOH_New16(REG_DEVADD2(base), devadd2_read, devadd2_write, usbfn);
+	IOH_New16(REG_DEVADD3(base), devadd3_read, devadd3_write, usbfn);
+	IOH_New16(REG_DEVADD4(base), devadd4_read, devadd4_write, usbfn);
+	IOH_New16(REG_DEVADD5(base), devadd5_read, devadd5_write, usbfn);
 #if 0
 	IOH_New32(REG_DPUSR0R);
 	IOH_New32(REG_DPUSR1R);
@@ -1515,13 +1514,13 @@ RxUsbFun_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
  *******************************************************
  */
 BusDevice *
-RX_UsbFnNew(const char *name) 
+RX_UsbFnNew(const char *name)
 {
 	RXUsbFn *ru = sg_new(RXUsbFn);
-        ru->bdev.owner = ru;
+	ru->bdev.owner = ru;
 	ru->bdev.first_mapping = NULL;
-        ru->bdev.Map = RxUsbFun_Map;
-        ru->bdev.UnMap = RxUsbFun_Unmap;
-        ru->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	ru->bdev.Map = RxUsbFun_Map;
+	ru->bdev.UnMap = RxUsbFun_Unmap;
+	ru->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &ru->bdev;
 }

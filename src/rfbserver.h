@@ -7,8 +7,9 @@
  */
 
 #include <stdint.h>
-#include <fbdisplay.h>
-#include <keyboard.h>
+#include "fbdisplay.h"
+#include "keyboard.h"
+#include "mouse.h"
 #if 0
 /*
  * ----------------------------------------------------------------
@@ -16,8 +17,8 @@
  * ----------------------------------------------------------------
  */
 typedef struct DisplayInfo {
-        uint32_t xres;
-        uint32_t yres;
+	uint32_t xres;
+	uint32_t yres;
 	int is_color;
 } DisplayInfo;
 
@@ -29,17 +30,17 @@ typedef struct DisplayInfo {
  */
 typedef struct PixelDataInfo {
 	uint8_t bits_per_pixel;
-        uint8_t depth;
-        uint8_t big_endian_flag;
-        uint8_t true_color_flag;
-        uint16_t red_max;
-        uint16_t blue_max;
-        uint16_t green_max;
-        uint8_t red_shift;
-        uint8_t green_shift;
-        uint8_t blue_shift;
+	uint8_t depth;
+	uint8_t big_endian_flag;
+	uint8_t true_color_flag;
+	uint16_t red_max;
+	uint16_t blue_max;
+	uint16_t green_max;
+	uint8_t red_shift;
+	uint8_t green_shift;
+	uint8_t blue_shift;
 } PixelDataInfo;
 #endif
 
 typedef struct RfbServer RfbServer;
-void RfbServer_New(const char *name,FbDisplay **fbdisplay,Keyboard **kbd,void **mouse);
+void RfbServer_New(const char *name, FbDisplay ** fbdisplay, Keyboard ** kbd, Mouse **mouse);

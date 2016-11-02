@@ -65,7 +65,7 @@
 #define FIFO_RINDEX(kbd) ((kbd)->event_rp % FIFO_SIZE)
 #define FIFO_WINDEX(kbd) ((kbd)->event_wp % FIFO_SIZE)
 
-typedef struct MatrixKeyboard  {
+typedef struct MatrixKeyboard {
 	char *name;
 	SigNode *keypadNode[MAX_KEYPAD_PINS];
 	int nr_keys;
@@ -78,45 +78,45 @@ typedef struct MatrixKeyboard  {
 } MatrixKeyboard;
 
 typedef struct
-Keypad_Signals {
+    Keypad_Signals {
 	char *keypad_line;
 } KeypadSignal;
 
 static KeypadSignal kpsigs[] = {
-	{ "x0" },
-	{ "x1" },
-	{ "x2" },
-	{ "x3" },
-	{ "x4" },
-	{ "x5" },
-	{ "x6" },
-	{ "x7" },
-	{ "x8" },
-	{ "x9" },
-	{ "x10"},
-	{ "x11"},
-	{ "x12"},
-	{ "x13"},
-	{ "x14"},
-	{ "x15"},
-	{ "x16"},
-	{ "y0"},
-	{ "y1"},
-	{ "y2"},
-	{ "y3"},
-	{ "y4"},
-	{ "y5"},
-	{ "y6"},
-	{ "y7"},
-	{ "y8"},
-	{ "y9"},
-	{ "y10"},
-	{ "y11"},
-	{ "y12"},
-	{ "y13"},
-	{ "y14"},
-	{ "y15"},
-	{ "y16"},
+	{"x0"},
+	{"x1"},
+	{"x2"},
+	{"x3"},
+	{"x4"},
+	{"x5"},
+	{"x6"},
+	{"x7"},
+	{"x8"},
+	{"x9"},
+	{"x10"},
+	{"x11"},
+	{"x12"},
+	{"x13"},
+	{"x14"},
+	{"x15"},
+	{"x16"},
+	{"y0"},
+	{"y1"},
+	{"y2"},
+	{"y3"},
+	{"y4"},
+	{"y5"},
+	{"y6"},
+	{"y7"},
+	{"y8"},
+	{"y9"},
+	{"y10"},
+	{"y11"},
+	{"y12"},
+	{"y13"},
+	{"y14"},
+	{"y15"},
+	{"y16"},
 };
 
 /*
@@ -127,12 +127,13 @@ static KeypadSignal kpsigs[] = {
  * --------------------------------------------------------
  */
 
-static void 
-execute_key_event(void *clientData) 
+static void
+execute_key_event(void *clientData)
 {
 	int i;
 	KeyEvent *ev;
-	MatrixKeyboard *mkbd = (MatrixKeyboard*) clientData;
+	uint32_t __UNUSED__ nowMs = CyclesToMilliseconds(CycleCounter_Get());
+	MatrixKeyboard *mkbd = (MatrixKeyboard *) clientData;
 	char *name1 = alloca(strlen(mkbd->name) + 10);
 	char *name2 = alloca(strlen(mkbd->name) + 10);
 	MatrixKey *key = NULL;
@@ -141,8 +142,8 @@ execute_key_event(void *clientData)
 	int nr_keys = mkbd->nr_keys;
 	int required_spacing;
 
-	if(!FIFO_COUNT(mkbd)) {
-		fprintf(stderr,"Emulator bug: Key fifo is empty\n");
+	if (!FIFO_COUNT(mkbd)) {
+		fprintf(stderr, "Emulator bug: Key fifo is empty\n");
 		return;
 	}
 	ev = &mkbd->eventFifo[FIFO_RINDEX(mkbd)];
@@ -150,19 +151,19 @@ execute_key_event(void *clientData)
 	xk_code = ev->key;
 	down = ev->down;
 
-	for(i=0;i<nr_keys;i++) {
-		if(xk_code == mkbd->keys[i]->xk_code) {
+	for (i = 0; i < nr_keys; i++) {
+		if (xk_code == mkbd->keys[i]->xk_code) {
 			key = mkbd->keys[i];
-			sprintf(name1,"%s.%s",mkbd->name,key->row);
-			sprintf(name2,"%s.%s",mkbd->name,key->col);
-			if(down) {
-				SigName_Link(name1,name2);
-				dbgprintf("Matrix Keyboard: Key down %d, %s %s\n"
-					,xk_code,name1,name2);
+			sprintf(name1, "%s.%s", mkbd->name, key->row);
+			sprintf(name2, "%s.%s", mkbd->name, key->col);
+			if (down) {
+				SigName_Link(name1, name2);
+				dbgprintf("%u Matrix Keyboard: Key down %d, %s %s\n",nowMs, xk_code, name1,
+					  name2);
 			} else {
-				dbgprintf("Matrix Keyboard: Key up %d, %s %s\n"
-					,xk_code,name1,name2);
-				while(SigName_RemoveLink(name1,name2) > 0) {
+				dbgprintf("%u Matrix Keyboard: Key up %d, %s %s\n", nowMs,xk_code, name1,
+					  name2);
+				while (SigName_RemoveLink(name1, name2) > 0) {
 					dbgprintf("Removed a link\n");
 				}
 			}
@@ -170,20 +171,20 @@ execute_key_event(void *clientData)
 			//break;
 		}
 	}
-	if(down) {
+	if (down) {
 		required_spacing = MIN_KEYPRESS_MS;
 	} else {
 		required_spacing = MIN_KEYRELEASE_MS;
 	}
-	if(FIFO_COUNT(mkbd) !=0) {
-		if(!key || (key->flags & KEY_FLAG_IS_MODIFIER)) {
-			CycleTimer_Mod(&mkbd->eventTimer,0);
+	if (FIFO_COUNT(mkbd) != 0) {
+		if (!key || (key->flags & KEY_FLAG_IS_MODIFIER)) {
+			CycleTimer_Mod(&mkbd->eventTimer, 0);
 		} else {
-			CycleTimer_Mod(&mkbd->eventTimer,MillisecondsToCycles(required_spacing));
+			CycleTimer_Mod(&mkbd->eventTimer, MillisecondsToCycles(required_spacing));
 		}
 	}
-	if(!key) {
-		dbgprintf("MatrixKeyboard: No key to emulate for Keycode 0x%04x\n",xk_code);
+	if (!key) {
+		dbgprintf("MatrixKeyboard: No key to emulate for Keycode 0x%04x\n", xk_code);
 	}
 	return;
 }
@@ -195,34 +196,35 @@ execute_key_event(void *clientData)
  * 	This handler is feed by the keyboard when a event is detected
  * ---------------------------------------------------------------------------------------
  */
-static void 
-handle_key_event(void *clientData,KeyEvent *ev) 
+static void
+handle_key_event(void *clientData, KeyEvent * ev)
 {
-	MatrixKeyboard *mkbd = (MatrixKeyboard*) clientData;
+	MatrixKeyboard *mkbd = (MatrixKeyboard *) clientData;
 	int64_t ms = CyclesToMilliseconds((CycleCounter_Get() - mkbd->last_event_time));
 	int delay;
-	if(FIFO_ROOM(mkbd)<1) {
-		fprintf(stderr,"key event: Fifo full\n");
+	if (FIFO_ROOM(mkbd) < 1) {
+		fprintf(stderr, "key event: Fifo full\n");
 		return;
 	}
+	dbgprintf("Key event\ņ");
 	mkbd->eventFifo[FIFO_WINDEX(mkbd)] = *ev;
 	mkbd->event_wp++;
-	if(!CycleTimer_IsActive(&mkbd->eventTimer)) {
-		if(ms<MIN_KEYPRESS_MS) {
-			delay = MIN_KEYPRESS_MS-ms;
+	if (!CycleTimer_IsActive(&mkbd->eventTimer)) {
+		if (ms < MIN_KEYPRESS_MS) {
+			delay = MIN_KEYPRESS_MS - ms;
 		} else {
 			delay = 0;
 		}
-		CycleTimer_Mod(&mkbd->eventTimer,MillisecondsToCycles(delay));
-	} 
+		CycleTimer_Mod(&mkbd->eventTimer, MillisecondsToCycles(delay));
+	}
 }
 
 static void
-init_keys(MatrixKeyboard *mkbd,MatrixKey *keys,int nr_keys) 
+init_keys(MatrixKeyboard * mkbd, MatrixKey * keys, int nr_keys)
 {
 	int i;
 	mkbd->nr_keys = nr_keys;
-	for(i=0;i<mkbd->nr_keys;i++) {
+	for (i = 0; i < mkbd->nr_keys; i++) {
 		mkbd->keys[i] = &keys[i];
 	}
 }
@@ -235,20 +237,18 @@ init_keys(MatrixKeyboard *mkbd,MatrixKey *keys,int nr_keys)
  * -------------------------------------------------------------------------------------
  */
 
-
 static void
-create_keypad_signals(MatrixKeyboard *mkbd) 
+create_keypad_signals(MatrixKeyboard * mkbd)
 {
 	int i;
-	int nr_pins = (sizeof(kpsigs)/sizeof(KeypadSignal));
-	if(nr_pins > MAX_KEYPAD_PINS) {
-		fprintf(stderr,"Error: keypad has to many pins\n");
+	int nr_pins = (sizeof(kpsigs) / sizeof(KeypadSignal));
+	if (nr_pins > MAX_KEYPAD_PINS) {
+		fprintf(stderr, "Error: keypad has to many pins\n");
 		exit(1);
 	}
-	for(i=0;i<nr_pins;i++) 
-	{
+	for (i = 0; i < nr_pins; i++) {
 		KeypadSignal *sig = &kpsigs[i];
-		mkbd->keypadNode[i] = SigNode_New("%s.%s",mkbd->name,sig->keypad_line);
+		mkbd->keypadNode[i] = SigNode_New("%s.%s", mkbd->name, sig->keypad_line);
 		//SigNode_Set(mkbd->keypadNode[i],SIG_PULLUP); 
 	}
 }
@@ -262,19 +262,17 @@ create_keypad_signals(MatrixKeyboard *mkbd)
  * -----------------------------------------------------------------------
  */
 void
-MatrixKeyboard_New(const char *name,Keyboard *keyboard,MatrixKey *keys,int nr_keys) 
+MatrixKeyboard_New(const char *name, Keyboard * keyboard, MatrixKey * keys, int nr_keys)
 {
 	MatrixKeyboard *mkbd = sg_new(MatrixKeyboard);
-	CycleTimer_Init(&mkbd->eventTimer,execute_key_event,mkbd);
+	CycleTimer_Init(&mkbd->eventTimer, execute_key_event, mkbd);
 	mkbd->name = sg_strdup(name);
 	create_keypad_signals(mkbd);
-	init_keys(mkbd,keys,nr_keys);
-	if(keyboard) {
-		Keyboard_AddListener(keyboard,handle_key_event,mkbd);
+	init_keys(mkbd, keys, nr_keys);
+	if (keyboard) {
+		Keyboard_AddListener(keyboard, handle_key_event, mkbd);
 	} else {
-		fprintf(stderr,"Warning: No input source for keyboard \"%s\"\n"
-			,name);
+		fprintf(stderr, "Warning: No input source for keyboard \"%s\"\n", name);
 	}
-	fprintf(stderr,"XY-Matrix keyboard \"%s\" created\n",name);
+	fprintf(stderr, "XY-Matrix keyboard \"%s\" created\n", name);
 }
-

@@ -17,20 +17,21 @@ typedef void InstructionProc(void);
 extern InstructionProc **iProcTab;
 
 typedef struct Instruction {
-        uint32_t mask;
-        uint32_t icode;
+	uint32_t mask;
+	uint32_t icode;
 	uint32_t arch;
-        char *name;
-        InstructionProc *proc;
+	char *name;
+	InstructionProc *proc;
 } Instruction;
 
 void IDecoder_New();
-Instruction * InstructionFind(uint32_t icode); 
+Instruction *InstructionFind(uint32_t icode);
 
 static inline InstructionProc *
-InstructionProcFind(uint32_t icode) {
-        int index=INSTR_INDEX(icode);
-	InstructionProc *proc=iProcTab[index];
+InstructionProcFind(uint32_t icode)
+{
+	int index = INSTR_INDEX(icode);
+	InstructionProc *proc = iProcTab[index];
 	return proc;
 }
 #endif

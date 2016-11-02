@@ -64,7 +64,7 @@ struct AT91Ecc {
 	uint32_t regPR;
 	uint32_t regNPR;
 	/* State machine eating incoming bytes */
-	uint32_t wordCnt; /* Number of bytes/words in ecc block */	
+	uint32_t wordCnt;	/* Number of bytes/words in ecc block */
 	uint16_t readnPar;
 	uint16_t readPar;
 
@@ -81,32 +81,32 @@ static uint8_t *precalc_bytepar = NULL;
 static void
 precalc_col_parity(void)
 {
-	int i,j;
-	uint8_t *tab8,*ntab8,*tabpar;
-	uint8_t P1,P2,P4;
-	uint8_t P1x,P2x,P4x;
-	if(precalc_col8_tab) {
+	int i, j;
+	uint8_t *tab8, *ntab8, *tabpar;
+	uint8_t P1, P2, P4;
+	uint8_t P1x, P2x, P4x;
+	if (precalc_col8_tab) {
 		return;
 	}
-	tab8 = precalc_col8_tab = sg_calloc(256); 
-	ntab8 = precalc_col8_ntab = sg_calloc(256); 
-	for(i = 0; i < 256; i++) {
-		P1 = BIT(i,7) ^ BIT(i,5) ^ BIT(i,3) ^ BIT(i,1);	
-		P2 = BIT(i,7) ^ BIT(i,6) ^ BIT(i,3) ^ BIT(i,2);
-		P4 = BIT(i,7) ^ BIT(i,6) ^ BIT(i,5) ^ BIT(i,4);
-		P1x = BIT(i,6) ^ BIT(i,4) ^ BIT(i,2) ^ BIT(i,0);
-		P2x = BIT(i,5) ^ BIT(i,4) ^ BIT(i,1) ^ BIT(i,0);
-		P4x = BIT(i,3) ^ BIT(i,2) ^ BIT(i,1) ^ BIT(i,0);
-		tab8[i] = P1  | (P2 << 1) | (P4 << 2);
+	tab8 = precalc_col8_tab = sg_calloc(256);
+	ntab8 = precalc_col8_ntab = sg_calloc(256);
+	for (i = 0; i < 256; i++) {
+		P1 = BIT(i, 7) ^ BIT(i, 5) ^ BIT(i, 3) ^ BIT(i, 1);
+		P2 = BIT(i, 7) ^ BIT(i, 6) ^ BIT(i, 3) ^ BIT(i, 2);
+		P4 = BIT(i, 7) ^ BIT(i, 6) ^ BIT(i, 5) ^ BIT(i, 4);
+		P1x = BIT(i, 6) ^ BIT(i, 4) ^ BIT(i, 2) ^ BIT(i, 0);
+		P2x = BIT(i, 5) ^ BIT(i, 4) ^ BIT(i, 1) ^ BIT(i, 0);
+		P4x = BIT(i, 3) ^ BIT(i, 2) ^ BIT(i, 1) ^ BIT(i, 0);
+		tab8[i] = P1 | (P2 << 1) | (P4 << 2);
 		ntab8[i] = (P1x << 0) | (P2x << 1) | (P4x << 2);
 	}
-	tabpar = precalc_bytepar = sg_calloc(256); 
-	for(i = 0; i < 256; i++) {
+	tabpar = precalc_bytepar = sg_calloc(256);
+	for (i = 0; i < 256; i++) {
 		uint8_t par = 0;
-		for(j = 0; j < 8; j++) {
-			par ^= BIT(i,j);
+		for (j = 0; j < 8; j++) {
+			par ^= BIT(i, j);
 		}
-		tabpar[i] = par;		
+		tabpar[i] = par;
 	}
 }
 
@@ -118,35 +118,35 @@ precalc_col_parity(void)
  ************************************************************
  */
 static void
-ecc_feed_byte(AT91Ecc *ecc,uint8_t value) 
+ecc_feed_byte(AT91Ecc * ecc, uint8_t value)
 {
-	uint32_t cnt = ecc->wordCnt;	
+	uint32_t cnt = ecc->wordCnt;
 	uint8_t par;
 	ecc->wordCnt++;
 	par = precalc_bytepar[value];
-	if(cnt >= ecc->pagesize) {
-		switch(cnt - ecc->pagesize) {
-			case 0:
-				ecc->readPar = value;
-				break;
-			case 1:
-				ecc->readPar |= ((uint16_t)value << 8);
-				break;
-			case 2:
-				ecc->readnPar = value;
-				break;
-			case 3:
-				ecc->readnPar |= ((uint16_t)value << 8);
-				break;
-			default:
-				//fprintf(stderr,"To much data\n");
-				break;
+	if (cnt >= ecc->pagesize) {
+		switch (cnt - ecc->pagesize) {
+		    case 0:
+			    ecc->readPar = value;
+			    break;
+		    case 1:
+			    ecc->readPar |= ((uint16_t) value << 8);
+			    break;
+		    case 2:
+			    ecc->readnPar = value;
+			    break;
+		    case 3:
+			    ecc->readnPar |= ((uint16_t) value << 8);
+			    break;
+		    default:
+			    //fprintf(stderr,"To much data\n");
+			    break;
 		}
 		return;
 	}
 	ecc->calcPar ^= precalc_col8_tab[value];
 	ecc->calcnPar ^= precalc_col8_ntab[value];
-	if(par) {
+	if (par) {
 		ecc->calcPar ^= (cnt & 0xfff) << 4;
 		ecc->calcnPar ^= ((cnt ^ 0xfff) & 0xfff) << 4;
 	}
@@ -161,27 +161,27 @@ ecc_feed_byte(AT91Ecc *ecc,uint8_t value)
  ****************************************************************************************
  */
 static void
-ecc_feed_word(AT91Ecc *ecc,uint16_t value) 
+ecc_feed_word(AT91Ecc * ecc, uint16_t value)
 {
-	uint32_t cnt = ecc->wordCnt;	
+	uint32_t cnt = ecc->wordCnt;
 	uint8_t par;
 	ecc->wordCnt++;
 	par = precalc_bytepar[value & 0xff] ^ precalc_bytepar[value >> 8];
-	if(cnt >= ecc->pagesize) {
-		switch(cnt - ecc->pagesize) {
-			case 0:
-				ecc->readPar = value;
-				break;
-			case 1:
-				ecc->readnPar = value;
-				break;
-			default:
-				//fprintf(stderr,"To much data\n");
-				break;
+	if (cnt >= ecc->pagesize) {
+		switch (cnt - ecc->pagesize) {
+		    case 0:
+			    ecc->readPar = value;
+			    break;
+		    case 1:
+			    ecc->readnPar = value;
+			    break;
+		    default:
+			    //fprintf(stderr,"To much data\n");
+			    break;
 		}
 		return;
 	}
-	if(par) {
+	if (par) {
 		ecc->calcPar ^= (cnt & 0xfff) << 4;
 		ecc->calcnPar ^= ((cnt ^ 0xfff) & 0xfff) << 4;
 	}
@@ -189,8 +189,8 @@ ecc_feed_word(AT91Ecc *ecc,uint16_t value)
 	ecc->calcPar ^= precalc_col8_tab[(value >> 8) & 0xff];
 	ecc->calcnPar ^= precalc_col8_ntab[value & 0xff];
 	ecc->calcnPar ^= precalc_col8_ntab[(value >> 8) & 0xff];
-	ecc->calcPar ^=  (precalc_bytepar[value >> 8] << 3);
-	ecc->calcnPar ^=  (precalc_bytepar[value & 0xff] << 3);
+	ecc->calcPar ^= (precalc_bytepar[value >> 8] << 3);
+	ecc->calcnPar ^= (precalc_bytepar[value & 0xff] << 3);
 }
 
 /**
@@ -199,24 +199,25 @@ ecc_feed_word(AT91Ecc *ecc,uint16_t value)
  ***************************************************************************
  */
 static inline void
-reset_parity(AT91Ecc *ecc) {
+reset_parity(AT91Ecc * ecc)
+{
 	ecc->readPar = ecc->readnPar = 0;
 	ecc->calcPar = ecc->calcnPar = 0;
 	ecc->wordCnt = 0;
 }
 
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"%s is writeonly\n",__func__);
-        return 0;
+	fprintf(stderr, "%s is writeonly\n", __func__);
+	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ecc *ecc = clientData;
-	if(value & 1) {
+	if (value & 1) {
 		reset_parity(ecc);
 	}
 }
@@ -227,14 +228,14 @@ cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************
  */
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ecc *ecc = clientData;
-        return ecc->regMR;
+	return ecc->regMR;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ecc *ecc = clientData;
 	ecc->regMR = value & 3;
@@ -250,109 +251,108 @@ mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ecc *ecc = clientData;
 	uint32_t ones;
 	uint32_t syndrome;
 	uint32_t result;
-	syndrome = (ecc->readPar ^ ecc->calcPar) | 
-		((ecc->readnPar ^ ecc->calcnPar) << 16);
+	syndrome = (ecc->readPar ^ ecc->calcPar) | ((ecc->readnPar ^ ecc->calcnPar) << 16);
 	ones = SGLib_OnecountU32(syndrome);
-        //fprintf(stderr,"%s is not implemented par %04x npar %04x cpar %04x cnpar %04x, wordCnt %u\n",__func__,ecc->readPar,ecc->readnPar,ecc->calcPar,ecc->calcnPar,ecc->wordCnt);
-	if(ones == 0) {
+	//fprintf(stderr,"%s is not implemented par %04x npar %04x cpar %04x cnpar %04x, wordCnt %u\n",__func__,ecc->readPar,ecc->readnPar,ecc->calcPar,ecc->calcnPar,ecc->wordCnt);
+	if (ones == 0) {
 		result = 0;
-	} else if(ones == 1) {
+	} else if (ones == 1) {
 		result = SR_ECCERR;
-	} else if(ones == (12 + (ecc->regMR & 3))) {
+	} else if (ones == (12 + (ecc->regMR & 3))) {
 		result = SR_RECERR;
 	} else {
 		result = SR_MULERR;
 	}
-        return result;
+	return result;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91ECC: Status register is readonly\n");
+	fprintf(stderr, "AT91ECC: Status register is readonly\n");
 }
 
 static uint32_t
-pr_read(void *clientData,uint32_t address,int rqlen)
+pr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ecc *ecc = clientData;
 	return ecc->calcPar ^ ecc->readPar;
 }
 
 static void
-pr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91ECC parity is not writable\n");
+	fprintf(stderr, "AT91ECC parity is not writable\n");
 }
 
 static uint32_t
-npr_read(void *clientData,uint32_t address,int rqlen)
+npr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ecc *ecc = clientData;
 	return ecc->calcnPar ^ ecc->readnPar;
 }
 
 static void
-npr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+npr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91ECC nparity is not writable\n");
+	fprintf(stderr, "AT91ECC nparity is not writable\n");
 }
 
 void
-AT91Ecc_Feed(BusDevice *bd,uint16_t data,int width) {
-	AT91Ecc *ecc = container_of(bd,AT91Ecc,bdev);
-	if(width == 1) {
-		ecc_feed_byte(ecc,data);
-	} else if(width == 2) {
-		ecc_feed_word(ecc,data);
+AT91Ecc_Feed(BusDevice * bd, uint16_t data, int width)
+{
+	AT91Ecc *ecc = container_of(bd, AT91Ecc, bdev);
+	if (width == 1) {
+		ecc_feed_byte(ecc, data);
+	} else if (width == 2) {
+		ecc_feed_word(ecc, data);
 	}
 }
 
-void 
-AT91Ecc_ResetEC(BusDevice *bd)
+void
+AT91Ecc_ResetEC(BusDevice * bd)
 {
-	AT91Ecc *ecc = container_of(bd,AT91Ecc,bdev);
+	AT91Ecc *ecc = container_of(bd, AT91Ecc, bdev);
 	reset_parity(ecc);
 }
 
 static void
-AT91Ecc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Ecc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91Ecc *ecc = (AT91Ecc*) owner;
-        IOH_New32(REG_ECC_CR(base),cr_read,cr_write,ecc);
-        IOH_New32(REG_ECC_MR(base),mr_read,mr_write,ecc);
-        IOH_New32(REG_ECC_SR(base),sr_read,sr_write,ecc);
-        IOH_New32(REG_ECC_PR(base),pr_read,pr_write,ecc);
-        IOH_New32(REG_ECC_NPR(base),npr_read,npr_write,ecc);
+	AT91Ecc *ecc = (AT91Ecc *) owner;
+	IOH_New32(REG_ECC_CR(base), cr_read, cr_write, ecc);
+	IOH_New32(REG_ECC_MR(base), mr_read, mr_write, ecc);
+	IOH_New32(REG_ECC_SR(base), sr_read, sr_write, ecc);
+	IOH_New32(REG_ECC_PR(base), pr_read, pr_write, ecc);
+	IOH_New32(REG_ECC_NPR(base), npr_read, npr_write, ecc);
 }
 
 static void
-AT91Ecc_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Ecc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete32(REG_ECC_CR(base));
-        IOH_Delete32(REG_ECC_MR(base));
-        IOH_Delete32(REG_ECC_SR(base));
-        IOH_Delete32(REG_ECC_PR(base));
-        IOH_Delete32(REG_ECC_NPR(base));
+	IOH_Delete32(REG_ECC_CR(base));
+	IOH_Delete32(REG_ECC_MR(base));
+	IOH_Delete32(REG_ECC_SR(base));
+	IOH_Delete32(REG_ECC_PR(base));
+	IOH_Delete32(REG_ECC_NPR(base));
 }
 
 BusDevice *
 AT91Ecc_New(const char *name)
 {
-        AT91Ecc *ecc = sg_new(AT91Ecc);
+	AT91Ecc *ecc = sg_new(AT91Ecc);
 	ecc->name = strdup(name);
-        ecc->bdev.first_mapping = NULL;
-        ecc->bdev.Map = AT91Ecc_Map;
-        ecc->bdev.UnMap = AT91Ecc_UnMap;
-        ecc->bdev.owner = ecc;
-        ecc->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	ecc->bdev.first_mapping = NULL;
+	ecc->bdev.Map = AT91Ecc_Map;
+	ecc->bdev.UnMap = AT91Ecc_UnMap;
+	ecc->bdev.owner = ecc;
+	ecc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	precalc_col_parity();
 	return &ecc->bdev;
 }
-

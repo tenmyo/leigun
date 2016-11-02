@@ -39,7 +39,7 @@
 #define		SSR_HFRES 	(1 << 0)
 #define REG_UD_SCR(base)	((base) + 0x20)
 #define		SCR_DTZIEN 	(1 << 14)
-#define		SCR_DIEN 	(1 << 12) 
+#define		SCR_DIEN 	(1 << 12)
 #define		SCR_VBOFE	(1 << 11)
 #define		SCR_VBOE 	(1 << 10)
 #define		SCR_RWDE	(1 << 9)
@@ -47,13 +47,13 @@
 #define		SCR_SPDCEN	(1 << 7)
 #define		SCR_SPDEN	(1 << 6)
 #define		SCR_RRDE	(1 << 5)
-#define		SCR_IPS		(1 << 4) 
+#define		SCR_IPS		(1 << 4)
 #define		SCR_SPDC	(1 << 3)
 #define		SCR_HSSPE 	(1 << 1)
 #define		SCR_HRESE 	(1 << 0)
 #define REG_UD_EP0SR(base)	((base) + 0x24)
 #define		EP0SR_LWO 	(1 << 6)
-#define		EP0SR_SHT 	(1 << 4) 
+#define		EP0SR_SHT 	(1 << 4)
 #define		EP0SR_TST 	(1 << 1)
 #define		EP0SR_RSR 	(1 << 0)
 #define REG_UD_EP0CR(base)	((base) + 0x28)
@@ -70,7 +70,7 @@
 #define REG_UD_PCR(base) 	((base) + 0xA4)
 #define		PCR_URSTC 	(1 << 7)
 #define		PCR_SIDC 	(1 << 6)
-#define		PCR_OPMC_MSK	(3 << 4) 
+#define		PCR_OPMC_MSK	(3 << 4)
 #define		PCR_TMSC 	(1 << 3)
 #define		PCR_XCRC 	(1 << 2)
 #define		PCR_SUSPC 	(1 << 1)
@@ -91,9 +91,9 @@
 #define 	ESR_RPS 	(1 << 0)
 #define REG_UD_ECR(base) 	((base) + 0x30)
 #define		ECR_SPE 	(1 << 15)
-#define		ECR_INHLD 	(1 << 12) 
+#define		ECR_INHLD 	(1 << 12)
 #define		ECR_OUTHD 	(1 << 11)
-#define		ECR_TNPMF_MSK 	(3 << 9) 
+#define		ECR_TNPMF_MSK 	(3 << 9)
 #define		ECR_IME 	(1 << 8)
 #define		ECR_DUEN 	(1 << 7)
 #define		ECR_FLUSH 	(1 << 6)
@@ -121,11 +121,11 @@
 #define		UPCR0_RCD_MSK	(3 << 9)
 #define		UPCR0_SDI	(1 << 8)
 #define		UPCR0_F0	(1 << 7)
-#define		UPCR0_VBDS	(1 << 6)	
+#define		UPCR0_VBDS	(1 << 6)
 #define		UPCR0_DMPD	(1 << 5)
 #define		UPCR0_DPPD	(1 << 4)
 #define		UPCR0_TBSH	(1 << 3)
-#define		UPCR0_TBS	(1 << 2)	
+#define		UPCR0_TBS	(1 << 2)
 #define		UPCR0_VBD	(1 << 1)
 #define		UPCR0_LBE	(1 << 0)
 #define REG_UPCR1(base) 	((base) + 0xCC)
@@ -180,14 +180,15 @@ typedef struct TccUsbDev {
 } TccUsbDev;
 
 static void
-update_interrupt(TccUsbDev *ud) 
+update_interrupt(TccUsbDev * ud)
 {
-	if(ud->regEir & ud->regEier) {
-		SigNode_Set(ud->sigIrq,SIG_HIGH);
+	if (ud->regEir & ud->regEier) {
+		SigNode_Set(ud->sigIrq, SIG_HIGH);
 	} else {
-		SigNode_Set(ud->sigIrq,SIG_LOW);
+		SigNode_Set(ud->sigIrq, SIG_LOW);
 	}
 }
+
 /**
  *****************************************************************************************
  * Index register:
@@ -195,17 +196,17 @@ update_interrupt(TccUsbDev *ud)
  *****************************************************************************************
  */
 static uint32_t
-ir_read(void *clientData,uint32_t address,int rqlen)
+ir_read(void *clientData, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        return ud->regIr;
+	TccUsbDev *ud = clientData;
+	return ud->regIr;
 }
 
 static void
-ir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        ud->regIr = value & 3;
+	TccUsbDev *ud = clientData;
+	ud->regIr = value & 3;
 }
 
 /**
@@ -215,17 +216,17 @@ ir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************************************
  */
 static uint32_t
-eir_read(void *clientData,uint32_t address,int rqlen)
+eir_read(void *clientData, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        return ud->regEir;
+	TccUsbDev *ud = clientData;
+	return ud->regEir;
 }
 
 static void
-eir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        ud->regEir &= ~value;
+	TccUsbDev *ud = clientData;
+	ud->regEir &= ~value;
 	update_interrupt(ud);
 }
 
@@ -235,17 +236,17 @@ eir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************************************
  */
 static uint32_t
-eier_read(void *clientData,uint32_t address,int rqlen)
+eier_read(void *clientData, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        return ud->regEier;
+	TccUsbDev *ud = clientData;
+	return ud->regEier;
 }
 
 static void
-eier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+eier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        ud->regEier = value & 0xf;
+	TccUsbDev *ud = clientData;
+	ud->regEier = value & 0xf;
 }
 
 /**
@@ -254,17 +255,17 @@ eier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************************************
  */
 static uint32_t
-far_read(void *clientData,uint32_t address,int rqlen)
+far_read(void *clientData, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        return ud->regFar;
+	TccUsbDev *ud = clientData;
+	return ud->regFar;
 }
 
 static void
-far_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+far_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        ud->regFar = value & 0x7f;
+	TccUsbDev *ud = clientData;
+	ud->regFar = value & 0x7f;
 }
 
 /**
@@ -276,16 +277,16 @@ far_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************************************
  */
 static uint32_t
-fnr_read(void *clientData,uint32_t address,int rqlen)
+fnr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-fnr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fnr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -296,17 +297,17 @@ fnr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************************************
  */
 static uint32_t
-edr_read(void *clientData,uint32_t address,int rqlen)
+edr_read(void *clientData, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        return ud->regEdr;
+	TccUsbDev *ud = clientData;
+	return ud->regEdr;
 }
 
 static void
-edr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+edr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	TccUsbDev *ud = clientData;	
-        ud->regEdr = value;
+	TccUsbDev *ud = clientData;
+	ud->regEdr = value;
 }
 
 /*
@@ -323,16 +324,16 @@ edr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************************
  */
 static uint32_t
-rt_read(void *clientData,uint32_t address,int rqlen)
+rt_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-rt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rt_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -357,16 +358,16 @@ rt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************************
  */
 static uint32_t
-ssr_read(void *clientData,uint32_t address,int rqlen)
+ssr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ssr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ssr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /*
@@ -388,16 +389,16 @@ ssr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************
  */
 static uint32_t
-scr_read(void *clientData,uint32_t address,int rqlen)
+scr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-scr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+scr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -409,16 +410,16 @@ scr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************************
  */
 static uint32_t
-ep0sr_read(void *clientData,uint32_t address,int rqlen)
+ep0sr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ep0sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ep0sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -430,16 +431,16 @@ ep0sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************************************
  */
 static uint32_t
-ep0cr_read(void *clientData,uint32_t address,int rqlen)
+ep0cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ep0cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ep0cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -449,16 +450,16 @@ ep0cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ************************************************************************************
  */
 static uint32_t
-scr2_read(void *clientData,uint32_t address,int rqlen)
+scr2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-scr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+scr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -468,56 +469,57 @@ scr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************************************
  */
 static uint32_t
-ep0buf_read(void *clientData,uint32_t address,int rqlen)
+ep0buf_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ep0buf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ep0buf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-ep1buf_read(void *clientData,uint32_t address,int rqlen)
+ep1buf_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ep1buf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ep1buf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-ep2buf_read(void *clientData,uint32_t address,int rqlen)
+ep2buf_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ep2buf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ep2buf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-ep3buf_read(void *clientData,uint32_t address,int rqlen)
+ep3buf_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ep3buf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ep3buf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
+
 /**
  ***************************************************************************
  * Phy link interface control register 
@@ -525,16 +527,16 @@ ep3buf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-plicr_read(void *clientData,uint32_t address,int rqlen)
+plicr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-plicr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+plicr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -550,16 +552,16 @@ plicr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-pcr_read(void *clientData,uint32_t address,int rqlen)
+pcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-pcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -581,16 +583,16 @@ pcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************************
  */
 static uint32_t
-esr_read(void *clientData,uint32_t address,int rqlen)
+esr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-esr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+esr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /*
@@ -611,16 +613,16 @@ esr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************************************
  */
 static uint32_t
-ecr_read(void *clientData,uint32_t address,int rqlen)
+ecr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ecr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ecr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -629,16 +631,16 @@ ecr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ************************************************************************************
  */
 static uint32_t
-brcr_read(void *clientData,uint32_t address,int rqlen)
+brcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-brcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+brcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -647,16 +649,16 @@ brcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************************************
  */
 static uint32_t
-bwcr_read(void *clientData,uint32_t address,int rqlen)
+bwcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-bwcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bwcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 /**
@@ -665,150 +667,150 @@ bwcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************************
  */
 static uint32_t
-mpr_read(void *clientData,uint32_t address,int rqlen)
+mpr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-mpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-dcr_read(void *clientData,uint32_t address,int rqlen)
+dcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-dtcr_read(void *clientData,uint32_t address,int rqlen)
+dtcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dtcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dtcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-dfcr_read(void *clientData,uint32_t address,int rqlen)
+dfcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dfcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-dttcr1_read(void *clientData,uint32_t address,int rqlen)
+dttcr1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dttcr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dttcr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-dttcr2_read(void *clientData,uint32_t address,int rqlen)
+dttcr2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dttcr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dttcr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-esr2_read(void *clientData,uint32_t address,int rqlen)
+esr2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-esr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+esr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-upcr0_read(void *clientData,uint32_t address,int rqlen)
+upcr0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-upcr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+upcr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-upcr1_read(void *clientData,uint32_t address,int rqlen)
+upcr1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-upcr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+upcr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-upcr2_read(void *clientData,uint32_t address,int rqlen)
+upcr2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-upcr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+upcr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static uint32_t
-upcr3_read(void *clientData,uint32_t address,int rqlen)
+upcr3_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
+	return 0;
 }
 
 static void
-upcr3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+upcr3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K USBDEV: %s: Register not implemented\n",__func__);
+	fprintf(stderr, "TCC8K USBDEV: %s: Register not implemented\n", __func__);
 }
 
 static void
-TccUsbdev_UnMap(void *owner,uint32_t base,uint32_t mask)
+TccUsbdev_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(REG_UD_IR(base));
 	IOH_Delete32(REG_UD_EIR(base));
@@ -847,60 +849,59 @@ TccUsbdev_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-TccUsbdev_Map(void *owner,uint32_t base,uint32_t mask,uint32_t _flags)
+TccUsbdev_Map(void *owner, uint32_t base, uint32_t mask, uint32_t _flags)
 {
 	TccUsbDev *ud = owner;
-	IOH_New32(REG_UD_IR(base),ir_read,ir_write,ud);
-	IOH_New32(REG_UD_EIR(base),eir_read,eir_write,ud);
-	IOH_New32(REG_UD_EIER(base),eier_read,eier_write,ud);
-	IOH_New32(REG_UD_FAR(base),far_read,far_write,ud);
-	IOH_New32(REG_UD_FNR(base),fnr_read,fnr_write,ud);
-	IOH_New32(REG_UD_EDR(base),edr_read,edr_write,ud);
-	IOH_New32(REG_UD_RT(base),rt_read,rt_write,ud);
-	IOH_New32(REG_UD_SSR(base),ssr_read,ssr_write,ud);
-	IOH_New32(REG_UD_SCR(base),scr_read,scr_write,ud);
-	IOH_New32(REG_UD_EP0SR(base),ep0sr_read,ep0sr_write,ud);
-	IOH_New32(REG_UD_EP0CR(base),ep0cr_read,ep0cr_write,ud);
-	IOH_New32(REG_UD_SCR2(base),scr2_read,scr2_write,ud);
-	IOH_New32(REG_UD_EP0BUF(base),ep0buf_read,ep0buf_write,ud);
-	IOH_New32(REG_UD_EP1BUF(base),ep1buf_read,ep1buf_write,ud);
-	IOH_New32(REG_UD_EP2BUF(base),ep2buf_read,ep2buf_write,ud);
-	IOH_New32(REG_UD_EP3BUF(base),ep3buf_read,ep3buf_write,ud);
-	IOH_New32(REG_UD_PLICR(base),plicr_read,plicr_write,ud);
-	IOH_New32(REG_UD_PCR(base),pcr_read,pcr_write,ud);
-	IOH_New32(REG_UD_ESR(base),esr_read,esr_write,ud);
-	IOH_New32(REG_UD_ECR(base),ecr_read,ecr_write,ud);
-	IOH_New32(REG_UD_BRCR(base),brcr_read,brcr_write,ud);
-	IOH_New32(REG_UD_BWCR(base),bwcr_read,bwcr_write,ud);
-	IOH_New32(REG_UD_MPR(base),mpr_read,mpr_write,ud);
-	IOH_New32(REG_UD_DCR(base),dcr_read,dcr_write,ud);
-	IOH_New32(REG_UD_DTCR(base),dtcr_read,dtcr_write,ud);
-	IOH_New32(REG_UD_DFCR(base),dfcr_read,dfcr_write,ud);
-	IOH_New32(REG_UD_DTTCR1(base),dttcr1_read,dttcr1_write,ud);
-	IOH_New32(REG_UD_DTTCR2(base),dttcr2_read,dttcr2_write,ud);
-	IOH_New32(REG_UD_ESR2(base),esr2_read,esr2_write,ud);
+	IOH_New32(REG_UD_IR(base), ir_read, ir_write, ud);
+	IOH_New32(REG_UD_EIR(base), eir_read, eir_write, ud);
+	IOH_New32(REG_UD_EIER(base), eier_read, eier_write, ud);
+	IOH_New32(REG_UD_FAR(base), far_read, far_write, ud);
+	IOH_New32(REG_UD_FNR(base), fnr_read, fnr_write, ud);
+	IOH_New32(REG_UD_EDR(base), edr_read, edr_write, ud);
+	IOH_New32(REG_UD_RT(base), rt_read, rt_write, ud);
+	IOH_New32(REG_UD_SSR(base), ssr_read, ssr_write, ud);
+	IOH_New32(REG_UD_SCR(base), scr_read, scr_write, ud);
+	IOH_New32(REG_UD_EP0SR(base), ep0sr_read, ep0sr_write, ud);
+	IOH_New32(REG_UD_EP0CR(base), ep0cr_read, ep0cr_write, ud);
+	IOH_New32(REG_UD_SCR2(base), scr2_read, scr2_write, ud);
+	IOH_New32(REG_UD_EP0BUF(base), ep0buf_read, ep0buf_write, ud);
+	IOH_New32(REG_UD_EP1BUF(base), ep1buf_read, ep1buf_write, ud);
+	IOH_New32(REG_UD_EP2BUF(base), ep2buf_read, ep2buf_write, ud);
+	IOH_New32(REG_UD_EP3BUF(base), ep3buf_read, ep3buf_write, ud);
+	IOH_New32(REG_UD_PLICR(base), plicr_read, plicr_write, ud);
+	IOH_New32(REG_UD_PCR(base), pcr_read, pcr_write, ud);
+	IOH_New32(REG_UD_ESR(base), esr_read, esr_write, ud);
+	IOH_New32(REG_UD_ECR(base), ecr_read, ecr_write, ud);
+	IOH_New32(REG_UD_BRCR(base), brcr_read, brcr_write, ud);
+	IOH_New32(REG_UD_BWCR(base), bwcr_read, bwcr_write, ud);
+	IOH_New32(REG_UD_MPR(base), mpr_read, mpr_write, ud);
+	IOH_New32(REG_UD_DCR(base), dcr_read, dcr_write, ud);
+	IOH_New32(REG_UD_DTCR(base), dtcr_read, dtcr_write, ud);
+	IOH_New32(REG_UD_DFCR(base), dfcr_read, dfcr_write, ud);
+	IOH_New32(REG_UD_DTTCR1(base), dttcr1_read, dttcr1_write, ud);
+	IOH_New32(REG_UD_DTTCR2(base), dttcr2_read, dttcr2_write, ud);
+	IOH_New32(REG_UD_ESR2(base), esr2_read, esr2_write, ud);
 
-	IOH_New32(REG_UPCR0(base),upcr0_read,upcr0_write,ud);
-	IOH_New32(REG_UPCR1(base),upcr1_read,upcr1_write,ud);
-	IOH_New32(REG_UPCR2(base),upcr2_read,upcr2_write,ud);
-	IOH_New32(REG_UPCR3(base),upcr3_read,upcr3_write,ud);
+	IOH_New32(REG_UPCR0(base), upcr0_read, upcr0_write, ud);
+	IOH_New32(REG_UPCR1(base), upcr1_read, upcr1_write, ud);
+	IOH_New32(REG_UPCR2(base), upcr2_read, upcr2_write, ud);
+	IOH_New32(REG_UPCR3(base), upcr3_read, upcr3_write, ud);
 }
 
 BusDevice *
 TCC8K_UdcNew(const char *name)
 {
 	TccUsbDev *ud = sg_new(TccUsbDev);
-        ud->bdev.first_mapping = NULL;
-        ud->bdev.Map = TccUsbdev_Map;
-        ud->bdev.UnMap = TccUsbdev_UnMap;
-        ud->bdev.owner = ud;
-        ud->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
-        ud->sigIrq = SigNode_New("%s.irq",name);
-        if(!ud->sigIrq) {
-                fprintf(stderr,"Can not create Interrupt line for USB device\n");
-                exit(1);
-        }
-        return &ud->bdev;
+	ud->bdev.first_mapping = NULL;
+	ud->bdev.Map = TccUsbdev_Map;
+	ud->bdev.UnMap = TccUsbdev_UnMap;
+	ud->bdev.owner = ud;
+	ud->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	ud->sigIrq = SigNode_New("%s.irq", name);
+	if (!ud->sigIrq) {
+		fprintf(stderr, "Can not create Interrupt line for USB device\n");
+		exit(1);
+	}
+	return &ud->bdev;
 
 }
-

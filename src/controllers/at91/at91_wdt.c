@@ -75,7 +75,7 @@ typedef struct AT91Wdt {
 } AT91Wdt;
 
 static void
-actualize_counter(AT91Wdt *wdt)
+actualize_counter(AT91Wdt * wdt)
 {
 	CycleCounter_t now;
 	FractionU64_t frac;
@@ -84,18 +84,18 @@ actualize_counter(AT91Wdt *wdt)
 	CycleCounter_t cycles = now - wdt->lastActualized;
 	wdt->accCycles += cycles;
 	frac = Clock_MasterRatio(wdt->clkSlckIn);
-	if(!frac.nom || !frac.denom) {
+	if (!frac.nom || !frac.denom) {
 		return;
 	}
-	wdt_cycles = wdt->accCycles / (frac.denom / frac.nom); 
+	wdt_cycles = wdt->accCycles / (frac.denom / frac.nom);
 	wdt->accCycles = wdt->accCycles - wdt_cycles * (frac.denom / frac.nom);
-	if(wdt_cycles >= wdt->wdtCounter) {
-		if(wdt->wdtCounter != 0) {
-			wdt->wdtCounter = 0;	
+	if (wdt_cycles >= wdt->wdtCounter) {
+		if (wdt->wdtCounter != 0) {
+			wdt->wdtCounter = 0;
 		}
 	} else {
 		wdt->wdtCounter -= wdt_cycles;
-	}	
+	}
 }
 
 /**
@@ -105,50 +105,50 @@ actualize_counter(AT91Wdt *wdt)
  ***********************************************************************
  */
 static void
-update_timeout(AT91Wdt *wdt)
+update_timeout(AT91Wdt * wdt)
 {
 	uint64_t wdt_cycles;
-        CycleCounter_t cycles;
-        FractionU64_t frac;
-        frac = Clock_MasterRatio(wdt->clkSlckIn);
-        if(!frac.nom || !frac.denom) {
-                fprintf(stderr,"Watchdog has No clock\n");
-                return;
-        }
-        if(wdt->wdtCounter == 0) {
-                return;
-        }
-        wdt_cycles = wdt->wdtCounter;
-        cycles = wdt_cycles * (frac.denom / frac.nom);
-        cycles -= wdt->accCycles;
-        //fprintf(stderr,"Watchdog timeout in %llu, cycles %llu\n",wdt_cycles,cycles);
-        CycleTimer_Mod(&wdt->wdtTimer,cycles);
+	CycleCounter_t cycles;
+	FractionU64_t frac;
+	frac = Clock_MasterRatio(wdt->clkSlckIn);
+	if (!frac.nom || !frac.denom) {
+		fprintf(stderr, "Watchdog has No clock\n");
+		return;
+	}
+	if (wdt->wdtCounter == 0) {
+		return;
+	}
+	wdt_cycles = wdt->wdtCounter;
+	cycles = wdt_cycles * (frac.denom / frac.nom);
+	cycles -= wdt->accCycles;
+	//fprintf(stderr,"Watchdog timeout in %llu, cycles %llu\n",wdt_cycles,cycles);
+	CycleTimer_Mod(&wdt->wdtTimer, cycles);
 }
 
 static void
-update_interrupt(AT91Wdt *wdt)
+update_interrupt(AT91Wdt * wdt)
 {
-	if(wdt->regMR & MR_WDFIEN && (wdt->regSR & (SR_WDERR | SR_WDUNF))) {
-		SigNode_Set(wdt->sigIrq,SIG_HIGH);
+	if (wdt->regMR & MR_WDFIEN && (wdt->regSR & (SR_WDERR | SR_WDUNF))) {
+		SigNode_Set(wdt->sigIrq, SIG_HIGH);
 	} else {
-		SigNode_Set(wdt->sigIrq,SIG_LOW);
+		SigNode_Set(wdt->sigIrq, SIG_LOW);
 	}
 }
 
 static void
 wdt_timeout(void *eventData)
 {
-        AT91Wdt *wdt = eventData;
-	if(wdt->regMR & MR_WDDIS) {
+	AT91Wdt *wdt = eventData;
+	if (wdt->regMR & MR_WDDIS) {
 		return;
 	}
-        actualize_counter(wdt);
+	actualize_counter(wdt);
 	wdt->regSR |= SR_WDUNF;
 	update_interrupt(wdt);
-	if(wdt->regMR & MR_WDRSTEN) {
+	if (wdt->regMR & MR_WDRSTEN) {
 		fflush(stderr);
 		fflush(stdout);
-		fprintf(stderr,"\nWatchdog timeout, Reset\n");
+		fprintf(stderr, "\nWatchdog timeout, Reset\n");
 		fflush(stderr);
 		exit(0);
 	}
@@ -161,25 +161,25 @@ wdt_timeout(void *eventData)
  ******************************************************************************
  */
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"WDT: %s is a writeonly register\n",__func__);
+	fprintf(stderr, "WDT: %s is a writeonly register\n", __func__);
 	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Wdt *wdt = clientData;
 	uint32_t wdd;
-	if((value >> 24) != 0xa5) {
-		fprintf(stderr,"Wrong key writing WDG control register\n");
+	if ((value >> 24) != 0xa5) {
+		fprintf(stderr, "Wrong key writing WDG control register\n");
 		return;
 	}
-	actualize_counter(wdt);	
-	wdd = (wdt->regMR >> 16)  & 0xfff;
-	if(value & 1) {
-		if((wdt->wdtCounter <= wdd)) {
+	actualize_counter(wdt);
+	wdd = (wdt->regMR >> 16) & 0xfff;
+	if (value & 1) {
+		if ((wdt->wdtCounter <= wdd)) {
 			wdt->wdtCounter = wdt->regMR & 0xfff;
 			update_timeout(wdt);
 		} else {
@@ -196,18 +196,18 @@ cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************************
  */
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Wdt *wdt = clientData;
 	return wdt->regMR;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Wdt *wdt = clientData;
-	if(wdt->mrWrittenOnce) {
-		fprintf(stderr,"Watchdog mode register written more than once\n");
+	if (wdt->mrWrittenOnce) {
+		fprintf(stderr, "Watchdog mode register written more than once\n");
 		return;
 	}
 	wdt->mrWrittenOnce = true;
@@ -217,7 +217,7 @@ mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Wdt *wdt = clientData;
 	actualize_counter(wdt);
@@ -225,22 +225,22 @@ sr_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"WDT: %s is readonly\n",__func__);
+	fprintf(stderr, "WDT: %s is readonly\n", __func__);
 }
 
 static void
-AT91Wdt_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Wdt_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	AT91Wdt *wdt = owner;
-	IOH_New32(WDT_CR(base),cr_read,cr_write,wdt);
-	IOH_New32(WDT_MR(base),mr_read,mr_write,wdt);
-	IOH_New32(WDT_SR(base),sr_read,sr_write,wdt);
+	IOH_New32(WDT_CR(base), cr_read, cr_write, wdt);
+	IOH_New32(WDT_MR(base), mr_read, mr_write, wdt);
+	IOH_New32(WDT_SR(base), sr_read, sr_write, wdt);
 }
 
 static void
-AT91Wdt_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Wdt_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(WDT_CR(base));
 	IOH_Delete32(WDT_MR(base));
@@ -256,12 +256,11 @@ AT91Wdt_New(const char *name)
 	wdt->bdev.Map = AT91Wdt_Map;
 	wdt->bdev.UnMap = AT91Wdt_UnMap;
 	wdt->bdev.owner = wdt;
-	wdt->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	wdt->clkSlckIn = Clock_New("%s.clk",name);
+	wdt->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	wdt->clkSlckIn = Clock_New("%s.clk", name);
 	wdt->mrWrittenOnce = false;
-	wdt->sigIrq = SigNode_New("%s.irq",name);
-	CycleTimer_Init(&wdt->wdtTimer,wdt_timeout,wdt);
-	fprintf(stderr,"AT91 Watchdog timer \"%s\" created\n",name);
+	wdt->sigIrq = SigNode_New("%s.irq", name);
+	CycleTimer_Init(&wdt->wdtTimer, wdt_timeout, wdt);
+	fprintf(stderr, "AT91 Watchdog timer \"%s\" created\n", name);
 	return &wdt->bdev;
 }
-

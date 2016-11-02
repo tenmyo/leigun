@@ -1,9 +1,9 @@
 #include <bus.h>
-BusDevice * NS9xxx_BBusNew(char *mode,char *devname);
-void BBus_PostIRQ(int subint); 
-void BBus_UnPostIRQ(int subint); 
-void BBus_PostDmaIRQ(int subint); 
-void BBus_UnPostDmaIRQ(int subint); 
+BusDevice *NS9xxx_BBusNew(char *mode, char *devname);
+void BBus_PostIRQ(int subint);
+void BBus_UnPostIRQ(int subint);
+void BBus_PostDmaIRQ(int subint);
+void BBus_UnPostDmaIRQ(int subint);
 
 #define IRQ_BBUS_AGGREGATE      2
 
@@ -17,17 +17,17 @@ void BBus_UnPostDmaIRQ(int subint);
 #define BB_GPIOCFG_5    __REG(0x90600020)
 #define BB_GPIOCFG_6    __REG(0x90600024)
 #define BB_GPIOCFG_7    __REG(0x90600028)
-#define BB_GPIOCFG_8    __REG(0x90600100) /* Only NS9360 */
-#define BB_GPIOCFG_9    __REG(0x90600104) /* Only NS9360 */
-#define BB_GPIOCFG_10   __REG(0x90600108) /* Only NS9360 */
+#define BB_GPIOCFG_8    __REG(0x90600100)	/* Only NS9360 */
+#define BB_GPIOCFG_9    __REG(0x90600104)	/* Only NS9360 */
+#define BB_GPIOCFG_10   __REG(0x90600108)	/* Only NS9360 */
 
 #define BB_GPIOCTRL_1   __REG(0x90600030)
 #define BB_GPIOCTRL_2   __REG(0x90600034)
-#define BB_GPIOCTRL_3   __REG(0x90600120) /* Only NS9360 */
+#define BB_GPIOCTRL_3   __REG(0x90600120)	/* Only NS9360 */
 
 #define BB_GPIOSTAT_1   __REG(0x90600040)
 #define BB_GPIOSTAT_2   __REG(0x90600044)
-#define BB_GPIOSTAT_3   __REG(0x90600130) /* Only NS9360 */
+#define BB_GPIOSTAT_3   __REG(0x90600130)	/* Only NS9360 */
 
 #define BB_MONITOR      __REG(0x90600050)
 #define BB_DMA_ISR      __REG(0x90600060)
@@ -36,7 +36,7 @@ void BBus_UnPostDmaIRQ(int subint);
 #define BB_ENDIAN       __REG(0x90600080)
 #define BB_WAKEUP       __REG(0x90600090)
 
-#define BB_BRIDGE_BASE		__REG(0xA0400000)	
+#define BB_BRIDGE_BASE		__REG(0xA0400000)
 #define BB_BRIDGE_MAPSIZE	(0x2000)
 #define BB_IS           __REG(0xA0401000)
 #define BB_IEN          __REG(0xA0401004)

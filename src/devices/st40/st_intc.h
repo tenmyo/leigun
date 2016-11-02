@@ -1,1 +1,1 @@
-BusDevice * StIntc_New(const char *devname);
+BusDevice *StIntc_New(const char *devname);

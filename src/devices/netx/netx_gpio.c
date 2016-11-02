@@ -85,9 +85,9 @@
 #define CTRL_CNT_EVENT             (1<<4)
 #define CTRL_RST_EN                (1<<5)
 #define CTRL_SEL_EVENT             (1<<6)
-#define CTRL_GPIO_REF /* FIXME */
+#define CTRL_GPIO_REF		/* FIXME */
 
-typedef struct NetXGpio NetXGpio; 
+typedef struct NetXGpio NetXGpio;
 
 typedef struct NetXTimer {
 	NetXGpio *gpio;
@@ -109,7 +109,7 @@ struct NetXGpio {
 	BusDevice bdev;
 	NetXTimer timer[5];
 
-	uint32_t reg_cfg[16];	
+	uint32_t reg_cfg[16];
 	uint32_t reg_thresh_capt[16];
 
 	uint32_t reg_inten;
@@ -123,87 +123,86 @@ struct NetXGpio {
 	Clock_t *clk_in;
 };
 
-static inline uint64_t 
-ctr_period(NetXTimer *tm)
+static inline uint64_t
+ctr_period(NetXTimer * tm)
 {
-	uint32_t ctrl = tm->reg_ctr_ctrl;	
+	uint32_t ctrl = tm->reg_ctr_ctrl;
 	uint64_t period;
-	if(ctrl & CTRL_SYM) {
+	if (ctrl & CTRL_SYM) {
 		/* triangle */
-		period = 2 * (uint64_t)tm->reg_ctr_max;  
+		period = 2 * (uint64_t) tm->reg_ctr_max;
 	} else {
-		period = (uint64_t)tm->reg_ctr_max + 1;  
+		period = (uint64_t) tm->reg_ctr_max + 1;
 	}
 	return period;
 }
 
 static void
-update_timer_interrupt(NetXTimer *tm) 
+update_timer_interrupt(NetXTimer * tm)
 {
 	NetXGpio *gpio = tm->gpio;
-	if((tm->reg_ctr_ctrl & CTRL_IRQ_EN) && 
+	if ((tm->reg_ctr_ctrl & CTRL_IRQ_EN) &&
 	    (gpio->reg_inten & gpio->reg_irq & (0x10000 << tm->index))) {
-		SigNode_Set(tm->sigIrq,SIG_LOW);
+		SigNode_Set(tm->sigIrq, SIG_LOW);
 	} else {
-		SigNode_Set(tm->sigIrq,SIG_HIGH);
+		SigNode_Set(tm->sigIrq, SIG_HIGH);
 	}
 }
 
 static void
-update_gpio_interrupt(NetXGpio *gpio) 
+update_gpio_interrupt(NetXGpio * gpio)
 {
-	if(gpio->reg_inten & gpio->reg_irq & 0xffff) {
+	if (gpio->reg_inten & gpio->reg_irq & 0xffff) {
 		//fprintf(stderr,"Poste timer interrupt, val %d\n",SigNode_Val(gpio->sigIrq));
-                if(!gpio->interrupt_posted) {
-                        SigNode_Set(gpio->sigIrq,SIG_LOW);
-                        gpio->interrupt_posted=1;
-                }
-        } else {
+		if (!gpio->interrupt_posted) {
+			SigNode_Set(gpio->sigIrq, SIG_LOW);
+			gpio->interrupt_posted = 1;
+		}
+	} else {
 		//fprintf(stderr,"unPoste timer interrupt inten %08x irq %08x\n",gpio->reg_inten,gpio->reg_irq);
-                if(gpio->interrupt_posted) {
-                        SigNode_Set(gpio->sigIrq,SIG_HIGH);
-                        gpio->interrupt_posted=0;
-                }
-        }
+		if (gpio->interrupt_posted) {
+			SigNode_Set(gpio->sigIrq, SIG_HIGH);
+			gpio->interrupt_posted = 0;
+		}
+	}
 }
 
-
 static void
-actualize_counter(NetXTimer *tm) 
+actualize_counter(NetXTimer * tm)
 {
 	FractionU64_t frac;
 	uint32_t ctrl;
-	uint64_t elapsed_cycles,acc;
+	uint64_t elapsed_cycles, acc;
 	uint64_t counter_cycles;
 	uint64_t count;
 	uint64_t period;
 	NetXGpio *gpio = tm->gpio;
 
-	ctrl = tm->reg_ctr_ctrl;	
-	elapsed_cycles = CycleCounter_Get() - tm->last_actualized; 
-	tm->last_actualized = CycleCounter_Get(); 
+	ctrl = tm->reg_ctr_ctrl;
+	elapsed_cycles = CycleCounter_Get() - tm->last_actualized;
+	tm->last_actualized = CycleCounter_Get();
 	acc = tm->accumulated_cycles + elapsed_cycles;
 	frac = Clock_MasterRatio(gpio->clk_in);
-	if((frac.nom == 0) || (frac.denom == 0)) {
-		fprintf(stderr,"Warning: gpio module has no clock frequency\n");
+	if ((frac.nom == 0) || (frac.denom == 0)) {
+		fprintf(stderr, "Warning: gpio module has no clock frequency\n");
 		return;
 	}
 	counter_cycles = acc * frac.nom / frac.denom;
 	acc -= counter_cycles * frac.denom / frac.nom;
 	tm->accumulated_cycles = acc;
-	if(!(ctrl & CTRL_RUN)) {
+	if (!(ctrl & CTRL_RUN)) {
 		return;
-	} 
+	}
 	period = ctr_period(tm);
 	//fprintf(stderr,"elapsed %lld, acc %lld, hz %d, adv %lld, period %lld\n",elapsed_cycles,acc,hz,counter_cycles,period);
-	if(!period) {
+	if (!period) {
 		tm->count = 0;
 		gpio->reg_irq |= (0x10000 << tm->index);
 		update_timer_interrupt(tm);
 	} else {
 		count = tm->count;
 		count += counter_cycles;
-		if(count >= period) {
+		if (count >= period) {
 			tm->count = count = count % period;
 			gpio->reg_irq |= (0x10000 << tm->index);
 			update_timer_interrupt(tm);
@@ -213,38 +212,38 @@ actualize_counter(NetXTimer *tm)
 			tm->count = count;
 		}
 	}
-	
+
 }
 
 static void
-update_timeout(NetXTimer *tm) 
+update_timeout(NetXTimer * tm)
 {
 	uint64_t period;
 	int64_t remaining;
 	CycleCounter_t master_cycles;
-	uint32_t ctrl = tm->reg_ctr_ctrl;	
+	uint32_t ctrl = tm->reg_ctr_ctrl;
 	uint64_t count = tm->count;
 	FractionU64_t frac;
-	if(!(ctrl & CTRL_RUN)) {
+	if (!(ctrl & CTRL_RUN)) {
 		/* Should delete old timer here */
 		return;
 	}
 	period = ctr_period(tm);
-	if(!period) {	
+	if (!period) {
 		return;
 	}
-	remaining = period - count;	
-	if(remaining < 0) {
-		fprintf(stderr,"Bug: update timeout with non actualized counter\n");
+	remaining = period - count;
+	if (remaining < 0) {
+		fprintf(stderr, "Bug: update timeout with non actualized counter\n");
 		return;
 	}
 	frac = Clock_MasterRatio(tm->gpio->clk_in);
-	if(frac.nom) {
+	if (frac.nom) {
 		master_cycles = remaining * frac.denom / frac.nom;
 		master_cycles -= tm->accumulated_cycles;
-		CycleTimer_Mod(&tm->event_timer,master_cycles);
+		CycleTimer_Mod(&tm->event_timer, master_cycles);
 	} else {
-		fprintf(stderr,"Warning, Bad clock for timer module\n");
+		fprintf(stderr, "Warning, Bad clock for timer module\n");
 	}
 	//fprintf(stderr,"Mod timer%d, cpu %lld, remaining %lld\n",tm->index,cpu_cycles,remaining);
 }
@@ -252,9 +251,9 @@ update_timeout(NetXTimer *tm)
 static void
 timer_event(void *clientData)
 {
-        NetXTimer *tm = (NetXTimer *)clientData;
-        actualize_counter(tm);
-        update_timeout(tm);
+	NetXTimer *tm = (NetXTimer *) clientData;
+	actualize_counter(tm);
+	update_timeout(tm);
 }
 
 /*
@@ -264,20 +263,21 @@ timer_event(void *clientData)
  * and from 0 to 2 * max in symetric mode 
  ***************************************************************
  */
-static inline uint32_t 
-reg_counter(NetXGpio *gpio,unsigned int ctr)
+static inline uint32_t
+reg_counter(NetXGpio * gpio, unsigned int ctr)
 {
 	uint64_t count = gpio->timer[ctr].count;
-	if(count > gpio->timer[ctr].reg_ctr_max) {
+	if (count > gpio->timer[ctr].reg_ctr_max) {
 		return count - gpio->timer[ctr].reg_ctr_max;
 	} else {
 		return count;
-	}	
+	}
 }
 
-static inline unsigned int get_gpio_index(uint32_t addr) 
+static inline unsigned int
+get_gpio_index(uint32_t addr)
 {
-	 return ((addr & 0x3f) >> 2) % 16;	
+	return ((addr & 0x3f) >> 2) % 16;
 }
 
 /*
@@ -305,32 +305,32 @@ static inline unsigned int get_gpio_index(uint32_t addr)
  */
 
 static uint32_t
-gpio_cfg_read(void *clientData,uint32_t address,int rqlen)
+gpio_cfg_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Gpio register %08x not implemented\n",address);
-        return 0; 
+	fprintf(stderr, "Gpio register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-gpio_cfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+gpio_cfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Gpio register %08x not implemented\n",address);
+	fprintf(stderr, "Gpio register %08x not implemented\n", address);
 
 }
 
 static uint32_t
-thresh_capt_read(void *clientData,uint32_t address,int rqlen)
+thresh_capt_read(void *clientData, uint32_t address, int rqlen)
 {
 	NetXGpio *gpio = (NetXGpio *) clientData;
-	uint32_t index = get_gpio_index(address); 
+	uint32_t index = get_gpio_index(address);
 	return gpio->reg_thresh_capt[index];
 }
 
 static void
-thresh_capt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+thresh_capt_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	NetXGpio *gpio = (NetXGpio *) clientData;
-	uint32_t index = get_gpio_index(address); 
+	uint32_t index = get_gpio_index(address);
 	gpio->reg_thresh_capt[index] = value;
 	//update_timeout of the counter belonging to this threshold
 }
@@ -348,245 +348,242 @@ thresh_capt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************************
  */
 static uint32_t
-ctr_ctrl_read(void *clientData,uint32_t address,int rqlen)
+ctr_ctrl_read(void *clientData, uint32_t address, int rqlen)
 {
 	NetXTimer *tm = (NetXTimer *) clientData;
 	return tm->reg_ctr_ctrl;
 }
 
 static void
-ctr_ctrl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ctr_ctrl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	NetXTimer *tm = (NetXTimer *) clientData;
 	uint32_t diff = value ^ tm->reg_ctr_ctrl;
-	if(diff & (CTRL_RUN | CTRL_SYM)) {
+	if (diff & (CTRL_RUN | CTRL_SYM)) {
 		actualize_counter(tm);
 	}
 	tm->reg_ctr_ctrl = value;
-	if(diff & (CTRL_SEL_EVENT | CTRL_RUN | CTRL_SYM | CTRL_IRQ_EN | CTRL_CNT_EVENT)) {
+	if (diff & (CTRL_SEL_EVENT | CTRL_RUN | CTRL_SYM | CTRL_IRQ_EN | CTRL_CNT_EVENT)) {
 		update_timeout(tm);
 		update_timer_interrupt(tm);
 	}
-	fprintf(stderr,"Counter%d Control write value: %08x\n",tm->index,value);
+	fprintf(stderr, "Counter%d Control write value: %08x\n", tm->index, value);
 }
 
-
 static uint32_t
-ctr_max_read(void *clientData,uint32_t address,int rqlen)
+ctr_max_read(void *clientData, uint32_t address, int rqlen)
 {
 	NetXTimer *tm = (NetXTimer *) clientData;
 	return tm->reg_ctr_max;
 }
 
 static void
-ctr_max_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ctr_max_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	NetXTimer *tm = (NetXTimer *) clientData;
 
 	actualize_counter(tm);
 	tm->reg_ctr_max = value;
 	update_timeout(tm);
-	fprintf(stderr,"Ctr%d max is now %08x\n",tm->index,value);
+	fprintf(stderr, "Ctr%d max is now %08x\n", tm->index, value);
 }
 
 static uint32_t
-ctr_curr_read(void *clientData,uint32_t address,int rqlen)
+ctr_curr_read(void *clientData, uint32_t address, int rqlen)
 {
 	NetXTimer *tm = (NetXTimer *) clientData;
- 	NetXGpio *gpio = tm->gpio; 
+	NetXGpio *gpio = tm->gpio;
 
 	actualize_counter(tm);
 	//fprintf(stderr,"Gpio Ctr %d read: %08x\n",index,reg_counter(gpio,index));
 	Senseless_Report(150);
-        return reg_counter(gpio,tm->index); 
+	return reg_counter(gpio, tm->index);
 }
 
 static void
-ctr_curr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ctr_curr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	NetXTimer *tm = (NetXTimer *) clientData;
 	actualize_counter(tm);
 	/* I Do not know in which half of the triangle i should start */
-	fprintf(stderr,"Gpio ctr write\n");
-	tm->count = (uint64_t)value;
+	fprintf(stderr, "Gpio ctr write\n");
+	tm->count = (uint64_t) value;
 }
 
 static uint32_t
-irq_enable_read(void *clientData,uint32_t address,int rqlen)
+irq_enable_read(void *clientData, uint32_t address, int rqlen)
 {
- 	NetXGpio *gpio = (NetXGpio *) clientData;
+	NetXGpio *gpio = (NetXGpio *) clientData;
 	return gpio->reg_inten;
 }
 
 static void
-irq_enable_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irq_enable_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
- 	NetXGpio *gpio = (NetXGpio *) clientData;
+	NetXGpio *gpio = (NetXGpio *) clientData;
 	int i;
-	uint32_t diff =  ~gpio->reg_inten & value;
+	uint32_t diff = ~gpio->reg_inten & value;
 	gpio->reg_inten |= value;
-	if(diff & 0xffff) {
+	if (diff & 0xffff) {
 		update_gpio_interrupt(gpio);
-	}	
-	for(i = 0;i < 5; i++) {
-		if(diff & (0x10000 << i)) {
+	}
+	for (i = 0; i < 5; i++) {
+		if (diff & (0x10000 << i)) {
 			update_timer_interrupt(&gpio->timer[i]);
-		} 
+		}
 	}
 }
 
 static uint32_t
-irq_disable_read(void *clientData,uint32_t address,int rqlen)
+irq_disable_read(void *clientData, uint32_t address, int rqlen)
 {
- 	NetXGpio *gpio = (NetXGpio *) clientData;
-	fprintf(stderr,"Reading from write only register GPIO IRQ-Disable\n");
+	NetXGpio *gpio = (NetXGpio *) clientData;
+	fprintf(stderr, "Reading from write only register GPIO IRQ-Disable\n");
 	return gpio->reg_inten;
 }
 
 static void
-irq_disable_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irq_disable_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
- 	NetXGpio *gpio = (NetXGpio *) clientData;
+	NetXGpio *gpio = (NetXGpio *) clientData;
 	uint32_t diff = gpio->reg_inten & value;
 	int i;
 	gpio->reg_inten &= ~value;
-	if(diff & 0xffff) {
+	if (diff & 0xffff) {
 		update_gpio_interrupt(gpio);
 	}
-	for(i = 0;i < 5; i++) {
-		if(diff & (0x10000 << i)) {
+	for (i = 0; i < 5; i++) {
+		if (diff & (0x10000 << i)) {
 			update_timer_interrupt(&gpio->timer[i]);
-		} 
+		}
 	}
 }
 
 static uint32_t
-systime_ns_cmp_read(void *clientData,uint32_t address,int rqlen)
+systime_ns_cmp_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Gpio register %08x not implemented\n",address);
-        return 0; 
+	fprintf(stderr, "Gpio register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-systime_ns_cmp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+systime_ns_cmp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Gpio register %08x not implemented\n",address);
+	fprintf(stderr, "Gpio register %08x not implemented\n", address);
 }
 
 static uint32_t
-io_read(void *clientData,uint32_t address,int rqlen)
+io_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Gpio register %08x not implemented\n",address);
-        return 0; 
+	fprintf(stderr, "Gpio register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-io_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+io_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Gpio register %08x not implemented\n",address);
+	fprintf(stderr, "Gpio register %08x not implemented\n", address);
 }
 
 static uint32_t
-irq_read(void *clientData,uint32_t address,int rqlen)
+irq_read(void *clientData, uint32_t address, int rqlen)
 {
 	NetXGpio *gpio = (NetXGpio *) clientData;
 	return gpio->reg_irq;
 }
 
 static void
-irq_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irq_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	NetXGpio *gpio = (NetXGpio *) clientData;
 	int i;
 	uint32_t diff = gpio->reg_irq & value;
 	gpio->reg_irq &= ~value;
-	if(diff & 0xffff) {
+	if (diff & 0xffff) {
 		update_gpio_interrupt(gpio);
 	}
-	for(i = 0;i < 5; i++) {
-		if(diff & (0x10000 << i)) {
+	for (i = 0; i < 5; i++) {
+		if (diff & (0x10000 << i)) {
 			update_timer_interrupt(&gpio->timer[i]);
-		} 
+		}
 	}
 }
 
-
 static void
-NetXGpio_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+NetXGpio_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        NetXGpio *gpio = (NetXGpio *) owner;
+	NetXGpio *gpio = (NetXGpio *) owner;
 	int i;
-	for(i = 0; i < 16; i++) {
-        	IOH_New32(NETX_GPIO_CFG(base,i),gpio_cfg_read,gpio_cfg_write,gpio);
-		IOH_New32(NETX_GPIO_THRESH_CAPT(base,i),thresh_capt_read,thresh_capt_write,gpio);
+	for (i = 0; i < 16; i++) {
+		IOH_New32(NETX_GPIO_CFG(base, i), gpio_cfg_read, gpio_cfg_write, gpio);
+		IOH_New32(NETX_GPIO_THRESH_CAPT(base, i), thresh_capt_read, thresh_capt_write,
+			  gpio);
 	}
-	for(i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {
 		NetXTimer *tm = &gpio->timer[i];
-		IOH_New32(NETX_GPIO_CTR_CTRL(base,i),ctr_ctrl_read,ctr_ctrl_write,tm);
-		IOH_New32(NETX_GPIO_CTR_MAX(base,i),ctr_max_read,ctr_max_write,tm);
-		IOH_New32(NETX_GPIO_CTR_CURR(base,i),ctr_curr_read,ctr_curr_write,tm);
+		IOH_New32(NETX_GPIO_CTR_CTRL(base, i), ctr_ctrl_read, ctr_ctrl_write, tm);
+		IOH_New32(NETX_GPIO_CTR_MAX(base, i), ctr_max_read, ctr_max_write, tm);
+		IOH_New32(NETX_GPIO_CTR_CURR(base, i), ctr_curr_read, ctr_curr_write, tm);
 	}
-	IOH_New32(NETX_GPIO_IRQ_ENABLE(base),irq_enable_read,irq_enable_write,gpio);
-	IOH_New32(NETX_GPIO_IRQ_DISABLE(base),irq_disable_read,irq_disable_write,gpio);
-	IOH_New32(NETX_GPIO_SYSTIME_NS_CMP(base),systime_ns_cmp_read,systime_ns_cmp_write,gpio);
-	IOH_New32(NETX_GPIO_IO(base),io_read,io_write,gpio);	
-	IOH_New32(NETX_GPIO_IRQ(base),irq_read,irq_write,gpio);
+	IOH_New32(NETX_GPIO_IRQ_ENABLE(base), irq_enable_read, irq_enable_write, gpio);
+	IOH_New32(NETX_GPIO_IRQ_DISABLE(base), irq_disable_read, irq_disable_write, gpio);
+	IOH_New32(NETX_GPIO_SYSTIME_NS_CMP(base), systime_ns_cmp_read, systime_ns_cmp_write, gpio);
+	IOH_New32(NETX_GPIO_IO(base), io_read, io_write, gpio);
+	IOH_New32(NETX_GPIO_IRQ(base), irq_read, irq_write, gpio);
 }
 
 static void
-NetXGpio_UnMap(void *owner,uint32_t base,uint32_t mask)
+NetXGpio_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
-	for(i = 0; i < 16; i++) {
-        	IOH_Delete32(NETX_GPIO_CFG(base,i));
-		IOH_Delete32(NETX_GPIO_THRESH_CAPT(base,i));
+	for (i = 0; i < 16; i++) {
+		IOH_Delete32(NETX_GPIO_CFG(base, i));
+		IOH_Delete32(NETX_GPIO_THRESH_CAPT(base, i));
 	}
-	for(i = 0; i < 5; i++) {
-		IOH_Delete32(NETX_GPIO_CTR_CTRL(base,i));
-		IOH_Delete32(NETX_GPIO_CTR_MAX(base,i));
-		IOH_Delete32(NETX_GPIO_CTR_CURR(base,i));
+	for (i = 0; i < 5; i++) {
+		IOH_Delete32(NETX_GPIO_CTR_CTRL(base, i));
+		IOH_Delete32(NETX_GPIO_CTR_MAX(base, i));
+		IOH_Delete32(NETX_GPIO_CTR_CURR(base, i));
 	}
 	IOH_Delete32(NETX_GPIO_IRQ_ENABLE(base));
 	IOH_Delete32(NETX_GPIO_IRQ_DISABLE(base));
 	IOH_Delete32(NETX_GPIO_SYSTIME_NS_CMP(base));
-	IOH_Delete32(NETX_GPIO_IO(base));	
+	IOH_Delete32(NETX_GPIO_IO(base));
 	IOH_Delete32(NETX_GPIO_IRQ(base));
 }
 
-
 BusDevice *
-NetXGpio_New(const char *devname) {
+NetXGpio_New(const char *devname)
+{
 	NetXGpio *gpio = sg_new(NetXGpio);
 	int i;
-        gpio->bdev.first_mapping = NULL;
-        gpio->bdev.Map = NetXGpio_Map;
-        gpio->bdev.UnMap = NetXGpio_UnMap;
-        gpio->bdev.owner = gpio;
-        gpio->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	gpio->bdev.first_mapping = NULL;
+	gpio->bdev.Map = NetXGpio_Map;
+	gpio->bdev.UnMap = NetXGpio_UnMap;
+	gpio->bdev.owner = gpio;
+	gpio->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 
-        gpio->sigIrq = SigNode_New("%s.irq",devname);
-        gpio->sigGpio15Irq = SigNode_New("%s.gpio15irq",devname);
-	if(!gpio->sigIrq || !gpio->sigGpio15Irq) {
-                fprintf(stderr,"Can not create irq signals for \"%s\"\n",devname);
+	gpio->sigIrq = SigNode_New("%s.irq", devname);
+	gpio->sigGpio15Irq = SigNode_New("%s.gpio15irq", devname);
+	if (!gpio->sigIrq || !gpio->sigGpio15Irq) {
+		fprintf(stderr, "Can not create irq signals for \"%s\"\n", devname);
 	}
-        gpio->clk_in = Clock_New("%s.clk",devname);
-        if(!gpio->clk_in) {
-                fprintf(stderr,"Can not create clock for \"%s\"\n",devname);
-                exit(1);
-        }
-        SigNode_Set(gpio->sigIrq,SIG_HIGH); /* No request on startup */
-        gpio->interrupt_posted=0;
-	for(i = 0; i < 5; i++) {
+	gpio->clk_in = Clock_New("%s.clk", devname);
+	if (!gpio->clk_in) {
+		fprintf(stderr, "Can not create clock for \"%s\"\n", devname);
+		exit(1);
+	}
+	SigNode_Set(gpio->sigIrq, SIG_HIGH);	/* No request on startup */
+	gpio->interrupt_posted = 0;
+	for (i = 0; i < 5; i++) {
 		NetXTimer *timer = &gpio->timer[i];
 		timer->gpio = gpio;
 		timer->index = i;
-		CycleTimer_Init(&timer->event_timer,timer_event,timer);
-        	timer->sigIrq = SigNode_New("%s.timer%d.irq",devname,i);
+		CycleTimer_Init(&timer->event_timer, timer_event, timer);
+		timer->sigIrq = SigNode_New("%s.timer%d.irq", devname, i);
 	}
-        Clock_SetFreq(gpio->clk_in,100000000);
+	Clock_SetFreq(gpio->clk_in, 100000000);
 
-        fprintf(stderr,"Created NetX GPIO + Counter module \"%s\"\n",devname);
-        return &gpio->bdev;
+	fprintf(stderr, "Created NetX GPIO + Counter module \"%s\"\n", devname);
+	return &gpio->bdev;
 }
-
-

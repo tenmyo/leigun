@@ -53,49 +53,49 @@ typedef struct CRCGen {
 
 RegSet crc_regs[] = {
 	{
-		/* M32C87 */
-		.aCrcd = 0x37c,
-		.aCrcIn = 0x37e,
-	},
+	 /* M32C87 */
+	 .aCrcd = 0x37c,
+	 .aCrcIn = 0x37e,
+	 },
 	{
-		/* M16C65 */
-		.aCrcd = 0x3bc,
-		.aCrcIn = 0x3be,
-	}
+	 /* M16C65 */
+	 .aCrcd = 0x3bc,
+	 .aCrcIn = 0x3be,
+	 }
 };
 
 static uint32_t
-crcd_read(void *clientData,uint32_t address,int rqlen)
+crcd_read(void *clientData, uint32_t address, int rqlen)
 {
-	CRCGen *cg = clientData;	
-        return cg->regCrcd;
+	CRCGen *cg = clientData;
+	return cg->regCrcd;
 }
 
 static void
-crcd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crcd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	CRCGen *cg = clientData;	
-        cg->regCrcd = value;
+	CRCGen *cg = clientData;
+	cg->regCrcd = value;
 }
 
 static uint32_t
-crcin_read(void *clientData,uint32_t address,int rqlen)
+crcin_read(void *clientData, uint32_t address, int rqlen)
 {
-	CRCGen *cg = clientData;	
+	CRCGen *cg = clientData;
 	return cg->regCrcIn;
 }
 
 static void
-crcin_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crcin_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	CRCGen *cg = clientData;	
+	CRCGen *cg = clientData;
 	uint8_t data = value;
-        cg->regCrcIn = value;
-	cg->regCrcd = CRC16_0x1021Rev(cg->regCrcd,&data,1);	
+	cg->regCrcIn = value;
+	cg->regCrcd = CRC16_0x1021Rev(cg->regCrcd, &data, 1);
 }
 
 static void
-M32C_CRCGenUnmap(void *owner,uint32_t base,uint32_t mask)
+M32C_CRCGenUnmap(void *owner, uint32_t base, uint32_t mask)
 {
 	CRCGen *cg = owner;
 	RegSet *rs = cg->regSet;
@@ -104,28 +104,28 @@ M32C_CRCGenUnmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-M32C_CRCGenMap(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+M32C_CRCGenMap(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	CRCGen *cg = owner;
 	RegSet *rs = cg->regSet;
 	uint32_t flags = IOH_FLG_HOST_ENDIAN | IOH_FLG_PRD_RARP | IOH_FLG_PA_CBSE | IOH_FLG_PWR_RMW;
-	IOH_New16f(rs->aCrcd,crcd_read,crcd_write,cg,flags);
-	IOH_New8(rs->aCrcIn,crcin_read,crcin_write,cg);
+	IOH_New16f(rs->aCrcd, crcd_read, crcd_write, cg, flags);
+	IOH_New8(rs->aCrcIn, crcin_read, crcin_write, cg);
 }
 
 BusDevice *
-M32C_CRCNew(const char *name,unsigned int register_set)
+M32C_CRCNew(const char *name, unsigned int register_set)
 {
 	CRCGen *cg = sg_new(CRCGen);
-	if(register_set >= array_size(crc_regs)) {
-		fprintf(stderr,"CRC Generator: illegal register set %d\n",register_set);
+	if (register_set >= array_size(crc_regs)) {
+		fprintf(stderr, "CRC Generator: illegal register set %d\n", register_set);
 		exit(1);
 	}
 	cg->regSet = &crc_regs[register_set];
-        cg->bdev.first_mapping = NULL;
-        cg->bdev.Map = M32C_CRCGenMap;
-        cg->bdev.UnMap = M32C_CRCGenUnmap;
-        cg->bdev.owner = cg;
-        cg->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	cg->bdev.first_mapping = NULL;
+	cg->bdev.Map = M32C_CRCGenMap;
+	cg->bdev.UnMap = M32C_CRCGenUnmap;
+	cg->bdev.owner = cg;
+	cg->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &cg->bdev;
 }

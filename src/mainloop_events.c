@@ -54,7 +54,7 @@
  *      interrupt is signaled to the cpu.
  * ----------------------------------------------------
  */
-uint32_t mainloop_event_pending=0;
+uint32_t mainloop_event_pending = 0;
 
 /*
  * ---------------------------------------------------
@@ -63,4 +63,4 @@ uint32_t mainloop_event_pending=0;
  *	to process some IO.
  * ---------------------------------------------------
  */
-uint32_t mainloop_event_io=0;
+uint32_t mainloop_event_io = 0;

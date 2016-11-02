@@ -34,6 +34,7 @@
 #include "bus.h"
 #include "pio_m32c.h"
 #include "cpu_m32c.h"
+#include "cycletimer.h"
 
 #define REG_P0	(0x3e0)
 #define REG_P1	(0x3e1)
@@ -110,35 +111,36 @@
 #include "signode.h"
 #include "sgstring.h"
 
-typedef struct M32C_Pio M32C_Pio; 
+typedef struct M32C_Pio M32C_Pio;
 
 typedef struct Port {
 	M32C_Pio *pio;
 	int port_nr;
-	SigNode  *ioPin;
+	SigNode *ioPin;
 	SigTrace *ioPinTrace;
-	SigNode  *puEn;
+	SigNode *puEn;
 	SigTrace *puEnTrace;
-	SigNode  *puSel;
+	SigNode *puSel;
 	SigTrace *puSelTrace;
-	SigNode  *portLatch;
+	SigNode *portLatch;
 	SigTrace *portLatchTrace;
-	SigNode  *portDir;
+	SigNode *portDir;
 	SigTrace *portDirTrace;
-	SigNode  *pcr;
+	SigNode *pcr;
 	SigTrace *pcrTrace;
 } Port;
 
 struct M32C_Pio {
-	BusDevice bdev;	
+	BusDevice bdev;
 	char *name;
 	uint16_t addrP[16];
 	uint16_t addrPD[16];
-	int addrPS[16]; 
-	uint8_t regP[16];	
+	int addrPS[16];
+	uint8_t regP[16];
 	uint8_t regPD[16];
 	SigNode *sigPRC2;
 	Port *port[128];
+    uint8_t regPS[10];
 	uint8_t reg_PSL0;
 	uint8_t reg_PSL1;
 	uint8_t reg_PSL2;
@@ -152,11 +154,11 @@ struct M32C_Pio {
 };
 
 static void
-update_puen(Port *port)
+update_puen(Port * port)
 {
 	int pusel = SigNode_Val(port->puSel);
 	int pdir = SigNode_Val(port->portDir);
-	if((pusel == SIG_HIGH) && (pdir == SIG_LOW)) {
+	if ((pusel == SIG_HIGH) && (pdir == SIG_LOW)) {
 		SigNode_Set(port->puEn, SIG_LOW);
 	} else {
 		SigNode_Set(port->puEn, SIG_HIGH);
@@ -164,90 +166,90 @@ update_puen(Port *port)
 }
 
 static void
-update_iopin(Port *port)
+update_iopin(Port * port)
 {
 	int pdir = SigNode_Val(port->portDir);
 	int platch = SigNode_Val(port->portLatch);
 	int puen = SigNode_Val(port->puEn);
-	if(pdir == SIG_HIGH) {
-		if(platch == SIG_HIGH) {
-			SigNode_Set(port->ioPin,SIG_HIGH);
+	if (pdir == SIG_HIGH) {
+		if (platch == SIG_HIGH) {
+			SigNode_Set(port->ioPin, SIG_HIGH);
 		} else {
 			//fprintf(stderr,"Set low %s\n",SigName(port->ioPin));
-			SigNode_Set(port->ioPin,SIG_LOW);
+			SigNode_Set(port->ioPin, SIG_LOW);
 		}
 	} else {
-		if(puen == SIG_HIGH) {
+		if (puen == SIG_HIGH) {
 			//fprintf(stderr,"Set pullup %s\n",SigName(port->ioPin));
-			SigNode_Set(port->ioPin,SIG_WEAK_PULLUP);
+			SigNode_Set(port->ioPin, SIG_WEAK_PULLUP);
 		} else {
-			SigNode_Set(port->ioPin,SIG_OPEN);
+			SigNode_Set(port->ioPin, SIG_OPEN);
 		}
 	}
 }
 
-static void 
-iopin_trace(SigNode *node,int value,void *clientData) 
+static void
+iopin_trace(SigNode * node, int value, void *clientData)
 {
-//	Port *port = clientData;
-//	update_puen(port);
-}
-
-static void 
-puen_trace(SigNode *node,int value,void *clientData) 
-{
-	Port *port = clientData;
-	update_iopin(port);
-}
-
-static void 
-pusel_trace(SigNode *node,int value,void *clientData) 
-{
-	Port *port = clientData;
-	update_puen(port);
-}
-
-static void 
-port_latch_trace(SigNode *node,int value,void *clientData) 
-{
-	Port *port = clientData;
-	update_iopin(port);
-}
-
-static void 
-port_dir_trace(SigNode *node,int value,void *clientData) 
-{
-	Port *port = clientData;
-	update_puen(port);
-	update_iopin(port);
-}
-
-static void 
-pcr_trace(SigNode *node,int value,void *clientData) 
-{
-#if 0
-	Port *port = clientData;
-	update_puen(port);
-#endif
-}
-
-#if 0
-static uint32_t
-debug_read(void *clientData,uint32_t address,int rqlen)
-{
-	fprintf(stderr,"0x%04x At %06x\n",address,M32C_REG_PC);
-        return 0;
+//      Port *port = clientData;
+//      update_puen(port);
 }
 
 static void
-debug_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+puen_trace(SigNode * node, int value, void *clientData)
 {
-	fprintf(stderr,"0x%04x At %06x\n",address,M32C_REG_PC);
+	Port *port = clientData;
+	update_iopin(port);
+}
+
+static void
+pusel_trace(SigNode * node, int value, void *clientData)
+{
+	Port *port = clientData;
+	update_puen(port);
+}
+
+static void
+port_latch_trace(SigNode * node, int value, void *clientData)
+{
+	Port *port = clientData;
+	update_iopin(port);
+}
+
+static void
+port_dir_trace(SigNode * node, int value, void *clientData)
+{
+	Port *port = clientData;
+	update_puen(port);
+	update_iopin(port);
+}
+
+static void
+pcr_trace(SigNode * node, int value, void *clientData)
+{
+#if 0
+	Port *port = clientData;
+	update_puen(port);
+#endif
+}
+
+#if 0
+static uint32_t
+debug_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "0x%04x At %06x\n", address, M32C_REG_PC);
+	return 0;
+}
+
+static void
+debug_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "0x%04x At %06x\n", address, M32C_REG_PC);
 }
 #endif
 
 static uint32_t
-port_read(void *clientData,uint32_t address,int rqlen)
+port_read(void *clientData, uint32_t address, int rqlen)
 {
 	Port *firstport = clientData;
 	M32C_Pio *pio = firstport->pio;
@@ -256,48 +258,65 @@ port_read(void *clientData,uint32_t address,int rqlen)
 	uint8_t value;
 	int idx = port_base >> 3;
 	value = 0;
-	for(i = 0;i < 8;i++) {
+	for (i = 0; i < 8; i++) {
 		Port *port = pio->port[port_base + i];
-		if(pio->regPD[idx] & (1 << i)) {
-			if(pio->regP[idx] & (1 << i)) {
+		if (pio->regPD[idx] & (1 << i)) {
+			if (pio->regP[idx] & (1 << i)) {
 				value |= (1 << i);
 			}
 		} else {
-			if(SigNode_Val(port->ioPin) == SIG_HIGH) {
+#if 0
+			if ((i == 7) && (idx == 12)) {
+				value |= (1 << 7);
+				fprintf(stderr, "Read Port%d: %02x\n", idx, value);
+				usleep(10000);
+			}
+#endif
+			if (SigNode_Val(port->ioPin) == SIG_HIGH) {
 				value |= (1 << i);
 			}
 		}
 	}
 #if 0
-	if((idx == 6) || (idx == 7)) {
-		fprintf(stderr,"Read Port%d: %02x\n",idx,value);
-	}	
-#endif
+	if ((idx == 13) || (idx == 13)) {
+		fprintf(stderr, "Read Port%d: %02x\n", idx, value);
+	}
 	//value = value & port->regPD[i]
+#endif
 	return value;
 }
 
+#include "cpu_m32c.h"
 static void
-port_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+port_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	Port *firstport = clientData;
 	M32C_Pio *pio = firstport->pio;
 	int port_base = firstport->port_nr;
 	int idx = port_base >> 3;
 	int i;
-	pio->regP[idx] = value;	
-	for(i=0;i<8;i++) {
-		Port *port = pio->port[i+port_base];
-		if(value & (1 << i)) {
-			SigNode_Set(port->portLatch,SIG_HIGH);
+	pio->regP[idx] = value;
+#if 0
+	if (idx == 12) {
+		if ((value & 0x80) == 0) {
+			fprintf(stderr, "Cyclecounter %lld\n", CycleCounter_Get());
+			fprintf(stderr, "Port %d %02x write at %08x\n", idx, value, M32C_REG_PC);
+			usleep(100000);
+		}
+	}
+#endif
+	for (i = 0; i < 8; i++) {
+		Port *port = pio->port[i + port_base];
+		if (value & (1 << i)) {
+			SigNode_Set(port->portLatch, SIG_HIGH);
 		} else {
-			SigNode_Set(port->portLatch,SIG_LOW);
-		}	
+			SigNode_Set(port->portLatch, SIG_LOW);
+		}
 	}
 }
 
 static uint32_t
-port_dir_read(void *clientData,uint32_t address,int rqlen)
+port_dir_read(void *clientData, uint32_t address, int rqlen)
 {
 	Port *firstport = clientData;
 	M32C_Pio *pio = firstport->pio;
@@ -308,202 +327,225 @@ port_dir_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-port_dir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+port_dir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	Port *firstport = clientData;
 	M32C_Pio *pio = firstport->pio;
 	int port_base = firstport->port_nr;
 	int idx = port_base >> 3;
 	int i;
-	if(idx == 9) {
-		if(SigNode_Val(pio->sigPRC2)  == SIG_LOW) {
-			fprintf(stderr,"Write to PD%u disabled by PRC2\n",idx);
+	if (idx == 9) {
+		if (SigNode_Val(pio->sigPRC2) == SIG_LOW) {
+			fprintf(stderr, "Write to PD%u disabled by PRC2\n", idx);
 			return;
 		}
 	}
-	pio->regPD[idx] = value;	
-	for(i=0;i<8;i++) {
-		Port *port = pio->port[i+port_base];
-		if(value & (1 << i)) {
-			SigNode_Set(port->portDir,SIG_HIGH);
+	pio->regPD[idx] = value;
+#if 0
+	if (idx == 13) {
+		fprintf(stderr, "Cyclecounter %lld\n", CycleCounter_Get());
+		fprintf(stderr, "PortDIR 13 %02x write at %08x\n", value, M32C_REG_PC);
+		usleep(100000);
+	}
+#endif
+	for (i = 0; i < 8; i++) {
+		Port *port = pio->port[i + port_base];
+		if (value & (1 << i)) {
+			SigNode_Set(port->portDir, SIG_HIGH);
 		} else {
-			SigNode_Set(port->portDir,SIG_LOW);
-		}	
+			SigNode_Set(port->portDir, SIG_LOW);
+		}
 	}
 #if 0
-	if((idx == 6) || (idx == 7)) {
-		fprintf(stderr,"Write Dir: %d: %02x\n",idx,value);
-	}	
+	if ((idx == 6) || (idx == 7)) {
+		fprintf(stderr, "Write Dir: %d: %02x\n", idx, value);
+	}
 #endif
 }
 
 static uint32_t
-ps_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-ps_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ps_read(void *clientData, uint32_t address, int rqlen)
 {
 	Port *port = clientData;
 	M32C_Pio *pio = port->pio;
-	int ps_nr = port->port_nr >> 3;	
-	if(ps_nr == 9) {
-		if(SigNode_Val(pio->sigPRC2) == SIG_LOW) {
-			fprintf(stderr,"Write to PS3 disabled by PRC2\n");
-		} else {
-			//fprintf(stderr,"Write to PS3 not implented\n");
+	unsigned int ps_nr = (port->port_nr >> 3) - 6;
+    if(ps_nr < array_size(pio->regPS)) {
+        return pio->regPS[ps_nr];
+    } else {
+        return 0;
+    }
+}
+
+static void
+ps_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	Port *port = clientData;
+	M32C_Pio *pio = port->pio;
+	unsigned int ps_nr = (port->port_nr >> 3) - 6;
+	if (ps_nr == 9) {
+		if (SigNode_Val(pio->sigPRC2) == SIG_LOW) {
+			fprintf(stderr, "Write to PS3 disabled by PRC2, old 0x%04x, new 0x%04x, PC %08x\n", pio->regPS[ps_nr], value, M32C_REG_PC);
+            return;
 		}
 	}
+    if(ps_nr < array_size(pio->regPS)) {
+        pio->regPS[ps_nr] = value;
+    }
 }
 
 static uint32_t
-psl0_read(void *clientData,uint32_t address,int rqlen)
+psl0_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-psl0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+psl0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	static int warn = 0;
-	if(!warn) {
+	if (!warn) {
 		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
 	}
 }
 
 static uint32_t
-psl1_read(void *clientData,uint32_t address,int rqlen)
+psl1_read(void *clientData, uint32_t address, int rqlen)
 {
-        return 0;
+	return 0;
 }
 
 static void
-psl1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+psl1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	static int warn = 0;
-	if(!warn) {
+	if (!warn) {
 		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
-	}
-}
-static uint32_t
-psl2_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-psl2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	static int warn = 0;
-	if(!warn) {
-		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
-	}
-}
-static uint32_t
-psl3_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-psl3_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	static int warn = 0;
-	if(!warn) {
-		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
-	}
-}
-static uint32_t
-psl5_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-psl5_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	static int warn = 0;
-	if(!warn) {
-		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
-	}
-}
-static uint32_t
-psl6_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-psl6_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	static int warn = 0;
-	if(!warn) {
-		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
-	}
-}
-static uint32_t
-psl7_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-psl7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	static int warn = 0;
-	if(!warn) {
-		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
-	}
-}
-static uint32_t
-psl9_read(void *clientData,uint32_t address,int rqlen)
-{
-        return 0;
-}
-
-static void
-psl9_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	static int warn = 0;
-	if(!warn) {
-		warn++;
-		fprintf(stderr,"PSL register 0x%03x not implemented\n",address);
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
 	}
 }
 
 static uint32_t
-psc_read(void *clientData,uint32_t address,int rqlen)
+psl2_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+psl2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	static int warn = 0;
+	if (!warn) {
+		warn++;
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
+	}
+}
+
+static uint32_t
+psl3_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+psl3_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	static int warn = 0;
+	if (!warn) {
+		warn++;
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
+	}
+}
+
+static uint32_t
+psl5_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+psl5_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	static int warn = 0;
+	if (!warn) {
+		warn++;
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
+	}
+}
+
+static uint32_t
+psl6_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+psl6_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	static int warn = 0;
+	if (!warn) {
+		warn++;
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
+	}
+}
+
+static uint32_t
+psl7_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+psl7_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	static int warn = 0;
+	if (!warn) {
+		warn++;
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
+	}
+}
+
+static uint32_t
+psl9_read(void *clientData, uint32_t address, int rqlen)
+{
+	return 0;
+}
+
+static void
+psl9_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	static int warn = 0;
+	if (!warn) {
+		warn++;
+		fprintf(stderr, "PSL register 0x%03x not implemented\n", address);
+	}
+}
+
+static uint32_t
+psc_read(void *clientData, uint32_t address, int rqlen)
 {
 	M32C_Pio *pio = clientData;
 	return pio->reg_PSC;
 }
 
 static void
-psc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+psc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	M32C_Pio *pio = clientData;
 	pio->reg_PSC = value;
-//	fprintf(stderr,"PSC %02x\n",value);
+//      fprintf(stderr,"PSC %02x\n",value);
 }
+
 static void
-M32CPio_Unmap(void *owner,uint32_t base,uint32_t mask)
+M32CPio_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
-	M32C_Pio *pio = (M32C_Pio *)owner;
-	for(i=0;i<16;i++) {
-		IOH_Delete8(pio->addrP[i]);	
-		IOH_Delete8(pio->addrPD[i]);	
-		if(pio->addrPS[i] >= 0) {
-			IOH_Delete8(pio->addrPS[i]);	
+	M32C_Pio *pio = (M32C_Pio *) owner;
+	for (i = 0; i < 16; i++) {
+		IOH_Delete8(pio->addrP[i]);
+		IOH_Delete8(pio->addrPD[i]);
+		if (pio->addrPS[i] >= 0) {
+			IOH_Delete8(pio->addrPS[i]);
 		}
 	}
 	IOH_Delete8(REG_PSL0);
@@ -518,56 +560,56 @@ M32CPio_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-M32CPio_Map(void *owner,uint32_t _base,uint32_t mask,uint32_t mapflags)
+M32CPio_Map(void *owner, uint32_t _base, uint32_t mask, uint32_t mapflags)
 {
 	int i;
-	M32C_Pio *pio = (M32C_Pio *)owner;
-	for(i=0;i<16;i++) {
+	M32C_Pio *pio = (M32C_Pio *) owner;
+	for (i = 0; i < 16; i++) {
 		Port *port = pio->port[i << 3];
-		IOH_New8(pio->addrP[i],port_read,port_write,port);	
-		IOH_New8(pio->addrPD[i],port_dir_read,port_dir_write,port);	
-		if(pio->addrPS[i] >= 0) {
-			IOH_New8(pio->addrPS[i],ps_read,ps_write,port);	
+		IOH_New8(pio->addrP[i], port_read, port_write, port);
+		IOH_New8(pio->addrPD[i], port_dir_read, port_dir_write, port);
+		if (pio->addrPS[i] >= 0) {
+			IOH_New8(pio->addrPS[i], ps_read, ps_write, port);
 		}
 	}
-	IOH_New8(REG_PSL0,psl0_read,psl0_write,pio);
-	IOH_New8(REG_PSL1,psl1_read,psl1_write,pio);
-	IOH_New8(REG_PSL2,psl2_read,psl2_write,pio);
-	IOH_New8(REG_PSL3,psl3_read,psl3_write,pio);
-	IOH_New8(REG_PSL5,psl5_read,psl5_write,pio);
-	IOH_New8(REG_PSL6,psl6_read,psl6_write,pio);
-	IOH_New8(REG_PSL7,psl7_read,psl7_write,pio);
-	IOH_New8(REG_PSL9,psl9_read,psl9_write,pio);
-	IOH_New8(REG_PSC,psc_read,psc_write,pio);
+	IOH_New8(REG_PSL0, psl0_read, psl0_write, pio);
+	IOH_New8(REG_PSL1, psl1_read, psl1_write, pio);
+	IOH_New8(REG_PSL2, psl2_read, psl2_write, pio);
+	IOH_New8(REG_PSL3, psl3_read, psl3_write, pio);
+	IOH_New8(REG_PSL5, psl5_read, psl5_write, pio);
+	IOH_New8(REG_PSL6, psl6_read, psl6_write, pio);
+	IOH_New8(REG_PSL7, psl7_read, psl7_write, pio);
+	IOH_New8(REG_PSL9, psl9_read, psl9_write, pio);
+	IOH_New8(REG_PSC, psc_read, psc_write, pio);
 }
 
 static void
-M32C_PortsInit(M32C_Pio *pio) 
+M32C_PortsInit(M32C_Pio * pio)
 {
-	int i,j;
-	for(i=0;i<128;i++) {
+	int i, j;
+	for (i = 0; i < 128; i++) {
 		Port *port;
 		port = pio->port[i] = sg_new(Port);
 		j = i & 7;
-		port->port_nr = i;	
+		port->port_nr = i;
 		port->pio = pio;
-		port->ioPin = SigNode_New("%s.P%d.%d",pio->name,i >> 3,j);
-		port->puEn = SigNode_New("%s.PuEn%d.%d",pio->name,i >> 3,j);
-		port->puSel = SigNode_New("%s.PuSel%d.%d",pio->name,i >> 3,j);
-		port->portLatch = SigNode_New("%s.PortLatch%d.%d",pio->name,i >> 3,j);
-		port->portDir = SigNode_New("%s.PortDir%d.%d",pio->name,i >> 3,j);
-		port->pcr = SigNode_New("%s.Pcr%d.%d",pio->name,i >> 3,j);
-		if(!port->ioPin || !port->puEn || !port->puSel || 
-		   !port->portLatch || !port->portDir || !port->pcr) {
-			fprintf(stderr,"Can not create signal line\n");
+		port->ioPin = SigNode_New("%s.P%d.%d", pio->name, i >> 3, j);
+		port->puEn = SigNode_New("%s.PuEn%d.%d", pio->name, i >> 3, j);
+		port->puSel = SigNode_New("%s.PuSel%d.%d", pio->name, i >> 3, j);
+		port->portLatch = SigNode_New("%s.PortLatch%d.%d", pio->name, i >> 3, j);
+		port->portDir = SigNode_New("%s.PortDir%d.%d", pio->name, i >> 3, j);
+		port->pcr = SigNode_New("%s.Pcr%d.%d", pio->name, i >> 3, j);
+		if (!port->ioPin || !port->puEn || !port->puSel ||
+		    !port->portLatch || !port->portDir || !port->pcr) {
+			fprintf(stderr, "Can not create signal line\n");
 			exit(1);
 		}
-		port->ioPinTrace = SigNode_Trace(port->ioPin,iopin_trace,port);
-		port->puEnTrace = SigNode_Trace(port->puEn,puen_trace,port);
-		port->puSelTrace = SigNode_Trace(port->puSel,pusel_trace,port);
-		port->portLatchTrace = SigNode_Trace(port->portLatch,port_latch_trace,port);
-		port->portDirTrace = SigNode_Trace(port->portDir,port_dir_trace,port);
-		port->pcrTrace = SigNode_Trace(port->pcr,pcr_trace,port);
+		port->ioPinTrace = SigNode_Trace(port->ioPin, iopin_trace, port);
+		port->puEnTrace = SigNode_Trace(port->puEn, puen_trace, port);
+		port->puSelTrace = SigNode_Trace(port->puSel, pusel_trace, port);
+		port->portLatchTrace = SigNode_Trace(port->portLatch, port_latch_trace, port);
+		port->portDirTrace = SigNode_Trace(port->portDir, port_dir_trace, port);
+		port->pcrTrace = SigNode_Trace(port->pcr, pcr_trace, port);
 	}
 	pio->addrP[0] = REG_P0;
 	pio->addrP[1] = REG_P1;
@@ -603,12 +645,12 @@ M32C_PortsInit(M32C_Pio *pio)
 	pio->addrPD[14] = REG_PD14;
 	pio->addrPD[15] = REG_PD15;
 
-	pio->addrPS[0] = -1; 
-	pio->addrPS[1] = -1; 
-	pio->addrPS[2] = -1; 
-	pio->addrPS[3] = -1; 
-	pio->addrPS[4] = -1; 
-	pio->addrPS[5] = -1; 
+	pio->addrPS[0] = -1;
+	pio->addrPS[1] = -1;
+	pio->addrPS[2] = -1;
+	pio->addrPS[3] = -1;
+	pio->addrPS[4] = -1;
+	pio->addrPS[5] = -1;
 	pio->addrPS[6] = REG_PS0;
 	pio->addrPS[7] = REG_PS1;
 	pio->addrPS[8] = REG_PS2;
@@ -625,17 +667,30 @@ BusDevice *
 M32C_PioNew(const char *name)
 {
 	M32C_Pio *pio = sg_new(M32C_Pio);
+	int i;
 	pio->bdev.first_mapping = NULL;
 	pio->bdev.Map = M32CPio_Map;
 	pio->bdev.UnMap = M32CPio_Unmap;
 	pio->bdev.owner = pio;
-	pio->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	pio->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	pio->name = sg_strdup(name);
-	pio->sigPRC2 = SigNode_New("%s.prc2",pio->name);
-	if(pio->sigPRC2 == NULL) {
-		fprintf(stderr,"Can not create sig PRC2\n");
+	pio->sigPRC2 = SigNode_New("%s.prc2", pio->name);
+	if (pio->sigPRC2 == NULL) {
+		fprintf(stderr, "Can not create sig PRC2\n");
 		exit(1);
 	}
 	M32C_PortsInit(pio);
+	for (i = 0; i < array_size(pio->regP); i++) {
+		/* 
+		 *********************************************************
+		 * Real board gives 0 for the latch register, manual says 
+		 * undefined.
+		 *********************************************************
+		 */
+		/* pio->regP[i] = lrand48(); */
+		pio->regP[i] = 0;
+		/* Not all PD are 0, should be checked with the manual again */
+		pio->regPD[i] = 0;
+	}
 	return &pio->bdev;
 }

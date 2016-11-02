@@ -106,7 +106,6 @@
 #define ASC_RETRIES(base)	((base) + 0x28)
 #define 	RETRIES_MSK	0x00FF
 
-
 #define RX_FIFO_SIZE_MAX (16)
 #define RX_FIFO_SIZE(ser) (16)
 #define RX_FIFO_MASK(ser) (RX_FIFO_SIZE(ser) - 1)
@@ -123,9 +122,8 @@
 #define TX_FIFO_WP(ser)	(ser->txfifo_wp & TX_FIFO_MASK(ser))
 #define TX_FIFO_RP(ser)	(ser->txfifo_rp & TX_FIFO_MASK(ser))
 
-
 typedef struct StAsc {
-	BusDevice bdev;	
+	BusDevice bdev;
 	UartPort *backend;
 	Clock_t *clk_in;
 	Clock_t *clk_baud;
@@ -145,45 +143,45 @@ typedef struct StAsc {
 	uint32_t reg_RETRIES;
 
 	UartChar rx_fifo[RX_FIFO_SIZE_MAX];
-        uint64_t rxfifo_wp;
-        uint64_t rxfifo_rp;
+	uint64_t rxfifo_wp;
+	uint64_t rxfifo_rp;
 	uint32_t rx_fifo_size;
 
-        UartChar tx_fifo[TX_FIFO_SIZE_MAX];
-        uint64_t txfifo_wp;
-        uint64_t txfifo_rp;
+	UartChar tx_fifo[TX_FIFO_SIZE_MAX];
+	uint64_t txfifo_wp;
+	uint64_t txfifo_rp;
 	uint32_t tx_fifo_size;
 
 	int interrupt_posted;
 	SigNode *sigIrq;
 } StAsc;
 
-
 static void
-update_interrupts(StAsc *asc) 
+update_interrupts(StAsc * asc)
 {
-	if(asc->reg_STA & asc->reg_INTEN) {
-		if(!asc->interrupt_posted) {
-			SigNode_Set(asc->sigIrq,SIG_LOW);
-                        asc->interrupt_posted = 1;
+	if (asc->reg_STA & asc->reg_INTEN) {
+		if (!asc->interrupt_posted) {
+			SigNode_Set(asc->sigIrq, SIG_LOW);
+			asc->interrupt_posted = 1;
 		}
 	} else {
-		if(asc->interrupt_posted) {
-			SigNode_Set(asc->sigIrq,SIG_HIGH);
-                        asc->interrupt_posted = 0;
+		if (asc->interrupt_posted) {
+			SigNode_Set(asc->sigIrq, SIG_HIGH);
+			asc->interrupt_posted = 0;
 		}
 	}
 }
 
 static void
-update_clock(StAsc *asc) {
+update_clock(StAsc * asc)
+{
 	uint32_t bauddiv;
-        bauddiv = asc->reg_BAUDRATE & 0xffff;
-	if(asc->reg_CTL & CTL_BAUDMODE) {
-		Clock_MakeDerived(asc->clk_baud,asc->clk_in,bauddiv,1024 * 1024);
+	bauddiv = asc->reg_BAUDRATE & 0xffff;
+	if (asc->reg_CTL & CTL_BAUDMODE) {
+		Clock_MakeDerived(asc->clk_baud, asc->clk_in, bauddiv, 1024 * 1024);
 	} else {
-		Clock_MakeDerived(asc->clk_baud,asc->clk_in,1,16 * bauddiv);
-	}	
+		Clock_MakeDerived(asc->clk_baud, asc->clk_in, 1, 16 * bauddiv);
+	}
 }
 
 /*
@@ -194,14 +192,14 @@ update_clock(StAsc *asc) {
  */
 
 static void
-baud_clock_trace(Clock_t *clock,void *clientData) 
+baud_clock_trace(Clock_t * clock, void *clientData)
 {
 	StAsc *asc = (StAsc *) clientData;
-        UartCmd cmd;
-        cmd.opcode = UART_OPC_SET_BAUDRATE;
-        cmd.arg = Clock_Freq(clock);
+	UartCmd cmd;
+	cmd.opcode = UART_OPC_SET_BAUDRATE;
+	cmd.arg = Clock_Freq(clock);
 	/* Dont forget to update the baudrate when uart is enabled */
-	SerialDevice_Cmd(asc->backend,&cmd);
+	SerialDevice_Cmd(asc->backend, &cmd);
 }
 
 /*
@@ -210,31 +208,29 @@ baud_clock_trace(Clock_t *clock,void *clientData)
  *      Write chars from TX-Fifo to backend. 
  ***************************************************************
  */
-static void 
-serial_output(void *cd) {
-        StAsc *asc = cd;
-        while(TX_FIFO_COUNT(asc) > 0) {
-                int count;
-		count=SerialDevice_Write(asc->backend,&asc->tx_fifo[TX_FIFO_RP(asc)],1);
-                if(count > 0) {
-                        asc->txfifo_rp++;
-                } else {
-			break;
-		} 
-        }
-        if(TX_FIFO_COUNT(asc) == 0) {
-		asc->reg_STA |= STA_TE; 
+static bool
+serial_output(void *cd, UartChar * c)
+{
+	StAsc *asc = cd;
+	if (TX_FIFO_COUNT(asc) > 0) {
+		*c = asc->tx_fifo[TX_FIFO_RP(asc)];
+		asc->txfifo_rp++;
+	} else {
+		fprintf(stderr, "Bug in %s %s\n", __FILE__, __func__);
+	}
+	if (TX_FIFO_COUNT(asc) == 0) {
+		asc->reg_STA |= STA_TE;
 		SerialDevice_StopTx(asc->backend);
 	}
-	if(TX_FIFO_COUNT(asc) <= 8) {
-		asc->reg_STA |= STA_THE; 
+	if (TX_FIFO_COUNT(asc) <= 8) {
+		asc->reg_STA |= STA_THE;
 	}
-        if(TX_FIFO_ROOM(asc) > 0) {
+	if (TX_FIFO_ROOM(asc) > 0) {
 		/* No longer full */
 		asc->reg_STA &= ~STA_TF;
-        } 
+	}
 	update_interrupts(asc);
-        return;
+	return true;
 }
 
 /*
@@ -243,49 +239,39 @@ serial_output(void *cd) {
  ************************************************************
  */
 static inline int
-serial_put_rx_fifo(StAsc *asc,uint32_t c) {
-        int room = RX_FIFO_ROOM(asc);
-        if(room < 1) {
-                return -1;
-        }
-        asc->rx_fifo[RX_FIFO_WP(asc)]=c;
-        asc->rxfifo_wp++;
-        if(room == 1) {
+serial_put_rx_fifo(StAsc * asc, uint32_t c)
+{
+	int room = RX_FIFO_ROOM(asc);
+	if (room < 1) {
+		return -1;
+	}
+	asc->rx_fifo[RX_FIFO_WP(asc)] = c;
+	asc->rxfifo_wp++;
+	if (room == 1) {
 		SerialDevice_StopRx(asc->backend);
-                return 0;
-        }
-        return 1;
+		return 0;
+	}
+	return 1;
 }
 
-
-static void 
-serial_input(void *cd) {
-        StAsc *asc = cd;
-        int fifocount;
-        while(1) {
-                UartChar c;
-		int count = SerialDevice_Read(asc->backend,&c,1);
-                if(count == 1) {
-                        if(serial_put_rx_fifo(asc,c) < 1) {
-				break;
-			}
-                } else {
-			break;
-		} 
-        }
-        fifocount = RX_FIFO_COUNT(asc);
-        if(fifocount) {
-		if(fifocount >= 8) {
+static void
+serial_input(void *cd, UartChar c)
+{
+	StAsc *asc = cd;
+	int fifocount;
+	serial_put_rx_fifo(asc, c);
+	fifocount = RX_FIFO_COUNT(asc);
+	if (fifocount) {
+		if (fifocount >= 8) {
 			asc->reg_STA |= STA_RHF;
 		}
 		asc->reg_STA |= STA_RBF;
-                update_interrupts(asc);
-        }  
+		update_interrupts(asc);
+	}
 }
 
-
 static void
-reset_rx_fifo(StAsc *asc) 
+reset_rx_fifo(StAsc * asc)
 {
 	asc->rxfifo_rp = asc->rxfifo_wp = 0;
 	asc->reg_STA &= ~(STA_RHF | STA_RBF);
@@ -293,7 +279,7 @@ reset_rx_fifo(StAsc *asc)
 }
 
 static void
-reset_tx_fifo(StAsc *asc) 
+reset_tx_fifo(StAsc * asc)
 {
 	asc->txfifo_rp = asc->txfifo_wp = 0;
 	asc->reg_STA |= STA_TE | STA_THE;
@@ -301,79 +287,79 @@ reset_tx_fifo(StAsc *asc)
 	update_interrupts(asc);
 }
 
-
 static void
-update_serconfig(StAsc *asc)
+update_serconfig(StAsc * asc)
 {
-        UartCmd cmd;
-        tcflag_t bits;
-        tcflag_t parodd;
-        tcflag_t parenb;
-        tcflag_t crtscts;
+	UartCmd cmd;
+	tcflag_t bits;
+	tcflag_t parodd;
+	tcflag_t parenb;
+	tcflag_t crtscts;
 	uint32_t mode;
-	crtscts=0; 
+	crtscts = 0;
 	mode = asc->reg_CTL & CTL_MODE_MSK;
-        if(asc->reg_CTL & CTL_PARITYODD) {
-                parodd=1;
-        } else {
-                parodd=0;
-        }
-	if((mode == CTL_MODE_7BIT_PAR) ||(mode == CTL_MODE_8BIT_PAR)) {
-                parenb=1;
+	if (asc->reg_CTL & CTL_PARITYODD) {
+		parodd = 1;
 	} else {
-                parenb=0;
+		parodd = 0;
 	}
-        switch(mode) {
-		case CTL_MODE_7BIT_PAR:
-                        bits=7; 
-			break;
-
-		case CTL_MODE_8BIT:
-		case CTL_MODE_8BIT_WKUP:
-		case CTL_MODE_8BIT_PAR:
-                        bits=8; 
-			break;
-	
-		case CTL_MODE_9BIT:
-                        bits=9; 
-			break;
-                default:
-                        bits=8; break;
-        }
-	if(asc->reg_CTL & CTL_CTSENABLE) {
-		crtscts = 1;	
+	if ((mode == CTL_MODE_7BIT_PAR) || (mode == CTL_MODE_8BIT_PAR)) {
+		parenb = 1;
+	} else {
+		parenb = 0;
 	}
-	if(crtscts) {
-                cmd.opcode = UART_OPC_CRTSCTS;
-                cmd.arg = 1;
-                SerialDevice_Cmd(asc->backend,&cmd);
-        } else {
-                cmd.opcode = UART_OPC_CRTSCTS;
-                cmd.arg = 0;
-                SerialDevice_Cmd(asc->backend,&cmd);
+	switch (mode) {
+	    case CTL_MODE_7BIT_PAR:
+		    bits = 7;
+		    break;
 
-                cmd.opcode = UART_OPC_SET_RTS;
+	    case CTL_MODE_8BIT:
+	    case CTL_MODE_8BIT_WKUP:
+	    case CTL_MODE_8BIT_PAR:
+		    bits = 8;
+		    break;
+
+	    case CTL_MODE_9BIT:
+		    bits = 9;
+		    break;
+	    default:
+		    bits = 8;
+		    break;
+	}
+	if (asc->reg_CTL & CTL_CTSENABLE) {
+		crtscts = 1;
+	}
+	if (crtscts) {
+		cmd.opcode = UART_OPC_CRTSCTS;
+		cmd.arg = 1;
+		SerialDevice_Cmd(asc->backend, &cmd);
+	} else {
+		cmd.opcode = UART_OPC_CRTSCTS;
+		cmd.arg = 0;
+		SerialDevice_Cmd(asc->backend, &cmd);
+
+		cmd.opcode = UART_OPC_SET_RTS;
 		/* Set the initial state of RTS */
 #if 0
-                if(iuart->ucr2 & UCR2_CTS) {
-                        cmd.arg = UART_RTS_ACT;
-                } else {
-                        cmd.arg = UART_RTS_INACT;
-                }
-                SerialDevice_Cmd(asc->backend,&cmd);
+		if (iuart->ucr2 & UCR2_CTS) {
+			cmd.arg = UART_RTS_ACT;
+		} else {
+			cmd.arg = UART_RTS_INACT;
+		}
+		SerialDevice_Cmd(asc->backend, &cmd);
 #endif
-        }
-        cmd.opcode = UART_OPC_PAREN;
+	}
+	cmd.opcode = UART_OPC_PAREN;
 	cmd.arg = parenb;
-        SerialDevice_Cmd(asc->backend,&cmd);
+	SerialDevice_Cmd(asc->backend, &cmd);
 
-        cmd.opcode = UART_OPC_PARODD;
+	cmd.opcode = UART_OPC_PARODD;
 	cmd.arg = parodd;
-        SerialDevice_Cmd(asc->backend,&cmd);
+	SerialDevice_Cmd(asc->backend, &cmd);
 
-        cmd.opcode = UART_OPC_SET_CSIZE;
+	cmd.opcode = UART_OPC_SET_CSIZE;
 	cmd.arg = bits;
-        SerialDevice_Cmd(asc->backend,&cmd);
+	SerialDevice_Cmd(asc->backend, &cmd);
 
 }
 
@@ -382,8 +368,8 @@ update_serconfig(StAsc *asc)
  * Baudrate
  **************************************************
  */
-static inline void 
-baudrate_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+static inline void
+baudrate_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	asc->reg_BAUDRATE = value;
@@ -391,7 +377,7 @@ baudrate_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-baudrate_read(void *clientData,uint32_t address,int rqlen) 
+baudrate_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	return asc->reg_BAUDRATE;
@@ -404,44 +390,44 @@ baudrate_read(void *clientData,uint32_t address,int rqlen)
  ************************************************************
  */
 static void
-txbuf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{ 
+txbuf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
 	StAsc *asc = (StAsc *) clientData;
-        int room;
+	int room;
 	uint8_t old_STA;
-	if(TX_FIFO_ROOM(asc) > 0) {
+	if (TX_FIFO_ROOM(asc) > 0) {
 		asc->tx_fifo[TX_FIFO_WP(asc)] = value & 0x1ff;
 		asc->txfifo_wp++;
 	}
-	old_STA = asc->reg_STA;	
-        room = TX_FIFO_ROOM(asc);
+	old_STA = asc->reg_STA;
+	room = TX_FIFO_ROOM(asc);
 
 	asc->reg_STA &= ~STA_TE;
-	if(room < 8) {
+	if (room < 8) {
 		asc->reg_STA &= ~STA_THE;
 	}
-        if(room > 0) {
+	if (room > 0) {
 		asc->reg_STA &= ~STA_TF;
-        } else {
+	} else {
 		asc->reg_STA |= STA_TF;
 	}
-	if(asc->reg_STA != old_STA) {
+	if (asc->reg_STA != old_STA) {
 		update_interrupts(asc);
 	}
 	SerialDevice_StartTx(asc->backend);
 }
 
 static uint32_t
-txbuf_read(void *clientData,uint32_t address,int rqlen) 
+txbuf_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"StAsc: Warning: Writing readonly register txbuf\n");
+	fprintf(stderr, "StAsc: Warning: Writing readonly register txbuf\n");
 	return 0;
 }
 
 static void
-rxbuf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{ 
-	fprintf(stderr,"StAsc: Warning: Writing readonly register rxbuf\n");
+rxbuf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "StAsc: Warning: Writing readonly register rxbuf\n");
 }
 
 /*
@@ -450,22 +436,22 @@ rxbuf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***************************************************************
  */
 static uint32_t
-rxbuf_read(void *clientData,uint32_t address,int rqlen) 
+rxbuf_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-        uint32_t data=0;
-	if(RX_FIFO_COUNT(asc) > 0) {
+	uint32_t data = 0;
+	if (RX_FIFO_COUNT(asc) > 0) {
 		data = asc->rx_fifo[RX_FIFO_RP(asc)];
 		asc->rxfifo_rp++;
 	}
-	if(RX_FIFO_COUNT(asc) == 0) {
+	if (RX_FIFO_COUNT(asc) == 0) {
 		asc->reg_STA &= ~STA_RBF;
 	}
-	if(RX_FIFO_COUNT(asc) >= 8) {
+	if (RX_FIFO_COUNT(asc) >= 8) {
 		asc->reg_STA |= STA_RHF;
 	}
 	update_interrupts(asc);
-	if(asc->reg_CTL & CTL_RXENABLE) {
+	if (asc->reg_CTL & CTL_RXENABLE) {
 		SerialDevice_StartRx(asc->backend);
 	}
 	return data;
@@ -477,48 +463,48 @@ rxbuf_read(void *clientData,uint32_t address,int rqlen)
  ***************************************************************************
  */
 static uint32_t
-ctl_read(void *clientData,uint32_t address,int rqlen) 
+ctl_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-        return asc->reg_CTL;
+	return asc->reg_CTL;
 }
 
 static void
-ctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+ctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	uint32_t diff = value ^ asc->reg_CTL;
 	asc->reg_CTL = value;
 	update_serconfig(asc);
-	if(value & CTL_RXENABLE) {
+	if (value & CTL_RXENABLE) {
 		SerialDevice_StartRx(asc->backend);
 	}
-	if(diff & CTL_BAUDMODE) {	
-		update_clock(asc); 
-	}	
-        return;
+	if (diff & CTL_BAUDMODE) {
+		update_clock(asc);
+	}
+	return;
 }
 
 static uint32_t
-inten_read(void *clientData,uint32_t address,int rqlen) 
+inten_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-        return asc->reg_INTEN;
+	return asc->reg_INTEN;
 }
 
 static void
-inten_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+inten_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	asc->reg_INTEN = value;
 	update_interrupts(asc);
-        return;
+	return;
 }
 
 /*
  */
 static uint32_t
-sta_read(void *clientData,uint32_t address,int rqlen) 
+sta_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	Senseless_Report(150);
@@ -526,94 +512,94 @@ sta_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-sta_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+sta_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	asc->reg_STA = value;
 }
 
 static uint32_t
-guardtime_read(void *clientData,uint32_t address,int rqlen) 
+guardtime_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	return asc->reg_GUARDTIME;
 }
 
 static void
-guardtime_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+guardtime_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-	fprintf(stderr,"StaAsc Warning: Guardtime register not implemented\n");
+	fprintf(stderr, "StaAsc Warning: Guardtime register not implemented\n");
 	asc->reg_GUARDTIME = value & 0x1ff;
 }
 
 static uint32_t
-timeout_read(void *clientData,uint32_t address,int rqlen) 
+timeout_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	return asc->reg_TIMEOUT;
 }
 
 static void
-timeout_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+timeout_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-	fprintf(stderr,"StaAsc Warning: timeout register not implemented\n");
+	fprintf(stderr, "StaAsc Warning: timeout register not implemented\n");
 	asc->reg_TIMEOUT = value & 0x1ff;
 }
 
 static void
-txreset_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+txreset_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-	reset_tx_fifo(asc);	
+	reset_tx_fifo(asc);
 }
 
 static void
-rxreset_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+rxreset_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
-	reset_rx_fifo(asc);	
+	reset_rx_fifo(asc);
 }
 
 static void
-retries_write(void *clientData,uint32_t value,uint32_t address,int rqlen) 
+retries_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	asc->reg_RETRIES = value & 0xff;
 }
 
-static uint32_t 
-retries_read(void *clientData,uint32_t address,int rqlen) 
+static uint32_t
+retries_read(void *clientData, uint32_t address, int rqlen)
 {
 	StAsc *asc = (StAsc *) clientData;
 	return asc->reg_RETRIES;
 }
 
 static void
-StAsc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags) 
+StAsc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	StAsc *asc = (StAsc *) owner;
-        IOH_New32(ASC_BAUDRATE(base),baudrate_read,baudrate_write,asc);
-        IOH_New32(ASC_TXBUF(base),txbuf_read,txbuf_write,asc);
-        IOH_New32(ASC_RXBUF(base),rxbuf_read,rxbuf_write,asc);
-	IOH_New32(ASC_CTL(base),ctl_read,ctl_write,asc);
-	IOH_New32(ASC_INTEN(base),inten_read,inten_write,asc);
-	IOH_New32(ASC_STA(base),sta_read,sta_write,asc);
-	IOH_New32(ASC_GUARDTIME(base),guardtime_read,guardtime_write,asc);
-	IOH_New32(ASC_TIMEOUT(base),timeout_read,timeout_write,asc);
-	IOH_New32(ASC_TXRESET(base),NULL,txreset_write,asc);
-	IOH_New32(ASC_RXRESET(base),NULL,rxreset_write,asc);
-	IOH_New32(ASC_RETRIES(base),retries_read,retries_write,asc);
+	IOH_New32(ASC_BAUDRATE(base), baudrate_read, baudrate_write, asc);
+	IOH_New32(ASC_TXBUF(base), txbuf_read, txbuf_write, asc);
+	IOH_New32(ASC_RXBUF(base), rxbuf_read, rxbuf_write, asc);
+	IOH_New32(ASC_CTL(base), ctl_read, ctl_write, asc);
+	IOH_New32(ASC_INTEN(base), inten_read, inten_write, asc);
+	IOH_New32(ASC_STA(base), sta_read, sta_write, asc);
+	IOH_New32(ASC_GUARDTIME(base), guardtime_read, guardtime_write, asc);
+	IOH_New32(ASC_TIMEOUT(base), timeout_read, timeout_write, asc);
+	IOH_New32(ASC_TXRESET(base), NULL, txreset_write, asc);
+	IOH_New32(ASC_RXRESET(base), NULL, rxreset_write, asc);
+	IOH_New32(ASC_RETRIES(base), retries_read, retries_write, asc);
 
 }
 
 static void
-StAsc_UnMap(void *owner,uint32_t base,uint32_t mask) 
+StAsc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete32(ASC_BAUDRATE(base));
-        IOH_Delete32(ASC_TXBUF(base));
-        IOH_Delete32(ASC_RXBUF(base));
+	IOH_Delete32(ASC_BAUDRATE(base));
+	IOH_Delete32(ASC_TXBUF(base));
+	IOH_Delete32(ASC_RXBUF(base));
 	IOH_Delete32(ASC_CTL(base));
 	IOH_Delete32(ASC_INTEN(base));
 	IOH_Delete32(ASC_STA(base));
@@ -631,29 +617,29 @@ StAsc_UnMap(void *owner,uint32_t base,uint32_t mask)
  **********************************************************
  */
 BusDevice *
-StAsc_New(const char *devname) {
+StAsc_New(const char *devname)
+{
 	StAsc *asc = (StAsc *) sg_new(StAsc);
-        asc->bdev.first_mapping = NULL;
-        asc->bdev.Map = StAsc_Map;
-        asc->bdev.UnMap = StAsc_UnMap;
-        asc->bdev.owner= asc;
-        asc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	asc->backend = Uart_New(devname,serial_input,serial_output,NULL,asc);
+	asc->bdev.first_mapping = NULL;
+	asc->bdev.Map = StAsc_Map;
+	asc->bdev.UnMap = StAsc_UnMap;
+	asc->bdev.owner = asc;
+	asc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	asc->backend = Uart_New(devname, serial_input, serial_output, NULL, asc);
 	asc->rx_fifo_size = asc->tx_fifo_size = 1;
-	asc->clk_in = Clock_New("%s.clk",devname);
-	asc->clk_baud = Clock_New("%s.baud_clk",devname);
-	if(!asc->clk_in || !asc->clk_baud) {
-		fprintf(stderr,"Can not create baud clocks for %s\n",devname);
+	asc->clk_in = Clock_New("%s.clk", devname);
+	asc->clk_baud = Clock_New("%s.baud_clk", devname);
+	if (!asc->clk_in || !asc->clk_baud) {
+		fprintf(stderr, "Can not create baud clocks for %s\n", devname);
 		exit(1);
 	}
-	asc->sigIrq = SigNode_New("%s.irq",devname);	
-	if(!asc->sigIrq) {
-		fprintf(stderr,"Can not create interrupt signal for %s\n",devname);
+	asc->sigIrq = SigNode_New("%s.irq", devname);
+	if (!asc->sigIrq) {
+		fprintf(stderr, "Can not create interrupt signal for %s\n", devname);
 	}
-	SigNode_Set(asc->sigIrq,SIG_HIGH); /* No request on startup */	
-	asc->interrupt_posted=0;
-	Clock_Trace(asc->clk_baud,baud_clock_trace,asc);
-	fprintf(stderr,"Created ST Asynchronous serial controller (ASC) \"%s\"\n",devname);
-        return &asc->bdev;
+	SigNode_Set(asc->sigIrq, SIG_HIGH);	/* No request on startup */
+	asc->interrupt_posted = 0;
+	Clock_Trace(asc->clk_baud, baud_clock_trace, asc);
+	fprintf(stderr, "Created ST Asynchronous serial controller (ASC) \"%s\"\n", devname);
+	return &asc->bdev;
 }
- 

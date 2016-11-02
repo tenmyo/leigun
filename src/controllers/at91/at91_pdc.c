@@ -44,11 +44,11 @@
 #include "at91_pdc.h"
 #include "sgstring.h"
 
-#define PDC_RPR(base)	((base)+0x100)  /* Receive Pointer Register */
-#define PDC_RCR(base) 	((base)+0x104)  /* Receive Counter Register */
-#define PDC_TPR(base)	((base)+0x108)  /* Transmit Pointer Register */
-#define PDC_TCR(base)	((base)+0x10c)  /* Transmit Counter Register */
-#define PDC_RNPR(base)	((base)+0x110)  /* Receive Next Pointer Register */
+#define PDC_RPR(base)	((base)+0x100)	/* Receive Pointer Register */
+#define PDC_RCR(base) 	((base)+0x104)	/* Receive Counter Register */
+#define PDC_TPR(base)	((base)+0x108)	/* Transmit Pointer Register */
+#define PDC_TCR(base)	((base)+0x10c)	/* Transmit Counter Register */
+#define PDC_RNPR(base)	((base)+0x110)	/* Receive Next Pointer Register */
 #define PDC_RNCR(base)	((base)+0x114)	/* Receive Next Counter Register */
 #define PDC_TNPR(base)	((base)+0x118)	/* Transmit Next Pointer Register */
 #define PDC_TNCR(base)	((base)+0x11c)	/* Transmit Next Counter Register */
@@ -82,13 +82,14 @@ typedef struct AT91Pdc {
 
 /* Receive Pointer Register */
 static uint32_t
-rpr_read(void *clientData,uint32_t address,int rqlen)
+rpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->rpr;
+	return pdc->rpr;
 }
+
 static void
-rpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->rpr = value;
@@ -96,13 +97,14 @@ rpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Receive Counter Register */
 static uint32_t
-rcr_read(void *clientData,uint32_t address,int rqlen)
+rcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->rcr;
+	return pdc->rcr;
 }
+
 static void
-rcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->rcr = value & 0xffff;
@@ -110,13 +112,14 @@ rcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Transmit Pointer Register */
 static uint32_t
-tpr_read(void *clientData,uint32_t address,int rqlen)
+tpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->tpr;
+	return pdc->tpr;
 }
+
 static void
-tpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->tpr = value;
@@ -124,28 +127,30 @@ tpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Transmit Counter Register */
 static uint32_t
-tcr_read(void *clientData,uint32_t address,int rqlen)
+tcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->tcr;
+	return pdc->tcr;
 }
+
 static void
-tcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->tcr = value & 0xffff;
-	fprintf(stderr,"Register %08x is not implemented\n",address);
+	fprintf(stderr, "Register %08x is not implemented\n", address);
 }
 
 /* Receive Next Pointer Register */
 static uint32_t
-rnpr_read(void *clientData,uint32_t address,int rqlen)
+rnpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->rnpr;
+	return pdc->rnpr;
 }
+
 static void
-rnpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rnpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->rnpr = value;
@@ -153,14 +158,14 @@ rnpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Receive Next Counter Register */
 static uint32_t
-rncr_read(void *clientData,uint32_t address,int rqlen)
+rncr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->rncr;
+	return pdc->rncr;
 }
 
 static void
-rncr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rncr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->rncr = value & 0xffff;
@@ -168,13 +173,14 @@ rncr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Transmit Next Pointer Register */
 static uint32_t
-tnpr_read(void *clientData,uint32_t address,int rqlen)
+tnpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->tnpr;
+	return pdc->tnpr;
 }
+
 static void
-tnpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tnpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->tnpr = value;
@@ -182,13 +188,14 @@ tnpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Transmit Next Counter Register */
 static uint32_t
-tncr_read(void *clientData,uint32_t address,int rqlen)
+tncr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->tncr;
+	return pdc->tncr;
 }
+
 static void
-tncr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tncr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->tncr = value & 0xffff;
@@ -196,50 +203,52 @@ tncr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 
 /* Transfer Control Register */
 static uint32_t
-ptcr_read(void *clientData,uint32_t address,int rqlen)
+ptcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->ptcr;
+	return pdc->ptcr;
 }
+
 static void
-ptcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ptcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
 	pdc->ptcr = value & 0x303;
-	fprintf(stderr,"Register %08x is not implemented\n",address);
+	fprintf(stderr, "Register %08x is not implemented\n", address);
 }
 
 /* Transfer Status Register */
 static uint32_t
-ptsr_read(void *clientData,uint32_t address,int rqlen)
+ptsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pdc *pdc = (AT91Pdc *) clientData;
-        return pdc->ptsr;
-}
-static void
-ptsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	fprintf(stderr,"AT91Pdc: Status register is readonly\n");
+	return pdc->ptsr;
 }
 
 static void
-AT91Pdc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+ptsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Pdc *pdc = (AT91Pdc*) owner;
-	IOH_New32(PDC_RPR(base),rpr_read,rpr_write,pdc);
-	IOH_New32(PDC_RCR(base),rcr_read,rcr_write,pdc);
-	IOH_New32(PDC_TPR(base),tpr_read,tpr_write,pdc);
-	IOH_New32(PDC_TCR(base),tcr_read,tcr_write,pdc);
-	IOH_New32(PDC_RNPR(base),rnpr_read,rnpr_write,pdc);
-	IOH_New32(PDC_RNCR(base),rncr_read,rncr_write,pdc);
-	IOH_New32(PDC_TNPR(base),tnpr_read,tnpr_write,pdc);
-	IOH_New32(PDC_TNCR(base),tncr_read,tncr_write,pdc);
-	IOH_New32(PDC_PTCR(base),ptcr_read,ptcr_write,pdc);
-	IOH_New32(PDC_PTSR(base),ptsr_read,ptsr_write,pdc);
+	fprintf(stderr, "AT91Pdc: Status register is readonly\n");
 }
 
 static void
-AT91Pdc_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Pdc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
+{
+	AT91Pdc *pdc = (AT91Pdc *) owner;
+	IOH_New32(PDC_RPR(base), rpr_read, rpr_write, pdc);
+	IOH_New32(PDC_RCR(base), rcr_read, rcr_write, pdc);
+	IOH_New32(PDC_TPR(base), tpr_read, tpr_write, pdc);
+	IOH_New32(PDC_TCR(base), tcr_read, tcr_write, pdc);
+	IOH_New32(PDC_RNPR(base), rnpr_read, rnpr_write, pdc);
+	IOH_New32(PDC_RNCR(base), rncr_read, rncr_write, pdc);
+	IOH_New32(PDC_TNPR(base), tnpr_read, tnpr_write, pdc);
+	IOH_New32(PDC_TNCR(base), tncr_read, tncr_write, pdc);
+	IOH_New32(PDC_PTCR(base), ptcr_read, ptcr_write, pdc);
+	IOH_New32(PDC_PTSR(base), ptsr_read, ptsr_write, pdc);
+}
+
+static void
+AT91Pdc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(PDC_RPR(base));
 	IOH_Delete32(PDC_RCR(base));
@@ -255,15 +264,15 @@ AT91Pdc_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 BusDevice *
-AT91Pdc_New(const char *name) 
+AT91Pdc_New(const char *name)
 {
 	AT91Pdc *pdc = sg_new(AT91Pdc);
-	pdc->bdev.first_mapping=NULL;
-        pdc->bdev.Map=AT91Pdc_Map;
-        pdc->bdev.UnMap=AT91Pdc_UnMap;
-        pdc->bdev.owner=pdc;
-        pdc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        //update_interrupt(pdc);
-        fprintf(stderr,"AT91 PDC \"%s\" created\n",name);
-        return &pdc->bdev;
+	pdc->bdev.first_mapping = NULL;
+	pdc->bdev.Map = AT91Pdc_Map;
+	pdc->bdev.UnMap = AT91Pdc_UnMap;
+	pdc->bdev.owner = pdc;
+	pdc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	//update_interrupt(pdc);
+	fprintf(stderr, "AT91 PDC \"%s\" created\n", name);
+	return &pdc->bdev;
 }

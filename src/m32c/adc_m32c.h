@@ -41,5 +41,5 @@
 typedef struct M32C_Adc M32C_Adc;
 
 M32C_Adc *M32C_AdcNew(const char *name);
-void M32C_AdChSet(M32C_Adc *adc,unsigned int channel,uint16_t mvolt);
+void M32C_AdChSet(M32C_Adc * adc, unsigned int channel, uint16_t mvolt);
 #endif

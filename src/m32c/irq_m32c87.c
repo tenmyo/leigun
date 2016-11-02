@@ -116,7 +116,7 @@
 #define ICR_POL		(1 << 4)
 #define ICR_LVS		(1 << 5)
 
-typedef struct M32C_IntCo M32C_IntCo; 
+typedef struct M32C_IntCo M32C_IntCo;
 
 typedef struct M32C_Irq {
 	M32C_IntCo *intco;
@@ -125,6 +125,7 @@ typedef struct M32C_Irq {
 	int ifsr_bit;
 	int int_nr;
 	uint8_t reg_icr;
+    uint8_t forceIRHigh;
 } M32C_Irq;
 
 struct M32C_IntCo {
@@ -135,87 +136,88 @@ struct M32C_IntCo {
 };
 
 static void
-update_interrupt(M32C_IntCo *intco) 
+update_interrupt(M32C_IntCo * intco)
 {
 	int max_ilvl = 0;
 	int ilvl;
 	int i;
 	int int_no = -1;
 	M32C_Irq *irq;
-	for(i = 0; i < 64; i ++) {
+	for (i = 0; i < 64; i++) {
 		irq = &intco->irq[i];
-		if((irq->reg_icr & ICR_IR) == 0) {
+		if ((irq->reg_icr & ICR_IR) == 0) {
 			continue;
 		}
 		ilvl = irq->reg_icr & ICR_ILVL_MSK;
-		if(ilvl > max_ilvl) {
+		if (ilvl > max_ilvl) {
 			max_ilvl = ilvl;
 			int_no = irq->int_nr;
 		}
 	}
 	//fprintf(stderr,"Maxlevel by %d at %llu\n",int_no,CycleCounter_Get());
-	#if 0
-	if(int_no == 31) {
-	 	fprintf(stderr,"Maxlevel by %d at %llu\n",int_no,CycleCounter_Get());
-	}
-	#endif
-	M32C_PostILevel(max_ilvl,int_no);	
 #if 0
-	if(max_ilvl > 0) {
-		fprintf(stderr,"Poste einen Ilevel von %d, int_no %d\n",max_ilvl,int_no);
+	if (int_no == 31) {
+		fprintf(stderr, "Maxlevel by %d at %llu\n", int_no, CycleCounter_Get());
+	}
+#endif
+	M32C_PostILevel(max_ilvl, int_no);
+#if 0
+	if (max_ilvl > 0) {
+		fprintf(stderr, "Poste einen Ilevel von %d, int_no %d\n", max_ilvl, int_no);
 		exit(1);
 	}
 #endif
 }
 
 void
-M32C_AckIrq(BusDevice *intco_bdev,unsigned int intno) 
+M32C_AckIrq(BusDevice * intco_bdev, unsigned int intno)
 {
 	M32C_IntCo *intco = (M32C_IntCo *) intco_bdev;
 	M32C_Irq *irq;
 #if 0
-	if(intno == 21) {
-		fprintf(stderr,"Ack intno %d at %llu\n",intno,CyclesToMilliseconds(CycleCounter_Get()));
+	if (intno == 21) {
+		fprintf(stderr, "Ack intno %d at %llu\n", intno,
+			CyclesToMilliseconds(CycleCounter_Get()));
 	}
 #endif
 #if 0
-	if(intno == 54) {
-		fprintf(stderr,"Ack intno %d at %llu\n",intno,CycleCounter_Get());
+	if (intno == 54) {
+		fprintf(stderr, "Ack intno %d at %llu\n", intno, CycleCounter_Get());
 	}
 #endif
-	if(intno < 64) {
+	if (intno < 64) {
 		irq = &intco->irq[intno];
-		irq->reg_icr &=  ~ICR_IR;
-		update_interrupt(intco); 
+		irq->reg_icr &= ~ICR_IR;
+        irq->reg_icr |= irq->forceIRHigh;
+		update_interrupt(intco);
 	}
 }
 
 static uint32_t
-icr_read(void *clientData,uint32_t address,int rqlen)
+icr_read(void *clientData, uint32_t address, int rqlen)
 {
 	M32C_Irq *irq = (M32C_Irq *) clientData;
 #if 0
 	static uint8_t last;
-	if(irq->reg_icr != last) {
-		fprintf(stderr,"read ICR: %02x\n",irq->reg_icr);
+	if (irq->reg_icr != last) {
+		fprintf(stderr, "read ICR: %02x\n", irq->reg_icr);
 		last = irq->reg_icr;
 	}
 #endif
-        return irq->reg_icr;
+	return irq->reg_icr;
 }
 
 static void
-icr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+icr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	M32C_Irq *irq = (M32C_Irq *) clientData;
 	uint8_t diff = irq->reg_icr;
 	irq->reg_icr = (irq->reg_icr & value & ICR_IR) | (value & ~ICR_IR);
 	diff ^= irq->reg_icr;
-	if(diff & ICR_IR) {
+	if (diff & ICR_IR) {
 		update_interrupt(irq->intco);
-	}	
+	}
 }
-
 
 /**
  ************************************************************
@@ -223,72 +225,79 @@ icr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ************************************************************
  */
 static void
-update_level_interrupt(M32C_Irq *irq) {
+update_level_interrupt(M32C_Irq * irq)
+{
 	uint8_t value = irq->reg_icr;
-	if(value & ICR_LVS) {
-		if(value & ICR_POL) {
-			if(SigNode_Val(irq->irqInput) == SIG_HIGH) {
-				irq->reg_icr |= ICR_IR;
-			} else {
-				irq->reg_icr &= ~ICR_IR;
-			}
-		} else {
-			if(SigNode_Val(irq->irqInput) == SIG_LOW) {
-				irq->reg_icr |= ICR_IR;
-			} else {
-				irq->reg_icr &= ~ICR_IR;
-			}
-		}
-		update_interrupt(irq->intco);
-	}
+    if (value & ICR_POL) {
+        if (SigNode_Val(irq->irqInput) == SIG_HIGH) {
+            irq->reg_icr |= ICR_IR;
+            irq->forceIRHigh  = ICR_IR;
+        } else {
+            irq->forceIRHigh  = 0;
+            //irq->reg_icr &= ~ICR_IR;
+        }
+    } else {
+        if (SigNode_Val(irq->irqInput) == SIG_LOW) {
+            irq->reg_icr |= ICR_IR;
+            irq->forceIRHigh  = ICR_IR;
+        } else {
+            irq->forceIRHigh  = 0;
+            //irq->reg_icr &= ~ICR_IR;
+        }
+    }
+    update_interrupt(irq->intco);
 }
 
 static uint32_t
-exticr_read(void *clientData,uint32_t address,int rqlen)
+exticr_read(void *clientData, uint32_t address, int rqlen)
 {
 	M32C_Irq *irq = (M32C_Irq *) clientData;
-        return irq->reg_icr;
+	return irq->reg_icr;
 }
 
 static void
-exticr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+exticr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	M32C_Irq *irq = (M32C_Irq *) clientData;
-        irq->reg_icr = value & (irq->reg_icr | ~ICR_IR);
-	if(value & ICR_LVS) {
+	irq->reg_icr = (irq->reg_icr & value & ICR_IR) | (value & ~ICR_IR);
+	if (value & ICR_LVS) {
+	    irq->reg_icr = value; 
 		update_level_interrupt(irq);
 	} else {
+        irq->forceIRHigh = 0;
+        irq->reg_icr = (irq->reg_icr & value & ICR_IR) | (value & ~ICR_IR);
 		update_interrupt(irq->intco);
 	}
 }
 
 static uint32_t
-ifsra_read(void *clientData,uint32_t address,int rqlen)
+ifsra_read(void *clientData, uint32_t address, int rqlen)
 {
 	M32C_IntCo *ic = clientData;
 	return ic->regIfsra;
 }
 
 static void
-ifsra_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ifsra_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	M32C_IntCo *ic = clientData;
 	ic->regIfsra = value;
 }
 
 static uint32_t
-ifsr_read(void *clientData,uint32_t address,int rqlen)
+ifsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	M32C_IntCo *ic = clientData;
 	return ic->regIfsr;
 }
 
 static void
-ifsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ifsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	M32C_IntCo *ic = clientData;
 	ic->regIfsr = value;
 }
+
 /*
  ****************************************************************
  * int_src_change
@@ -296,28 +305,28 @@ ifsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ****************************************************************
  */
 static void
-int_src_change(SigNode *node,int value,void *clientData)
+int_src_change(SigNode * node, int value, void *clientData)
 {
-        M32C_Irq *irq = (M32C_Irq*) clientData;
-        if((value == SIG_LOW)) {
-		if((irq->reg_icr & ICR_IR) == 0) {
+	M32C_Irq *irq = (M32C_Irq *) clientData;
+	if (value == SIG_LOW) {
+		if ((irq->reg_icr & ICR_IR) == 0) {
 			irq->reg_icr |= ICR_IR;
-       			update_interrupt(irq->intco);
-		#if 0
-		if(irq->int_nr == M32C_INT_TIMER_B5) {
-			fprintf(stderr,"TIMER B5 %llu: %u\n",CycleCounter_Get(),value);
-			usleep(100000);
-		}
-		#endif
+			update_interrupt(irq->intco);
+#if 0
+			if (irq->int_nr == M32C_INT_TIMER_B5) {
+				fprintf(stderr, "TIMER B5 %llu: %u\n", CycleCounter_Get(), value);
+				usleep(100000);
+			}
+#endif
 		} else {
-		#if 0
-		if(irq->int_nr == M32C_INT_TIMER_B5) {
-			fprintf(stderr,"timer B5 %llu: %u\n",CycleCounter_Get(),value);
-			usleep(100000);
+#if 0
+			if (irq->int_nr == M32C_INT_TIMER_B5) {
+				fprintf(stderr, "timer B5 %llu: %u\n", CycleCounter_Get(), value);
+				usleep(100000);
+			}
+#endif
 		}
-		#endif
-		}
-        } 
+	}
 }
 
 /**
@@ -326,33 +335,39 @@ int_src_change(SigNode *node,int value,void *clientData)
  ********************************************************************************
  */
 static void
-extint_src_change(SigNode *node,int value,void *clientData)
+extint_src_change(SigNode * node, int value, void *clientData)
 {
-        M32C_Irq *irq = (M32C_Irq*) clientData;
+	M32C_Irq *irq = (M32C_Irq *) clientData;
 	M32C_IntCo *ic = irq->intco;
-	if(irq->reg_icr & ICR_LVS) {
-		update_level_interrupt(irq); 
-	} else if(irq->reg_icr & ICR_IR) {
+
+	if (!(irq->reg_icr & ICR_LVS)) {
+        irq->forceIRHigh = 0;
+    }
+
+	if (irq->reg_icr & ICR_LVS) {
+		update_level_interrupt(irq);
+	} else if (irq->reg_icr & ICR_IR) {
 		/* Do nothing in this case */
-	} else if(ic->regIfsr & (1 << irq->ifsr_bit)) {
+	} else if (ic->regIfsr & (1 << irq->ifsr_bit)) {
+        /* Both edges interrupt */
 		irq->reg_icr |= ICR_IR;
 		update_interrupt(irq->intco);
-	} else { 
-		if(irq->reg_icr & ICR_POL) {
-			if((value == SIG_HIGH)) {
+	} else {
+		if (irq->reg_icr & ICR_POL) {
+			if (value == SIG_HIGH) {
 				irq->reg_icr |= ICR_IR;
-			} 
+			}
 		} else {
-			if((value == SIG_LOW)) {
+			if (value == SIG_LOW) {
 				irq->reg_icr |= ICR_IR;
-			} 
-		}	
+			}
+		}
 		update_interrupt(irq->intco);
 	}
 }
 
 static void
-M32CIntCo_Unmap(void *owner,uint32_t base,uint32_t mask)
+M32CIntCo_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete8(REG_TA0IC);
 	IOH_Delete8(REG_TA1IC);
@@ -418,122 +433,122 @@ M32CIntCo_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-M32CIntCo_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+M32CIntCo_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 
 	M32C_IntCo *ic = (M32C_IntCo *) owner;
-	IOH_New8(REG_TA0IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_A0]);
-	IOH_New8(REG_TA1IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_A1]);
-	IOH_New8(REG_TA2IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_A2]);
-	IOH_New8(REG_TA3IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_A3]);
-	IOH_New8(REG_TA4IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_A4]);
+	IOH_New8(REG_TA0IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_A0]);
+	IOH_New8(REG_TA1IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_A1]);
+	IOH_New8(REG_TA2IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_A2]);
+	IOH_New8(REG_TA3IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_A3]);
+	IOH_New8(REG_TA4IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_A4]);
 
-	IOH_New8(REG_TB0IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_B0]);
-	IOH_New8(REG_TB1IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_B1]);
-	IOH_New8(REG_TB2IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_B2]);
-	IOH_New8(REG_TB3IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_B3]);
-	IOH_New8(REG_TB4IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_B4]);
-	IOH_New8(REG_TB5IC,icr_read,icr_write,&ic->irq[M32C_INT_TIMER_B5]);
+	IOH_New8(REG_TB0IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_B0]);
+	IOH_New8(REG_TB1IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_B1]);
+	IOH_New8(REG_TB2IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_B2]);
+	IOH_New8(REG_TB3IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_B3]);
+	IOH_New8(REG_TB4IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_B4]);
+	IOH_New8(REG_TB5IC, icr_read, icr_write, &ic->irq[M32C_INT_TIMER_B5]);
 
-	IOH_New8(REG_S0TIC,icr_read,icr_write,&ic->irq[M32C_INT_UART0_TX]);
-	IOH_New8(REG_S1TIC,icr_read,icr_write,&ic->irq[M32C_INT_UART1_TX]);
-	IOH_New8(REG_S2TIC,icr_read,icr_write,&ic->irq[M32C_INT_UART2_TX]);
-	IOH_New8(REG_S3TIC,icr_read,icr_write,&ic->irq[M32C_INT_UART3_TX]);
-	IOH_New8(REG_S4TIC,icr_read,icr_write,&ic->irq[M32C_INT_UART4_TX]);
+	IOH_New8(REG_S0TIC, icr_read, icr_write, &ic->irq[M32C_INT_UART0_TX]);
+	IOH_New8(REG_S1TIC, icr_read, icr_write, &ic->irq[M32C_INT_UART1_TX]);
+	IOH_New8(REG_S2TIC, icr_read, icr_write, &ic->irq[M32C_INT_UART2_TX]);
+	IOH_New8(REG_S3TIC, icr_read, icr_write, &ic->irq[M32C_INT_UART3_TX]);
+	IOH_New8(REG_S4TIC, icr_read, icr_write, &ic->irq[M32C_INT_UART4_TX]);
 
-	IOH_New8(REG_S0RIC,icr_read,icr_write,&ic->irq[M32C_INT_UART0_RX]);
-	IOH_New8(REG_S1RIC,icr_read,icr_write,&ic->irq[M32C_INT_UART1_RX]);
-	IOH_New8(REG_S2RIC,icr_read,icr_write,&ic->irq[M32C_INT_UART2_RX]);
-	IOH_New8(REG_S3RIC,icr_read,icr_write,&ic->irq[M32C_INT_UART3_RX]);
-	IOH_New8(REG_S4RIC,icr_read,icr_write,&ic->irq[M32C_INT_UART4_RX]);
-	
-	IOH_New8(REG_BCN0IC,icr_read,icr_write,&ic->irq[M32C_INT_BCN_UART03]);
-	IOH_New8(REG_BCN1IC,icr_read,icr_write,&ic->irq[M32C_INT_BCN_UART14]);
-	IOH_New8(REG_BCN2IC,icr_read,icr_write,&ic->irq[M32C_INT_BCN_UART2]);
+	IOH_New8(REG_S0RIC, icr_read, icr_write, &ic->irq[M32C_INT_UART0_RX]);
+	IOH_New8(REG_S1RIC, icr_read, icr_write, &ic->irq[M32C_INT_UART1_RX]);
+	IOH_New8(REG_S2RIC, icr_read, icr_write, &ic->irq[M32C_INT_UART2_RX]);
+	IOH_New8(REG_S3RIC, icr_read, icr_write, &ic->irq[M32C_INT_UART3_RX]);
+	IOH_New8(REG_S4RIC, icr_read, icr_write, &ic->irq[M32C_INT_UART4_RX]);
 
-	IOH_New8(REG_DM0IC,icr_read,icr_write,&ic->irq[M32C_INT_DMA0]);
-	IOH_New8(REG_DM1IC,icr_read,icr_write,&ic->irq[M32C_INT_DMA1]);
-	IOH_New8(REG_DM2IC,icr_read,icr_write,&ic->irq[M32C_INT_DMA2]);
-	IOH_New8(REG_DM3IC,icr_read,icr_write,&ic->irq[M32C_INT_DMA3]);
+	IOH_New8(REG_BCN0IC, icr_read, icr_write, &ic->irq[M32C_INT_BCN_UART03]);
+	IOH_New8(REG_BCN1IC, icr_read, icr_write, &ic->irq[M32C_INT_BCN_UART14]);
+	IOH_New8(REG_BCN2IC, icr_read, icr_write, &ic->irq[M32C_INT_BCN_UART2]);
 
-	IOH_New8(REG_AD0IC,icr_read,icr_write,&ic->irq[M32C_INT_AD0]);
-	IOH_New8(REG_KUPIC,icr_read,icr_write,&ic->irq[M32C_INT_KEYINPUT]);
+	IOH_New8(REG_DM0IC, icr_read, icr_write, &ic->irq[M32C_INT_DMA0]);
+	IOH_New8(REG_DM1IC, icr_read, icr_write, &ic->irq[M32C_INT_DMA1]);
+	IOH_New8(REG_DM2IC, icr_read, icr_write, &ic->irq[M32C_INT_DMA2]);
+	IOH_New8(REG_DM3IC, icr_read, icr_write, &ic->irq[M32C_INT_DMA3]);
 
-	IOH_New8(REG_IIO0IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO0]);
-	IOH_New8(REG_IIO1IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO1]);
-	IOH_New8(REG_IIO2IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO2]);
-	IOH_New8(REG_IIO3IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO3]);
-	IOH_New8(REG_IIO4IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO4]);
-	IOH_New8(REG_IIO5IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO5]);
-	IOH_New8(REG_IIO6IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO6]);
-	IOH_New8(REG_IIO7IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO7]);
-	IOH_New8(REG_IIO8IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO8]);
-	IOH_New8(REG_IIO9IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO9]);
-	IOH_New8(REG_IIO10IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO10]);
-	IOH_New8(REG_IIO11IC,icr_read,icr_write,&ic->irq[M32C_INT_IIO11]);
+	IOH_New8(REG_AD0IC, icr_read, icr_write, &ic->irq[M32C_INT_AD0]);
+	IOH_New8(REG_KUPIC, icr_read, icr_write, &ic->irq[M32C_INT_KEYINPUT]);
+
+	IOH_New8(REG_IIO0IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO0]);
+	IOH_New8(REG_IIO1IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO1]);
+	IOH_New8(REG_IIO2IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO2]);
+	IOH_New8(REG_IIO3IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO3]);
+	IOH_New8(REG_IIO4IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO4]);
+	IOH_New8(REG_IIO5IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO5]);
+	IOH_New8(REG_IIO6IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO6]);
+	IOH_New8(REG_IIO7IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO7]);
+	IOH_New8(REG_IIO8IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO8]);
+	IOH_New8(REG_IIO9IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO9]);
+	IOH_New8(REG_IIO10IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO10]);
+	IOH_New8(REG_IIO11IC, icr_read, icr_write, &ic->irq[M32C_INT_IIO11]);
 
 	/* External Interrupt lines with polarity and Level/Edge switching */
-	IOH_New8(REG_INT0IC,exticr_read,exticr_write,&ic->irq[M32C_INT_INT0]);
-	IOH_New8(REG_INT1IC,exticr_read,exticr_write,&ic->irq[M32C_INT_INT1]);
-	IOH_New8(REG_INT2IC,exticr_read,exticr_write,&ic->irq[M32C_INT_INT2]);
-	IOH_New8(REG_INT3IC,exticr_read,exticr_write,&ic->irq[M32C_INT_INT3]);
-	IOH_New8(REG_INT4IC,exticr_read,exticr_write,&ic->irq[M32C_INT_INT4]);
-	IOH_New8(REG_INT5IC,exticr_read,exticr_write,&ic->irq[M32C_INT_INT5]);
-	
+	IOH_New8(REG_INT0IC, exticr_read, exticr_write, &ic->irq[M32C_INT_INT0]);
+	IOH_New8(REG_INT1IC, exticr_read, exticr_write, &ic->irq[M32C_INT_INT1]);
+	IOH_New8(REG_INT2IC, exticr_read, exticr_write, &ic->irq[M32C_INT_INT2]);
+	IOH_New8(REG_INT3IC, exticr_read, exticr_write, &ic->irq[M32C_INT_INT3]);
+	IOH_New8(REG_INT4IC, exticr_read, exticr_write, &ic->irq[M32C_INT_INT4]);
+	IOH_New8(REG_INT5IC, exticr_read, exticr_write, &ic->irq[M32C_INT_INT5]);
+
 	/* The interrupt controler */
-	IOH_New8(REG_IFSRA,ifsra_read,ifsra_write,ic);
-	IOH_New8(REG_IFSR,ifsr_read,ifsr_write,ic);
+	IOH_New8(REG_IFSRA, ifsra_read, ifsra_write, ic);
+	IOH_New8(REG_IFSR, ifsr_read, ifsr_write, ic);
 }
 
-
-BusDevice * 
-M32C87IntCo_New(const char *name) 
+BusDevice *
+M32C87IntCo_New(const char *name)
 {
 	M32C_IntCo *ic = sg_new(M32C_IntCo);
 	int i;
-	for(i = 0;i < 64; i++) {
-		M32C_Irq *irq = &ic->irq[i];	
-		irq->irqInput = SigNode_New("%s.irq%d",name,i);
-		if(!irq->irqInput) {
-			fprintf(stderr,"M32C87: Can not create interrupt %d\n",i);
+	for (i = 0; i < 64; i++) {
+		M32C_Irq *irq = &ic->irq[i];
+		irq->irqInput = SigNode_New("%s.irq%d", name, i);
+		if (!irq->irqInput) {
+			fprintf(stderr, "M32C87: Can not create interrupt %d\n", i);
 			exit(1);
 		}
 		irq->intco = ic;
 		irq->int_nr = i;
-		switch(i) {
-			case M32C_INT_INT0:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,extint_src_change,irq);
-				irq->ifsr_bit = 0;
-				break;
-			case M32C_INT_INT1:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,extint_src_change,irq);
-				irq->ifsr_bit = 1;
-				break;
-			case M32C_INT_INT2:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,extint_src_change,irq);
-				irq->ifsr_bit = 2;
-				break;
-			case M32C_INT_INT3:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,extint_src_change,irq);
-				irq->ifsr_bit = 3;
-				break;
-			case M32C_INT_INT4:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,extint_src_change,irq);
-				irq->ifsr_bit = 4;
-				break;
-			case M32C_INT_INT5:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,extint_src_change,irq);
-				irq->ifsr_bit = 5;
-				break;
-			default:
-				irq->irqTrace = SigNode_Trace(irq->irqInput,int_src_change,irq);
-				break;
+        irq->forceIRHigh = 0;
+		switch (i) {
+		    case M32C_INT_INT0:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, extint_src_change, irq);
+			    irq->ifsr_bit = 0;
+			    break;
+		    case M32C_INT_INT1:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, extint_src_change, irq);
+			    irq->ifsr_bit = 1;
+			    break;
+		    case M32C_INT_INT2:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, extint_src_change, irq);
+			    irq->ifsr_bit = 2;
+			    break;
+		    case M32C_INT_INT3:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, extint_src_change, irq);
+			    irq->ifsr_bit = 3;
+			    break;
+		    case M32C_INT_INT4:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, extint_src_change, irq);
+			    irq->ifsr_bit = 4;
+			    break;
+		    case M32C_INT_INT5:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, extint_src_change, irq);
+			    irq->ifsr_bit = 5;
+			    break;
+		    default:
+			    irq->irqTrace = SigNode_Trace(irq->irqInput, int_src_change, irq);
+			    break;
 		}
 	}
 	ic->bdev.first_mapping = NULL;
-        ic->bdev.Map = M32CIntCo_Map;
-        ic->bdev.UnMap = M32CIntCo_Unmap;
-        ic->bdev.owner = ic;
-        ic->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	ic->bdev.Map = M32CIntCo_Map;
+	ic->bdev.UnMap = M32CIntCo_Unmap;
+	ic->bdev.owner = ic;
+	ic->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &ic->bdev;
 }

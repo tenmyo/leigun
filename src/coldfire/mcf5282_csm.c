@@ -60,10 +60,10 @@
 #define		CSCR_WS_MASK	(0xf << 10)
 #define		CSCR_WS_SHIFT	(10)
 
-typedef struct Csm Csm; 
+typedef struct Csm Csm;
 
 typedef struct ChipSelect {
-	Csm *csm;	
+	Csm *csm;
 	BusDevice *dev;
 	uint16_t csar;
 	uint32_t csmr;
@@ -76,96 +76,97 @@ struct Csm {
 };
 
 static void
-UpdateMappings(Csm *csm)
+UpdateMappings(Csm * csm)
 {
-	if(!csm->cs[0].csmr & CSMR_V) {
+	if (!csm->cs[0].csmr & CSMR_V) {
 		// Map it to everythere except ipsbar
 	}
 }
+
 static uint32_t
-csar_read(void *clientData,uint32_t address,int rqlen)
+csar_read(void *clientData, uint32_t address, int rqlen)
 {
 	ChipSelect *cs = (ChipSelect *) clientData;
-        return cs->csar;
+	return cs->csar;
 }
 
 static void
-csar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	ChipSelect *cs = (ChipSelect *) clientData;
 	cs->csar = value;
-        fprintf(stderr,"CSM: csar not implemented\n");
+	fprintf(stderr, "CSM: csar not implemented\n");
 	// update_mappings
 }
 
 static uint32_t
-csmr_read(void *clientData,uint32_t address,int rqlen)
+csmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	ChipSelect *cs = (ChipSelect *) clientData;
-        return cs->csmr;
+	return cs->csmr;
 }
 
 static void
-csmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	ChipSelect *cs = (ChipSelect *) clientData;
 	cs->csmr = value;
-        fprintf(stderr,"CSM: csmr not implemented\n");
+	fprintf(stderr, "CSM: csmr not implemented\n");
 	// update_mappings
 }
 
 static uint32_t
-cscr_read(void *clientData,uint32_t address,int rqlen)
+cscr_read(void *clientData, uint32_t address, int rqlen)
 {
 	ChipSelect *cs = (ChipSelect *) clientData;
-	if(rqlen == 4) {
+	if (rqlen == 4) {
 		return cs->cscr << 16;
-	} else if((rqlen == 2) && ((address & 2) == 2)) {
+	} else if ((rqlen == 2) && ((address & 2) == 2)) {
 		return cs->cscr;
 	}
-        return 0;
+	return 0;
 }
 
 static void
-cscr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cscr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	ChipSelect *cs = (ChipSelect *) clientData;
-	if(rqlen == 4) {
-		cs->cscr  = value >> 16;
-	} else if((rqlen == 2) && ((address & 2) == 2)) {
+	if (rqlen == 4) {
+		cs->cscr = value >> 16;
+	} else if ((rqlen == 2) && ((address & 2) == 2)) {
 		cs->cscr = value;
 	}
 }
 
 static void
-Csm_Unmap(void *owner,uint32_t base,uint32_t mask)
+Csm_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
-	for(i=0;i<7;i++) {
-        	IOH_Delete32(CSM_CSAR(base,i));
-        	IOH_Delete32(CSM_CSMR(base,i));
-        	IOH_Delete32(CSM_CSCR(base,i));
+	for (i = 0; i < 7; i++) {
+		IOH_Delete32(CSM_CSAR(base, i));
+		IOH_Delete32(CSM_CSMR(base, i));
+		IOH_Delete32(CSM_CSCR(base, i));
 	}
 }
 
 static void
-Csm_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+Csm_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
-        Csm *csm = (Csm *) owner;
+	Csm *csm = (Csm *) owner;
 	int i;
-	for(i=0;i<7;i++) {
-        	IOH_New32(CSM_CSAR(base,i),csar_read,csar_write,&csm->cs[i]);
-        	IOH_New32(CSM_CSMR(base,i),csmr_read,csmr_write,&csm->cs[i]);
-        	IOH_New32(CSM_CSCR(base,i),cscr_read,cscr_write,&csm->cs[i]);
+	for (i = 0; i < 7; i++) {
+		IOH_New32(CSM_CSAR(base, i), csar_read, csar_write, &csm->cs[i]);
+		IOH_New32(CSM_CSMR(base, i), csmr_read, csmr_write, &csm->cs[i]);
+		IOH_New32(CSM_CSCR(base, i), cscr_read, cscr_write, &csm->cs[i]);
 	}
 }
 
 static void
-Csm_RegisterDevice(Csm *csm,BusDevice *dev,unsigned int cs_nr) 
+Csm_RegisterDevice(Csm * csm, BusDevice * dev, unsigned int cs_nr)
 {
-	ChipSelect *cs = &csm->cs[cs_nr];
-	if(cs_nr >= 7) {
-		fprintf(stderr,"Illegal Chip select %d\n",cs_nr);	
+	ChipSelect *cs;
+	if (cs_nr >= 7) {
+		fprintf(stderr, "Illegal Chip select %d\n", cs_nr);
 		exit(1);
 	}
 	cs = &csm->cs[cs_nr];
@@ -176,11 +177,11 @@ Csm_RegisterDevice(Csm *csm,BusDevice *dev,unsigned int cs_nr)
 BusDevice *
 MCF5282_CsmNew(const char *name)
 {
-        Csm *csm = sg_calloc(sizeof(Csm));
-        csm->bdev.first_mapping=NULL;
-        csm->bdev.Map=Csm_Map;
-        csm->bdev.UnMap=Csm_Unmap;
-        csm->bdev.owner=csm;
-        csm->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &csm->bdev;
+	Csm *csm = sg_calloc(sizeof(Csm));
+	csm->bdev.first_mapping = NULL;
+	csm->bdev.Map = Csm_Map;
+	csm->bdev.UnMap = Csm_Unmap;
+	csm->bdev.owner = csm;
+	csm->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &csm->bdev;
 }

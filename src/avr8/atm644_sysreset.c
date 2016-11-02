@@ -34,7 +34,6 @@
  *************************************************************************************************
  */
 
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -44,7 +43,6 @@
 #include "avr8_io.h"
 #include "avr8_cpu.h"
 #include "atm644_sysreset.h"
-
 
 #define REG_MCUSR(base)		(0x54)
 #define 	MCUSR_JTRF    (1 << 4)
@@ -63,128 +61,126 @@
 #define 	WDTCSR_WDP1    (1 << 1)
 #define 	WDTCSR_WDP0    (1 << 0)
 
-
-
 typedef struct ATM644_SR {
 	Clock_t *wdOsc;
 	CycleTimer wd_timer;
-	SigNode *wdIrqNode;		
+	SigNode *wdIrqNode;
 	SigNode *wdResetNode;
 	uint8_t reg_mcusr;
 	uint8_t reg_wdtcsr;
 } ATM644_SR;
 
-static void 
-restart_watchdog(ATM644_SR *sr) 
+static void
+restart_watchdog(ATM644_SR * sr)
 {
-	uint64_t timeout; 
+	uint64_t timeout;
 	int wdp;
 	uint32_t prescaler;
-	if(!(sr->reg_wdtcsr & WDTCSR_WDE)) {
+	if (!(sr->reg_wdtcsr & WDTCSR_WDE)) {
 		CycleTimer_Remove(&sr->wd_timer);
 		return;
 	}
 	wdp = (sr->reg_wdtcsr & 7) | ((sr->reg_wdtcsr >> 2) & 8);
-	switch(wdp) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-		case 8:
-		case 9:
-			prescaler = 2048 << wdp;
-			break;
-		default:
-			fprintf(stderr,"Illegal prescaler value for watchdog\n");
-			prescaler = 1;
+	switch (wdp) {
+	    case 0:
+	    case 1:
+	    case 2:
+	    case 3:
+	    case 4:
+	    case 5:
+	    case 6:
+	    case 7:
+	    case 8:
+	    case 9:
+		    prescaler = 2048 << wdp;
+		    break;
+	    default:
+		    fprintf(stderr, "Illegal prescaler value for watchdog\n");
+		    prescaler = 1;
 	}
-	timeout = prescaler * (uint64_t)CycleTimerRate_Get() / Clock_DFreq(sr->wdOsc);
-	CycleTimer_Mod(&sr->wd_timer,timeout);
+	timeout = prescaler * (uint64_t) CycleTimerRate_Get() / Clock_DFreq(sr->wdOsc);
+	CycleTimer_Mod(&sr->wd_timer, timeout);
 }
 
 static uint8_t
-mcusr_read(void *clientData,uint32_t address)
+mcusr_read(void *clientData, uint32_t address)
 {
-        ATM644_SR *sr = (ATM644_SR *) clientData;
+	ATM644_SR *sr = (ATM644_SR *) clientData;
 	return sr->reg_mcusr;
 }
 
 static void
-mcusr_write(void *clientData,uint8_t value,uint32_t address)
+mcusr_write(void *clientData, uint8_t value, uint32_t address)
 {
-        ATM644_SR *sr = (ATM644_SR *) clientData;
+	ATM644_SR *sr = (ATM644_SR *) clientData;
 	sr->reg_mcusr = value;
-        return;
+	return;
 }
 
 static uint8_t
-wdtcsr_read(void *clientData,uint32_t address)
+wdtcsr_read(void *clientData, uint32_t address)
 {
-        ATM644_SR *sr = (ATM644_SR *) clientData;
+	ATM644_SR *sr = (ATM644_SR *) clientData;
 	return sr->reg_wdtcsr;
 }
 
 static void
-wdtcsr_write(void *clientData,uint8_t value,uint32_t address)
+wdtcsr_write(void *clientData, uint8_t value, uint32_t address)
 {
-        ATM644_SR *sr = (ATM644_SR *) clientData;
+	ATM644_SR *sr = (ATM644_SR *) clientData;
 	sr->reg_wdtcsr = value;
-	if(value & WDTCSR_WDE) {
-		if(!CycleTimer_IsActive(&sr->wd_timer)) {
+	if (value & WDTCSR_WDE) {
+		if (!CycleTimer_IsActive(&sr->wd_timer)) {
 			restart_watchdog(sr);
 		}
 	}
-        return;
+	return;
 }
 
 static void
-wd_timeout(void *clientData) 
+wd_timeout(void *clientData)
 {
 	ATM644_SR *sr = (ATM644_SR *) clientData;
-	if(sr->reg_wdtcsr & WDTCSR_WDE) {
-		fprintf(stderr,"Watchdog expired: reset\n");
+	if (sr->reg_wdtcsr & WDTCSR_WDE) {
+		fprintf(stderr, "Watchdog expired: reset\n");
 		exit(1);
 	}
 
 }
 
-static void wd_reset(SigNode *node,int value,void *clientData)
+static void
+wd_reset(SigNode * node, int value, void *clientData)
 {
-	
-	ATM644_SR *sr = (ATM644_SR *) clientData; 
-	if(value != SIG_LOW) {
+
+	ATM644_SR *sr = (ATM644_SR *) clientData;
+	if (value != SIG_LOW) {
 		return;
 	}
 	restart_watchdog(sr);
 }
 
-
 void
-ATM644_SRNew(const char *name) 
+ATM644_SRNew(const char *name)
 {
 	ATM644_SR *sr = sg_new(ATM644_SR);
-	AVR8_RegisterIOHandler(REG_MCUSR(base),mcusr_read,mcusr_write,sr);
-	AVR8_RegisterIOHandler(REG_WDTCSR(base),wdtcsr_read,wdtcsr_write,sr);
-	sr->wdIrqNode = SigNode_New("%s.wdIrq",name);
-	sr->wdResetNode = SigNode_New("%s.wdReset",name);
-	sr->reg_mcusr = MCUSR_PORF; 
-	if(!sr->wdIrqNode || !sr->wdResetNode) {
-		fprintf(stderr,"Can not create System/Reset module control lines\n");
+	AVR8_RegisterIOHandler(REG_MCUSR(base), mcusr_read, mcusr_write, sr);
+	AVR8_RegisterIOHandler(REG_WDTCSR(base), wdtcsr_read, wdtcsr_write, sr);
+	sr->wdIrqNode = SigNode_New("%s.wdIrq", name);
+	sr->wdResetNode = SigNode_New("%s.wdReset", name);
+	sr->reg_mcusr = MCUSR_PORF;
+	if (!sr->wdIrqNode || !sr->wdResetNode) {
+		fprintf(stderr, "Can not create System/Reset module control lines\n");
 		exit(1);
 	}
-	SigNode_Set(sr->wdIrqNode,SIG_PULLUP);
-	SigNode_Set(sr->wdResetNode,SIG_OPEN);
-	sr->wdOsc = Clock_New("%s.wdClock",name);
-	if(!sr->wdOsc) {
-		fprintf(stderr,"Creating the Watchdog clock failed\n");
+	SigNode_Set(sr->wdIrqNode, SIG_PULLUP);
+	SigNode_Set(sr->wdResetNode, SIG_OPEN);
+	sr->wdOsc = Clock_New("%s.wdClock", name);
+	if (!sr->wdOsc) {
+		fprintf(stderr, "Creating the Watchdog clock failed\n");
 		exit(1);
 	}
-	Clock_SetFreq(sr->wdOsc,128000);
-	SigNode_Trace(sr->wdResetNode,wd_reset,sr);
-	CycleTimer_Init(&sr->wd_timer,wd_timeout,sr);
+	Clock_SetFreq(sr->wdOsc, 128000);
+	SigNode_Trace(sr->wdResetNode, wd_reset, sr);
+	CycleTimer_Init(&sr->wd_timer, wd_timeout, sr);
 
 }

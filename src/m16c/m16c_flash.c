@@ -62,7 +62,7 @@
 #define CMD_CLEAR_STATUS	(0x50)
 #define CMD_PROGRAM		(0x41)
 #define CMD_BLOCK_ERASE		(0x20)
-//#define CMD_ERASE_ALL_UNLOCKED	(0x77)
+//#define CMD_ERASE_ALL_UNLOCKED        (0x77)
 #define CMD_LOCK_BIT_PGM	(0x77)
 #define CMD_READ_LOCK_BIT_STAT  (0x71)
 #define CMD_BLOCK_BLANK_CHK  	(0x25)
@@ -71,10 +71,9 @@
 #define MAP_IO          (1)
 
 typedef struct FlashSector {
-        uint32_t sect_addr;		
-        uint32_t sect_size;
+	uint32_t sect_addr;
+	uint32_t sect_size;
 } FlashSector;
-
 
 typedef struct M16CFlash {
 	uint8_t regFmr0;
@@ -85,204 +84,207 @@ typedef struct M16CFlash {
 	/* State space from two variables */
 	int cycle;
 	int cmd;
-	int mode; /* Read array or command mode */
+	int mode;		/* Read array or command mode */
 	uint32_t write_addr;
 	/*
 	 * timing parameters 
 	 */
 	uint32_t pgm_word_us;
-	uint32_t erase_sector_us;	
+	uint32_t erase_sector_us;
 	CycleCounter_t busy_until;
 
-        BusDevice bdev;
-        DiskImage *disk_image;
-        uint8_t *host_mem;
+	BusDevice bdev;
+	DiskImage *disk_image;
+	uint8_t *host_mem;
 	uint32_t map_addr;
-        int size;
+	int size;
 } M16CFlash;
 
 static void
-switch_to_readarray(M16CFlash *mflash) {
-        if(mflash->mode!=MAP_READ_ARRAY) {
-                mflash->mode=MAP_READ_ARRAY;
-                Mem_AreaUpdateMappings(&mflash->bdev);
-        }
+switch_to_readarray(M16CFlash * mflash)
+{
+	if (mflash->mode != MAP_READ_ARRAY) {
+		mflash->mode = MAP_READ_ARRAY;
+		Mem_AreaUpdateMappings(&mflash->bdev);
+	}
 }
 
 static void
-switch_to_iomode(M16CFlash *mflash) {
-        if(mflash->mode!=MAP_IO) {
-                mflash->mode=MAP_IO;
-                Mem_AreaUpdateMappings(&mflash->bdev);
-        }
+switch_to_iomode(M16CFlash * mflash)
+{
+	if (mflash->mode != MAP_IO) {
+		mflash->mode = MAP_IO;
+		Mem_AreaUpdateMappings(&mflash->bdev);
+	}
 }
 
 static inline void
-make_busy(M16CFlash *mflash,uint32_t useconds)
+make_busy(M16CFlash * mflash, uint32_t useconds)
 {
 	mflash->busy_until = CycleCounter_Get() + MicrosecondsToCycles(useconds);
 }
 
 static void
-cmd_block_erase(M16CFlash *mflash,uint32_t mem_addr)
+cmd_block_erase(M16CFlash * mflash, uint32_t mem_addr)
 {
 	uint32_t idx = mem_addr - mflash->map_addr;
 	FlashSector *fs = alloca(sizeof(FlashSector));
-	if((idx + 1) >= mflash->size) {
-		return;	
-	}
-	fs->sect_size = 65536;
-	fs->sect_addr = idx  &  ~(fs->sect_size - 1);
-        memset(mflash->host_mem + fs->sect_addr,0xff,fs->sect_size);
-        make_busy(mflash,250000);
-        fprintf(stderr,"M16C_Flash: Erased sector at %08x\n",mem_addr);
-}
-
-static void
-cmd_program(M16CFlash *mflash,uint32_t mem_addr,uint32_t value) 
-{
-	uint32_t idx = mem_addr - mflash->map_addr;
-	if((idx + 1) >= mflash->size) {
-		return;	
-	}
-	mflash->host_mem[idx + 0] &=  (value & 0xff);
-	mflash->host_mem[idx + 1] &= (value >> 8) & 0xff;
-	make_busy(mflash,mflash->pgm_word_us);
-}
-
-static void
-flash_write_first(M16CFlash *mflash,uint32_t value,uint32_t mem_addr,int rqlen)
-{
-	mflash->cmd = value & 0xff;
-	switch(mflash->cmd) {
-		
-		case CMD_READ_ARRAY:
-			switch_to_readarray(mflash);
-			break;
-
-		case CMD_READ_STATUS:
-			/* Read status register */
-			switch_to_iomode(mflash);
-			mflash->cycle++;
-			break;
-
-		case CMD_CLEAR_STATUS:
-			/* Clear status register  do immediately*/
-			break;
-
-		case CMD_PROGRAM:
-			/* program  */
-			mflash->write_addr = mem_addr;
-			switch_to_iomode(mflash);
-			mflash->cycle++;
-			break;
-
-		case CMD_BLOCK_ERASE:
-			/* block erase */
-			switch_to_iomode(mflash);
-			mflash->cycle++;
-			break;
-
-		case CMD_LOCK_BIT_PGM:
-			/* lock bit program */
-			switch_to_iomode(mflash);
-			mflash->cycle++;
-			break;
-
-		case CMD_READ_LOCK_BIT_STAT:
-			/* read lock bit status */
-			switch_to_iomode(mflash);
-			mflash->cycle++;
-			break;
-
-		case CMD_BLOCK_BLANK_CHK:
-			fprintf(stderr,"M16CFlash: blank check not implemented\n");	
-			//switch_to_iomode(mflash);
-			//mflash->cycle++;
-			break;
-			
-		default:
-			fprintf(stderr,"M16CFlash: Unknown command 0x%04x\n",value);	
-			break;
-	}
-}
-
-static void
-flash_write_second(M16CFlash *mflash,uint32_t value,uint32_t mem_addr,int rqlen)
-{
-	switch(mflash->cmd) {
-		case CMD_READ_STATUS: 
-			fprintf(stderr,"M16CFlash command read status not implemented\n");
-			break;
-		case CMD_PROGRAM:
-			if(mflash->write_addr != mem_addr) {
-				fprintf(stderr,"Changed write addr in Programm cycle\n");
-			} else {
-				cmd_program(mflash,mem_addr,value);
-			}
-			break;
-		case CMD_BLOCK_ERASE:
-			cmd_block_erase(mflash,mem_addr);
-			break;
-		//case CMD_ERASE_ALL_UNLOCKED:
-		case CMD_LOCK_BIT_PGM:
-		case CMD_READ_LOCK_BIT_STAT:
-			fprintf(stderr,"M16CFlash command %02x not implemented\n",mflash->cmd);
-			break;
-		default:
-			fprintf(stderr,"M16CFlash illegal command %02x\n",mflash->cmd);
-			break;
-	}
-}
-
-static void
-flash_write(void *clientData,uint32_t value, uint32_t mem_addr,int rqlen)
-{
-	M16CFlash *mflash = (M16CFlash *) clientData;
-	if(CycleCounter_Get() < mflash->busy_until) {
+	if ((idx + 1) >= mflash->size) {
 		return;
 	}
-	switch(mflash->cycle) {
-		case 1:
-			flash_write_first(mflash,value,mem_addr,rqlen);
-			break;
-		case 2:
-			flash_write_second(mflash,value,mem_addr,rqlen);
-			break;
-		default:
-			fprintf(stderr,"M16C flash emulator bug: cycle %d\n",mflash->cycle);
+	fs->sect_size = 65536;
+	fs->sect_addr = idx & ~(fs->sect_size - 1);
+	memset(mflash->host_mem + fs->sect_addr, 0xff, fs->sect_size);
+	make_busy(mflash, 250000);
+	fprintf(stderr, "M16C_Flash: Erased sector at %08x\n", mem_addr);
+}
+
+static void
+cmd_program(M16CFlash * mflash, uint32_t mem_addr, uint32_t value)
+{
+	uint32_t idx = mem_addr - mflash->map_addr;
+	if ((idx + 1) >= mflash->size) {
+		return;
+	}
+	mflash->host_mem[idx + 0] &= (value & 0xff);
+	mflash->host_mem[idx + 1] &= (value >> 8) & 0xff;
+	make_busy(mflash, mflash->pgm_word_us);
+}
+
+static void
+flash_write_first(M16CFlash * mflash, uint32_t value, uint32_t mem_addr, int rqlen)
+{
+	mflash->cmd = value & 0xff;
+	switch (mflash->cmd) {
+
+	    case CMD_READ_ARRAY:
+		    switch_to_readarray(mflash);
+		    break;
+
+	    case CMD_READ_STATUS:
+		    /* Read status register */
+		    switch_to_iomode(mflash);
+		    mflash->cycle++;
+		    break;
+
+	    case CMD_CLEAR_STATUS:
+		    /* Clear status register  do immediately */
+		    break;
+
+	    case CMD_PROGRAM:
+		    /* program  */
+		    mflash->write_addr = mem_addr;
+		    switch_to_iomode(mflash);
+		    mflash->cycle++;
+		    break;
+
+	    case CMD_BLOCK_ERASE:
+		    /* block erase */
+		    switch_to_iomode(mflash);
+		    mflash->cycle++;
+		    break;
+
+	    case CMD_LOCK_BIT_PGM:
+		    /* lock bit program */
+		    switch_to_iomode(mflash);
+		    mflash->cycle++;
+		    break;
+
+	    case CMD_READ_LOCK_BIT_STAT:
+		    /* read lock bit status */
+		    switch_to_iomode(mflash);
+		    mflash->cycle++;
+		    break;
+
+	    case CMD_BLOCK_BLANK_CHK:
+		    fprintf(stderr, "M16CFlash: blank check not implemented\n");
+		    //switch_to_iomode(mflash);
+		    //mflash->cycle++;
+		    break;
+
+	    default:
+		    fprintf(stderr, "M16CFlash: Unknown command 0x%04x\n", value);
+		    break;
 	}
 }
+
+static void
+flash_write_second(M16CFlash * mflash, uint32_t value, uint32_t mem_addr, int rqlen)
+{
+	switch (mflash->cmd) {
+	    case CMD_READ_STATUS:
+		    fprintf(stderr, "M16CFlash command read status not implemented\n");
+		    break;
+	    case CMD_PROGRAM:
+		    if (mflash->write_addr != mem_addr) {
+			    fprintf(stderr, "Changed write addr in Programm cycle\n");
+		    } else {
+			    cmd_program(mflash, mem_addr, value);
+		    }
+		    break;
+	    case CMD_BLOCK_ERASE:
+		    cmd_block_erase(mflash, mem_addr);
+		    break;
+		    //case CMD_ERASE_ALL_UNLOCKED:
+	    case CMD_LOCK_BIT_PGM:
+	    case CMD_READ_LOCK_BIT_STAT:
+		    fprintf(stderr, "M16CFlash command %02x not implemented\n", mflash->cmd);
+		    break;
+	    default:
+		    fprintf(stderr, "M16CFlash illegal command %02x\n", mflash->cmd);
+		    break;
+	}
+}
+
+static void
+flash_write(void *clientData, uint32_t value, uint32_t mem_addr, int rqlen)
+{
+	M16CFlash *mflash = (M16CFlash *) clientData;
+	if (CycleCounter_Get() < mflash->busy_until) {
+		return;
+	}
+	switch (mflash->cycle) {
+	    case 1:
+		    flash_write_first(mflash, value, mem_addr, rqlen);
+		    break;
+	    case 2:
+		    flash_write_second(mflash, value, mem_addr, rqlen);
+		    break;
+	    default:
+		    fprintf(stderr, "M16C flash emulator bug: cycle %d\n", mflash->cycle);
+	}
+}
+
 /*
  * -----------------------------------------------------------------------------
  * In MAP_IO mode this flash_read is used, else direct access to mmaped file
  * -----------------------------------------------------------------------------
  */
-static uint32_t 
-flash_read(void *clientData,uint32_t mem_addr,int rqlen)
+static uint32_t
+flash_read(void *clientData, uint32_t mem_addr, int rqlen)
 {
-	fprintf(stderr,"M16CFlash: IO-mode read not implemented\n");
+	fprintf(stderr, "M16CFlash: IO-mode read not implemented\n");
 	return 0;
 }
 
 static void
-Flash_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags)
+Flash_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
-        M16CFlash *mflash = module_owner;
-        uint8_t *host_mem=mflash->host_mem;
-	if(mflash->mode == MAP_READ_ARRAY) {
-                flags &= MEM_FLAG_READABLE;
-        	Mem_MapRange(base,host_mem,mflash->size,mapsize,flags);
-        }
-        IOH_NewRegion(base,mapsize,flash_read,flash_write,HOST_BYTEORDER,mflash);
+	M16CFlash *mflash = module_owner;
+	uint8_t *host_mem = mflash->host_mem;
+	if (mflash->mode == MAP_READ_ARRAY) {
+		flags &= MEM_FLAG_READABLE;
+		Mem_MapRange(base, host_mem, mflash->size, mapsize, flags);
+	}
+	IOH_NewRegion(base, mapsize, flash_read, flash_write, HOST_BYTEORDER, mflash);
 	mflash->map_addr = base;
 }
 
 static void
-Flash_UnMap(void *module_owner,uint32_t base,uint32_t mapsize)
+Flash_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
 {
-        Mem_UnMapRange(base,mapsize);
-        IOH_DeleteRegion(base,mapsize);
+	Mem_UnMapRange(base, mapsize);
+	IOH_DeleteRegion(base, mapsize);
 }
 
 /**
@@ -298,23 +300,23 @@ Flash_UnMap(void *module_owner,uint32_t base,uint32_t mapsize)
  ************************************************************************
  */
 static uint32_t
-fmr0_read(void *clientData,uint32_t address,int rqlen)
+fmr0_read(void *clientData, uint32_t address, int rqlen)
 {
-	M16CFlash *mflash = (M16CFlash *) clientData;	
+	M16CFlash *mflash = (M16CFlash *) clientData;
 	return mflash->regFmr0;
 }
 
 static void
-fmr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fmr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	M16CFlash *mflash = (M16CFlash *) clientData;	
+	M16CFlash *mflash = (M16CFlash *) clientData;
 #if 0
-	if(value & FMR0_CPU_REWRITE) {
-		switch_to_iomode(mflash); // ?????
+	if (value & FMR0_CPU_REWRITE) {
+		switch_to_iomode(mflash);	// ?????
 	}
 #endif
 	mflash->regFmr0 = value;
-        return;
+	return;
 }
 
 /**
@@ -328,16 +330,16 @@ fmr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ********************************************************************************
  */
 static uint32_t
-fmr1_read(void *clientData,uint32_t address,int rqlen)
+fmr1_read(void *clientData, uint32_t address, int rqlen)
 {
-	M16CFlash *mflash = (M16CFlash *) clientData;	
+	M16CFlash *mflash = (M16CFlash *) clientData;
 	return mflash->regFmr1;
 }
 
 static void
-fmr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fmr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        return;
+	return;
 }
 
 /**
@@ -348,16 +350,16 @@ fmr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *******************************************************************
  */
 static uint32_t
-fmr2_read(void *clientData,uint32_t address,int rqlen)
+fmr2_read(void *clientData, uint32_t address, int rqlen)
 {
-	M16CFlash *mflash = (M16CFlash *) clientData;	
+	M16CFlash *mflash = (M16CFlash *) clientData;
 	return mflash->regFmr2;
 }
 
 static void
-fmr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fmr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        return;
+	return;
 }
 
 /**
@@ -369,17 +371,18 @@ fmr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************************************************
  */
 static uint32_t
-fmr6_read(void *clientData,uint32_t address,int rqlen)
+fmr6_read(void *clientData, uint32_t address, int rqlen)
 {
-	M16CFlash *mflash = (M16CFlash *) clientData;	
+	M16CFlash *mflash = (M16CFlash *) clientData;
 	return mflash->regFmr6;
 }
 
 static void
-fmr6_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fmr6_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        return;
+	return;
 }
+
 /*
  * ---------------------------------------------------------
  * The SFR part of the registers for flash is always at the 
@@ -387,79 +390,79 @@ fmr6_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------
  */
 static void
-Flash_SFRMap(M16CFlash *mflash) 
+Flash_SFRMap(M16CFlash * mflash)
 {
-	IOH_New8(FMR0,fmr0_read,fmr0_write,mflash);
-	IOH_New8(FMR1,fmr1_read,fmr1_write,mflash);
-	IOH_New8(FMR2,fmr2_read,fmr2_write,mflash);
-	IOH_New8(FMR6,fmr6_read,fmr6_write,mflash);
+	IOH_New8(FMR0, fmr0_read, fmr0_write, mflash);
+	IOH_New8(FMR1, fmr1_read, fmr1_write, mflash);
+	IOH_New8(FMR2, fmr2_read, fmr2_write, mflash);
+	IOH_New8(FMR6, fmr6_read, fmr6_write, mflash);
 }
 
 static uint32_t
-parse_memsize (char *str)
+parse_memsize(char *str)
 {
-        uint32_t size;
-        unsigned char c;
-        if(sscanf(str,"%d",&size)!=1) {
-                return 0;
-        }
-        if(sscanf(str,"%d%c",&size,&c)==1) {
-                return size;
-        }
-        switch(tolower(c)) {
-                case 'm':
-                        return size*1024*1024;
-                case 'k':
-                        return size*1024;
-        }
-        return 0;
+	uint32_t size;
+	unsigned char c;
+	if (sscanf(str, "%d", &size) != 1) {
+		return 0;
+	}
+	if (sscanf(str, "%d%c", &size, &c) == 1) {
+		return size;
+	}
+	switch (tolower(c)) {
+	    case 'm':
+		    return size * 1024 * 1024;
+	    case 'k':
+		    return size * 1024;
+	}
+	return 0;
 }
 
 BusDevice *
 M16CFlash_New(const char *flash_name)
 {
-	
-        M16CFlash *mflash = sg_new(M16CFlash);
-        char *imagedir;
-        char *sizestr;
-        imagedir = Config_ReadVar("global","imagedir");
-        sizestr = Config_ReadVar(flash_name,"size");
-        if(sizestr) {
-                mflash->size = parse_memsize(sizestr);
-                if(mflash->size == 0) {
-                        fprintf(stderr,"M16C Flash \"%s\" has zero size\n",flash_name);
-                        return NULL;
-                }
-        } else {
-                mflash->size = 192*1024;
-        }
-        if(imagedir) {
-                char *mapfile = alloca(strlen(imagedir) + strlen(flash_name) + 20);
-                sprintf(mapfile,"%s/%s.img",imagedir,flash_name);
-                mflash->disk_image = DiskImage_Open(mapfile,mflash->size,DI_RDWR | DI_CREAT_FF);
-                if(!mflash->disk_image) {
-                        fprintf(stderr,"Open disk image failed\n");
-                        exit(42);
-                }
-                mflash->host_mem=DiskImage_Mmap(mflash->disk_image);
-                //fprintf(stderr,"Mapped to %08x\n",mflash->host_mem);
-        } else {
-                mflash->host_mem = sg_calloc(mflash->size);
-                memset(mflash->host_mem,0xff,mflash->size);
-        }
-        mflash->cycle = 1;
-        mflash->mode=MAP_READ_ARRAY;
-        mflash->cmd = CMD_NONE;
+
+	M16CFlash *mflash = sg_new(M16CFlash);
+	char *imagedir;
+	char *sizestr;
+	imagedir = Config_ReadVar("global", "imagedir");
+	sizestr = Config_ReadVar(flash_name, "size");
+	if (sizestr) {
+		mflash->size = parse_memsize(sizestr);
+		if (mflash->size == 0) {
+			fprintf(stderr, "M16C Flash \"%s\" has zero size\n", flash_name);
+			return NULL;
+		}
+	} else {
+		mflash->size = 192 * 1024;
+	}
+	if (imagedir) {
+		char *mapfile = alloca(strlen(imagedir) + strlen(flash_name) + 20);
+		sprintf(mapfile, "%s/%s.img", imagedir, flash_name);
+		mflash->disk_image = DiskImage_Open(mapfile, mflash->size, DI_RDWR | DI_CREAT_FF);
+		if (!mflash->disk_image) {
+			fprintf(stderr, "Open disk image failed\n");
+			exit(42);
+		}
+		mflash->host_mem = DiskImage_Mmap(mflash->disk_image);
+		//fprintf(stderr,"Mapped to %08x\n",mflash->host_mem);
+	} else {
+		mflash->host_mem = sg_calloc(mflash->size);
+		memset(mflash->host_mem, 0xff, mflash->size);
+	}
+	mflash->cycle = 1;
+	mflash->mode = MAP_READ_ARRAY;
+	mflash->cmd = CMD_NONE;
 	/* Timing setup */
 	mflash->erase_sector_us = 250000;
 	mflash->pgm_word_us = 50;
 
-        mflash->bdev.first_mapping=NULL;
-        mflash->bdev.Map=Flash_Map;
-        mflash->bdev.UnMap=Flash_UnMap;
-        mflash->bdev.owner=mflash;
-        mflash->bdev.hw_flags=MEM_FLAG_READABLE;
-        fprintf(stderr,"Created M16C Flash with size %d bytes\n",mflash->size);
-        Flash_SFRMap(mflash); /* ???? */
-        return &mflash->bdev;
+	mflash->bdev.first_mapping = NULL;
+	mflash->bdev.Map = Flash_Map;
+	mflash->bdev.UnMap = Flash_UnMap;
+	mflash->bdev.owner = mflash;
+	mflash->bdev.hw_flags = MEM_FLAG_READABLE;
+	fprintf(stderr, "Created M16C Flash with size %d bytes\n", mflash->size);
+	Flash_SFRMap(mflash);	/* ???? */
+	return &mflash->bdev;
 }

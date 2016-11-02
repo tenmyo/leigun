@@ -1,6 +1,6 @@
 /*
  **********************************************************************************************
- * Renesas RX62N CRC module  
+ * Renesas RX62N/RX63N CRC module  
  *
  * State: working, MSTP not implemented 
  *
@@ -52,75 +52,75 @@ typedef struct CRCMod {
 } CRCMod;
 
 static uint32_t
-crccr_read(void *clientData,uint32_t address,int rqlen)
+crccr_read(void *clientData, uint32_t address, int rqlen)
 {
 	CRCMod *cm = clientData;
 	return cm->regCRCCR;
 }
 
 static void
-crccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CRCMod *cm = clientData;
 	cm->regCRCCR = value & 0x7;
-	if(value & 0x80) {
+	if (value & 0x80) {
 		cm->regCRCDOR = 0;
 	}
 }
 
 static uint32_t
-crcdir_read(void *clientData,uint32_t address,int rqlen)
+crcdir_read(void *clientData, uint32_t address, int rqlen)
 {
 	return 0;
 }
 
 static void
-crcdir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crcdir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CRCMod *cm = clientData;
 	uint8_t data = value;
-	switch(cm->regCRCCR & 7) {
-		case 0:
-			break;
-		case 1:
-			cm->regCRCDOR = Crc8_Poly7Rev(cm->regCRCDOR,&data,1);
-			break;
-		case 2:
-			cm->regCRCDOR = CRC16_0x8005Rev(cm->regCRCDOR,&data,1);
-			break;
-		case 3:
-			cm->regCRCDOR = CRC16_0x1021Rev(cm->regCRCDOR,&data,1);
-			break;
-		case 4:
-			break;
-		case 5:
-			cm->regCRCDOR = Crc8_Poly7(cm->regCRCDOR,&data,1);
-			break;
-		case 6:
-			cm->regCRCDOR = CRC16_0x8005(cm->regCRCDOR,&data,1);
-			break;
-		case 7:
-			cm->regCRCDOR = CRC16_0x1021(cm->regCRCDOR,&data,1);
-			break;
+	switch (cm->regCRCCR & 7) {
+	    case 0:
+		    break;
+	    case 1:
+		    cm->regCRCDOR = Crc8_Poly7Rev(cm->regCRCDOR, &data, 1);
+		    break;
+	    case 2:
+		    cm->regCRCDOR = CRC16_0x8005Rev(cm->regCRCDOR, &data, 1);
+		    break;
+	    case 3:
+		    cm->regCRCDOR = CRC16_0x1021Rev(cm->regCRCDOR, &data, 1);
+		    break;
+	    case 4:
+		    break;
+	    case 5:
+		    cm->regCRCDOR = Crc8_Poly7(cm->regCRCDOR, &data, 1);
+		    break;
+	    case 6:
+		    cm->regCRCDOR = CRC16_0x8005(cm->regCRCDOR, &data, 1);
+		    break;
+	    case 7:
+		    cm->regCRCDOR = CRC16_0x1021(cm->regCRCDOR, &data, 1);
+		    break;
 	}
 }
 
 static uint32_t
-crcdor_read(void *clientData,uint32_t address,int rqlen)
+crcdor_read(void *clientData, uint32_t address, int rqlen)
 {
 	CRCMod *cm = clientData;
 	return cm->regCRCDOR;
 }
 
 static void
-crcdor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crcdor_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	CRCMod *cm = clientData;
 	cm->regCRCDOR = value;
 }
 
 static void
-CRCMod_Unmap(void *owner,uint32_t base,uint32_t mask)
+CRCMod_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete8(REG_CRCCR(base));
 	IOH_Delete8(REG_CRCDIR(base));
@@ -128,22 +128,22 @@ CRCMod_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-CRCMod_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+CRCMod_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	CRCMod *cm = owner;
-	IOH_New8(REG_CRCCR(base),crccr_read,crccr_write,cm);
-	IOH_New8(REG_CRCDIR(base),crcdir_read,crcdir_write,cm);
-	IOH_New16(REG_CRCDOR(base),crcdor_read,crcdor_write,cm);
+	IOH_New8(REG_CRCCR(base), crccr_read, crccr_write, cm);
+	IOH_New8(REG_CRCDIR(base), crcdir_read, crcdir_write, cm);
+	IOH_New16(REG_CRCDOR(base), crcdor_read, crcdor_write, cm);
 }
 
 BusDevice *
 RxCrc_New(const char *name)
 {
 	CRCMod *cm = sg_new(CRCMod);
-        cm->bdev.first_mapping = NULL;
-        cm->bdev.Map = CRCMod_Map;
-        cm->bdev.UnMap = CRCMod_Unmap;
-        cm->bdev.owner = cm;
-        cm->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &cm->bdev;
+	cm->bdev.first_mapping = NULL;
+	cm->bdev.Map = CRCMod_Map;
+	cm->bdev.UnMap = CRCMod_Unmap;
+	cm->bdev.owner = cm;
+	cm->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &cm->bdev;
 }

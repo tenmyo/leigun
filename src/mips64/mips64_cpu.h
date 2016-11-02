@@ -12,13 +12,13 @@
 #define ISPOS64(x) (-(x) & (1<<31)
 
 typedef struct MIPS64Cpu {
-	uint64_t gpr[32];	
+	uint64_t gpr[32];
 	uint64_t hi;
 	uint64_t lo;
-	uint64_t pc; /* location of currently interpreted instruction, Not result from PC read */
+	uint64_t pc;		/* location of currently interpreted instruction, Not result from PC read */
 	uint32_t icode;
 	uint32_t next_icode;
-	int LLBit;	/* Atomic instruction flag */ 
+	int LLBit;		/* Atomic instruction flag */
 	jmp_buf restart_pipeline;
 } MIPS64Cpu;
 
@@ -38,21 +38,24 @@ extern MIPS64Cpu gcpu_mips64;
  * The instruction manual uses PC in the sense of the Current
  * instruction address.
  */
-static inline uint64_t 
-MIPS64_GetRegPC() {
+static inline uint64_t
+MIPS64_GetRegPC()
+{
 	return GET_CIA;
 }
 
-static inline void __attribute__ ((noreturn)) 
-MIPS64_SetRegPC(uint64_t value) {
+static inline void __attribute__ ((noreturn))
+    MIPS64_SetRegPC(uint64_t value)
+{
 	gcpu_mips64.pc = value;
-	longjmp(gcpu_mips64.restart_pipeline,1);
+	longjmp(gcpu_mips64.restart_pipeline, 1);
 }
 
-static inline void 
-MIPS64_WriteGpr(int i,uint64_t value) {
-	if(i) {
-		(gcpu_mips64.gpr[(i)]) = value; 
+static inline void
+MIPS64_WriteGpr(int i, uint64_t value)
+{
+	if (i) {
+		(gcpu_mips64.gpr[(i)]) = value;
 	}
 }
 
@@ -62,39 +65,46 @@ MIPS64_WriteGpr(int i,uint64_t value) {
  * -----------------------------------------
  */
 static inline uint64_t
-MIPS64_GetLo() {
+MIPS64_GetLo()
+{
 	return gcpu_mips64.lo;
-} 
+}
 
 static inline uint64_t
-MIPS64_GetHi() {
+MIPS64_GetHi()
+{
 	return gcpu_mips64.hi;
-} 
+}
 
-static inline void 
-MIPS64_SetLo(uint64_t lo) {
+static inline void
+MIPS64_SetLo(uint64_t lo)
+{
 	gcpu_mips64.lo = lo;
-} 
+}
 
-static inline void 
-MIPS64_SetHi(uint64_t hi) {
+static inline void
+MIPS64_SetHi(uint64_t hi)
+{
 	gcpu_mips64.hi = hi;
-} 
+}
 
-void MIPS64_ExecuteDelaySlot(); 
+void MIPS64_ExecuteDelaySlot();
 
-static inline void 
-MIPS64_NullifyDelaySlot(void) {
+static inline void
+MIPS64_NullifyDelaySlot(void)
+{
 	gcpu_mips64.next_icode = 0;
 }
 
-static inline int 
-MIPS64_GetLLBit(void) {
+static inline int
+MIPS64_GetLLBit(void)
+{
 	return gcpu_mips64.LLBit;
 }
 
-static inline void 
-MIPS64_SetLLBit(int value) {
+static inline void
+MIPS64_SetLLBit(int value)
+{
 	gcpu_mips64.LLBit = value;
 }
 #endif

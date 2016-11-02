@@ -46,12 +46,13 @@
 
 struct Throttle {
 	struct timespec tv_last_throttle;
-        CycleCounter_t last_throttle_cycles;
-        CycleTimer throttle_timer;
-        int64_t cycles_ahead; /* Number of cycles ahead of real cpu */
-        /* Control loop for the sound */
-        SigNode *sigSpeedUp;
-        SigNode *sigSpeedDown;
+	CycleCounter_t last_throttle_cycles;
+	CycleTimer throttle_timer;
+	int64_t cycles_ahead;	/* Number of cycles ahead of real cpu */
+	uint32_t sleepsPerSecond;
+	/* Control loop for the sound */
+	SigNode *sigSpeedUp;
+	SigNode *sigSpeedDown;
 };
 
 /**
@@ -68,65 +69,75 @@ struct Throttle {
 static void
 throttle_proc(void *clientData)
 {
-        Throttle *th = (Throttle *) clientData;
-        struct timespec tv_now;
-        uint32_t nsecs;
-        int64_t exp_cpu_cycles,done_cpu_cycles;
-        done_cpu_cycles = CycleCounter_Get() - th->last_throttle_cycles;
-        th->cycles_ahead += done_cpu_cycles;
-        do {
-                struct timespec tout;
-                tout.tv_nsec = 10000000; /* 10 ms */
-                tout.tv_sec = 0;
+	Throttle *th = (Throttle *) clientData;
+	struct timespec tv_now;
+	uint32_t nsecs;
+	uint32_t sleepCnt = 0;
+	int64_t exp_cpu_cycles, done_cpu_cycles;
+	done_cpu_cycles = CycleCounter_Get() - th->last_throttle_cycles;
+	th->cycles_ahead += done_cpu_cycles;
+	do {
+		struct timespec tout;
+		tout.tv_nsec = 200 * 1000; /* 0.2 ms */
+		tout.tv_sec = 0;
 
-                clock_gettime(CLOCK_MONOTONIC,&tv_now);
-                nsecs = (tv_now.tv_nsec - th->tv_last_throttle.tv_nsec) +
-                        (int64_t)1000000000*(tv_now.tv_sec - th->tv_last_throttle.tv_sec);
-                exp_cpu_cycles = NanosecondsToCycles(nsecs);
-                if(SigNode_Val(th->sigSpeedUp) == SIG_HIGH) {
-                        exp_cpu_cycles += exp_cpu_cycles >> 4;
-                } else if(SigNode_Val(th->sigSpeedDown) == SIG_HIGH) {
-                        exp_cpu_cycles -= exp_cpu_cycles >> 4;
-                }
-                if(th->cycles_ahead > exp_cpu_cycles) {
-                        FIO_WaitEventTimeout(&tout);
-                }
-        } while(th->cycles_ahead > exp_cpu_cycles);
-        th->cycles_ahead -= exp_cpu_cycles;
+		clock_gettime(CLOCK_MONOTONIC, &tv_now);
+		nsecs = (tv_now.tv_nsec - th->tv_last_throttle.tv_nsec) +
+		    (int64_t) 1000000000 * (tv_now.tv_sec - th->tv_last_throttle.tv_sec);
+		exp_cpu_cycles = NanosecondsToCycles(nsecs);
+		if (SigNode_Val(th->sigSpeedUp) == SIG_HIGH) {
+			exp_cpu_cycles += exp_cpu_cycles >> 4;
+		} else if (SigNode_Val(th->sigSpeedDown) == SIG_HIGH) {
+			exp_cpu_cycles -= exp_cpu_cycles >> 4;
+		}
+		if (th->cycles_ahead > exp_cpu_cycles) {
+			FIO_WaitEventTimeout(&tout);
+			sleepCnt++;
+		}
+	} while (th->cycles_ahead > exp_cpu_cycles);
+	th->cycles_ahead -= exp_cpu_cycles;
+	th->last_throttle_cycles = CycleCounter_Get();
+	th->tv_last_throttle = tv_now;
 	/*  
 	 **********************************************************
-         * Forget about catch up if CPU is more than on second 
-         * behind to avoid a longer phase of overspeed. Sound
-         * doesn't like it !
-         **********************************************************
-         */
-        if( -th->cycles_ahead > (CycleTimerRate_Get() >> 2)) {
-                th->cycles_ahead = 0;
-        }
-        th->last_throttle_cycles = CycleCounter_Get();
-        th->tv_last_throttle = tv_now;
-        CycleTimer_Mod(&th->throttle_timer,CycleTimerRate_Get() / 40);
-        return;
+	 * Forget about catch up if CPU is more than on second 
+	 * behind to avoid a longer phase of overspeed. Sound
+	 * doesn't like it !
+	 **********************************************************
+	 */
+	if (-th->cycles_ahead > (CycleTimerRate_Get() >> 2)) {
+		th->cycles_ahead = 0;
+	}
+	if(sleepCnt > 1) {
+		th->sleepsPerSecond = th->sleepsPerSecond + 1 + (th->sleepsPerSecond >> 8);
+	//	fprintf(stderr,"SleepCnt is %u, sps %u\n",sleepCnt,th->sleepsPerSecond);
+	} else if((sleepCnt == 0) && (th->sleepsPerSecond > 40)) {
+		th->sleepsPerSecond--;
+	//fprintf(stderr,"SleepCnt is %u, sps %u\n",sleepCnt,th->sleepsPerSecond);
+	}
+	CycleTimer_Mod(&th->throttle_timer, CycleTimerRate_Get() / th->sleepsPerSecond);
+	return;
 }
 
-Throttle * 
+Throttle *
 Throttle_New(const char *name)
 {
 	uint32_t throttle_enable = 1;
 	Throttle *th = sg_new(Throttle);
-	th->sigSpeedUp = SigNode_New("%s.throttle.speedUp",name);
-	th->sigSpeedDown = SigNode_New("%s.throttle.speedDown",name);
-	if(!th->sigSpeedUp || !th->sigSpeedDown) {
-		fprintf(stderr,"Can not create throttleControl signal lines\n");
+	th->sigSpeedUp = SigNode_New("%s.throttle.speedUp", name);
+	th->sigSpeedDown = SigNode_New("%s.throttle.speedDown", name);
+	if (!th->sigSpeedUp || !th->sigSpeedDown) {
+		fprintf(stderr, "Can not create throttleControl signal lines\n");
 		exit(1);
 	}
-	SigNode_Set(th->sigSpeedUp,SIG_PULLDOWN);
-	SigNode_Set(th->sigSpeedDown,SIG_PULLDOWN);
-        clock_gettime(CLOCK_MONOTONIC,&th->tv_last_throttle);
-        th->last_throttle_cycles = 0;
-	Config_ReadUInt32(&throttle_enable,name,"throttle");
-	if(throttle_enable) {
-        	CycleTimer_Add(&th->throttle_timer,CycleTimerRate_Get() / 40,throttle_proc,th);
+	SigNode_Set(th->sigSpeedUp, SIG_PULLDOWN);
+	SigNode_Set(th->sigSpeedDown, SIG_PULLDOWN);
+	clock_gettime(CLOCK_MONOTONIC, &th->tv_last_throttle);
+	th->last_throttle_cycles = 0;
+	th->sleepsPerSecond = 100; /* Start Value, Sleep 100 times per second */
+	Config_ReadUInt32(&throttle_enable, name, "throttle");
+	if (throttle_enable) {
+		CycleTimer_Add(&th->throttle_timer, CycleTimerRate_Get() / 40, throttle_proc, th);
 	}
 	return th;
 }

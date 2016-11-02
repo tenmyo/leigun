@@ -7,20 +7,23 @@
  * -----------------------------------------------------------------
  */
 #include "sgstring.h"
-#include <xy_tree.h> 
+#include <xy_tree.h>
 
 #ifdef TREE_DEBUG
-static void 
-Assert(int assertion, char* error) {
-  	if(!assertion) {
-    		printf("Assertion Failed: %s\n",error);
-    		exit(-1);
-  	}
+static void
+Assert(int assertion, char *error)
+{
+	if (!assertion) {
+		printf("Assertion Failed: %s\n", error);
+		exit(-1);
+	}
 }
 #endif
 
-static void 
-do_nothing(void *v) { /* do nothing */ }
+static void
+do_nothing(void *v)
+{				/* do nothing */
+}
 
 /************************************************************************/
 /*  FUNCTION:  XY_InitTree 						*/
@@ -42,39 +45,38 @@ do_nothing(void *v) { /* do nothing */ }
 /*  Modifies Input: none                                                */
 /************************************************************************/
 
-void 
-XY_InitTree( struct XY_Tree *newTree,
-			int (*CompFunc) (const void*,const void*),
-		      	void (*DestFunc) (void*),
-		      	void (*ValueDestFunc) (void*),
-		      	void (*nodeDestFunc) (void*)
-		      ) {
-	xy_node* temp;
+void
+XY_InitTree(struct XY_Tree *newTree,
+	    int (*CompFunc) (const void *, const void *),
+	    void (*DestFunc) (void *), void (*ValueDestFunc) (void *), void (*nodeDestFunc) (void *)
+    )
+{
+	xy_node *temp;
 
-	newTree->Compare=  CompFunc;
-	newTree->DestroyKey= DestFunc;
-	if(!newTree->DestroyKey) {
-		newTree->DestroyKey=do_nothing;
+	newTree->Compare = CompFunc;
+	newTree->DestroyKey = DestFunc;
+	if (!newTree->DestroyKey) {
+		newTree->DestroyKey = do_nothing;
 	}
-	newTree->DestroyValue=ValueDestFunc;
-	if(!newTree->DestroyValue) {
-		newTree->DestroyValue=do_nothing;
+	newTree->DestroyValue = ValueDestFunc;
+	if (!newTree->DestroyValue) {
+		newTree->DestroyValue = do_nothing;
 	}
-	newTree->DestroyNode=nodeDestFunc;
-	if(!newTree->DestroyNode) {
-		newTree->DestroyNode=do_nothing;
+	newTree->DestroyNode = nodeDestFunc;
+	if (!newTree->DestroyNode) {
+		newTree->DestroyNode = do_nothing;
 	}
 
 	/*  see the comment in the XY_Tree structure in red_black_tree.h */
 	/*  for information on nilp and root */
-	temp=newTree->nilp = &newTree->nil;
-	temp->parent=temp->left=temp->right=temp;
-	temp->red=0;
-	temp->key=0;
-	temp=newTree->rootp= &newTree->root;
-	temp->parent=temp->left=temp->right=newTree->nilp;
-	temp->key=0;
-	temp->red=0;
+	temp = newTree->nilp = &newTree->nil;
+	temp->parent = temp->left = temp->right = temp;
+	temp->red = 0;
+	temp->key = 0;
+	temp = newTree->rootp = &newTree->root;
+	temp->parent = temp->left = temp->right = newTree->nilp;
+	temp->key = 0;
+	temp->red = 0;
 }
 
 /************************************************************************/
@@ -94,11 +96,11 @@ XY_InitTree( struct XY_Tree *newTree,
 /*            accordingly. 						*/
 /************************************************************************/
 
-static void 
-LeftRotate(XY_Tree* tree, xy_node* x) 
+static void
+LeftRotate(XY_Tree * tree, xy_node * x)
 {
-	xy_node* y;
-	xy_node* nilp=tree->nilp;
+	xy_node *y;
+	xy_node *nilp = tree->nilp;
 
 	/*  I originally wrote this function to use the sentinel for */
 	/*  nilp to avoid checking for nilp.  However this introduces a */
@@ -110,29 +112,29 @@ LeftRotate(XY_Tree* tree, xy_node* x)
 	/*  calls LeftRotate it expects the parent pointer of nilp to be */
 	/*  unchanged. */
 
-	y=x->right;
-	x->right=y->left;
+	y = x->right;
+	x->right = y->left;
 
-	if (y->left != nilp) y->left->parent=x; /* used to use sentinel here */
+	if (y->left != nilp)
+		y->left->parent = x;	/* used to use sentinel here */
 	/* and do an unconditional assignment instead of testing for nilp */
-  
-	y->parent=x->parent;   
+
+	y->parent = x->parent;
 
 	/* instead of checking if x->parent is the root as in the book, we */
 	/* count on the root sentinel to implicitly take care of this case */
-	if( x == x->parent->left) {
-		x->parent->left=y;
+	if (x == x->parent->left) {
+		x->parent->left = y;
 	} else {
-		x->parent->right=y;
+		x->parent->right = y;
 	}
-	y->left=x;
-	x->parent=y;
+	y->left = x;
+	x->parent = y;
 
 #ifdef DEBUG_ASSERT
-	Assert(!tree->nilp->red,"nil not red in LeftRotate");
+	Assert(!tree->nilp->red, "nil not red in LeftRotate");
 #endif
 }
-
 
 /*************************************************************************/
 /*  FUNCTION:  RightRotate 						 */
@@ -151,10 +153,11 @@ LeftRotate(XY_Tree* tree, xy_node* x)
 /*            accordingly. 						 */
 /*************************************************************************/
 
-static void 
-RightRotate(XY_Tree* tree, xy_node* y) {
-  	xy_node* x;
-  	xy_node* nilp=tree->nilp;
+static void
+RightRotate(XY_Tree * tree, xy_node * y)
+{
+	xy_node *x;
+	xy_node *nilp = tree->nilp;
 
 	/*  I originally wrote this function to use the sentinel for */
 	/*  nilp to avoid checking for nilp.  However this introduces a */
@@ -163,28 +166,29 @@ RightRotate(XY_Tree* tree, xy_node* y) {
 	/*  function which calls LeftRotate also uses the nilp sentinel */
 	/*  and expects the nilp sentinel's parent pointer to be unchanged */
 	/*  after calling this function.  For example, when RBDeleteFixUP */
- 	/*  calls LeftRotate it expects the parent pointer of nilp to be */
- 	/*  unchanged. */
+	/*  calls LeftRotate it expects the parent pointer of nilp to be */
+	/*  unchanged. */
 
-	x=y->left;
-	y->left=x->right;
+	x = y->left;
+	y->left = x->right;
 
-	if (nilp != x->right)  x->right->parent=y; /*used to use sentinel here */
+	if (nilp != x->right)
+		x->right->parent = y;	/*used to use sentinel here */
 	/* and do an unconditional assignment instead of testing for nilp */
 
 	/* instead of checking if x->parent is the root as in the book, we */
 	/* count on the root sentinel to implicitly take care of this case */
-	x->parent=y->parent;
-	if( y == y->parent->left) {
-		y->parent->left=x;
+	x->parent = y->parent;
+	if (y == y->parent->left) {
+		y->parent->left = x;
 	} else {
-		y->parent->right=x;
+		y->parent->right = x;
 	}
-	x->right=y;
-	y->parent=x;
+	x->right = y;
+	y->parent = x;
 
 #ifdef DEBUG_ASSERT
-	Assert(!tree->nilp->red,"nil not red in RightRotate");
+	Assert(!tree->nilp->red, "nil not red in RightRotate");
 #endif
 }
 
@@ -203,34 +207,34 @@ RightRotate(XY_Tree* tree, xy_node* y) {
 /*            by the RBTreeInsert function and not by the user              */
 /****************************************************************************/
 
-static void 
-TreeInsertHelp(XY_Tree* tree, xy_node* z) {
-  /*  This function should only be called by InsertRBTree (see above) */
-  xy_node* x;
-  xy_node* y;
-  xy_node* nilp=tree->nilp;
-  
-  z->left=z->right=nilp;
-  y=tree->rootp;
-  x=tree->rootp->left;
-  while( x != nilp) {
-    y=x;
-    if (tree->Compare(x->key,z->key)>0) { /* x.key > z.key */
-      x=x->left;
-    } else { /* x,key <= z.key */
-      x=x->right;
-    }
-  }
-  z->parent=y;
-  if ( (y == tree->rootp) ||
-       (tree->Compare(y->key,z->key)>0)) { /* y.key > z.key */
-    y->left=z;
-  } else {
-    y->right=z;
-  }
+static void
+TreeInsertHelp(XY_Tree * tree, xy_node * z)
+{
+	/*  This function should only be called by InsertRBTree (see above) */
+	xy_node *x;
+	xy_node *y;
+	xy_node *nilp = tree->nilp;
+
+	z->left = z->right = nilp;
+	y = tree->rootp;
+	x = tree->rootp->left;
+	while (x != nilp) {
+		y = x;
+		if (tree->Compare(x->key, z->key) > 0) {	/* x.key > z.key */
+			x = x->left;
+		} else {	/* x,key <= z.key */
+			x = x->right;
+		}
+	}
+	z->parent = y;
+	if ((y == tree->rootp) || (tree->Compare(y->key, z->key) > 0)) {	/* y.key > z.key */
+		y->left = z;
+	} else {
+		y->right = z;
+	}
 
 #ifdef DEBUG_ASSERT
-  Assert(!tree->nilp->red,"nilp not red in TreeInsertHelp");
+	Assert(!tree->nilp->red, "nilp not red in TreeInsertHelp");
 #endif
 }
 
@@ -238,84 +242,85 @@ TreeInsertHelp(XY_Tree* tree, xy_node* z) {
 
 /***********************************************************************/
 /*  FUNCTION:  RBTreeInsert */
-/**/
+ /**/
 /*  INPUTS:  tree is the red-black tree to insert a node which has a key */
 /*           pointed to by key and value pointed to by value.  */
-/**/
+     /**/
 /*  OUTPUT:  This function returns a pointer to the newly inserted node */
 /*           which is guarunteed to be valid until this node is deleted. */
 /*           What this means is if another data structure stores this */
 /*           pointer then the tree does not need to be searched when this */
 /*           is to be deleted. */
-/**/
+     /**/
 /*  Modifies Input: tree */
-/**/
+     /**/
 /*  EFFECTS:  Creates a node node which contains the appropriate key and */
 /*            value pointers and inserts it into the tree. */
 /***********************************************************************/
+    void
+XY_AddTreeNode(XY_Tree * tree, xy_node * x, void *key, void *value)
+{
+	xy_node *y;
 
-void
-XY_AddTreeNode(XY_Tree* tree, xy_node *x,void* key, void* value) {
-	xy_node * y;
-	xy_node * newNode;
+	x->key = key;
+	x->value = value;
 
-	x->key=key;
-	x->value=value;
+	TreeInsertHelp(tree, x);
+	x->red = 1;
 
-	TreeInsertHelp(tree,x);
-  	newNode=x;
-  	x->red=1;
-
-  while(x->parent->red) { /* use sentinel instead of checking for root */
-    if (x->parent == x->parent->parent->left) {
-      y=x->parent->parent->right;
-      if (y->red) {
-	x->parent->red=0;
-	y->red=0;
-	x->parent->parent->red=1;
-	x=x->parent->parent;
-      } else {
-	if (x == x->parent->right) {
-	  x=x->parent;
-	  LeftRotate(tree,x);
+	while (x->parent->red) {	/* use sentinel instead of checking for root */
+		if (x->parent == x->parent->parent->left) {
+			y = x->parent->parent->right;
+			if (y->red) {
+				x->parent->red = 0;
+				y->red = 0;
+				x->parent->parent->red = 1;
+				x = x->parent->parent;
+			} else {
+				if (x == x->parent->right) {
+					x = x->parent;
+					LeftRotate(tree, x);
+				}
+				x->parent->red = 0;
+				x->parent->parent->red = 1;
+				RightRotate(tree, x->parent->parent);
+			}
+		} else {	/* case for x->parent == x->parent->parent->right */
+			y = x->parent->parent->left;
+			if (y->red) {
+				x->parent->red = 0;
+				y->red = 0;
+				x->parent->parent->red = 1;
+				x = x->parent->parent;
+			} else {
+				if (x == x->parent->left) {
+					x = x->parent;
+					RightRotate(tree, x);
+				}
+				x->parent->red = 0;
+				x->parent->parent->red = 1;
+				LeftRotate(tree, x->parent->parent);
+			}
+		}
 	}
-	x->parent->red=0;
-	x->parent->parent->red=1;
-	RightRotate(tree,x->parent->parent);
-      } 
-    } else { /* case for x->parent == x->parent->parent->right */
-      y=x->parent->parent->left;
-      if (y->red) {
-	x->parent->red=0;
-	y->red=0;
-	x->parent->parent->red=1;
-	x=x->parent->parent;
-      } else {
-	if (x == x->parent->left) {
-	  x=x->parent;
-	  RightRotate(tree,x);
-	}
-	x->parent->red=0;
-	x->parent->parent->red=1;
-	LeftRotate(tree,x->parent->parent);
-      } 
-    }
-  }
-  tree->rootp->left->red=0;
+	tree->rootp->left->red = 0;
 
 #ifdef DEBUG_ASSERT
-  Assert(!tree->nilp->red,"nil not red in RBTreeInsert");
-  Assert(!treep->root->red,"root not red in RBTreeInsert");
+	Assert(!tree->nilp->red, "nil not red in RBTreeInsert");
+	Assert(!treep->root->red, "root not red in RBTreeInsert");
 #endif
 }
-xy_node * 
-XY_CreateTreeNode(XY_Tree* tree, void* key, void* value) {
-	xy_node *node =(xy_node*) sg_new(xy_node);
-	if(!node)
+
+xy_node *
+XY_CreateTreeNode(XY_Tree * tree, void *key, void *value)
+{
+	xy_node *node = (xy_node *) sg_new(xy_node);
+	if (!node)
 		return NULL;
-	XY_AddTreeNode(tree,node,key,value);
+	XY_AddTreeNode(tree, node, key, value);
 	return node;
 }
+
 /***************************************************************************/
 /*  FUNCTION:  TreeSuccessor  						   */
 /*									   */
@@ -329,113 +334,114 @@ XY_CreateTreeNode(XY_Tree* tree, void* key, void* value) {
 /*									   */
 /*    Note:  uses the algorithm in _Introduction_To_Algorithms_            */
 /***************************************************************************/
-  
-static xy_node* 
-TreeSuccessor(XY_Tree* tree,xy_node* x) { 
-	xy_node* y;
-	xy_node* nilp=tree->nilp;
-	xy_node* rootp=tree->rootp;
 
-	if (nilp != (y = x->right)) { /* assignment to y is intentional */
-		while(y->left != nilp) { /* returns the minium of the right subtree of x */
-			y=y->left;
+static xy_node *
+TreeSuccessor(XY_Tree * tree, xy_node * x)
+{
+	xy_node *y;
+	xy_node *nilp = tree->nilp;
+	xy_node *rootp = tree->rootp;
+
+	if (nilp != (y = x->right)) {	/* assignment to y is intentional */
+		while (y->left != nilp) {	/* returns the minium of the right subtree of x */
+			y = y->left;
 		}
-    		return(y);
- 	} else {
-    		y=x->parent;
-		while(x == y->right) { /* sentinel used instead of checking for nilp */
-			x=y;
-			y=y->parent;
-    		}
-		if (y == rootp) return(nilp);
-    		return(y);
-  	}
+		return (y);
+	} else {
+		y = x->parent;
+		while (x == y->right) {	/* sentinel used instead of checking for nilp */
+			x = y;
+			y = y->parent;
+		}
+		if (y == rootp)
+			return (nilp);
+		return (y);
+	}
 }
 
 #if 0
 /***********************************************************************/
 /*  FUNCTION:  Treepredecessor  */
-/**/
+ /**/
 /*    INPUTS:  tree is the tree in question, and x is the node we want the */
 /*             the predecessor of. */
-/**/
+     /**/
 /*    OUTPUT:  This function returns the predecessor of x or NULL if no */
 /*             predecessor exists. */
-/**/
+     /**/
 /*    Modifies Input: none */
-/**/
+     /**/
 /*    Note:  uses the algorithm in _Introduction_To_Algorithms_ */
 /***********************************************************************/
+static xy_node *
+TreePredecessor(XY_Tree * tree, xy_node * x)
+{
+	xy_node *y;
+	xy_node *nilp = tree->nilp;
+	xy_node *root = tree->rootp;
 
-static xy_node* 
-TreePredecessor(XY_Tree* tree, xy_node* x) {
-  xy_node* y;
-  xy_node* nilp=tree->nilp;
-  xy_node* root=tree->rootp;
-
-  if (nilp != (y = x->left)) { /* assignment to y is intentional */
-    while(y->right != nilp) { /* returns the maximum of the left subtree of x */
-      y=y->right;
-    }
-    return(y);
-  } else {
-    y=x->parent;
-    while(x == y->left) { 
-      if (y == root) return(nilp); 
-      x=y;
-      y=y->parent;
-    }
-    return(y);
-  }
+	if (nilp != (y = x->left)) {	/* assignment to y is intentional */
+		while (y->right != nilp) {	/* returns the maximum of the left subtree of x */
+			y = y->right;
+		}
+		return (y);
+	} else {
+		y = x->parent;
+		while (x == y->left) {
+			if (y == root)
+				return (nilp);
+			x = y;
+			y = y->parent;
+		}
+		return (y);
+	}
 }
 
 #endif
 /***********************************************************************/
 /*  FUNCTION:  TreeDestHelper */
-/**/
+ /**/
 /*    INPUTS:  tree is the tree to destroy and x is the current node */
-/**/
+     /**/
 /*    OUTPUT:  none  */
-/**/
+     /**/
 /*    EFFECTS:  This function recursively destroys the nodes of the tree */
 /*              postorder using the DestroyKey and DestroyInfo functions. */
-/**/
+     /**/
 /*    Modifies Input: tree, x */
-/**/
+     /**/
 /*    Note:    This function should only be called by RBTreeDestroy */
 /***********************************************************************/
-
-static void 
-TreeDestHelper(XY_Tree* tree, xy_node* x) {
-  xy_node* nilp=tree->nilp;
-  if (x != nilp) {
-    TreeDestHelper(tree,x->left);
-    TreeDestHelper(tree,x->right);
-    tree->DestroyKey(x->key);
-    tree->DestroyValue(x->value);
-    tree->DestroyNode(x);
-  }
+    static void
+TreeDestHelper(XY_Tree * tree, xy_node * x)
+{
+	xy_node *nilp = tree->nilp;
+	if (x != nilp) {
+		TreeDestHelper(tree, x->left);
+		TreeDestHelper(tree, x->right);
+		tree->DestroyKey(x->key);
+		tree->DestroyValue(x->value);
+		tree->DestroyNode(x);
+	}
 }
-
 
 /***********************************************************************/
 /*  FUNCTION:  RBTreeDestroy */
-/**/
+ /**/
 /*    INPUTS:  tree is the tree to destroy */
-/**/
+     /**/
 /*    OUTPUT:  none */
-/**/
+     /**/
 /*    EFFECT:  Destroys the key and frees memory */
-/**/
+     /**/
 /*    Modifies Input: tree */
-/**/
+     /**/
 /***********************************************************************/
-
-
-void XY_DeleteTree(XY_Tree* tree) {
-  TreeDestHelper(tree,tree->rootp->left);
+    void
+XY_DeleteTree(XY_Tree * tree)
+{
+	TreeDestHelper(tree, tree->rootp->left);
 }
-
 
 /************************************************************************/
 /*  FUNCTION:  RBFind 							*/
@@ -450,77 +456,80 @@ void XY_DeleteTree(XY_Tree* tree) {
 /*    Modifies Input: none 						*/
 /*									*/
 /************************************************************************/
-  
-xy_node* 
-XY_FindTreeNode(XY_Tree* tree, void* q) {
-	xy_node* x=tree->rootp->left;
-	xy_node* nilp=tree->nilp;
-	int compVal;
-	if (x == nilp) 
-		return(0);
-	compVal=tree->Compare(x->key, q);
-	while(0 != compVal) {/*assignemnt*/
-		if (compVal>0) { /* x->key > q */
-			x=x->left;
-		} else {
-			x=x->right;
-		}
-		if ( x == nilp) 
-			return(0);
-		compVal=tree->Compare(x->key, q);
-	}
-	return(x);
-}
 
-
-xy_node*
-XY_FindLeftTreeNode(XY_Tree* tree, void* q) {
-        xy_node* x=tree->rootp->left;
-        xy_node* nilp=tree->nilp;
-        xy_node* last = NULL;
-        int compVal;
-        if (x == nilp)
-                return(0);
-        compVal=tree->Compare(q,x->key);
-        while(0 != compVal) {/*assignemnt*/
-                if (compVal > 0) { /* x->key > q */
-                        last = x;
-                        x = x->right;
-                        if(x == nilp) {
-                                return last;
-                        }
-                } else /* < 0 */ {
-                        x = x->left;
-                        if ( x == nilp)  {
-                                return last;
-                        }
-                }
-                compVal=tree->Compare(q,x->key);
-        }
-        return x;
-}
-
-xy_node* 
-XY_FirstTreeNode(XY_Tree* tree) 
+xy_node *
+XY_FindTreeNode(XY_Tree * tree, void *q)
 {
-	xy_node* x=tree->rootp->left;
-	if (x == tree->nilp) 
-		return(0);
-	while(x->left && (x->left != tree->nilp)) {
-		x=x->left;
+	xy_node *x = tree->rootp->left;
+	xy_node *nilp = tree->nilp;
+	int compVal;
+	if (x == nilp)
+		return (0);
+	compVal = tree->Compare(x->key, q);
+	while (0 != compVal) {	/*assignemnt */
+		if (compVal > 0) {	/* x->key > q */
+			x = x->left;
+		} else {
+			x = x->right;
+		}
+		if (x == nilp)
+			return (0);
+		compVal = tree->Compare(x->key, q);
+	}
+	return (x);
+}
+
+xy_node *
+XY_FindLeftTreeNode(XY_Tree * tree, void *q)
+{
+	xy_node *x = tree->rootp->left;
+	xy_node *nilp = tree->nilp;
+	xy_node *last = NULL;
+	int compVal;
+	if (x == nilp)
+		return (0);
+	compVal = tree->Compare(q, x->key);
+	while (0 != compVal) {	/*assignemnt */
+		if (compVal > 0) {	/* x->key > q */
+			last = x;
+			x = x->right;
+			if (x == nilp) {
+				return last;
+			}
+		} else {	/* < 0 */
+
+			x = x->left;
+			if (x == nilp) {
+				return last;
+			}
+		}
+		compVal = tree->Compare(q, x->key);
 	}
 	return x;
 }
+
+xy_node *
+XY_FirstTreeNode(XY_Tree * tree)
+{
+	xy_node *x = tree->rootp->left;
+	if (x == tree->nilp)
+		return (0);
+	while (x->left && (x->left != tree->nilp)) {
+		x = x->left;
+	}
+	return x;
+}
+
 /*
  * --------------------------------
  * Find Successor 
  * --------------------------------
  */
-xy_node* 
-XY_NextTreeNode(XY_Tree* tree, xy_node *x) 
+xy_node *
+XY_NextTreeNode(XY_Tree * tree, xy_node * x)
 {
-	xy_node *node=TreeSuccessor(tree,x);
-	if (node==tree->nilp) {
+	xy_node *node = TreeSuccessor(tree, x);
+	if (node == tree->nilp) {
 		return NULL;
 	}
 	return node;
@@ -542,70 +551,69 @@ XY_NextTreeNode(XY_Tree* tree, xy_node *x)
 /*    The algorithm from this function is from _Introduction_To_Algorithms_ */
 /**************************************************************************/
 
-static void 
-RBDeleteFixUp(XY_Tree* tree, xy_node* x) 
+static void
+RBDeleteFixUp(XY_Tree * tree, xy_node * x)
 {
-  xy_node* root=tree->rootp->left;
-  xy_node* w;
+	xy_node *root = tree->rootp->left;
+	xy_node *w;
 
-  while( (!x->red) && (root != x)) {
-    if (x == x->parent->left) {
-      w=x->parent->right;
-      if (w->red) {
-	w->red=0;
-	x->parent->red=1;
-	LeftRotate(tree,x->parent);
-	w=x->parent->right;
-      }
-      if ( (!w->right->red) && (!w->left->red) ) { 
-	w->red=1;
-	x=x->parent;
-      } else {
-	if (!w->right->red) {
-	  w->left->red=0;
-	  w->red=1;
-	  RightRotate(tree,w);
-	  w=x->parent->right;
+	while ((!x->red) && (root != x)) {
+		if (x == x->parent->left) {
+			w = x->parent->right;
+			if (w->red) {
+				w->red = 0;
+				x->parent->red = 1;
+				LeftRotate(tree, x->parent);
+				w = x->parent->right;
+			}
+			if ((!w->right->red) && (!w->left->red)) {
+				w->red = 1;
+				x = x->parent;
+			} else {
+				if (!w->right->red) {
+					w->left->red = 0;
+					w->red = 1;
+					RightRotate(tree, w);
+					w = x->parent->right;
+				}
+				w->red = x->parent->red;
+				x->parent->red = 0;
+				w->right->red = 0;
+				LeftRotate(tree, x->parent);
+				x = root;	/* this is to exit while loop */
+			}
+		} else {	/* the code below is has left and right switched from above */
+			w = x->parent->left;
+			if (w->red) {
+				w->red = 0;
+				x->parent->red = 1;
+				RightRotate(tree, x->parent);
+				w = x->parent->left;
+			}
+			if ((!w->right->red) && (!w->left->red)) {
+				w->red = 1;
+				x = x->parent;
+			} else {
+				if (!w->left->red) {
+					w->right->red = 0;
+					w->red = 1;
+					LeftRotate(tree, w);
+					w = x->parent->left;
+				}
+				w->red = x->parent->red;
+				x->parent->red = 0;
+				w->left->red = 0;
+				RightRotate(tree, x->parent);
+				x = root;	/* this is to exit while loop */
+			}
+		}
 	}
-	w->red=x->parent->red;
-	x->parent->red=0;
-	w->right->red=0;
-	LeftRotate(tree,x->parent);
-	x=root; /* this is to exit while loop */
-      }
-    } else { /* the code below is has left and right switched from above */
-      w=x->parent->left;
-      if (w->red) {
-	w->red=0;
-	x->parent->red=1;
-	RightRotate(tree,x->parent);
-	w=x->parent->left;
-      }
-      if ( (!w->right->red) && (!w->left->red) ) { 
-	w->red=1;
-	x=x->parent;
-      } else {
-	if (!w->left->red) {
-	  w->right->red=0;
-	  w->red=1;
-	  LeftRotate(tree,w);
-	  w=x->parent->left;
-	}
-	w->red=x->parent->red;
-	x->parent->red=0;
-	w->left->red=0;
-	RightRotate(tree,x->parent);
-	x=root; /* this is to exit while loop */
-      }
-    }
-  }
-  x->red=0;
+	x->red = 0;
 
 #ifdef DEBUG_ASSERT
-  Assert(!tree->nilp->red,"nil not black in RBDeleteFixUp");
+	Assert(!tree->nilp->red, "nil not black in RBDeleteFixUp");
 #endif
 }
-
 
 /************************************************************************/
 /*  FUNCTION:  RBDelete 						*/
@@ -620,58 +628,61 @@ RBDeleteFixUp(XY_Tree* tree, xy_node* x)
 /*									*/
 /*    Modifies Input: tree, z 						*/
 /*									*/
-/*    The algorithm from this function is from 				*/ 
+/*    The algorithm from this function is from 				*/
 /*     _Introduction_To_Algorithms_ 					*/
 /************************************************************************/
 
-void 
-XY_DeleteTreeNode(XY_Tree* tree, xy_node* z) {
-	xy_node* y;
-	xy_node* x;
-	xy_node* nilp=tree->nilp;
-	xy_node* root=tree->rootp;
+void
+XY_DeleteTreeNode(XY_Tree * tree, xy_node * z)
+{
+	xy_node *y;
+	xy_node *x;
+	xy_node *nilp = tree->nilp;
+	xy_node *root = tree->rootp;
 
-  y= ((z->left == nilp) || (z->right == nilp)) ? z : TreeSuccessor(tree,z);
-  x= (y->left == nilp) ? y->right : y->left;
-  if (root == (x->parent = y->parent)) { /* assignment of y->p to x->p is intentional */
-    root->left=x;
-  } else {
-    if (y == y->parent->left) {
-      y->parent->left=x;
-    } else {
-      y->parent->right=x;
-    }
-  }
-  if (y != z) { /* y should not be nilp in this case */
+	y = ((z->left == nilp) || (z->right == nilp)) ? z : TreeSuccessor(tree, z);
+	x = (y->left == nilp) ? y->right : y->left;
+	if (root == (x->parent = y->parent)) {	/* assignment of y->p to x->p is intentional */
+		root->left = x;
+	} else {
+		if (y == y->parent->left) {
+			y->parent->left = x;
+		} else {
+			y->parent->right = x;
+		}
+	}
+	if (y != z) {		/* y should not be nilp in this case */
 
 #ifdef DEBUG_ASSERT
-    Assert( (y!=tree->nilp),"y is nilp in RBDelete\n");
+		Assert((y != tree->nilp), "y is nilp in RBDelete\n");
 #endif
-    /* y is the node to splice out and x is its child */
+		/* y is the node to splice out and x is its child */
 
-    if (!(y->red)) RBDeleteFixUp(tree,x);
-  
-    tree->DestroyKey(z->key);
-    tree->DestroyValue(z->value);
-    y->left=z->left;
-    y->right=z->right;
-    y->parent=z->parent;
-    y->red=z->red;
-    z->left->parent=z->right->parent=y;
-    if (z == z->parent->left) {
-      z->parent->left=y; 
-    } else {
-      z->parent->right=y;
-    }
-    tree->DestroyNode(z); 
-  } else {
-    tree->DestroyKey(y->key);
-    tree->DestroyValue(y->value);
-    if (!(y->red)) RBDeleteFixUp(tree,x);
-    tree->DestroyNode(y); 
-  }
-  
+		if (!(y->red))
+			RBDeleteFixUp(tree, x);
+
+		tree->DestroyKey(z->key);
+		tree->DestroyValue(z->value);
+		y->left = z->left;
+		y->right = z->right;
+		y->parent = z->parent;
+		y->red = z->red;
+		z->left->parent = z->right->parent = y;
+		if (z == z->parent->left) {
+			z->parent->left = y;
+		} else {
+			z->parent->right = y;
+		}
+		tree->DestroyNode(z);
+	} else {
+		tree->DestroyKey(y->key);
+		tree->DestroyValue(y->value);
+		if (!(y->red))
+			RBDeleteFixUp(tree, x);
+		tree->DestroyNode(y);
+	}
+
 #ifdef DEBUG_ASSERT
-  Assert(!tree->nilp->red,"nilp not black in RBDelete");
+	Assert(!tree->nilp->red, "nilp not black in RBDelete");
 #endif
 }

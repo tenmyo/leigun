@@ -1,6 +1,6 @@
 #include <bus.h>
-BusDevice * AT91Mc_New(const char *name); 
-void AT91Mc_RegisterDevice(BusDevice *mcdev,BusDevice *bdev,unsigned int area_id);
+BusDevice *AT91Mc_New(const char *name);
+void AT91Mc_RegisterDevice(BusDevice * mcdev, BusDevice * bdev, unsigned int area_id);
 
 #define AT91_AREA_EXMEM0	(0)
 #define AT91_AREA_IROM		(1)

@@ -9,6 +9,6 @@
 #define CSM_CS6		(6)
 
 typedef struct Scm MCF5282ScmCsm;
-MCF5282ScmCsm * MCF5282_ScmCsmNew(const char *name);
-void MCF5282Scm_RegisterIpsbarDevice(MCF5282ScmCsm *scm,BusDevice *bdev,uint32_t ipsbar_offset);
-void MCF5282Csm_RegisterDevice(MCF5282ScmCsm *,BusDevice *dev,unsigned int cs_nr);
+MCF5282ScmCsm *MCF5282_ScmCsmNew(const char *name);
+void MCF5282Scm_RegisterIpsbarDevice(MCF5282ScmCsm * scm, BusDevice * bdev, uint32_t ipsbar_offset);
+void MCF5282Csm_RegisterDevice(MCF5282ScmCsm *, BusDevice * dev, unsigned int cs_nr);

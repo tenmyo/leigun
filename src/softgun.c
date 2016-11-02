@@ -39,6 +39,8 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 #include "fio.h"
 #include "signode.h"
@@ -63,36 +65,36 @@ typedef struct LoadChainEntry {
 	char *filename;
 	char *addr_string;
 	uint32_t addr;
-	uint32_t region_size; /* 0 = unlimited */
+	uint32_t region_size;	/* 0 = unlimited */
 } LoadChainEntry;
 
 static char *configfpath = NULL;
 static char *configname = "defaultboard";
 static LoadChainEntry *loadChainHead = NULL;
 
-static void 
-LoadChain_Append(const char *addr_string,const char *filename)
+static void
+LoadChain_Append(const char *addr_string, const char *filename)
 {
 	struct stat stat_buf;
 	LoadChainEntry *lce = sg_new(LoadChainEntry);
-	if(!addr_string) {
+	if (!addr_string) {
 		addr_string = "flash";
 	}
-	fprintf(stderr,"LCA \"%s\" \"%s\"\n",addr_string,filename);
-	if(stat(filename,&stat_buf) <0) {
-		fprintf(stderr,"stat on file \"%s\" failed ",filename);
+	fprintf(stderr, "LCA \"%s\" \"%s\"\n", addr_string, filename);
+	if (stat(filename, &stat_buf) < 0) {
+		fprintf(stderr, "stat on file \"%s\" failed ", filename);
 		perror("");
 		exit(1);
 	}
 	lce->filename = sg_strdup(filename);
 	lce->addr_string = sg_strdup(addr_string);
-	if(!loadChainHead) {
+	if (!loadChainHead) {
 		lce->next = NULL;
 		loadChainHead = lce;
 	} else {
 		LoadChainEntry *last = loadChainHead;
-		while(last->next) {
-			last=last->next;
+		while (last->next) {
+			last = last->next;
 		}
 		lce->next = NULL;
 		last->next = lce;
@@ -106,38 +108,41 @@ LoadChain_Append(const char *addr_string,const char *filename)
  * ----------------------------------------------
  */
 static void
-LoadChain_Resolve(void) 
+LoadChain_Resolve(void)
 {
 	/* now decode the address */
-	LoadChainEntry *lce = loadChainHead;
-	for(lce = loadChainHead;lce;lce = lce->next) {
-		if(sscanf(lce->addr_string,"0x%x",&lce->addr) == 1) {
+	LoadChainEntry *lce;
+	for (lce = loadChainHead; lce; lce = lce->next) {
+		if (sscanf(lce->addr_string, "0x%x", &lce->addr) == 1) {
 			lce->region_size = 0;
-		} else if(sscanf(lce->addr_string,"%u",&lce->addr) == 1) {
+		} else if (sscanf(lce->addr_string, "%u", &lce->addr) == 1) {
 			lce->region_size = 0;
 		} else {
-			char *dest = Config_ReadVar("regions",lce->addr_string);
+			char *dest = Config_ReadVar("regions", lce->addr_string);
 			int n;
-			if(!dest) {
-				fprintf(stderr,"Load destination \"%s\" not understood\n",lce->addr_string);
+			if (!dest) {
+				fprintf(stderr, "Load destination \"%s\" not understood\n",
+					lce->addr_string);
 				exit(1);
 			}
-			n = sscanf(dest,"0x%x 0x%x",&lce->addr,&lce->region_size);
-			if(n == 0) {
-				fprintf(stderr,"Bad address \"%s\" for \"%s\" in configfile\n",dest,lce->addr_string);	
-				fprintf(stderr,"Should be %s: <hexaddr> ?hex-maxsize?\n",lce->addr_string);	
+			n = sscanf(dest, "0x%x 0x%x", &lce->addr, &lce->region_size);
+			if (n == 0) {
+				fprintf(stderr, "Bad address \"%s\" for \"%s\" in configfile\n",
+					dest, lce->addr_string);
+				fprintf(stderr, "Should be %s: <hexaddr> ?hex-maxsize?\n",
+					lce->addr_string);
 				exit(1);
 			}
 		}
 	}
 }
 
-static int 
-LoadChain_Load(void) 
+static int
+LoadChain_Load(void)
 {
-	LoadChainEntry *lce = loadChainHead;
-	for(lce = loadChainHead;lce;lce = lce->next) {
-		if(Load_AutoType(lce->filename,lce->addr,lce->region_size)<0) {
+	LoadChainEntry *lce;
+	for (lce = loadChainHead; lce; lce = lce->next) {
+		if (Load_AutoType(lce->filename, lce->addr, lce->region_size) < 0) {
 			return -1;
 		}
 	}
@@ -145,96 +150,107 @@ LoadChain_Load(void)
 }
 
 static void
-help() {
-	fprintf(stderr,"\nThis is %s first compiled on %s %s\n",softgun_version,__DATE__,__TIME__);
-	fprintf(stderr,"Usage:\n");
-	fprintf(stderr,"\tsoftgun [options] ?configuration_name?\n");
-	fprintf(stderr,"Options:\n");
-	fprintf(stderr,"-l <loadaddr | region> <file>:  Load a file to address or region\n");
-	fprintf(stderr,"-c <configfile_path>:           Use alternate configfile\n");
-	fprintf(stderr,"-g <startaddr>:                 Use non default startaddress\n");
-	fprintf(stderr,"-d                              Debug: Do not start. Wait for gdb connection\n");
-	fprintf(stderr,"\n");
+help()
+{
+	fprintf(stderr, "\nThis is %s first compiled on %s %s\n", softgun_version, __DATE__,
+		__TIME__);
+	fprintf(stderr, "Usage:\n");
+	fprintf(stderr, "\tsoftgun [options] ?configuration_name?\n");
+	fprintf(stderr, "Options:\n");
+	fprintf(stderr, "-l <loadaddr | region> <file>:  Load a file to address or region\n");
+	fprintf(stderr, "-c <configfile_path>:           Use alternate configfile\n");
+	fprintf(stderr, "-g <startaddr>:                 Use non default startaddress\n");
+	fprintf(stderr,
+		"-d                              Debug: Do not start. Wait for gdb connection\n");
+	fprintf(stderr, "\n");
 }
 
-static int 
-read_configfile() {
+static int
+read_configfile()
+{
 	char *str;
 
-	if(configfpath) {
-		if(Config_ReadFile(configfpath)>=0) {
+	if (configfpath) {
+		if (Config_ReadFile(configfpath) >= 0) {
 			return 0;
 		} else {
-			fprintf(stderr,"Can not read configfile %s\n",configfpath);
+			fprintf(stderr, "Can not read configfile %s\n", configfpath);
 			exit(3255);
 		}
 	}
-	str = alloca(100+strlen(getenv("HOME")) + strlen(configname));
-	sprintf(str,"%s/.softgun/%s.sg",getenv("HOME"),configname);
-	if(Config_ReadFile(str)>=0) {
+	str = (char *)alloca(100 + strlen(getenv("HOME")) + strlen(configname));
+	sprintf(str, "%s/.softgun/%s.sg", getenv("HOME"), configname);
+	if (Config_ReadFile(str) >= 0) {
 		return 0;
 	}
-	fprintf(stderr,"Error: Can Not read configuration file %s\n",str);
+	fprintf(stderr, "Error: Can Not read configuration file %s\n", str);
 	exit(1843);
 }
 
 static void
-parse_commandline(int argc,char *argv[]) {
+parse_commandline(int argc, char *argv[])
+{
 	char confstr[100];
-	while(argc) {
-		if(argv[0][0]=='-') {
-			switch(argv[0][1]) {
-				case 'c':
-					if(argc>1) {
-						configfpath=argv[1];
-						argc--;argv++;
-					} else {
-						fprintf(stderr,"Missing name of configuration file\n");
-						exit(74530);
-					}
-					break;
+	while (argc) {
+		if (argv[0][0] == '-') {
+			switch (argv[0][1]) {
+			    case 'c':
+				    if (argc > 1) {
+					    configfpath = argv[1];
+					    argc--;
+					    argv++;
+				    } else {
+					    fprintf(stderr, "Missing name of configuration file\n");
+					    exit(74530);
+				    }
+				    break;
 
-				case 'l':
-					if((argc > 2) && (argv[1][0] != '-') && (argv[2][0] != '-')) {
-						LoadChain_Append(argv[1],argv[2]);
-						argc-= 2; argv+=2;
+			    case 'l':
+				    if ((argc > 2) && (argv[1][0] != '-') && (argv[2][0] != '-')) {
+					    LoadChain_Append(argv[1], argv[2]);
+					    argc -= 2;
+					    argv += 2;
 #if 1
-					} else if((argc > 1)) {
-						LoadChain_Append(NULL,argv[1]);
-						argc-= 1; argv+=1;
+				    } else if ((argc > 1)) {
+					    LoadChain_Append(NULL, argv[1]);
+					    argc -= 1;
+					    argv += 1;
 #endif
-					} else {
-						fprintf(stderr,"Missing argument\n");
-						help();
-						exit(245);
-					}
-					break;
+				    } else {
+					    fprintf(stderr, "Missing argument\n");
+					    help();
+					    exit(245);
+				    }
+				    break;
 
-				case 'd':
-					Config_AddString("\n[global]\ndbgwait: 1\n");
-					break;
-					
-				case 'g':
-					if(argc>1) {
-						snprintf(confstr,100,"\n[global]\nstart_address: %s\n",argv[1]);
-						Config_AddString(confstr);
-						argc--;argv++;
-					} else {
-						fprintf(stderr,"Missing argument\n");
-						help();
-						exit(245);
-					}
-					break;
+			    case 'd':
+				    Config_AddString("\n[global]\ndbgwait: 1\n");
+				    break;
 
-				default:
-					fprintf(stderr,"unknown argument \"%s\"\n",argv[0]);
-					help();
-					exit(3245);
+			    case 'g':
+				    if (argc > 1) {
+					    snprintf(confstr, 100,
+						     "\n[global]\nstart_address: %s\n", argv[1]);
+					    Config_AddString(confstr);
+					    argc--;
+					    argv++;
+				    } else {
+					    fprintf(stderr, "Missing argument\n");
+					    help();
+					    exit(245);
+				    }
+				    break;
+
+			    default:
+				    fprintf(stderr, "unknown argument \"%s\"\n", argv[0]);
+				    help();
+				    exit(3245);
 			}
 		} else {
 			configname = argv[0];
-		} 
-		argc--;argv++;
+		}
+		argc--;
+		argv++;
 	}
 }
 
@@ -246,39 +262,50 @@ parse_commandline(int argc,char *argv[]) {
  */
 
 int
-main(int argc,char *argv[]) {
+main(int argc, char *argv[])
+{
 	char *boardname;
+	struct timeval tv;
+	uint64_t seedval;
 	Board *board;
 	SGLib_Init();
 	CRC16_Init();
 	signal(SIGPIPE, SIG_IGN);
-	parse_commandline(argc-1,argv+1);
+	parse_commandline(argc - 1, argv + 1);
 	CmdRegistry_Init();
 	DbgVars_Init();
 	read_configfile();
+	if (Config_ReadUInt64(&seedval, "global", "random_seed") >= 0) {
+		fprintf(stderr, "Random Seed from Configuration file: %" PRIu64 "\n", seedval);
+	} else {
+		gettimeofday(&tv, NULL);
+		seedval = tv.tv_usec + ((uint64_t) tv.tv_sec << 20);
+		fprintf(stderr, "Random Seed from time of day %" PRIu64 "\n", seedval);
+	}
+	srand48(seedval);
 	FIO_Init();
 	SignodesInit();
 	ClocksInit();
 	Shlibs_Init();
-	boardname = Config_ReadVar("global","board");
-	if(!boardname) {
-		fprintf(stderr,"No Board selected in Configfile global section\n");
+	boardname = Config_ReadVar("global", "board");
+	if (!boardname) {
+		fprintf(stderr, "No Board selected in Configfile global section\n");
 		exit(1);
 	}
 	board = Board_Find(boardname);
-	if(!board) {
+	if (!board) {
 		exit(1);
 	}
-	if(Board_DefaultConfig(board)) {
-	//	fprintf(stderr,"defaultconfig %s\n",Board_DefaultConfig(board));
+	if (Board_DefaultConfig(board)) {
+		//      fprintf(stderr,"defaultconfig %s\n",Board_DefaultConfig(board));
 		Config_AddString(Board_DefaultConfig(board));
 	}
 	Board_Create(board);
-	CliServer_New("cli");	
-	WebServ_New("webserv");	
+	CliServer_New("cli");
+	WebServ_New("webserv");
 	LoadChain_Resolve();
-	if(LoadChain_Load() < 0) {
-		fprintf(stderr,"Loading failed\n");
+	if (LoadChain_Load() < 0) {
+		fprintf(stderr, "Loading failed\n");
 		exit(1);
 	}
 	Senseless_Init();

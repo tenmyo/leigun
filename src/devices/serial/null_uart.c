@@ -59,52 +59,35 @@
 #define dbgprintf(x...)
 #endif
 
-
 typedef struct NullUart {
 	SerialDevice serdev;
 	int tx_enabled;
 } NullUart;
 
-static void
-null_enable_tx(SerialDevice *serial_device) {
-	NullUart *nua = serial_device->owner;
-	nua->tx_enabled = 1;
-	while(nua->tx_enabled) {
-		Uart_TxEvent(serial_device);
-	}
-}
-
-static int 
-null_write(SerialDevice *serial_device,const UartChar *buf,int len) 
+static int
+null_write(SerialDevice * serial_device, const UartChar * buf, int len)
 {
 	return len;
 }
 
-static int 
-null_read(SerialDevice *serial_device,UartChar *buf,int len) 
+static int
+null_read(SerialDevice * serial_device, UartChar * buf, int len)
 {
 	return 0;
 }
 
-static void
-null_disable_tx(SerialDevice *serial_device) {
-	NullUart *nua = serial_device->owner;
-	nua->tx_enabled = 0;
-}
-
-static SerialDevice null_uart =  {
-	.stop_tx = null_disable_tx,
-	.start_tx = null_enable_tx,
+static SerialDevice null_uart = {
 	.stop_rx = NULL,
 	.start_rx = NULL,
 	.write = null_write,
 	.read = null_read,
 };
 
-static SerialDevice * 
-NullUart_New(const char *uart_name)  {
+static SerialDevice *
+NullUart_New(const char *uart_name)
+{
 	NullUart *nua = sg_new(NullUart);
-	nua->serdev = null_uart; /* copy from template */
+	nua->serdev = null_uart;	/* copy from template */
 	nua->serdev.owner = nua;
 	nua->tx_enabled = 0;
 	return &nua->serdev;
@@ -120,7 +103,6 @@ NullUart_New(const char *uart_name)  {
 __CONSTRUCTOR__ static void
 NullUart_Init(void)
 {
-        SerialModule_Register("null",NullUart_New);
-        fprintf(stderr,"Registered Null UART Emulator module\n");
+	SerialModule_Register("null", NullUart_New);
+	fprintf(stderr, "Registered Null UART Emulator module\n");
 }
-

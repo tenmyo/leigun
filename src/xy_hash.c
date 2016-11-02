@@ -40,48 +40,52 @@
 #include "sgstring.h"
 
 static unsigned int
-hashkey_one_word32(const void *data) 
+hashkey_one_word32(const void *data)
 {
-	uint32_t w = (unsigned long) data;
-	return (w+(w>>5)+(w>>10)+(w>>15)+(w>>20)+(w>>25)+(w>>30)) & 31;	
-} 
+	uint32_t w = (unsigned long)data;
+	return (w + (w >> 5) + (w >> 10) + (w >> 15) + (w >> 20) + (w >> 25) + (w >> 30)) & 31;
+}
 
 static unsigned int
-hashkey_one_word256(const void *data) 
+hashkey_one_word256(const void *data)
 {
-	uint32_t w = (unsigned long) data;
-	return (w+(w>>24)+(w>>16)+(w>>8)) & 255;	
-} 
+	uint32_t w = (unsigned long)data;
+	return (w + (w >> 24) + (w >> 16) + (w >> 8)) & 255;
+}
 
-static unsigned int 
-hashkey_one_word1024(const void *data) 
+static unsigned int
+hashkey_one_word1024(const void *data)
 {
-	uint32_t w = (unsigned long) data;
-	return (w+(w>>10)+(w>>20)+(w>>30)) & 1023;
+	uint32_t w = (unsigned long)data;
+	return (w + (w >> 10) + (w >> 20) + (w >> 30)) & 1023;
 }
-static unsigned int 
-hashkey_one_word8192(const void *data) 
+
+static unsigned int
+hashkey_one_word8192(const void *data)
 {
-	uint32_t w = (unsigned long) data;
-	return (w+(w>>13)+(w>>26)) & 8191;
+	uint32_t w = (unsigned long)data;
+	return (w + (w >> 13) + (w >> 26)) & 8191;
 }
-static int
-one_word_isequal(const void *data1,const void *data2) 
-{
-	return ((unsigned long)data1==(unsigned long)data2);
-} 
 
 static int
-string_isequal(const void *d1,const void *d2) {
-	char *str1=(char *) d1; 
-	char *str2=(char *) d2; 
-	return (strcmp(str1,str2)==0);
+one_word_isequal(const void *data1, const void *data2)
+{
+	return ((unsigned long)data1 == (unsigned long)data2);
 }
 
-static int 
-hash_string2(const char *s) {
-	unsigned int hash=0;
-	while(*s) {
+static int
+string_isequal(const void *d1, const void *d2)
+{
+	char *str1 = (char *)d1;
+	char *str2 = (char *)d2;
+	return (strcmp(str1, str2) == 0);
+}
+
+static int
+hash_string2(const char *s)
+{
+	unsigned int hash = 0;
+	while (*s) {
 		hash = *s + (hash << 6) + (hash << 16) - hash;
 		s++;
 	}
@@ -89,55 +93,59 @@ hash_string2(const char *s) {
 }
 
 static unsigned int
-hashkey_string32(const void *data) {
-	char *str = (char*) data;
+hashkey_string32(const void *data)
+{
+	char *str = (char *)data;
 	unsigned long w;
 	w = hash_string2(str);
-	return (w+(w>>5)+(w>>10)+(w>>15)+(w>>20)+(w>>25)+(w>>30)) & 31;	
+	return (w + (w >> 5) + (w >> 10) + (w >> 15) + (w >> 20) + (w >> 25) + (w >> 30)) & 31;
 }
 
 static unsigned int
-hashkey_string256(const void *data) {
-	char *str = (char*) data;
+hashkey_string256(const void *data)
+{
+	char *str = (char *)data;
 	unsigned long w;
 	w = hash_string2(str);
-	return (w+(w>>24)+(w>>16)+(w>>8)) & 255;	
+	return (w + (w >> 24) + (w >> 16) + (w >> 8)) & 255;
 }
 
 static unsigned int
-hashkey_string1024(const void *data) {
-	char *str = (char*) data;
+hashkey_string1024(const void *data)
+{
+	char *str = (char *)data;
 	unsigned long w;
 	w = hash_string2(str);
-	return (w+(w>>10)+(w>>20)+(w>>30)) & 1023;
+	return (w + (w >> 10) + (w >> 20) + (w >> 30)) & 1023;
 }
 
 static unsigned int
-hashkey_string8192(const void *data) {
-	char *str = (char*) data;
+hashkey_string8192(const void *data)
+{
+	char *str = (char *)data;
 	unsigned long w;
 	w = hash_string2(str);
-	return (w+(w>>13)+(w>>26)) & 8191;
+	return (w + (w >> 13) + (w >> 26)) & 8191;
 }
 
 static unsigned int
-hashkey_string65536(const void *data) {
-	char *str = (char*) data;
+hashkey_string65536(const void *data)
+{
+	char *str = (char *)data;
 	unsigned long w;
 	w = hash_string2(str);
-	return (w+(w>>16)+(w>>12)-(w>>3)) & 65535;
+	return (w + (w >> 16) + (w >> 12) - (w >> 3)) & 65535;
 }
-
 
 XY_HashEntry *
-XY_FindHashEntry(XY_HashTable *hash,const void *key) 
+XY_FindHashEntry(XY_HashTable * hash, const void *key)
 {
-	int h = hash->hashfunc(key); 
-	XY_HashEntry **first=&hash->table[h];
+	int h = hash->hashfunc(key);
+	XY_HashEntry **first = &hash->table[h];
 	XY_HashEntry *cursor;
 	//printf("searche for key %s\n",key);
-	for(cursor=*first;cursor;cursor=cursor->next) {
-		if(hash->isequal(cursor->key,key)) {
+	for (cursor = *first; cursor; cursor = cursor->next) {
+		if (hash->isequal(cursor->key, key)) {
 			break;
 		}
 	}
@@ -146,142 +154,144 @@ XY_FindHashEntry(XY_HashTable *hash,const void *key)
 }
 
 XY_HashEntry *
-XY_NextHashEntry(XY_HashSearch *search) 
+XY_NextHashEntry(XY_HashSearch * search)
 {
 	XY_HashEntry *entry = search->cursor;
 	XY_HashTable *hash = search->hash;
-	if(entry->next) {
+	if (entry->next) {
 		search->cursor = entry->next;
 		return search->cursor;
 	}
-	while(search->nr_hash < hash->nr_hashes) {
-		XY_HashEntry **first=&hash->table[search->nr_hash];
+	while (search->nr_hash < hash->nr_hashes) {
+		XY_HashEntry **first = &hash->table[search->nr_hash];
 		search->nr_hash++;
-		if(*first) {
-			search->cursor=*first;
+		if (*first) {
+			search->cursor = *first;
 			return *first;
 		}
-	}	
+	}
 	return NULL;
 }
 
 XY_HashEntry *
-XY_FirstHashEntry(XY_HashTable *hash,XY_HashSearch *search) 
+XY_FirstHashEntry(XY_HashTable * hash, XY_HashSearch * search)
 {
 	search->hash = hash;
-	for(search->nr_hash=0;search->nr_hash < hash->nr_hashes;) {
-		XY_HashEntry **first=&hash->table[search->nr_hash];
+	for (search->nr_hash = 0; search->nr_hash < hash->nr_hashes;) {
+		XY_HashEntry **first = &hash->table[search->nr_hash];
 		search->nr_hash++;
-		if(*first) {
-			search->cursor=*first;
+		if (*first) {
+			search->cursor = *first;
 			return *first;
 		}
-	}	
+	}
 	return NULL;
 }
 
-
 void
-XY_DeleteHashEntry(XY_HashTable *hash,XY_HashEntry *entry) {
+XY_DeleteHashEntry(XY_HashTable * hash, XY_HashEntry * entry)
+{
 	XY_HashEntry *prev = entry->prev;
 	XY_HashEntry *next = entry->next;
-	if(prev) {
+	if (prev) {
 		prev->next = next;
 	} else {
-		int h = hash->hashfunc(entry->key); 
-		XY_HashEntry **first=&hash->table[h];
+		int h = hash->hashfunc(entry->key);
+		XY_HashEntry **first = &hash->table[h];
 		*first = next;
 	}
-	if(next)
+	if (next)
 		next->prev = prev;
 	free(entry);
 }
 
 void
-XY_ClearHashTable(XY_HashTable *hash) {
+XY_ClearHashTable(XY_HashTable * hash)
+{
 	XY_HashEntry *cursor;
 	int i;
-	for(i=0;i<hash->nr_hashes;i++) {
-		XY_HashEntry **first=&hash->table[i];
+	for (i = 0; i < hash->nr_hashes; i++) {
+		XY_HashEntry **first = &hash->table[i];
 		XY_HashEntry *next;
-		for(cursor=*first;cursor;cursor=next) {
-			next=cursor->next;
+		for (cursor = *first; cursor; cursor = next) {
+			next = cursor->next;
 			free(cursor);
 		}
-		*first=NULL;
+		*first = NULL;
 	}
 	free(hash->table);
 }
 
 XY_HashEntry *
-XY_AddHashEntry(XY_HashTable *hash,XY_HashEntry *newentry,const void *key)
+XY_AddHashEntry(XY_HashTable * hash, XY_HashEntry * newentry, const void *key)
 {
-        int h = hash->hashfunc(key);
-        XY_HashEntry **first=&hash->table[h];
-        XY_HashEntry *cursor;
-
-        for(cursor=*first;cursor;cursor=cursor->next) {
-                if(hash->isequal(cursor->key,key)) {
-                        break;
-                }
-        }
-        if(cursor) {
-                return NULL;
-        }
-        newentry->next = *first;
-        newentry->prev = NULL;
-        if(*first)
-                (*first)->prev = newentry;
-        *first = newentry;
-        newentry->key = key;
-        return newentry;
-}
-
-void
-XY_RemoveHashEntry(XY_HashTable *hash,XY_HashEntry *entry) {
-        XY_HashEntry *prev = entry->prev;
-        XY_HashEntry *next = entry->next;
-        if(prev) {
-                prev->next = next;
-        } else {
-                int h = hash->hashfunc(entry->key);
-                XY_HashEntry **first=&hash->table[h];
-                *first = next;
-        }
-        if(next)
-                next->prev = prev;
-}
-
-XY_HashEntry *
-XY_CreateHashEntry(XY_HashTable *hash,void *key,int *newptr) 
-{
-	int h = hash->hashfunc(key); 
-	XY_HashEntry **first=&hash->table[h];
+	int h = hash->hashfunc(key);
+	XY_HashEntry **first = &hash->table[h];
 	XY_HashEntry *cursor;
-	XY_HashEntry *newentry;
-#if 0
-	printf("h ist %d\n",h);
-	printf("first ist %p\n",first);
-	printf("*first ist %p\n",*first);
-#endif
-	for(cursor=*first;cursor;cursor=cursor->next) {
-		if(hash->isequal(cursor->key,key)) {
+
+	for (cursor = *first; cursor; cursor = cursor->next) {
+		if (hash->isequal(cursor->key, key)) {
 			break;
 		}
 	}
-	if(cursor) {
-//		printf("already da %s\n",cursor->key);
-		*newptr=0;
+	if (cursor) {
+		return NULL;
+	}
+	newentry->next = *first;
+	newentry->prev = NULL;
+	if (*first)
+		(*first)->prev = newentry;
+	*first = newentry;
+	newentry->key = key;
+	return newentry;
+}
+
+void
+XY_RemoveHashEntry(XY_HashTable * hash, XY_HashEntry * entry)
+{
+	XY_HashEntry *prev = entry->prev;
+	XY_HashEntry *next = entry->next;
+	if (prev) {
+		prev->next = next;
+	} else {
+		int h = hash->hashfunc(entry->key);
+		XY_HashEntry **first = &hash->table[h];
+		*first = next;
+	}
+	if (next)
+		next->prev = prev;
+}
+
+XY_HashEntry *
+XY_CreateHashEntry(XY_HashTable * hash, void *key, int *newptr)
+{
+	int h = hash->hashfunc(key);
+	XY_HashEntry **first = &hash->table[h];
+	XY_HashEntry *cursor;
+	XY_HashEntry *newentry;
+#if 0
+	printf("h ist %d\n", h);
+	printf("first ist %p\n", first);
+	printf("*first ist %p\n", *first);
+#endif
+	for (cursor = *first; cursor; cursor = cursor->next) {
+		if (hash->isequal(cursor->key, key)) {
+			break;
+		}
+	}
+	if (cursor) {
+//              printf("already da %s\n",cursor->key);
+		*newptr = 0;
 		return cursor;
 	}
 	*newptr = 1;
-	newentry=(XY_HashEntry*)malloc(sizeof(XY_HashEntry));
-	if(!newentry) {
+	newentry = (XY_HashEntry *) malloc(sizeof(XY_HashEntry));
+	if (!newentry) {
 		exit(342);
 	}
 	newentry->next = *first;
 	newentry->prev = NULL;
-	if(*first) 
+	if (*first)
 		(*first)->prev = newentry;
 	*first = newentry;
 	newentry->key = key;
@@ -290,99 +300,102 @@ XY_CreateHashEntry(XY_HashTable *hash,void *key,int *newptr)
 }
 
 int
-XY_InitHashTable(XY_HashTable *hash,int keytype,int size) {
-	int n_bytes = size * sizeof(void*);
-	hash->table = (XY_HashEntry **)sg_calloc(n_bytes);
+XY_InitHashTable(XY_HashTable * hash, int keytype, int size)
+{
+	int n_bytes = size * sizeof(void *);
+	hash->table = (XY_HashEntry **) sg_calloc(n_bytes);
 #if 0
-	printf("Table at %p, len %d\n",hash->table,n_bytes);
+	printf("Table at %p, len %d\n", hash->table, n_bytes);
 #endif
-	switch(keytype) {
-		case XY_USER_HASHFUNC:
-			break;
-		case XY_ONE_WORD_KEYS:
-			hash->isequal = one_word_isequal;
-			switch(size) {
-				case 32:
-					hash->hashfunc = hashkey_one_word32;
-					break;
-				case 256:
-					hash->hashfunc = hashkey_one_word256;
-					break;
-				case 1024:
-					hash->hashfunc = hashkey_one_word1024;
-					break;
-				case 8192:
-					hash->hashfunc = hashkey_one_word8192;
-					break;
-				default:
-					sg_free(hash->table);
-					return -1;
-			}
-			break;
-		case XY_STRING_KEYS:
-			hash->isequal = string_isequal;
-			switch(size) {
-				case 32:
-					hash->hashfunc = hashkey_string32;
-					break;
-				case 256:
-					hash->hashfunc = hashkey_string256;
-					break;
-				case 1024:
-					hash->hashfunc = hashkey_string1024;
-					break;
-				case 8192:
-					hash->hashfunc = hashkey_string8192;
-					break;
-				case 65536:
-					hash->hashfunc = hashkey_string65536;
-					break;
-				default:
-					sg_free(hash->table);
-					return -1;
+	switch (keytype) {
+	    case XY_USER_HASHFUNC:
+		    break;
+	    case XY_ONE_WORD_KEYS:
+		    hash->isequal = one_word_isequal;
+		    switch (size) {
+			case 32:
+				hash->hashfunc = hashkey_one_word32;
+				break;
+			case 256:
+				hash->hashfunc = hashkey_one_word256;
+				break;
+			case 1024:
+				hash->hashfunc = hashkey_one_word1024;
+				break;
+			case 8192:
+				hash->hashfunc = hashkey_one_word8192;
+				break;
+			default:
+				sg_free(hash->table);
+				return -1;
+		    }
+		    break;
+	    case XY_STRING_KEYS:
+		    hash->isequal = string_isequal;
+		    switch (size) {
+			case 32:
+				hash->hashfunc = hashkey_string32;
+				break;
+			case 256:
+				hash->hashfunc = hashkey_string256;
+				break;
+			case 1024:
+				hash->hashfunc = hashkey_string1024;
+				break;
+			case 8192:
+				hash->hashfunc = hashkey_string8192;
+				break;
+			case 65536:
+				hash->hashfunc = hashkey_string65536;
+				break;
+			default:
+				sg_free(hash->table);
+				return -1;
 
-			}		
-			break;
-		default:
-			sg_free(hash->table);
-			return -1;
-			break;
+		    }
+		    break;
+	    default:
+		    sg_free(hash->table);
+		    return -1;
+		    break;
 	}
-	hash->nr_hashes=size;
-	return 0;	
+	hash->nr_hashes = size;
+	return 0;
 }
 
 #ifdef XY_HASH_STAT
 void
-XY_HashStat(XY_HashTable *hash) {
-	int *stat=NULL;
-	int max=0;
+XY_HashStat(XY_HashTable * hash)
+{
+	int *stat = NULL;
+	int max = 0;
 	int count;
-	int sum=0;
-	int sumquadrat=0;
-	int i,j;
-	for(i=0;i<hash->nr_hashes;i++) {
-		XY_HashEntry **first=&hash->table[i];
+	int sum = 0;
+	int sumquadrat = 0;
+	int i, j;
+	for (i = 0; i < hash->nr_hashes; i++) {
+		XY_HashEntry **first = &hash->table[i];
 		XY_HashEntry *cursor;
-		count=0;
-		for(cursor=*first;cursor;cursor=cursor->next) {
+		count = 0;
+		for (cursor = *first; cursor; cursor = cursor->next) {
 			count++;
 		}
-		if(count>=max) {
-			stat = realloc(stat,sizeof(int)*(count+1));
-			for(j=max;j<count+1;j++)
-				stat[j]=0;
-			max=count+1;
+		if (count >= max) {
+			stat = realloc(stat, sizeof(int) * (count + 1));
+			for (j = max; j < count + 1; j++)
+				stat[j] = 0;
+			max = count + 1;
 		}
 		stat[count]++;
 	}
-	for(i=0;i<max;i++) {
-		if(stat[i]) {
-			printf("%d times %d\n",stat[i],i); 
+	for (i = 0; i < max; i++) {
+		if (stat[i]) {
+			printf("%d times %d\n", stat[i], i);
 		}
-		sumquadrat += i*i*stat[i];
-		sum +=i*stat[i];
+		sumquadrat += i * i * stat[i];
+		sum += i * stat[i];
 	}
-	printf("sum %d,quadrat %f, optimum %f\n",sum,(float)sumquadrat/sum,(float)sum/hash->nr_hashes); 
+	printf("sum %d,quadrat %f, optimum %f\n", sum, (float)sumquadrat / sum,
+	       (float)sum / hash->nr_hashes);
 }
 #endif

@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include "sgstring.h"
 
-void 
-sg_oom(const char *file,int line) 
+void
+sg_oom(const char *file, int line)
 {
-	fprintf(stderr,"Out of memory in %s line %d\n",file,line);
+	fprintf(stderr, "Out of memory in %s line %d\n", file, line);
 	exit(1);
 }

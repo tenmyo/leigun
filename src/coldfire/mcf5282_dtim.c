@@ -51,29 +51,29 @@
 #include <mcf5282_dtim.h>
 
 typedef struct DTim {
-	BusDevice bdev;	
+	BusDevice bdev;
 } DTim;
 
 static void
-DTim_Unmap(void *owner,uint32_t base,uint32_t mask)
+DTim_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 //        IOH_Delete16(CFU_UMR1(base));
 }
 
 static void
-DTim_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+DTim_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 
 }
+
 BusDevice *
 MCF5282_DTimNew(const char *name)
 {
-        DTim *dtim = sg_calloc(sizeof(DTim));
-        dtim->bdev.first_mapping=NULL;
-        dtim->bdev.Map=DTim_Map;
-        dtim->bdev.UnMap=DTim_Unmap;
-        dtim->bdev.owner=dtim;
-        dtim->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &dtim->bdev;
+	DTim *dtim = sg_calloc(sizeof(DTim));
+	dtim->bdev.first_mapping = NULL;
+	dtim->bdev.Map = DTim_Map;
+	dtim->bdev.UnMap = DTim_Unmap;
+	dtim->bdev.owner = dtim;
+	dtim->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &dtim->bdev;
 }
-

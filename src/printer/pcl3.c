@@ -46,7 +46,7 @@
 #define STATE_PCLCMD (1)
 #define STATE_DATA   (2)
 
-struct PCL3_Interp  {
+struct PCL3_Interp {
 	int state;
 	char cmdbuf[30];
 	int cmd_wp;
@@ -61,13 +61,13 @@ struct PCL3_Interp  {
  */
 
 static int
-eval_pcl3_cmd(PCL3_Interp *interp,int *done) 
+eval_pcl3_cmd(PCL3_Interp * interp, int *done)
 {
-	if(strcmp("%-12345X",interp->cmdbuf) == 0) {
-		fprintf(stderr,"Exiting from PCL3 Interpreter because of UEL\n");
-		*done=1;
+	if (strcmp("%-12345X", interp->cmdbuf) == 0) {
+		fprintf(stderr, "Exiting from PCL3 Interpreter because of UEL\n");
+		*done = 1;
 		return 0;
-	}	
+	}
 	return -1;
 }
 
@@ -77,72 +77,72 @@ eval_pcl3_cmd(PCL3_Interp *interp,int *done)
  * --------------------------------------------------------
  */
 int
-PCL3Interp_Feed(PCL3_Interp *interp,uint8_t *buf,int len,int *done)
+PCL3Interp_Feed(PCL3_Interp * interp, uint8_t * buf, int len, int *done)
 {
 
 	int count;
 	int result;
 	*done = 0;
-	for(count=0;count < len;count++) {
-		switch(interp->state) {
-			case STATE_IDLE:
-				if(buf[count] == 0x1b) {
-					interp->state = STATE_PCLCMD;
-					interp->cmd_wp = 0;
-					break;
-				} else {
-					// print text
-				}	
-				break;
-			case STATE_PCLCMD:
-				if((interp->cmd_wp+1) >= sizeof(interp->cmdbuf)) {
-					interp->state = STATE_IDLE;
-					interp->cmd_wp = 0;
-				}	
-				if(buf[count] == 0x1b) {
-					// Premature end or unimplemented command
-					interp->state = STATE_PCLCMD;
-					interp->cmd_wp = 0;
-				} else {
-					interp->cmdbuf[interp->cmd_wp++] = buf[count];
-					interp->cmdbuf[interp->cmd_wp] = 0;
-					result = eval_pcl3_cmd(interp,done); 
-					if(result < 0) {
-						break;
-					} else if (result == 0) {
-						/* next command */
-						interp->state = STATE_IDLE;
-						interp->cmd_wp = 0;
-						if(*done == 1) {
-							return count;
-						}
-					} else if(result > 0) {
-						/* Data phase follows */
-						/* Should set a limit on expected data */
-						interp->cmd_wp = 0;
-						interp->state = STATE_DATA;
-						interp->data_expected = result;
-					}
-				}
-				break;
-			case STATE_DATA:
-				/* 
-				 * Currently eat up data and do nothing because nothing is 
-				 * implemented
-				 */
-				interp->data_expected--;
-				if(interp->data_expected == 0) {
-					interp->state = STATE_IDLE;
-					interp->cmd_wp = 0;
-				}
-				break;
+	for (count = 0; count < len; count++) {
+		switch (interp->state) {
+		    case STATE_IDLE:
+			    if (buf[count] == 0x1b) {
+				    interp->state = STATE_PCLCMD;
+				    interp->cmd_wp = 0;
+				    break;
+			    } else {
+				    // print text
+			    }
+			    break;
+		    case STATE_PCLCMD:
+			    if ((interp->cmd_wp + 1) >= sizeof(interp->cmdbuf)) {
+				    interp->state = STATE_IDLE;
+				    interp->cmd_wp = 0;
+			    }
+			    if (buf[count] == 0x1b) {
+				    // Premature end or unimplemented command
+				    interp->state = STATE_PCLCMD;
+				    interp->cmd_wp = 0;
+			    } else {
+				    interp->cmdbuf[interp->cmd_wp++] = buf[count];
+				    interp->cmdbuf[interp->cmd_wp] = 0;
+				    result = eval_pcl3_cmd(interp, done);
+				    if (result < 0) {
+					    break;
+				    } else if (result == 0) {
+					    /* next command */
+					    interp->state = STATE_IDLE;
+					    interp->cmd_wp = 0;
+					    if (*done == 1) {
+						    return count;
+					    }
+				    } else if (result > 0) {
+					    /* Data phase follows */
+					    /* Should set a limit on expected data */
+					    interp->cmd_wp = 0;
+					    interp->state = STATE_DATA;
+					    interp->data_expected = result;
+				    }
+			    }
+			    break;
+		    case STATE_DATA:
+			    /* 
+			     * Currently eat up data and do nothing because nothing is 
+			     * implemented
+			     */
+			    interp->data_expected--;
+			    if (interp->data_expected == 0) {
+				    interp->state = STATE_IDLE;
+				    interp->cmd_wp = 0;
+			    }
+			    break;
 		}
 	}
 	return count;
 }
 
 void
-PCL3Interp_Reset(PCL3_Interp *interp)
+PCL3Interp_Reset(PCL3_Interp * interp)
 {
 }
 

@@ -1,2 +1,1 @@
-BusDevice * M32CTimerBlock_New(const char *name);
-
+BusDevice *M32CTimerBlock_New(const char *name);

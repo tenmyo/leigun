@@ -12,7 +12,7 @@
  **************************************************************************
  */
 Debugger *
-Debugger_New(DebugBackendOps *ops,void *backend)
+Debugger_New(DebugBackendOps * ops, void *backend)
 {
-	return GdbServer_New(ops,backend);
+	return GdbServer_New(ops, backend);
 }

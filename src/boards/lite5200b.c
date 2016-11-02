@@ -33,7 +33,8 @@
 #include <amdflash.h>
 
 static void
-board_lite5200b_run(Board *bd) {
+board_lite5200b_run(Board * bd)
+{
 	PpcCpu_Run();
 }
 
@@ -41,16 +42,16 @@ static int
 board_lite5200b_create()
 {
 	// PpcCpu *cpu = PpcCpu_New(CPU_MPC866P,0);
-        Bus_Init(NULL,4*1024);
-        BusDevice *dev;
+	Bus_Init(NULL, 4 * 1024);
+	BusDevice *dev;
 	/* CS0 */
-	dev=AMDFlashBank_New("flash0");
+	dev = AMDFlashBank_New("flash0");
 	/* CS1 */
-	dev=AMDFlashBank_New("flash1");
+	dev = AMDFlashBank_New("flash1");
 	/* SDRAM_CS0 */
-	dev=DRam_New("dram0");
+	dev = DRam_New("dram0");
 	/* SDRAM_CS1 */
-	dev=DRam_New("dram1");
+	dev = DRam_New("dram1");
 	return 0;
 }
 
@@ -75,18 +76,16 @@ board_lite5200b_create()
 "\n"
 
 static Board board_lite5200b = {
-        .name = "LITE5200B",
-        .description =  "LITE5200B",
-        .createBoard =  board_lite5200b_create,
-        .runBoard =     board_lite5200b_run,
-        .defaultconfig = DEFAULTCONFIG
+	.name = "LITE5200B",
+	.description = "LITE5200B",
+	.createBoard = board_lite5200b_create,
+	.runBoard = board_lite5200b_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
-#ifdef _SHARED_
-void
-_init() {
-        fprintf(stderr,"Loading Freescale LITE5200B development Board module\n");
-        Board_Register(&board_lite5200b);
+__CONSTRUCTOR__ static void
+lite5200b_init()
+{
+	fprintf(stderr, "Loading Freescale LITE5200B development Board module\n");
+	Board_Register(&board_lite5200b);
 }
-#endif
-

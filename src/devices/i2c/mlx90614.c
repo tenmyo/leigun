@@ -44,7 +44,6 @@
 #include "sgstring.h"
 #include "crc8.h"
 
-
 #define MXREG_RAW_CH1		(0x04)
 #define MXREG_RAW_CH2		(0x05)
 #define MXREG_TA		(0x06)
@@ -86,7 +85,7 @@ struct Mlx {
 	uint16_t reg_TA;
 	uint16_t reg_TObj1;
 	uint16_t reg_TObj2;
-	uint16_t reg_TOMax;	
+	uint16_t reg_TOMax;
 	uint16_t reg_TOMin;
 	uint16_t reg_PwmCtrl;
 	uint16_t reg_TARange;
@@ -99,60 +98,61 @@ struct Mlx {
 	uint16_t reg_ID3;
 };
 
-static void 
-Mlx_WriteReg(Mlx *mlx,uint8_t reg,uint16_t value) {
-	switch(reg) {
-		case MXREG_RAW_CH1:
-			//mlx->reg_rawCh1;
-		case MXREG_RAW_CH2:
-			//mlx->reg_rawCh2;
-		case MXREG_TA:
-			//mlx->reg_TA;
-		case MXREG_TOBJ1:
-			//mlx->reg_TObj1;
-		case MXREG_TOBJ2:
-			//mlx->reg_TObj2;
-		case MXREG_TOMAX:
-			//mlx->reg_TOMax;	
-		case MXREG_TOMIN:
-			//mlx->reg_TOMin;
-		case MXREG_PWMCTRL:
-			//mlx->reg_PwmCtrl;
-		case MXREG_TARANGE:
-			//mlx->reg_TARange;
-			break;
+static void
+Mlx_WriteReg(Mlx * mlx, uint8_t reg, uint16_t value)
+{
+	switch (reg) {
+	    case MXREG_RAW_CH1:
+		    //mlx->reg_rawCh1;
+	    case MXREG_RAW_CH2:
+		    //mlx->reg_rawCh2;
+	    case MXREG_TA:
+		    //mlx->reg_TA;
+	    case MXREG_TOBJ1:
+		    //mlx->reg_TObj1;
+	    case MXREG_TOBJ2:
+		    //mlx->reg_TObj2;
+	    case MXREG_TOMAX:
+		    //mlx->reg_TOMax;       
+	    case MXREG_TOMIN:
+		    //mlx->reg_TOMin;
+	    case MXREG_PWMCTRL:
+		    //mlx->reg_PwmCtrl;
+	    case MXREG_TARANGE:
+		    //mlx->reg_TARange;
+		    break;
 
-		case MXREG_EMI:
-			if(value == 0) {
-				mlx->reg_Emi = 0;
-			} else if(mlx->reg_Emi == 0) {
-				mlx->reg_Emi = value; 
-			} else {
-				fprintf(stderr,"Melexis: Emi must be cleared before writing\n");  
-			}
-			break;
+	    case MXREG_EMI:
+		    if (value == 0) {
+			    mlx->reg_Emi = 0;
+		    } else if (mlx->reg_Emi == 0) {
+			    mlx->reg_Emi = value;
+		    } else {
+			    fprintf(stderr, "Melexis: Emi must be cleared before writing\n");
+		    }
+		    break;
 
-		case MXREG_CONF1:
-			if(value == 0) {
-				mlx->reg_Conf1 = 0;
-			} else if(mlx->reg_Conf1 == 0) {
-				mlx->reg_Conf1 = value;
-			} else {
-				fprintf(stderr,"Melexis: RegConf1 must be cleared before writing\n");  
-			}
-			break;
+	    case MXREG_CONF1:
+		    if (value == 0) {
+			    mlx->reg_Conf1 = 0;
+		    } else if (mlx->reg_Conf1 == 0) {
+			    mlx->reg_Conf1 = value;
+		    } else {
+			    fprintf(stderr, "Melexis: RegConf1 must be cleared before writing\n");
+		    }
+		    break;
 
-		case MXREG_SMBADDR:
-			//mlx->reg_SmbAddr;
-		case MXREG_ID0:
-			//mlx->reg_ID0;
-		case MXREG_ID1:
-			//mlx->reg_ID1;
-		case MXREG_ID2:
-			//mlx->reg_ID2;
-		case MXREG_ID3:
-			//mlx->reg_ID3;
-			break;
+	    case MXREG_SMBADDR:
+		    //mlx->reg_SmbAddr;
+	    case MXREG_ID0:
+		    //mlx->reg_ID0;
+	    case MXREG_ID1:
+		    //mlx->reg_ID1;
+	    case MXREG_ID2:
+		    //mlx->reg_ID2;
+	    case MXREG_ID3:
+		    //mlx->reg_ID3;
+		    break;
 	}
 }
 
@@ -161,86 +161,88 @@ Mlx_WriteReg(Mlx *mlx,uint8_t reg,uint16_t value) {
  * Melexis Write state machine 
  *****************************************************************
  */
-static int 
-mlx_write(void *dev,uint8_t data) {
+static int
+mlx_write(void *dev, uint8_t data)
+{
 	Mlx *mlx = dev;
-	if(mlx->state == STATE_ADDR) {
-		if(data > 0x3f) {
+	if (mlx->state == STATE_ADDR) {
+		if (data > 0x3f) {
 			return I2C_NACK;
 		}
 		mlx->addr = data;
 		mlx->state = STATE_DATA_L;
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,&data,1);
-	} else if(mlx->state == STATE_DATA_L) {
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, &data, 1);
+	} else if (mlx->state == STATE_DATA_L) {
 		mlx->atomic16 = data;
 		mlx->state = STATE_DATA_H;
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,&data,1);
-	} else if(mlx->state == STATE_DATA_H) {
-		mlx->atomic16 |= ((uint16_t)data) << 8;
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, &data, 1);
+	} else if (mlx->state == STATE_DATA_H) {
+		mlx->atomic16 |= ((uint16_t) data) << 8;
 		mlx->state = STATE_CRC;
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,&data,1);
-	} else if(mlx->state == STATE_CRC) {
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,&data,1);
-		if(mlx->crc8 == 0) {
-			Mlx_WriteReg(mlx,mlx->addr,mlx->atomic16);
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, &data, 1);
+	} else if (mlx->state == STATE_CRC) {
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, &data, 1);
+		if (mlx->crc8 == 0) {
+			Mlx_WriteReg(mlx, mlx->addr, mlx->atomic16);
 		} else {
-			fprintf(stderr,"Melexis: Got bad CRC\n");
+			fprintf(stderr, "Melexis: Got bad CRC\n");
 		}
 	}
 	return I2C_ACK;
 };
 
 static uint16_t
-Mlx_ReadReg(Mlx *mlx,uint8_t reg) {
-	switch(reg) {
-		case MXREG_RAW_CH1:
-			return mlx->reg_rawCh1;
-		case MXREG_RAW_CH2:
-			return mlx->reg_rawCh2;
-		case MXREG_TA:
-			return mlx->reg_TA;
-		case MXREG_TOBJ1:
-			return mlx->reg_TObj1;
-		case MXREG_TOBJ2:
-			return mlx->reg_TObj2;
-		case MXREG_TOMAX:
-			return mlx->reg_TOMax;	
-		case MXREG_TOMIN:
-			return mlx->reg_TOMin;
-		case MXREG_PWMCTRL:
-			return mlx->reg_PwmCtrl;
-		case MXREG_TARANGE:
-			return mlx->reg_TARange;
-		case MXREG_EMI:
-			return mlx->reg_Emi;
-		case MXREG_CONF1:
-			return mlx->reg_Conf1;
-		case MXREG_SMBADDR:
-			return mlx->reg_SmbAddr;
-		case MXREG_ID0:
-			return mlx->reg_ID0;
-		case MXREG_ID1:
-			return mlx->reg_ID1;
-		case MXREG_ID2:
-			return mlx->reg_ID2;
-		case MXREG_ID3:
-			return mlx->reg_ID3;
+Mlx_ReadReg(Mlx * mlx, uint8_t reg)
+{
+	switch (reg) {
+	    case MXREG_RAW_CH1:
+		    return mlx->reg_rawCh1;
+	    case MXREG_RAW_CH2:
+		    return mlx->reg_rawCh2;
+	    case MXREG_TA:
+		    return mlx->reg_TA;
+	    case MXREG_TOBJ1:
+		    return mlx->reg_TObj1;
+	    case MXREG_TOBJ2:
+		    return mlx->reg_TObj2;
+	    case MXREG_TOMAX:
+		    return mlx->reg_TOMax;
+	    case MXREG_TOMIN:
+		    return mlx->reg_TOMin;
+	    case MXREG_PWMCTRL:
+		    return mlx->reg_PwmCtrl;
+	    case MXREG_TARANGE:
+		    return mlx->reg_TARange;
+	    case MXREG_EMI:
+		    return mlx->reg_Emi;
+	    case MXREG_CONF1:
+		    return mlx->reg_Conf1;
+	    case MXREG_SMBADDR:
+		    return mlx->reg_SmbAddr;
+	    case MXREG_ID0:
+		    return mlx->reg_ID0;
+	    case MXREG_ID1:
+		    return mlx->reg_ID1;
+	    case MXREG_ID2:
+		    return mlx->reg_ID2;
+	    case MXREG_ID3:
+		    return mlx->reg_ID3;
 	}
 	return 0xff;
 }
 
-static int 
-mlx_read(void *dev,uint8_t *data) 
+static int
+mlx_read(void *dev, uint8_t * data)
 {
 	Mlx *mlx = dev;
-	if(mlx->state == STATE_DATA_L) {
-		mlx->atomic16 = Mlx_ReadReg(mlx,mlx->addr);
+	if (mlx->state == STATE_DATA_L) {
+		mlx->atomic16 = Mlx_ReadReg(mlx, mlx->addr);
 		*data = mlx->atomic16 & 0xff;
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,data,1);
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, data, 1);
 		mlx->state = STATE_DATA_H;
 	} else if (mlx->state == STATE_DATA_H) {
 		*data = mlx->atomic16 >> 8;
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,data,1);
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, data, 1);
 		mlx->state = STATE_CRC;
 	} else if (mlx->state == STATE_CRC) {
 		*data = mlx->crc8;
@@ -249,45 +251,47 @@ mlx_read(void *dev,uint8_t *data)
 };
 
 static int
-mlx_start(void *dev,int i2c_addr,int operation) {
+mlx_start(void *dev, int i2c_addr, int operation)
+{
 	Mlx *mlx = dev;
 	dbgprintf("Melxis start\n");
 	uint8_t data = i2c_addr << 1;
 	//fprintf(stderr,"I2CA: %02x\n",i2c_addr);
-	if(operation == I2C_WRITE) {
+	if (operation == I2C_WRITE) {
 		mlx->state = STATE_ADDR;
-		mlx->crc8 = Crc8_Poly7(0,&data,1);
+		mlx->crc8 = Crc8_Poly7(0, &data, 1);
 	} else {
 		data |= 1;
-		mlx->crc8 = Crc8_Poly7(mlx->crc8,&data,1);
-		if(mlx->state != STATE_DATA_L) {
+		mlx->crc8 = Crc8_Poly7(mlx->crc8, &data, 1);
+		if (mlx->state != STATE_DATA_L) {
 			return I2C_NACK;
 		}
 	}
 	return I2C_ACK;
 }
 
-static void 
-mlx_stop(void *dev) {
+static void
+mlx_stop(void *dev)
+{
 	Mlx *mlx = dev;
 	mlx->state = STATE_IDLE;
 	dbgprintf("MLX stop\n");
 }
 
-
 static I2C_SlaveOps mlx_ops = {
 	.start = mlx_start,
-	.stop =  mlx_stop,
-	.read =  mlx_read,	
-	.write = mlx_write	
+	.stop = mlx_stop,
+	.read = mlx_read,
+	.write = mlx_write
 };
 
 I2C_Slave *
-MLX90614_New(char *name) {
-	Mlx *mlx = sg_new(Mlx); 
+MLX90614_New(char *name)
+{
+	Mlx *mlx = sg_new(Mlx);
 	I2C_Slave *i2c_slave;
 	i2c_slave = &mlx->i2c_slave;
-	i2c_slave->devops = &mlx_ops; 
+	i2c_slave->devops = &mlx_ops;
 	i2c_slave->dev = mlx;
 	i2c_slave->speed = I2C_SPEED_FAST;
 	mlx->reg_rawCh1 = 0x9280;
@@ -306,6 +310,6 @@ MLX90614_New(char *name) {
 	mlx->reg_ID1 = 0xe196;
 	mlx->reg_ID2 = 0x24a7;
 	mlx->reg_ID3 = 0xc88a;
-	fprintf(stderr,"Melexis 90614 Temperature Sensor \"%s\" created\n",name);
+	fprintf(stderr, "Melexis 90614 Temperature Sensor \"%s\" created\n", name);
 	return i2c_slave;
 }

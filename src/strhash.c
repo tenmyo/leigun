@@ -39,10 +39,11 @@
 #include <strhash.h>
 #include "sgstring.h"
 
-static inline int 
-hash_string2(const char *s) {
-	unsigned int hash=0;
-	while(*s) {
+static inline int
+hash_string2(const char *s)
+{
+	unsigned int hash = 0;
+	while (*s) {
 		hash = *s + (hash << 6) + (hash << 16) - hash;
 		s++;
 	}
@@ -50,21 +51,22 @@ hash_string2(const char *s) {
 }
 
 static unsigned int
-hashkey_string(const void *data) {
-	char *str = (char*) data;
+hashkey_string(const void *data)
+{
+	char *str = (char *)data;
 	unsigned long w;
 	w = hash_string2(str);
-	return (w+(w>>10)+(w>>20)+(w>>30)) & 1023;
+	return (w + (w >> 10) + (w >> 20) + (w >> 30)) & 1023;
 }
 
 SHashEntry *
-SHash_FindEntry(SHashTable *hash,const char *key) 
+SHash_FindEntry(SHashTable * hash, const char *key)
 {
-	int h = hashkey_string(key); 
-	SHashEntry **first=&hash->table[h];
+	int h = hashkey_string(key);
+	SHashEntry **first = &hash->table[h];
 	SHashEntry *cursor;
-	for(cursor=*first;cursor;cursor=cursor->next) {
-		if(!strcmp(cursor->key,key)) {
+	for (cursor = *first; cursor; cursor = cursor->next) {
+		if (!strcmp(cursor->key, key)) {
 			break;
 		}
 	}
@@ -73,94 +75,95 @@ SHash_FindEntry(SHashTable *hash,const char *key)
 }
 
 SHashEntry *
-SHash_NextEntry(SHashSearch *search) 
+SHash_NextEntry(SHashSearch * search)
 {
 	SHashEntry *entry = search->cursor;
 	SHashTable *hash = search->hash;
-	if(entry->next) {
+	if (entry->next) {
 		search->cursor = entry->next;
 		return search->cursor;
 	}
-	while(search->nr_hash < hash->nr_buckets) {
-		SHashEntry **first=&hash->table[search->nr_hash];
+	while (search->nr_hash < hash->nr_buckets) {
+		SHashEntry **first = &hash->table[search->nr_hash];
 		search->nr_hash++;
-		if(*first) {
-			search->cursor=*first;
+		if (*first) {
+			search->cursor = *first;
 			return *first;
 		}
-	}	
+	}
 	return NULL;
 }
 
 SHashEntry *
-SHash_FirstEntry(SHashTable *hash,SHashSearch *search) 
+SHash_FirstEntry(SHashTable * hash, SHashSearch * search)
 {
 	search->hash = hash;
-	for(search->nr_hash=0;search->nr_hash < hash->nr_buckets;) {
-		SHashEntry **first=&hash->table[search->nr_hash];
+	for (search->nr_hash = 0; search->nr_hash < hash->nr_buckets;) {
+		SHashEntry **first = &hash->table[search->nr_hash];
 		search->nr_hash++;
-		if(*first) {
-			search->cursor=*first;
+		if (*first) {
+			search->cursor = *first;
 			return *first;
 		}
-	}	
+	}
 	return NULL;
 }
 
-
 void
-SHash_DeleteEntry(SHashTable *hash,SHashEntry *entry) {
+SHash_DeleteEntry(SHashTable * hash, SHashEntry * entry)
+{
 	SHashEntry *prev = entry->prev;
 	SHashEntry *next = entry->next;
-	if(prev) {
+	if (prev) {
 		prev->next = next;
 	} else {
-		int h = hashkey_string(entry->key); 
-		SHashEntry **first=&hash->table[h];
+		int h = hashkey_string(entry->key);
+		SHashEntry **first = &hash->table[h];
 		*first = next;
 	}
-	if(next)
+	if (next)
 		next->prev = prev;
 	sg_free(entry->key);
 	sg_free(entry);
 }
 
 void
-SHash_ClearTable(SHashTable *hash) {
+SHash_ClearTable(SHashTable * hash)
+{
 	SHashEntry *cursor;
 	int i;
-	for(i=0;i<hash->nr_buckets;i++) {
-		SHashEntry **first=&hash->table[i];
+	for (i = 0; i < hash->nr_buckets; i++) {
+		SHashEntry **first = &hash->table[i];
 		SHashEntry *next;
-		for(cursor=*first;cursor;cursor=next) {
-			next=cursor->next;
+		for (cursor = *first; cursor; cursor = next) {
+			next = cursor->next;
 			sg_free(cursor->key);
 			sg_free(cursor);
 		}
-		*first=NULL;
+		*first = NULL;
 	}
 	free(hash->table);
 }
 
 SHashEntry *
-SHash_CreateEntry(SHashTable *hash,const char *key) 
+SHash_CreateEntry(SHashTable * hash, const char *key)
 {
-	int h = hashkey_string(key); 
-	SHashEntry **first=&hash->table[h];
+	int h = hashkey_string(key);
+	SHashEntry **first = &hash->table[h];
 	SHashEntry *cursor;
 	SHashEntry *newentry;
-	for(cursor=*first;cursor;cursor=cursor->next) {
-		if(!strcmp(cursor->key,key)) {
+	for (cursor = *first; cursor; cursor = cursor->next) {
+		if (!strcmp(cursor->key, key)) {
 			break;
 		}
 	}
-	if(cursor) {
+	if (cursor) {
 		return NULL;
 	}
 	newentry = sg_new(SHashEntry);
 	newentry->next = *first;
 	newentry->prev = NULL;
-	if(*first) 
+	if (*first)
 		(*first)->prev = newentry;
 	*first = newentry;
 	newentry->key = sg_strdup(key);
@@ -168,44 +171,47 @@ SHash_CreateEntry(SHashTable *hash,const char *key)
 }
 
 void
-SHash_InitTable(SHashTable *hash) {
+SHash_InitTable(SHashTable * hash)
+{
 	int size = 1024;
-	int n_bytes = size * sizeof(void*);
-	hash->table = (SHashEntry **)sg_calloc(n_bytes);
+	int n_bytes = size * sizeof(void *);
+	hash->table = (SHashEntry **) sg_calloc(n_bytes);
 	hash->nr_buckets = size;
 }
 
 #ifdef SHASH_STAT
 void
-SHashStat(SHashTable *hash) {
-	int *stat=NULL;
-	int max=0;
+SHashStat(SHashTable * hash)
+{
+	int *stat = NULL;
+	int max = 0;
 	int count;
-	int sum=0;
-	int sumquadrat=0;
-	int i,j;
-	for(i=0;i<hash->nr_buckets;i++) {
-		SHashEntry **first=&hash->table[i];
+	int sum = 0;
+	int sumquadrat = 0;
+	int i, j;
+	for (i = 0; i < hash->nr_buckets; i++) {
+		SHashEntry **first = &hash->table[i];
 		_SHashEntry *cursor;
-		count=0;
-		for(cursor=*first;cursor;cursor=cursor->next) {
+		count = 0;
+		for (cursor = *first; cursor; cursor = cursor->next) {
 			count++;
 		}
-		if(count>=max) {
-			stat = realloc(stat,sizeof(int)*(count+1));
-			for(j=max;j<count+1;j++)
-				stat[j]=0;
-			max=count+1;
+		if (count >= max) {
+			stat = realloc(stat, sizeof(int) * (count + 1));
+			for (j = max; j < count + 1; j++)
+				stat[j] = 0;
+			max = count + 1;
 		}
 		stat[count]++;
 	}
-	for(i=0;i<max;i++) {
-		if(stat[i]) {
-			printf("%d times %d\n",stat[i],i); 
+	for (i = 0; i < max; i++) {
+		if (stat[i]) {
+			printf("%d times %d\n", stat[i], i);
 		}
-		sumquadrat += i*i*stat[i];
-		sum +=i*stat[i];
+		sumquadrat += i * i * stat[i];
+		sum += i * stat[i];
 	}
-	printf("sum %d,quadrat %f, optimum %f\n",sum,(float)sumquadrat/sum,(float)sum/hash->nr_buckets); 
+	printf("sum %d,quadrat %f, optimum %f\n", sum, (float)sumquadrat / sum,
+	       (float)sum / hash->nr_buckets);
 }
 #endif

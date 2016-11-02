@@ -6,7 +6,7 @@
 #include <bus.h>
 
 #define NS9750_USB_BASE		(0x90100000)
-#define NS9750_USB_GCTRL	(0x90100000) 
+#define NS9750_USB_GCTRL	(0x90100000)
 #define         NS9750_USB_GCTRL_HSTDEV                (1)
 #define         NS9750_USB_GCTRL_WKUP                   (4)
 #define         NS9750_USB_GCTRL_SUSP                   (32)
@@ -96,4 +96,4 @@
 
 #define NS9750_OHCI_BASE (0x90101000)
 
-BusDevice * NS9750Usb_New(const char *name);
+BusDevice *NS9750Usb_New(const char *name);

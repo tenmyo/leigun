@@ -14,8 +14,8 @@
 
 typedef struct I2C_SerDes I2C_SerDes;
 
-void I2C_SerDesAddSlave(I2C_SerDes * serdes,I2C_Slave *slave,int addr);
-int I2C_SerDesDetachSlave(I2C_SerDes * serdes,I2C_Slave *slave);
-I2C_SerDes * I2C_SerDesNew(const char *name);
-void SerDes_UnstretchScl(I2C_SerDes *serdes);
-void SerDes_Decouple(I2C_SerDes *serdes);
+void I2C_SerDesAddSlave(I2C_SerDes * serdes, I2C_Slave * slave, int addr);
+int I2C_SerDesDetachSlave(I2C_SerDes * serdes, I2C_Slave * slave);
+I2C_SerDes *I2C_SerDesNew(const char *name);
+void SerDes_UnstretchScl(I2C_SerDes * serdes);
+void SerDes_Decouple(I2C_SerDes * serdes);

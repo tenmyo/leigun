@@ -50,96 +50,95 @@ typedef struct Efc {
 } Efc;
 
 static uint32_t
-parse_memsize (char *str)
+parse_memsize(char *str)
 {
-        uint32_t size;
-        char c;
-        if(sscanf(str,"%d",&size)!=1) {
-                return 0;
-        }
-        if(sscanf(str,"%d%c",&size,&c)==1) {
-                return size;
-        }
-        switch(tolower((unsigned char)c)) {
-                case 'm':
-                        return size*1024*1024;
-                case 'k':
-                        return size*1024;
-        }
-        return 0;
+	uint32_t size;
+	char c;
+	if (sscanf(str, "%d", &size) != 1) {
+		return 0;
+	}
+	if (sscanf(str, "%d%c", &size, &c) == 1) {
+		return size;
+	}
+	switch (tolower((unsigned char)c)) {
+	    case 'm':
+		    return size * 1024 * 1024;
+	    case 'k':
+		    return size * 1024;
+	}
+	return 0;
 }
 
 static void
-AT91Efc_Map(void *owner,uint32_t base,uint32_t mapsize,uint32_t flags)
+AT91Efc_Map(void *owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
 //        Efc *efc = (Efc *) owner;
 //        IOH_New32(PMC_SCER(base),scer_read,scer_write,pmc);
 }
 
 static void
-AT91Efc_UnMap(void *owner,uint32_t base,uint32_t mapsize)
+AT91Efc_UnMap(void *owner, uint32_t base, uint32_t mapsize)
 {
 }
 
 static void
-AT91Flash_Map(void *owner,uint32_t base,uint32_t mapsize,uint32_t flags)
+AT91Flash_Map(void *owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
 	Efc *efc = (Efc *) owner;
-	Mem_MapRange(base,efc->host_mem,efc->size,mapsize,flags);
+	Mem_MapRange(base, efc->host_mem, efc->size, mapsize, flags);
 }
 
 static void
-AT91Flash_UnMap(void *owner,uint32_t base,uint32_t mapsize)
+AT91Flash_UnMap(void *owner, uint32_t base, uint32_t mapsize)
 {
-	 Mem_UnMapRange(base,mapsize);
+	Mem_UnMapRange(base, mapsize);
 }
 
-
 void
-AT91SAM7_EfcNew(BusDevice **flash,BusDevice **efcdev,const char *efcname,const char *flashname) 
+AT91SAM7_EfcNew(BusDevice ** flash, BusDevice ** efcdev, const char *efcname, const char *flashname)
 {
-	Efc *efc = sg_calloc(sizeof(Efc));	
+	Efc *efc = sg_calloc(sizeof(Efc));
 	char *directory;
 	char *mapfile = NULL;
 	char *sizestr;
 	uint32_t flash_size;
-	directory= Config_ReadVar("global","imagedir");
-        if(directory) {
-                mapfile = alloca(strlen(directory) + strlen(flashname)+20);
-                sprintf(mapfile,"%s/%s.img",directory,flashname);
+	directory = Config_ReadVar("global", "imagedir");
+	if (directory) {
+		mapfile = alloca(strlen(directory) + strlen(flashname) + 20);
+		sprintf(mapfile, "%s/%s.img", directory, flashname);
 	}
-	sizestr=Config_ReadVar(flashname,"size");
-        if(sizestr) {
-                flash_size=parse_memsize(sizestr);
-                if(flash_size==0) {
-                        fprintf(stderr,"AT91 flash bank \"%s\" has zero size\n",flashname);
-                        return;
-                }
-        } else {
-                fprintf(stderr,"size for flash size \"%s\" not configured\n",flashname);
-                exit(1);
-        }
+	sizestr = Config_ReadVar(flashname, "size");
+	if (sizestr) {
+		flash_size = parse_memsize(sizestr);
+		if (flash_size == 0) {
+			fprintf(stderr, "AT91 flash bank \"%s\" has zero size\n", flashname);
+			return;
+		}
+	} else {
+		fprintf(stderr, "size for flash size \"%s\" not configured\n", flashname);
+		exit(1);
+	}
 	efc->size = flash_size;
-	if(mapfile) {
-		efc->disk_image = DiskImage_Open(mapfile,efc->size,DI_RDWR | DI_CREAT_FF);
-		if(!efc->disk_image) {
-			fprintf(stderr,"Open disk image failed\n");
+	if (mapfile) {
+		efc->disk_image = DiskImage_Open(mapfile, efc->size, DI_RDWR | DI_CREAT_FF);
+		if (!efc->disk_image) {
+			fprintf(stderr, "Open disk image failed\n");
 			exit(42);
 		}
-		efc->host_mem=DiskImage_Mmap(efc->disk_image);
+		efc->host_mem = DiskImage_Mmap(efc->disk_image);
 	}
-	efc->efcdev.first_mapping=NULL;
-        efc->efcdev.Map=AT91Efc_Map;
-        efc->efcdev.UnMap=AT91Efc_UnMap;
-        efc->efcdev.owner=efc;
-        efc->efcdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	efc->efcdev.first_mapping = NULL;
+	efc->efcdev.Map = AT91Efc_Map;
+	efc->efcdev.UnMap = AT91Efc_UnMap;
+	efc->efcdev.owner = efc;
+	efc->efcdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 
-	efc->flashdev.first_mapping=NULL;
-        efc->flashdev.Map=AT91Flash_Map;
-        efc->flashdev.UnMap=AT91Flash_UnMap;
-        efc->flashdev.owner=efc;
-        efc->flashdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	efc->flashdev.first_mapping = NULL;
+	efc->flashdev.Map = AT91Flash_Map;
+	efc->flashdev.UnMap = AT91Flash_UnMap;
+	efc->flashdev.owner = efc;
+	efc->flashdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	*flash = &efc->flashdev;
-	*efcdev =  &efc->efcdev;
+	*efcdev = &efc->efcdev;
 
 }

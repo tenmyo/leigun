@@ -78,380 +78,398 @@ typedef struct ClockMod {
 	uint8_t regOscStatus;
 } ClockMod;
 
-BaseAddr base_addrs[] =  {
+BaseAddr base_addrs[] = {
 	{
-		.baClk = 0x40,
-		.baOsc = 0x50,
-		.baDfll32m = 0x60,
-		.baDfll2m = 0x68
-	}
+	 .baClk = 0x40,
+	 .baOsc = 0x50,
+	 .baDfll32m = 0x60,
+	 .baDfll2m = 0x68}
 };
 
 static uint8_t
-clock_ctrl_read(void *clientData,uint32_t address)
+clock_ctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-clock_ctrl_write(void *clientData,uint8_t value,uint32_t address)
+clock_ctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-clock_psctrl_read(void *clientData,uint32_t address)
+clock_psctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-clock_psctrl_write(void *clientData,uint8_t value,uint32_t address)
+clock_psctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-clock_lock_read(void *clientData,uint32_t address)
+clock_lock_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-clock_lock_write(void *clientData,uint8_t value,uint32_t address)
+clock_lock_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-clock_rtcctrl_read(void *clientData,uint32_t address)
+clock_rtcctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-clock_rtcctrl_write(void *clientData,uint8_t value,uint32_t address)
+clock_rtcctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-osc_ctrl_read(void *clientData,uint32_t address)
+osc_ctrl_read(void *clientData, uint32_t address)
 {
-	ClockMod *ck = clientData;	
+	ClockMod *ck = clientData;
 	return ck->regOscCtrl;
 }
 
 static void
-osc_ctrl_write(void *clientData,uint8_t value,uint32_t address)
+osc_ctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	ClockMod *ck = clientData;	
+	ClockMod *ck = clientData;
 	ck->regOscCtrl = ck->regOscStatus = value & 0x1f;
 }
 
 static uint8_t
-osc_status_read(void *clientData,uint32_t address)
+osc_status_read(void *clientData, uint32_t address)
 {
-	ClockMod *ck = clientData;	
+	ClockMod *ck = clientData;
 	return ck->regOscStatus;
 }
 
 static void
-osc_status_write(void *clientData,uint8_t value,uint32_t address)
+osc_status_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-osc_xoscctrl_read(void *clientData,uint32_t address)
+osc_xoscctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-osc_xoscctrl_write(void *clientData,uint8_t value,uint32_t address)
+osc_xoscctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-osc_xoscfail_read(void *clientData,uint32_t address)
+osc_xoscfail_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-osc_xoscfail_write(void *clientData,uint8_t value,uint32_t address)
+osc_xoscfail_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-osc_rc32kcal_read(void *clientData,uint32_t address)
+osc_rc32kcal_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-osc_rc32kcal_write(void *clientData,uint8_t value,uint32_t address)
+osc_rc32kcal_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-osc_pllctrl_read(void *clientData,uint32_t address)
+osc_pllctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-osc_pllctrl_write(void *clientData,uint8_t value,uint32_t address)
+osc_pllctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-osc_dfllctrl_read(void *clientData,uint32_t address)
+osc_dfllctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-osc_dfllctrl_write(void *clientData,uint8_t value,uint32_t address)
+osc_dfllctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-}
-
-
-static uint8_t
-dfll32m_ctrl_read(void *clientData,uint32_t address)
-{
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
-}
-
-static void
-dfll32m_ctrl_write(void *clientData,uint8_t value,uint32_t address)
-{
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll32m_cala_read(void *clientData,uint32_t address)
+dfll32m_ctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll32m_cala_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_ctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll32m_calb_read(void *clientData,uint32_t address)
+dfll32m_cala_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll32m_calb_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_cala_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll32m_comp0_read(void *clientData,uint32_t address)
+dfll32m_calb_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll32m_comp0_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_calb_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll32m_comp1_read(void *clientData,uint32_t address)
+dfll32m_comp0_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll32m_comp1_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_comp0_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll32m_comp2_read(void *clientData,uint32_t address)
+dfll32m_comp1_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll32m_comp2_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_comp1_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll32m_comp2h_read(void *clientData,uint32_t address)
+dfll32m_comp2_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll32m_comp2h_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_comp2_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll2m_ctrl_read(void *clientData,uint32_t address)
+dfll32m_comp2h_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll2m_ctrl_write(void *clientData,uint8_t value,uint32_t address)
+dfll32m_comp2h_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll2m_cala_read(void *clientData,uint32_t address)
+dfll2m_ctrl_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll2m_cala_write(void *clientData,uint8_t value,uint32_t address)
+dfll2m_ctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll2m_calb_read(void *clientData,uint32_t address)
+dfll2m_cala_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll2m_calb_write(void *clientData,uint8_t value,uint32_t address)
+dfll2m_cala_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll2m_comp0_read(void *clientData,uint32_t address)
+dfll2m_calb_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll2m_comp0_write(void *clientData,uint8_t value,uint32_t address)
+dfll2m_calb_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll2m_comp1_read(void *clientData,uint32_t address)
+dfll2m_comp0_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll2m_comp1_write(void *clientData,uint8_t value,uint32_t address)
+dfll2m_comp0_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-}
-static uint8_t
-dfll2m_comp2_read(void *clientData,uint32_t address)
-{
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
-}
-
-static void
-dfll2m_comp2_write(void *clientData,uint8_t value,uint32_t address)
-{
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 static uint8_t
-dfll2m_comp2h_read(void *clientData,uint32_t address)
+dfll2m_comp1_read(void *clientData, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dfll2m_comp2h_write(void *clientData,uint8_t value,uint32_t address)
+dfll2m_comp1_write(void *clientData, uint8_t value, uint32_t address)
 {
-	fprintf(stderr,"%s not implemented\n",__func__);
+	fprintf(stderr, "%s not implemented\n", __func__);
+}
+
+static uint8_t
+dfll2m_comp2_read(void *clientData, uint32_t address)
+{
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
+}
+
+static void
+dfll2m_comp2_write(void *clientData, uint8_t value, uint32_t address)
+{
+	fprintf(stderr, "%s not implemented\n", __func__);
+}
+
+static uint8_t
+dfll2m_comp2h_read(void *clientData, uint32_t address)
+{
+	fprintf(stderr, "%s not implemented\n", __func__);
+	return 0;
+}
+
+static void
+dfll2m_comp2h_write(void *clientData, uint8_t value, uint32_t address)
+{
+	fprintf(stderr, "%s not implemented\n", __func__);
 }
 
 void
-XMegaA_ClockNew(const char *name,unsigned int variant)
+XMegaA_ClockNew(const char *name, unsigned int variant)
 {
 	BaseAddr *addrs;
 	ClockMod *mod;
-	if(variant >= array_size(base_addrs)) {
-		fprintf(stderr,"Illegal variant %d for Xmega clock module variant\n",variant);
+	if (variant >= array_size(base_addrs)) {
+		fprintf(stderr, "Illegal variant %d for Xmega clock module variant\n", variant);
 		exit(1);
 	}
 	mod = sg_new(ClockMod);
 	addrs = &base_addrs[variant];
-        AVR8_RegisterIOHandler(CLOCK_CTRL(addrs->baClk),clock_ctrl_read,clock_ctrl_write,mod);
-        AVR8_RegisterIOHandler(CLOCK_PSCTRL(addrs->baClk),clock_psctrl_read,clock_psctrl_write,mod);
-        AVR8_RegisterIOHandler(CLOCK_LOCK(addrs->baClk),clock_lock_read,clock_lock_write,mod);
-        AVR8_RegisterIOHandler(CLOCK_RTCCTRL(addrs->baClk),clock_rtcctrl_read,clock_rtcctrl_write,mod);
+	AVR8_RegisterIOHandler(CLOCK_CTRL(addrs->baClk), clock_ctrl_read, clock_ctrl_write, mod);
+	AVR8_RegisterIOHandler(CLOCK_PSCTRL(addrs->baClk), clock_psctrl_read, clock_psctrl_write,
+			       mod);
+	AVR8_RegisterIOHandler(CLOCK_LOCK(addrs->baClk), clock_lock_read, clock_lock_write, mod);
+	AVR8_RegisterIOHandler(CLOCK_RTCCTRL(addrs->baClk), clock_rtcctrl_read, clock_rtcctrl_write,
+			       mod);
 
-        AVR8_RegisterIOHandler(OSC_CTRL(addrs->baOsc),osc_ctrl_read,osc_ctrl_write,mod);
-        AVR8_RegisterIOHandler(OSC_STATUS(addrs->baOsc),osc_status_read,osc_status_write,mod);
-        AVR8_RegisterIOHandler(OSC_XOSCCTRL(addrs->baOsc),osc_xoscctrl_read,osc_xoscctrl_write,mod);
-        AVR8_RegisterIOHandler(OSC_XOSCFAIL(addrs->baOsc),osc_xoscfail_read,osc_xoscfail_write,mod);
-        AVR8_RegisterIOHandler(OSC_RC32KCAL(addrs->baOsc),osc_rc32kcal_read,osc_rc32kcal_write,mod);
-        AVR8_RegisterIOHandler(OSC_PLLCTRL(addrs->baOsc),osc_pllctrl_read,osc_pllctrl_write,mod);
-        AVR8_RegisterIOHandler(OSC_DFLLCTRL(addrs->baOsc),osc_dfllctrl_read,osc_dfllctrl_write,mod);
-	
-        AVR8_RegisterIOHandler(DFLL_CTRL(addrs->baDfll32m),dfll32m_ctrl_read,dfll32m_ctrl_write,mod);
-        AVR8_RegisterIOHandler(DFLL_CALA(addrs->baDfll32m),dfll32m_cala_read,dfll32m_cala_write,mod);
-        AVR8_RegisterIOHandler(DFLL_CALB(addrs->baDfll32m),dfll32m_calb_read,dfll32m_calb_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP0(addrs->baDfll32m),dfll32m_comp0_read,dfll32m_comp0_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP1(addrs->baDfll32m),dfll32m_comp1_read,dfll32m_comp1_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP2(addrs->baDfll32m),dfll32m_comp2_read,dfll32m_comp2_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP2H(addrs->baDfll32m),dfll32m_comp2h_read,dfll32m_comp2h_write,mod);
+	AVR8_RegisterIOHandler(OSC_CTRL(addrs->baOsc), osc_ctrl_read, osc_ctrl_write, mod);
+	AVR8_RegisterIOHandler(OSC_STATUS(addrs->baOsc), osc_status_read, osc_status_write, mod);
+	AVR8_RegisterIOHandler(OSC_XOSCCTRL(addrs->baOsc), osc_xoscctrl_read, osc_xoscctrl_write,
+			       mod);
+	AVR8_RegisterIOHandler(OSC_XOSCFAIL(addrs->baOsc), osc_xoscfail_read, osc_xoscfail_write,
+			       mod);
+	AVR8_RegisterIOHandler(OSC_RC32KCAL(addrs->baOsc), osc_rc32kcal_read, osc_rc32kcal_write,
+			       mod);
+	AVR8_RegisterIOHandler(OSC_PLLCTRL(addrs->baOsc), osc_pllctrl_read, osc_pllctrl_write, mod);
+	AVR8_RegisterIOHandler(OSC_DFLLCTRL(addrs->baOsc), osc_dfllctrl_read, osc_dfllctrl_write,
+			       mod);
 
-        AVR8_RegisterIOHandler(DFLL_CTRL(addrs->baDfll2m),dfll2m_ctrl_read,dfll2m_ctrl_write,mod);
-        AVR8_RegisterIOHandler(DFLL_CALA(addrs->baDfll2m),dfll2m_cala_read,dfll2m_cala_write,mod);
-        AVR8_RegisterIOHandler(DFLL_CALB(addrs->baDfll2m),dfll2m_calb_read,dfll2m_calb_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP0(addrs->baDfll2m),dfll2m_comp0_read,dfll2m_comp0_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP1(addrs->baDfll2m),dfll2m_comp1_read,dfll2m_comp1_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP2(addrs->baDfll2m),dfll2m_comp2_read,dfll2m_comp2_write,mod);
-        AVR8_RegisterIOHandler(DFLL_COMP2H(addrs->baDfll2m),dfll2m_comp2h_read,dfll2m_comp2h_write,mod);
-	
+	AVR8_RegisterIOHandler(DFLL_CTRL(addrs->baDfll32m), dfll32m_ctrl_read, dfll32m_ctrl_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_CALA(addrs->baDfll32m), dfll32m_cala_read, dfll32m_cala_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_CALB(addrs->baDfll32m), dfll32m_calb_read, dfll32m_calb_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_COMP0(addrs->baDfll32m), dfll32m_comp0_read,
+			       dfll32m_comp0_write, mod);
+	AVR8_RegisterIOHandler(DFLL_COMP1(addrs->baDfll32m), dfll32m_comp1_read,
+			       dfll32m_comp1_write, mod);
+	AVR8_RegisterIOHandler(DFLL_COMP2(addrs->baDfll32m), dfll32m_comp2_read,
+			       dfll32m_comp2_write, mod);
+	AVR8_RegisterIOHandler(DFLL_COMP2H(addrs->baDfll32m), dfll32m_comp2h_read,
+			       dfll32m_comp2h_write, mod);
+
+	AVR8_RegisterIOHandler(DFLL_CTRL(addrs->baDfll2m), dfll2m_ctrl_read, dfll2m_ctrl_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_CALA(addrs->baDfll2m), dfll2m_cala_read, dfll2m_cala_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_CALB(addrs->baDfll2m), dfll2m_calb_read, dfll2m_calb_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_COMP0(addrs->baDfll2m), dfll2m_comp0_read, dfll2m_comp0_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_COMP1(addrs->baDfll2m), dfll2m_comp1_read, dfll2m_comp1_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_COMP2(addrs->baDfll2m), dfll2m_comp2_read, dfll2m_comp2_write,
+			       mod);
+	AVR8_RegisterIOHandler(DFLL_COMP2H(addrs->baDfll2m), dfll2m_comp2h_read,
+			       dfll2m_comp2h_write, mod);
+
 }
-

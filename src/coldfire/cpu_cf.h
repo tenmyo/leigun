@@ -10,8 +10,8 @@
 #define CR_REG_MMUBAR	(8)
 #define CR_REG_VBR	(0x801)
 #define CR_REG_PC	(0x80f)
-//#define CR_REG_ROMBAR0	(0xc00)
-//#define CR_REG_ROMBAR1	(0xc01)
+//#define CR_REG_ROMBAR0        (0xc00)
+//#define CR_REG_ROMBAR1        (0xc01)
 #define CR_REG_FLASHBAR	(0xc04)
 #define CR_REG_RAMBAR	(0xc05)
 #define CR_REG_MPCR	(0xc0c)
@@ -63,7 +63,7 @@ typedef struct {
 	uint32_t *reg_A;
 	uint32_t reg_PC;
 	uint16_t reg_CCR;
-	uint16_t icode; /* currently executed instruction */
+	uint16_t icode;		/* currently executed instruction */
 	/* MAC registers */
 	uint32_t reg_macSR;
 	uint32_t reg_macACC;
@@ -78,13 +78,13 @@ typedef struct {
 	uint16_t reg_SR;
 	uint32_t reg_OTHER_A7;
 	uint32_t reg_VBR;
-	uint32_t reg_CACR; 
-	uint32_t reg_ASID;   // not in v2
-	uint32_t reg_ACR[4]; // only 2 in v2
-	uint32_t reg_MMUBAR; // not in v2
-	uint32_t reg_FLASHBAR; // device specific
-	uint32_t reg_RAMBAR; // device specific
-	uint32_t reg_MBAR; 	// device specific
+	uint32_t reg_CACR;
+	uint32_t reg_ASID;	// not in v2
+	uint32_t reg_ACR[4];	// only 2 in v2
+	uint32_t reg_MMUBAR;	// not in v2
+	uint32_t reg_FLASHBAR;	// device specific
+	uint32_t reg_RAMBAR;	// device specific
+	uint32_t reg_MBAR;	// device specific
 } CFCpu;
 
 /* CCR Register Bitfield */
@@ -94,10 +94,10 @@ typedef struct {
 #define CCR_N	(1<<3)
 #define CCR_X	(1<<4)
 #define CCR_P	(1<<7)
-#define CCRS_T	(1<<15)	 /* Trace Bit 	     */
-#define CCRS_S	(1<<13)	 /* Supervisor State */
-#define CCRS_M	(1<<12)	 /* Master Interrupt State */
-#define CCRS_I	(7<<8)	 /* Interrupt Priority Mask */
+#define CCRS_T	(1<<15)		/* Trace Bit        */
+#define CCRS_S	(1<<13)		/* Supervisor State */
+#define CCRS_M	(1<<12)		/* Master Interrupt State */
+#define CCRS_I	(7<<8)		/* Interrupt Priority Mask */
 
 /* floating point control register */
 #define FPCR_BSUN	(1<<15)
@@ -176,67 +176,81 @@ extern CFCpu g_CFCpu;
 #define ICODE g_CFCpu.icode
 
 static inline int
-CF_IsSupervisor(void) {
+CF_IsSupervisor(void)
+{
 	return !!(g_CFCpu.reg_CCR & CCRS_S);
 }
 
-static inline uint32_t 
-CF_GetRegOtherA7(void) {
+static inline uint32_t
+CF_GetRegOtherA7(void)
+{
 	return g_CFCpu.reg_OTHER_A7;
 }
+
 static inline void
-CF_SetRegOtherA7(uint32_t value) {
+CF_SetRegOtherA7(uint32_t value)
+{
 	g_CFCpu.reg_OTHER_A7 = value;
 }
 
 static inline void
-CF_SetRegSR(uint16_t value) 
+CF_SetRegSR(uint16_t value)
 {
 	uint32_t diff = g_CFCpu.reg_CCR ^ value;
-	if(diff & CCRS_S) {
+	if (diff & CCRS_S) {
 		uint32_t tmp = g_CFCpu.reg_OTHER_A7;
 		g_CFCpu.reg_OTHER_A7 = g_CFCpu.reg_A[7];
 		g_CFCpu.reg_A[7] = tmp;
 	}
-	g_CFCpu.reg_CCR = value;	
+	g_CFCpu.reg_CCR = value;
 }
 
-static inline uint32_t 
-CF_GetReg(int reg) {
-	return g_CFCpu.reg_GP[reg];	
+static inline uint32_t
+CF_GetReg(int reg)
+{
+	return g_CFCpu.reg_GP[reg];
 }
 
-static inline uint32_t 
-CF_GetRegA(int reg) {
-	return g_CFCpu.reg_A[reg];	
+static inline uint32_t
+CF_GetRegA(int reg)
+{
+	return g_CFCpu.reg_A[reg];
 }
 
-static inline uint32_t 
-CF_GetRegD(int reg) {
-	return g_CFCpu.reg_D[reg];	
-}
-
-static inline void 
-CF_SetReg(uint32_t value,int reg) {
-	g_CFCpu.reg_GP[reg] = value;	
-}
-static inline void 
-CF_SetRegA(uint32_t value,int reg) {
-	g_CFCpu.reg_A[reg] = value;	
-}
-static inline void 
-CF_SetRegD(uint32_t value,int reg) {
-	g_CFCpu.reg_D[reg] = value;	
+static inline uint32_t
+CF_GetRegD(int reg)
+{
+	return g_CFCpu.reg_D[reg];
 }
 
 static inline void
-CF_SetRegPC(uint32_t value) {
+CF_SetReg(uint32_t value, int reg)
+{
+	g_CFCpu.reg_GP[reg] = value;
+}
+
+static inline void
+CF_SetRegA(uint32_t value, int reg)
+{
+	g_CFCpu.reg_A[reg] = value;
+}
+
+static inline void
+CF_SetRegD(uint32_t value, int reg)
+{
+	g_CFCpu.reg_D[reg] = value;
+}
+
+static inline void
+CF_SetRegPC(uint32_t value)
+{
 	g_CFCpu.reg_PC = value;
 }
 
-static inline uint32_t 
-CF_GetRegPC(void) {
-	return g_CFCpu.reg_PC; 
+static inline uint32_t
+CF_GetRegPC(void)
+{
+	return g_CFCpu.reg_PC;
 }
 
 static inline void
@@ -245,17 +259,18 @@ CF_SetRegMacAcc(uint32_t value)
 	g_CFCpu.reg_macACC = value;
 }
 
-static inline uint32_t 
+static inline uint32_t
 CF_GetRegMacAcc(void)
 {
 	return g_CFCpu.reg_macACC;
 }
 
-static inline void 
+static inline void
 CF_SetRegMacSr(uint32_t value)
 {
 	g_CFCpu.reg_macSR = value;
 }
+
 static inline uint32_t
 CF_GetRegMacSr(void)
 {
@@ -267,35 +282,35 @@ CF_SetRegMacMask(uint32_t value)
 {
 	g_CFCpu.reg_macMASK = value;
 }
+
 static inline uint32_t
 CF_GetRegMacMask(void)
 {
 	return g_CFCpu.reg_macMASK;
 }
 
-
-void CF_SetRegCR(uint32_t value,int reg); 
-uint32_t CF_GetRegCR(int reg); 
+void CF_SetRegCR(uint32_t value, int reg);
+uint32_t CF_GetRegCR(int reg);
 
 static inline void
 Push4(uint32_t val)
 {
-        uint32_t sp = CF_GetRegA(7);
-        sp-=4;
-        CF_MemWrite32(val,sp);
-        CF_SetRegA(sp,7);
+	uint32_t sp = CF_GetRegA(7);
+	sp -= 4;
+	CF_MemWrite32(val, sp);
+	CF_SetRegA(sp, 7);
 }
 
 static inline uint32_t
-Pop4(void) {
-        uint32_t val;
-        uint32_t sp = CF_GetRegA(7);
-        val = CF_MemRead32(sp);
-        sp+=4;
-        CF_SetRegA(sp,7);
-        return val;
+Pop4(void)
+{
+	uint32_t val;
+	uint32_t sp = CF_GetRegA(7);
+	val = CF_MemRead32(sp);
+	sp += 4;
+	CF_SetRegA(sp, 7);
+	return val;
 }
 
-
 void CF_CpuInit(void);
-void CF_CpuRun(void); 
+void CF_CpuRun(void);

@@ -37,14 +37,14 @@
 #include "instructions_rx.h"
 #include "cpu_rx.h"
 
-extern RX_Instruction     **rxITab;
+extern RX_Instruction **rxITab;
 
 void RX_IDecoderNew(void);
 
 static inline RX_Instruction *
 RX_InstructionFind(void)
 {
-        RX_Instruction *instr;
-        instr = rxITab[(uint16_t)ICODE];
+	RX_Instruction *instr;
+	instr = rxITab[(uint16_t) ICODE];
 	return instr;
 }

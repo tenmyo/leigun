@@ -60,7 +60,7 @@
 #define SPI_SPDR(base) 	((base) + 0x2)
 
 typedef struct ATM644_Spi {
-	SigNode *miso;	
+	SigNode *miso;
 	SigNode *mosi;
 	SigNode *sck;
 	SigNode *ss;
@@ -68,7 +68,7 @@ typedef struct ATM644_Spi {
 	SigNode *irqAckNode;
 	uint8_t spcr;
 	uint8_t spsr;
-	uint8_t spsr_read; /* needed as flag to clear wcol and SPIF */
+	uint8_t spsr_read;	/* needed as flag to clear wcol and SPIF */
 	uint8_t spdr;
 	Clock_t *clk_in;
 	Clock_t *spi_clk;
@@ -86,11 +86,11 @@ typedef struct ATM644_Spi {
 	int state;
 	int shiftoutcnt;
 	int shiftincnt;
-        uint8_t shiftreg;
+	uint8_t shiftreg;
 	/* 
- 	 * In master mode ddoe miso is used, in slave
- 	 * mode all ddoe are used except miso
- 	 */
+	 * In master mode ddoe miso is used, in slave
+	 * mode all ddoe are used except miso
+	 */
 	SigNode *ddoe_miso;
 	SigNode *pvoe_miso;
 	SigNode *ddov_miso;
@@ -106,50 +106,49 @@ typedef struct ATM644_Spi {
 } ATM644_Spi;
 
 static void
-update_clock(ATM644_Spi *spi) 
+update_clock(ATM644_Spi * spi)
 {
 	uint32_t multiplier = 1;
 	uint32_t divider = 2;
-	switch(spi->spcr & (SPCR_SPR1 | SPCR_SPR0)) {
-		case 0:
-			divider = 4;
-			break;
-		case 1:
-			divider = 16;
-			break;
-		case 2:
-			divider = 64;
-			break;
-		case 3:
-			divider = 128;
-			break;
+	switch (spi->spcr & (SPCR_SPR1 | SPCR_SPR0)) {
+	    case 0:
+		    divider = 4;
+		    break;
+	    case 1:
+		    divider = 16;
+		    break;
+	    case 2:
+		    divider = 64;
+		    break;
+	    case 3:
+		    divider = 128;
+		    break;
 	}
-	if(spi->spsr & SPSR_SPI2X) {
-		divider = divider >> 1;	
+	if (spi->spsr & SPSR_SPI2X) {
+		divider = divider >> 1;
 	}
-	Clock_MakeDerived(spi->spi_clk,spi->clk_in,multiplier,divider);
+	Clock_MakeDerived(spi->spi_clk, spi->clk_in, multiplier, divider);
 }
 
 static void
-update_delay(Clock_t *clock,void *clientData)
+update_delay(Clock_t * clock, void *clientData)
 {
 	ATM644_Spi *spi = (ATM644_Spi *) clientData;
-	if(Clock_Freq(spi->spi_clk) != 0) {
+	if (Clock_Freq(spi->spi_clk) != 0) {
 		spi->half_clock_delay = CycleTimerRate_Get() / Clock_Freq(spi->spi_clk) / 2;
 	} else {
-		fprintf(stderr,"SPI clock is 0, This should not happen\n");
+		fprintf(stderr, "SPI clock is 0, This should not happen\n");
 		spi->half_clock_delay = 1000;
 	}
 }
 
-
 static void
-update_interrupt(ATM644_Spi *spi)
+update_interrupt(ATM644_Spi * spi)
 {
-	if((spi->spsr & SPSR_SPIF) && (spi->spcr & SPCR_SPIE)) {
-		SigNode_Set(spi->irqNode,SIG_LOW);
+	if ((spi->spsr & SPSR_SPIF) && (spi->spcr & SPCR_SPIE)) {
+		SigNode_Set(spi->irqNode, SIG_LOW);
 	} else {
-		SigNode_Set(spi->irqNode,SIG_OPEN);
+		SigNode_Set(spi->irqNode, SIG_OPEN);
 	}
 }
 
@@ -160,60 +159,60 @@ update_interrupt(ATM644_Spi *spi)
 #define STATE_RELEASE		(4)
 
 static void
-sample_miso(ATM644_Spi *spi)
+sample_miso(ATM644_Spi * spi)
 {
 	int miso = SigNode_Val(spi->miso);
 	int bit;
-	if(spi->spcr & SPCR_DORD) {
+	if (spi->spcr & SPCR_DORD) {
 		bit = spi->shiftincnt;
 	} else {
 		bit = (7 - spi->shiftincnt);
 	}
-	if(spi->shiftincnt >= spi->shiftoutcnt) {
-		fprintf(stderr,"SPI Bug, shiftin of bit before shiftout\n");
-	} 
-	if((bit < 0) || (bit > 7)) {
-		fprintf(stderr,"SPI Bug, Shift more than 8 Bits\n");
+	if (spi->shiftincnt >= spi->shiftoutcnt) {
+		fprintf(stderr, "SPI Bug, shiftin of bit before shiftout\n");
 	}
-	if(miso == SIG_HIGH) {
-		spi->shiftreg |= (1 << bit); 
-	} else if(miso == SIG_LOW) {
-		spi->shiftreg &= ~(1 << bit); 
+	if ((bit < 0) || (bit > 7)) {
+		fprintf(stderr, "SPI Bug, Shift more than 8 Bits\n");
+	}
+	if (miso == SIG_HIGH) {
+		spi->shiftreg |= (1 << bit);
+	} else if (miso == SIG_LOW) {
+		spi->shiftreg &= ~(1 << bit);
 	}
 	spi->shiftincnt++;
 }
 
 static void
-shiftout_mosi(ATM644_Spi *spi)
+shiftout_mosi(ATM644_Spi * spi)
 {
 	int bit;
-	if(spi->spcr & SPCR_DORD) {
+	if (spi->spcr & SPCR_DORD) {
 		bit = spi->shiftincnt;
 	} else {
 		bit = (7 - spi->shiftincnt);
 	}
-	if((bit < 0) || (bit > 7)) {
-		fprintf(stderr,"SPI Bug, Shift more than 8 Bits\n");
+	if ((bit < 0) || (bit > 7)) {
+		fprintf(stderr, "SPI Bug, Shift more than 8 Bits\n");
 	}
-	if(spi->shiftreg & (1 << bit)) {
-		SigNode_Set(spi->mosi,SIG_HIGH);
+	if (spi->shiftreg & (1 << bit)) {
+		SigNode_Set(spi->mosi, SIG_HIGH);
 	} else {
-		SigNode_Set(spi->mosi,SIG_LOW);
+		SigNode_Set(spi->mosi, SIG_LOW);
 	}
 	spi->shiftoutcnt++;
 }
 
-static inline void spi_delay(ATM644_Spi *spi);
+static inline void spi_delay(ATM644_Spi * spi);
 
-static inline void 
-trigger_interrupt(ATM644_Spi *spi)
+static inline void
+trigger_interrupt(ATM644_Spi * spi)
 {
 #if 0
-	if((spi->shiftincnt != 8) || (spi->shiftoutcnt != 8)) {
+	if ((spi->shiftincnt != 8) || (spi->shiftoutcnt != 8)) {
 		uint8_t cpol = !!(spi->spcr & SPCR_CPOL);
 		uint8_t cpha = !!(spi->spcr & SPCR_CPHA);
-		fprintf(stderr,"SPI-Shiftcnt not 8: %d %d, cpol %d, cpha %d\n"
-			,spi->shiftincnt,spi->shiftoutcnt,cpol,cpha);
+		fprintf(stderr, "SPI-Shiftcnt not 8: %d %d, cpol %d, cpha %d\n", spi->shiftincnt,
+			spi->shiftoutcnt, cpol, cpha);
 	}
 #endif
 	//fprintf(stderr,"needed %lld Cycles\n",spi->next_timeout-spi->trans_start);
@@ -223,317 +222,320 @@ trigger_interrupt(ATM644_Spi *spi)
 }
 
 static void
-SpiMaster_OneStep(ATM644_Spi *spi) 
+SpiMaster_OneStep(ATM644_Spi * spi)
 {
 	uint8_t cpol = !!(spi->spcr & SPCR_CPOL);
 	uint8_t cpha = !!(spi->spcr & SPCR_CPHA);
-	switch(spi->state) {
-		case STATE_RELEASE:
-			SigNode_Set(spi->ss,SIG_HIGH);
-			spi->state = STATE_DONE;
-			trigger_interrupt(spi);
-			break;
-			
-		case STATE_STARTED:
-		case STATE_TRAILING_EDGE:
-			if((cpha == 1) && (spi->shiftoutcnt == 8)) {
-				SigNode_Set(spi->mosi,SIG_HIGH);
-				SigNode_Set(spi->ss,SIG_HIGH);
-				spi->state = STATE_DONE;
-				trigger_interrupt(spi);
-				break;
-			}
-			spi->state = STATE_LEADING_EDGE;
-			if(cpha == 0) {
-				sample_miso(spi);
-				if(spi->shiftincnt == 8) {
-					spi->spdr = spi->shiftreg;
-				}
-			} else {
-				shiftout_mosi(spi);
-			}
-			if(cpol == 0) {
-				SigNode_Set(spi->sck,SIG_HIGH);
-			} else {
-				SigNode_Set(spi->sck,SIG_LOW);
-			}
-			spi_delay(spi);
-			break;
-		case STATE_LEADING_EDGE:
-			if((cpha == 0) && (spi->shiftoutcnt == 8)) {
-				SigNode_Set(spi->mosi,SIG_HIGH);
-				spi->state = STATE_RELEASE;
-				if(cpol == 0) {
-					SigNode_Set(spi->sck,SIG_LOW);
-				} else {
-					SigNode_Set(spi->sck,SIG_HIGH);
-				}
-				spi_delay(spi);
-				break;
-				
-			} 
-			spi->state = STATE_TRAILING_EDGE;	
-			if(cpha == 0) {
-				shiftout_mosi(spi);
-			} else {
-				sample_miso(spi);
-				if(spi->shiftincnt == 8) {
-					spi->spdr = spi->shiftreg;
-					trigger_interrupt(spi);
-				}
-			}
-			if(cpol == 0) {
-				SigNode_Set(spi->sck,SIG_LOW);
-			} else {
-				SigNode_Set(spi->sck,SIG_HIGH);
-			}
-			spi_delay(spi);
-			break;
-	}	
+	switch (spi->state) {
+	    case STATE_RELEASE:
+		    SigNode_Set(spi->ss, SIG_HIGH);
+		    spi->state = STATE_DONE;
+		    trigger_interrupt(spi);
+		    break;
+
+	    case STATE_STARTED:
+	    case STATE_TRAILING_EDGE:
+		    if ((cpha == 1) && (spi->shiftoutcnt == 8)) {
+			    SigNode_Set(spi->mosi, SIG_HIGH);
+			    SigNode_Set(spi->ss, SIG_HIGH);
+			    spi->state = STATE_DONE;
+			    trigger_interrupt(spi);
+			    break;
+		    }
+		    spi->state = STATE_LEADING_EDGE;
+		    if (cpha == 0) {
+			    sample_miso(spi);
+			    if (spi->shiftincnt == 8) {
+				    spi->spdr = spi->shiftreg;
+			    }
+		    } else {
+			    shiftout_mosi(spi);
+		    }
+		    if (cpol == 0) {
+			    SigNode_Set(spi->sck, SIG_HIGH);
+		    } else {
+			    SigNode_Set(spi->sck, SIG_LOW);
+		    }
+		    spi_delay(spi);
+		    break;
+	    case STATE_LEADING_EDGE:
+		    if ((cpha == 0) && (spi->shiftoutcnt == 8)) {
+			    SigNode_Set(spi->mosi, SIG_HIGH);
+			    spi->state = STATE_RELEASE;
+			    if (cpol == 0) {
+				    SigNode_Set(spi->sck, SIG_LOW);
+			    } else {
+				    SigNode_Set(spi->sck, SIG_HIGH);
+			    }
+			    spi_delay(spi);
+			    break;
+
+		    }
+		    spi->state = STATE_TRAILING_EDGE;
+		    if (cpha == 0) {
+			    shiftout_mosi(spi);
+		    } else {
+			    sample_miso(spi);
+			    if (spi->shiftincnt == 8) {
+				    spi->spdr = spi->shiftreg;
+				    trigger_interrupt(spi);
+			    }
+		    }
+		    if (cpol == 0) {
+			    SigNode_Set(spi->sck, SIG_LOW);
+		    } else {
+			    SigNode_Set(spi->sck, SIG_HIGH);
+		    }
+		    spi_delay(spi);
+		    break;
+	}
 }
 
 static void
-clock_event(void *clientData) {
+clock_event(void *clientData)
+{
 	ATM644_Spi *spi = (ATM644_Spi *) clientData;
-	if(spi->state == STATE_DONE) {
-		fprintf(stderr,"SPI: Clock event should not happen when transfer complete\n");
+	if (spi->state == STATE_DONE) {
+		fprintf(stderr, "SPI: Clock event should not happen when transfer complete\n");
 		return;
 	}
 	SpiMaster_OneStep(spi);
 }
 
 static inline void
-spi_delay(ATM644_Spi *spi) 
+spi_delay(ATM644_Spi * spi)
 {
-	if(!spi->zerodelay) {
-                spi->next_timeout += spi->half_clock_delay;
-                if(CycleCounter_Get() >= spi->next_timeout) {
-                        clock_event(spi);
-                } else {
-                        CycleTimer_Mod(&spi->delayTimer,spi->next_timeout - CycleCounter_Get());
-                }
-        }
+	if (!spi->zerodelay) {
+		spi->next_timeout += spi->half_clock_delay;
+		if (CycleCounter_Get() >= spi->next_timeout) {
+			clock_event(spi);
+		} else {
+			CycleTimer_Mod(&spi->delayTimer, spi->next_timeout - CycleCounter_Get());
+		}
+	}
 }
 
 static void
-byte_timer_event(void *clientData) {
+byte_timer_event(void *clientData)
+{
 	ATM644_Spi *spi = (ATM644_Spi *) clientData;
 	/* SigNode_Set(spi->ss,SIG_HIGH); */
 	trigger_interrupt(spi);
 }
 
 static void
-SpiMaster_Start(ATM644_Spi *spi) 
+SpiMaster_Start(ATM644_Spi * spi)
 {
 	uint8_t cpha;
-	if(spi->byteExchangeProc) {
+	if (spi->byteExchangeProc) {
 		/* SigNode_Set(spi->ss,SIG_LOW); */
-		spi->spdr = spi->byteExchangeProc(spi->exchg_clientData,spi->spdr);
+		spi->spdr = spi->byteExchangeProc(spi->exchg_clientData, spi->spdr);
 		/* SigNode_Set(spi->ss,SIG_HIGH); */
-		if(spi->zerodelay) {
+		if (spi->zerodelay) {
 			trigger_interrupt(spi);
 		} else {
 			/* I should verify the seventeen with a real device */
-			CycleTimer_Mod(&spi->byteDelayTimer,17 * spi->half_clock_delay);
+			CycleTimer_Mod(&spi->byteDelayTimer, 17 * spi->half_clock_delay);
 		}
 		return;
-	}	
+	}
 	cpha = !!(spi->spcr & SPCR_CPHA);
 	spi->shiftoutcnt = 0;
 	spi->shiftincnt = 0;
 	spi->shiftreg = spi->spdr;
-	if(cpha == 0) {
+	if (cpha == 0) {
 		shiftout_mosi(spi);
-	} 
-	spi->state =  STATE_STARTED;
-	SigNode_Set(spi->ss,SIG_LOW);
-	if(spi->zerodelay) {
-		while(spi->state != STATE_DONE) {
-			SpiMaster_OneStep(spi) ;
+	}
+	spi->state = STATE_STARTED;
+	SigNode_Set(spi->ss, SIG_LOW);
+	if (spi->zerodelay) {
+		while (spi->state != STATE_DONE) {
+			SpiMaster_OneStep(spi);
 		}
 	} else {
 		spi->next_timeout = CycleCounter_Get();
-		spi_delay(spi);	
+		spi_delay(spi);
 	}
 }
 
 static uint8_t
-spcr_read(void *clientData,uint32_t address)
+spcr_read(void *clientData, uint32_t address)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
-        return spi->spcr;
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	return spi->spcr;
 }
 
 static void
-spcr_write(void *clientData,uint8_t value,uint32_t address)
+spcr_write(void *clientData, uint8_t value, uint32_t address)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
 	uint8_t diff = spi->spcr ^ value;
 	spi->spcr = value;
-	if(diff & (SPCR_MSTR | SPCR_SPE)) {
-		if((value & SPCR_MSTR) && (value & SPCR_SPE)) {
+	if (diff & (SPCR_MSTR | SPCR_SPE)) {
+		if ((value & SPCR_MSTR) && (value & SPCR_SPE)) {
 			/* Setup the DDOV before enabling ddoe ! */
-			SigNode_Set(spi->ddov_miso,SIG_LOW);
-			SigNode_Set(spi->ddoe_miso,SIG_HIGH);
-			SigNode_Set(spi->pvoe_mosi,SIG_HIGH);
-			SigNode_Set(spi->pvoe_sck,SIG_HIGH);
-			SigNode_Set(spi->pvoe_ss,SIG_HIGH);
+			SigNode_Set(spi->ddov_miso, SIG_LOW);
+			SigNode_Set(spi->ddoe_miso, SIG_HIGH);
+			SigNode_Set(spi->pvoe_mosi, SIG_HIGH);
+			SigNode_Set(spi->pvoe_sck, SIG_HIGH);
+			SigNode_Set(spi->pvoe_ss, SIG_HIGH);
 
 		} else {
 			/* Take away all signla overrides */
-			SigNode_Set(spi->ddoe_miso,SIG_LOW);
-			SigNode_Set(spi->pvoe_mosi,SIG_LOW);
-			SigNode_Set(spi->pvoe_sck,SIG_LOW);
-			SigNode_Set(spi->pvoe_ss,SIG_LOW);
+			SigNode_Set(spi->ddoe_miso, SIG_LOW);
+			SigNode_Set(spi->pvoe_mosi, SIG_LOW);
+			SigNode_Set(spi->pvoe_sck, SIG_LOW);
+			SigNode_Set(spi->pvoe_ss, SIG_LOW);
 
-			SigNode_Set(spi->ddov_miso,SIG_OPEN);
+			SigNode_Set(spi->ddov_miso, SIG_OPEN);
 			spi->state = STATE_DONE;
 			CycleTimer_Remove(&spi->delayTimer);
 			CycleTimer_Remove(&spi->byteDelayTimer);
-			SigNode_Set(spi->mosi,SIG_OPEN);
-			SigNode_Set(spi->sck,SIG_OPEN);
+			SigNode_Set(spi->mosi, SIG_OPEN);
+			SigNode_Set(spi->sck, SIG_OPEN);
 		}
 	}
-	if(diff & (SPCR_SPR0 | SPCR_SPR1)) {
+	if (diff & (SPCR_SPR0 | SPCR_SPR1)) {
 		update_clock(spi);
 	}
 }
 
 static uint8_t
-spsr_read(void *clientData,uint32_t address)
+spsr_read(void *clientData, uint32_t address)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
 	spi->spsr_read = spi->spsr & (SPSR_WCOL | SPSR_SPIF);
-        return spi->spsr;
+	return spi->spsr;
 }
 
 static void
-spsr_write(void *clientData,uint8_t value,uint32_t address)
+spsr_write(void *clientData, uint8_t value, uint32_t address)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
 	uint8_t diff = spi->spsr ^ value;
 	spi->spsr = value;
-	if(diff & SPSR_SPI2X) {
+	if (diff & SPSR_SPI2X) {
 		update_clock(spi);
 	}
 
 }
 
 static uint8_t
-spdr_read(void *clientData,uint32_t address)
+spdr_read(void *clientData, uint32_t address)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
 #if 0
-	fprintf(stderr,"ining %02x at %lld\n",spi->spdr,CycleCounter_Get());
+	fprintf(stderr, "ining %02x at %lld\n", spi->spdr, CycleCounter_Get());
 	usleep(30000);
 #endif
-	if(spi->spsr_read) {
+	if (spi->spsr_read) {
 		spi->spsr &= ~(spi->spsr_read);
 		spi->spsr_read = 0;
 		update_interrupt(spi);
 	}
-        return spi->spdr;
+	return spi->spdr;
 }
 
 static void
-spdr_write(void *clientData,uint8_t value,uint32_t address)
+spdr_write(void *clientData, uint8_t value, uint32_t address)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
 	spi->spdr = value;
 	//fprintf(stderr,"Outing %02x\n",value);
 	//usleep(20000);
-	if((spi->spcr & SPCR_MSTR) && (spi->spcr & SPCR_SPE)) {
-		if(spi->state != STATE_DONE) {
+	if ((spi->spcr & SPCR_MSTR) && (spi->spcr & SPCR_SPE)) {
+		if (spi->state != STATE_DONE) {
 			spi->spsr |= SPSR_WCOL;
 			spi->spsr_read &= ~SPSR_WCOL;
 		}
 		SpiMaster_Start(spi);
 	}
-	if(spi->spsr_read) {
+	if (spi->spsr_read) {
 		spi->spsr &= ~(spi->spsr_read);
 		spi->spsr_read = 0;
 		update_interrupt(spi);
 	}
 }
 
-static void spi_ack_irq(SigNode *node,int value,void *clientData)
+static void
+spi_ack_irq(SigNode * node, int value, void *clientData)
 {
-        ATM644_Spi *spi = (ATM644_Spi *) clientData;
-	if(value == SIG_LOW) {
+	ATM644_Spi *spi = (ATM644_Spi *) clientData;
+	if (value == SIG_LOW) {
 		spi->spsr &= ~SPSR_SPIF;
 		update_interrupt(spi);
 	}
 }
 
 void
-ATM644_SpiNew(const char *name,uint32_t base,Spi_ByteExchangeProc *proc,void *clientData)
+ATM644_SpiNew(const char *name, uint32_t base, Spi_ByteExchangeProc * proc, void *clientData)
 {
 	ATM644_Spi *spi = sg_new(ATM644_Spi);
-	spi->miso = SigNode_New("%s.miso",name);
-	spi->mosi = SigNode_New("%s.mosi",name);
-	spi->sck = SigNode_New("%s.sck",name);
-	spi->ss = SigNode_New("%s.ss",name);
-	if(!spi->miso || ! spi->mosi || !spi->sck || !spi->ss) {
-		fprintf(stderr,"Can not create signal lines for SPI\n");
+	spi->miso = SigNode_New("%s.miso", name);
+	spi->mosi = SigNode_New("%s.mosi", name);
+	spi->sck = SigNode_New("%s.sck", name);
+	spi->ss = SigNode_New("%s.ss", name);
+	if (!spi->miso || !spi->mosi || !spi->sck || !spi->ss) {
+		fprintf(stderr, "Can not create signal lines for SPI\n");
 		exit(1);
 	}
-	spi->irqNode = SigNode_New("%s.irq",name);
-	spi->irqAckNode = SigNode_New("%s.irqAck",name);
-	if(!spi->irqNode || !spi->irqAckNode) {
-		fprintf(stderr,"Can not create interrupt lines for SPI\n");
+	spi->irqNode = SigNode_New("%s.irq", name);
+	spi->irqAckNode = SigNode_New("%s.irqAck", name);
+	if (!spi->irqNode || !spi->irqAckNode) {
+		fprintf(stderr, "Can not create interrupt lines for SPI\n");
 		exit(1);
 	}
-	SigNode_Trace(spi->irqAckNode,spi_ack_irq,spi);
-	spi->ddoe_miso = SigNode_New("%s.ddoe_miso",name);
-	spi->pvoe_miso = SigNode_New("%s.pvoe_miso",name);
-	spi->ddov_miso = SigNode_New("%s.ddov_miso",name);
-	spi->ddoe_mosi = SigNode_New("%s.ddoe_mosi",name);
-	spi->pvoe_mosi = SigNode_New("%s.pvoe_mosi",name);
-	spi->ddov_mosi = SigNode_New("%s.ddov_mosi",name);
-	spi->ddoe_sck = SigNode_New("%s.ddoe_sck",name);
-	spi->pvoe_sck = SigNode_New("%s.pvoe_sck",name);
-	spi->ddov_sck = SigNode_New("%s.ddov_sck",name);
-	spi->ddoe_ss = SigNode_New("%s.ddoe_ss",name);
-	spi->pvoe_ss = SigNode_New("%s.pvoe_ss",name);
-	spi->ddov_ss = SigNode_New("%s.ddov_ss",name);
-	if(!spi->ddoe_miso || !(spi->ddoe_mosi) || !(spi->ddoe_sck) || !(spi->ddoe_ss)) {
-		fprintf(stderr,"Can not create SPI direction override enable outputs\n");
+	SigNode_Trace(spi->irqAckNode, spi_ack_irq, spi);
+	spi->ddoe_miso = SigNode_New("%s.ddoe_miso", name);
+	spi->pvoe_miso = SigNode_New("%s.pvoe_miso", name);
+	spi->ddov_miso = SigNode_New("%s.ddov_miso", name);
+	spi->ddoe_mosi = SigNode_New("%s.ddoe_mosi", name);
+	spi->pvoe_mosi = SigNode_New("%s.pvoe_mosi", name);
+	spi->ddov_mosi = SigNode_New("%s.ddov_mosi", name);
+	spi->ddoe_sck = SigNode_New("%s.ddoe_sck", name);
+	spi->pvoe_sck = SigNode_New("%s.pvoe_sck", name);
+	spi->ddov_sck = SigNode_New("%s.ddov_sck", name);
+	spi->ddoe_ss = SigNode_New("%s.ddoe_ss", name);
+	spi->pvoe_ss = SigNode_New("%s.pvoe_ss", name);
+	spi->ddov_ss = SigNode_New("%s.ddov_ss", name);
+	if (!spi->ddoe_miso || !(spi->ddoe_mosi) || !(spi->ddoe_sck) || !(spi->ddoe_ss)) {
+		fprintf(stderr, "Can not create SPI direction override enable outputs\n");
 		exit(1);
 	}
-	if(!spi->ddov_miso || !(spi->ddov_mosi) || !(spi->ddov_sck) || !(spi->ddov_ss)) {
-		fprintf(stderr,"Can not create SPI direction override value outputs\n");
+	if (!spi->ddov_miso || !(spi->ddov_mosi) || !(spi->ddov_sck) || !(spi->ddov_ss)) {
+		fprintf(stderr, "Can not create SPI direction override value outputs\n");
 		exit(1);
 	}
-	if(!spi->pvoe_miso || !(spi->pvoe_mosi) || !(spi->pvoe_sck) || !(spi->pvoe_ss)) {
-		fprintf(stderr,"Can not create SPI direction override enable outputs\n");
+	if (!spi->pvoe_miso || !(spi->pvoe_mosi) || !(spi->pvoe_sck) || !(spi->pvoe_ss)) {
+		fprintf(stderr, "Can not create SPI direction override enable outputs\n");
 		exit(1);
 	}
 	spi->zerodelay = 0;
-	Config_ReadUInt32(&spi->zerodelay,name,"zerodelay");
-	Config_ReadUInt32(&spi->parallel,name,"parallel");
+	Config_ReadUInt32(&spi->zerodelay, name, "zerodelay");
+	Config_ReadUInt32(&spi->parallel, name, "parallel");
 	spi->spcr = 0;
 	spi->spsr = 0;
 	spi->half_clock_delay = 1;
-	AVR8_RegisterIOHandler(SPI_SPCR(base),spcr_read,spcr_write,spi);
-	AVR8_RegisterIOHandler(SPI_SPSR(base),spsr_read,spsr_write,spi);
-	AVR8_RegisterIOHandler(SPI_SPDR(base),spdr_read,spdr_write,spi);
-	spi->clk_in = Clock_New("%s.clk",name);
-	spi->spi_clk = Clock_New("%s.spiclk",name);
-	CycleTimer_Init(&spi->delayTimer,clock_event,spi);
-	CycleTimer_Init(&spi->byteDelayTimer,byte_timer_event,spi);
-	Clock_Trace(spi->spi_clk,update_delay,spi);
+	AVR8_RegisterIOHandler(SPI_SPCR(base), spcr_read, spcr_write, spi);
+	AVR8_RegisterIOHandler(SPI_SPSR(base), spsr_read, spsr_write, spi);
+	AVR8_RegisterIOHandler(SPI_SPDR(base), spdr_read, spdr_write, spi);
+	spi->clk_in = Clock_New("%s.clk", name);
+	spi->spi_clk = Clock_New("%s.spiclk", name);
+	CycleTimer_Init(&spi->delayTimer, clock_event, spi);
+	CycleTimer_Init(&spi->byteDelayTimer, byte_timer_event, spi);
+	Clock_Trace(spi->spi_clk, update_delay, spi);
 	update_interrupt(spi);
 	update_clock(spi);
-	if(spi->parallel) {
+	if (spi->parallel) {
 		spi->byteExchangeProc = proc;
 		spi->exchg_clientData = clientData;
 	}
-	fprintf(stderr,"Created ATM644 SPI emulation");
-	if(spi->zerodelay) {
-		fprintf(stderr,", option zerodelay");
+	fprintf(stderr, "Created ATM644 SPI emulation");
+	if (spi->zerodelay) {
+		fprintf(stderr, ", option zerodelay");
 	}
-	if(spi->parallel && proc) {
-		fprintf(stderr,", option parallel interface");
+	if (spi->parallel && proc) {
+		fprintf(stderr, ", option parallel interface");
 	}
-	fprintf(stderr,"\n");
+	fprintf(stderr, "\n");
 }

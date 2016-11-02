@@ -35,242 +35,243 @@ typedef struct PmGpio {
 } PmGpio;
 
 static uint32_t
-bram_read(void *clientData,uint32_t address,int rqlen)
+bram_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-bram_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bram_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-dat_read(void *clientData,uint32_t address,int rqlen)
+dat_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dat_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dat_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-doe_read(void *clientData,uint32_t address,int rqlen)
+doe_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-doe_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+doe_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-fs0_read(void *clientData,uint32_t address,int rqlen)
+fs0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-fs0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+fs0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-rpu_read(void *clientData,uint32_t address,int rqlen)
+rpu_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-rpu_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rpu_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-rpd_read(void *clientData,uint32_t address,int rqlen)
+rpd_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-rpd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rpd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-dv0_read(void *clientData,uint32_t address,int rqlen)
+dv0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dv0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dv0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-dv1_read(void *clientData,uint32_t address,int rqlen)
+dv1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-dv1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+dv1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-ee0_read(void *clientData,uint32_t address,int rqlen)
+ee0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ee0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ee0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-ee1_read(void *clientData,uint32_t address,int rqlen)
+ee1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ee1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ee1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-ctl_read(void *clientData,uint32_t address,int rqlen)
+ctl_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-ctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-di_read(void *clientData,uint32_t address,int rqlen)
+di_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-di_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+di_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-}
-static uint32_t
-str_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
-}
-
-static void
-str_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-stf_read(void *clientData,uint32_t address,int rqlen)
+str_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-stf_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+str_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-pol_read(void *clientData,uint32_t address,int rqlen)
+stf_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-pol_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+stf_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
 }
 
 static uint32_t
-apb_read(void *clientData,uint32_t address,int rqlen)
+pol_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
-        return 0;
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-apb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pol_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PmGpio: %s not implemented\n",__func__);
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+}
+
+static uint32_t
+apb_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+	return 0;
 }
 
 static void
-PmGpio_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+apb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PmGpio: %s not implemented\n", __func__);
+}
+
+static void
+PmGpio_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	PmGpio *gpio = owner;
-	IOH_NewRegion(BACKUP_RAM(base),2048,bram_read,bram_write,HOST_BYTEORDER,gpio);
+	IOH_NewRegion(BACKUP_RAM(base), 2048, bram_read, bram_write, HOST_BYTEORDER, gpio);
 
-  //      IOH_New32(GPIOPK_RST(base),rst_read,rst_write,gpio);
-	IOH_New32(PMGPIO_DAT(base),dat_read,dat_write,gpio);
-	IOH_New32(PMGPIO_DOE(base),doe_read,doe_write,gpio);
-	IOH_New32(PMGPIO_FS0(base),fs0_read,fs0_write,gpio);
-	IOH_New32(PMGPIO_RPU(base),rpu_read,rpu_write,gpio);
-	IOH_New32(PMGPIO_RPD(base),rpd_read,rpd_write,gpio);
-	IOH_New32(PMGPIO_DV0(base),dv0_read,dv0_write,gpio);
-	IOH_New32(PMGPIO_DV1(base),dv1_read,dv1_write,gpio);
-	IOH_New32(PMGPIO_EE0(base),ee0_read,ee0_write,gpio);
-	IOH_New32(PMGPIO_EE1(base),ee1_read,ee1_write,gpio);
-	IOH_New32(PMGPIO_CTL(base),ctl_read,ctl_write,gpio);
-	IOH_New32(PMGPIO_DI(base),di_read,di_write,gpio);
-	IOH_New32(PMGPIO_STR(base),str_read,str_write,gpio);
-	IOH_New32(PMGPIO_STF(base),stf_read,stf_write,gpio);
-	IOH_New32(PMGPIO_POL(base),pol_read,pol_write,gpio);
-	IOH_New32(PMGPIO_APB(base),apb_read,apb_write,gpio);
+	//      IOH_New32(GPIOPK_RST(base),rst_read,rst_write,gpio);
+	IOH_New32(PMGPIO_DAT(base), dat_read, dat_write, gpio);
+	IOH_New32(PMGPIO_DOE(base), doe_read, doe_write, gpio);
+	IOH_New32(PMGPIO_FS0(base), fs0_read, fs0_write, gpio);
+	IOH_New32(PMGPIO_RPU(base), rpu_read, rpu_write, gpio);
+	IOH_New32(PMGPIO_RPD(base), rpd_read, rpd_write, gpio);
+	IOH_New32(PMGPIO_DV0(base), dv0_read, dv0_write, gpio);
+	IOH_New32(PMGPIO_DV1(base), dv1_read, dv1_write, gpio);
+	IOH_New32(PMGPIO_EE0(base), ee0_read, ee0_write, gpio);
+	IOH_New32(PMGPIO_EE1(base), ee1_read, ee1_write, gpio);
+	IOH_New32(PMGPIO_CTL(base), ctl_read, ctl_write, gpio);
+	IOH_New32(PMGPIO_DI(base), di_read, di_write, gpio);
+	IOH_New32(PMGPIO_STR(base), str_read, str_write, gpio);
+	IOH_New32(PMGPIO_STF(base), stf_read, stf_write, gpio);
+	IOH_New32(PMGPIO_POL(base), pol_read, pol_write, gpio);
+	IOH_New32(PMGPIO_APB(base), apb_read, apb_write, gpio);
 }
 
 static void
-PmGpio_UnMap(void *owner,uint32_t base,uint32_t mask)
+PmGpio_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-   //     IOH_Delete32(GPIOPK_RST(base));
-//#define BACKUP_RAM(base)	((base) + 0x000)
-	IOH_DeleteRegion(BACKUP_RAM(base),2048);
+	//     IOH_Delete32(GPIOPK_RST(base));
+//#define BACKUP_RAM(base)      ((base) + 0x000)
+	IOH_DeleteRegion(BACKUP_RAM(base), 2048);
 	IOH_Delete32(PMGPIO_DAT(base));
 	IOH_Delete32(PMGPIO_DOE(base));
 	IOH_Delete32(PMGPIO_FS0(base));
@@ -288,25 +289,23 @@ PmGpio_UnMap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(PMGPIO_APB(base));
 }
 
-
 BusDevice *
 TCC8K_PMGpioNew(const char *name)
 {
 	PmGpio *gpio = sg_new(PmGpio);
 	int j;
-        gpio->bdev.first_mapping = NULL;
-        gpio->bdev.Map = PmGpio_Map;
-        gpio->bdev.UnMap = PmGpio_UnMap;
-        gpio->bdev.owner = gpio;
-        gpio->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
-        for(j = 0;j < 32;j++) {
-                gpio->sigPk[j] = SigNode_New("%s.pk%d",name,j);
-		if(!gpio->sigPk[j]) {
-			fprintf(stderr,"Can not create FS0 for \"%s\"\n",name);
+	gpio->bdev.first_mapping = NULL;
+	gpio->bdev.Map = PmGpio_Map;
+	gpio->bdev.UnMap = PmGpio_UnMap;
+	gpio->bdev.owner = gpio;
+	gpio->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	for (j = 0; j < 32; j++) {
+		gpio->sigPk[j] = SigNode_New("%s.pk%d", name, j);
+		if (!gpio->sigPk[j]) {
+			fprintf(stderr, "Can not create FS0 for \"%s\"\n", name);
 			exit(1);
 		}
 	}
-        return &gpio->bdev;
+	return &gpio->bdev;
 
 }
-

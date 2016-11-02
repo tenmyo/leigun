@@ -83,11 +83,11 @@
 typedef struct Scm Scm;
 
 typedef struct ChipSelect {
-        Scm *scm;
-        BusDevice *dev;
-        uint16_t csar;
-        uint32_t csmr;
-        uint32_t cscr;
+	Scm *scm;
+	BusDevice *dev;
+	uint16_t csar;
+	uint32_t csmr;
+	uint32_t cscr;
 } ChipSelect;
 
 #define MAX_IPSDEVS	(16)
@@ -99,7 +99,7 @@ struct Scm {
 	BusDevice *ipsdev[MAX_IPSDEVS];
 	uint32_t rambar;
 	BusDevice *rambar_dev;
-        ChipSelect cs[7];
+	ChipSelect cs[7];
 	uint8_t crsr;
 	uint8_t cwcr;
 	uint8_t lpicr;
@@ -120,90 +120,93 @@ struct Scm {
 };
 #define GIGA (1024U*1024U*1024U)
 static void
-Scm_UpdateMappings(Scm *scm) 
+Scm_UpdateMappings(Scm * scm)
 {
 	int i;
 	int valid = scm->ipsbar & 1;
-	uint32_t ips_addr = scm->ipsbar & (3<<30);
-	for(i=0;i<MAX_IPSDEVS;i++) {
-		if(scm->ipsdev[i]) {
+	uint32_t ips_addr = scm->ipsbar & (3 << 30);
+	for (i = 0; i < MAX_IPSDEVS; i++) {
+		if (scm->ipsdev[i]) {
 			uint32_t devbase = ips_addr + scm->ipsbar_offset[i];
 			Mem_AreaDeleteMappings(scm->ipsdev[i]);
-			if(valid) {
-				Mem_AreaAddMapping(scm->ipsdev[i],devbase,GIGA,MEM_FLAG_WRITABLE|MEM_FLAG_READABLE);
+			if (valid) {
+				Mem_AreaAddMapping(scm->ipsdev[i], devbase, GIGA,
+						   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 			}
 		}
 	}
-	if(!(scm->cs[0].csmr & CSMR_V)) {
-		BusDevice *cs0_dev =scm->cs[0].dev;
-		if(cs0_dev && (ips_addr > 0)) {
-			Mem_AreaAddMapping(cs0_dev,0,ips_addr,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	if (!(scm->cs[0].csmr & CSMR_V)) {
+		BusDevice *cs0_dev = scm->cs[0].dev;
+		if (cs0_dev && (ips_addr > 0)) {
+			Mem_AreaAddMapping(cs0_dev, 0, ips_addr,
+					   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 		}
-		if(cs0_dev && (ips_addr < 3*GIGA)) {
+		if (cs0_dev && (ips_addr < 3 * GIGA)) {
 			uint32_t start = ips_addr + GIGA;
-			uint32_t size = 0 - start; 
-			Mem_AreaAddMapping(cs0_dev,start,size,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+			uint32_t size = 0 - start;
+			Mem_AreaAddMapping(cs0_dev, start, size,
+					   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 		}
 		return;
-        }
-	for(i=0;i<7;i++) {
-	//	ChipSelect *cs = &scm->cs[i];
+	}
+	for (i = 0; i < 7; i++) {
+		//      ChipSelect *cs = &scm->cs[i];
 	}
 }
 
 static uint32_t
-csar_read(void *clientData,uint32_t address,int rqlen)
+csar_read(void *clientData, uint32_t address, int rqlen)
 {
-        ChipSelect *cs = (ChipSelect *) clientData;
-        return cs->csar;
+	ChipSelect *cs = (ChipSelect *) clientData;
+	return cs->csar;
 }
 
 static void
-csar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        ChipSelect *cs = (ChipSelect *) clientData;
-        cs->csar = value;
-        fprintf(stderr,"CSM: csar not implemented\n");
-        // update_mappings
+	ChipSelect *cs = (ChipSelect *) clientData;
+	cs->csar = value;
+	fprintf(stderr, "CSM: csar not implemented\n");
+	// update_mappings
 }
 
 static uint32_t
-csmr_read(void *clientData,uint32_t address,int rqlen)
+csmr_read(void *clientData, uint32_t address, int rqlen)
 {
-        ChipSelect *cs = (ChipSelect *) clientData;
-        return cs->csmr;
+	ChipSelect *cs = (ChipSelect *) clientData;
+	return cs->csmr;
 }
 
 static void
-csmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        ChipSelect *cs = (ChipSelect *) clientData;
-        cs->csmr = value;
-        fprintf(stderr,"CSM: csmr not implemented\n");
-        // update_mappings
+	ChipSelect *cs = (ChipSelect *) clientData;
+	cs->csmr = value;
+	fprintf(stderr, "CSM: csmr not implemented\n");
+	// update_mappings
 }
 
 static uint32_t
-cscr_read(void *clientData,uint32_t address,int rqlen)
+cscr_read(void *clientData, uint32_t address, int rqlen)
 {
-        ChipSelect *cs = (ChipSelect *) clientData;
-        if(rqlen == 4) {
-                return cs->cscr << 16;
-        } else if((rqlen == 2) && ((address & 2) == 2)) {
-                return cs->cscr;
-        }
-        return 0;
+	ChipSelect *cs = (ChipSelect *) clientData;
+	if (rqlen == 4) {
+		return cs->cscr << 16;
+	} else if ((rqlen == 2) && ((address & 2) == 2)) {
+		return cs->cscr;
+	}
+	return 0;
 }
 
 static void
-cscr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cscr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        ChipSelect *cs = (ChipSelect *) clientData;
-        if(rqlen == 4) {
-                cs->cscr  = value >> 16;
-        } else if((rqlen == 2) && ((address & 2) == 2)) {
-                cs->cscr = value;
-        }
+	ChipSelect *cs = (ChipSelect *) clientData;
+	if (rqlen == 4) {
+		cs->cscr = value >> 16;
+	} else if ((rqlen == 2) && ((address & 2) == 2)) {
+		cs->cscr = value;
+	}
 }
 
 /*
@@ -213,19 +216,19 @@ cscr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *************************************************************
  */
 static uint32_t
-ipsbar_read(void *clientData,uint32_t address,int rqlen)
+ipsbar_read(void *clientData, uint32_t address, int rqlen)
 {
 	Scm *scm = (Scm *) clientData;
 	return scm->ipsbar;
 }
 
 static void
-ipsbar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ipsbar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	Scm *scm = (Scm *) clientData;
-	fprintf(stderr,"IPSBAR write: value %08x\n",value);
-	if(scm->ipsbar != value) {
-		Scm_UpdateMappings(scm) ;
+	fprintf(stderr, "IPSBAR write: value %08x\n", value);
+	if (scm->ipsbar != value) {
+		Scm_UpdateMappings(scm);
 	}
 	scm->ipsbar = value;
 }
@@ -237,20 +240,19 @@ ipsbar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ***********************************************************************
  */
 static uint32_t
-rambar_read(void *clientData,uint32_t address,int rqlen)
+rambar_read(void *clientData, uint32_t address, int rqlen)
 {
 	Scm *scm = (Scm *) clientData;
 	return scm->rambar;
 }
 
 static void
-rambar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rambar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	Scm *scm = (Scm *) clientData;
-	fprintf(stderr,"Write RAMBAR address %08x value %08x, len %d\n",
-		address,value,rqlen);
+	fprintf(stderr, "Write RAMBAR address %08x value %08x, len %d\n", address, value, rqlen);
 	scm->rambar = value;
-	
+
 }
 
 /*
@@ -262,16 +264,16 @@ rambar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  ******************************************************************
  */
 static uint32_t
-crsr_read(void *clientData,uint32_t address,int rqlen)
+crsr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM crsr not implented\n");
+	fprintf(stderr, "SCM crsr not implented\n");
 	return 0;
 }
 
 static void
-crsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+crsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM crsr not implented\n");
+	fprintf(stderr, "SCM crsr not implented\n");
 }
 
 /*
@@ -281,16 +283,16 @@ crsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-mpark_read(void *clientData,uint32_t address,int rqlen)
+mpark_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM mpark not implented\n");
+	fprintf(stderr, "SCM mpark not implented\n");
 	return 0;
 }
 
 static void
-mpark_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mpark_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM mpark not implented\n");
+	fprintf(stderr, "SCM mpark not implented\n");
 }
 
 /*
@@ -305,16 +307,16 @@ mpark_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************
  */
 static uint32_t
-mpr_read(void *clientData,uint32_t address,int rqlen)
+mpr_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM mpr not implented\n");
+	fprintf(stderr, "SCM mpr not implented\n");
 	return 0;
 }
 
 static void
-mpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM mpr not implented\n");
+	fprintf(stderr, "SCM mpr not implented\n");
 }
 
 /*
@@ -323,42 +325,42 @@ mpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **************************************************
  */
 static uint32_t
-pacr0_read(void *clientData,uint32_t address,int rqlen)
+pacr0_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM pacr0 not implented\n");
+	fprintf(stderr, "SCM pacr0 not implented\n");
 	return 0;
 }
 
 static void
-pacr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pacr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM pacr0 not implented\n");
+	fprintf(stderr, "SCM pacr0 not implented\n");
 }
 
 static uint32_t
-pacr4_read(void *clientData,uint32_t address,int rqlen)
+pacr4_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM pacr4 not implented\n");
+	fprintf(stderr, "SCM pacr4 not implented\n");
 	return 0;
 }
 
 static void
-pacr4_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pacr4_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM pacr4 not implented\n");
+	fprintf(stderr, "SCM pacr4 not implented\n");
 }
 
 static uint32_t
-pacr7_read(void *clientData,uint32_t address,int rqlen)
+pacr7_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM pacr7 not implented\n");
+	fprintf(stderr, "SCM pacr7 not implented\n");
 	return 0;
 }
 
 static void
-pacr7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pacr7_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM pacr7 not implented\n");
+	fprintf(stderr, "SCM pacr7 not implented\n");
 }
 
 /*
@@ -367,23 +369,22 @@ pacr7_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  **********************************************************
  */
 static uint32_t
-gpacr0_read(void *clientData,uint32_t address,int rqlen)
+gpacr0_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM gpacr0 not implented\n");
+	fprintf(stderr, "SCM gpacr0 not implented\n");
 	return 0;
 }
 
 static void
-gpacr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+gpacr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"SCM gpacr0 not implented\n");
+	fprintf(stderr, "SCM gpacr0 not implented\n");
 }
 
-
 static void
-Scm_Unmap(void *owner,uint32_t base,uint32_t mask)
+Scm_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
-        int i;
+	int i;
 	IOH_Delete32(SCM_IPSBAR(base));
 	IOH_Delete32(SCM_RAMBAR(base));
 	IOH_Delete32(SCM_CRSR(base));
@@ -393,32 +394,32 @@ Scm_Unmap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(SCM_PACR4(base));
 	IOH_Delete32(SCM_PACR7(base));
 	IOH_Delete32(SCM_GPACR0(base));
-        for(i=0;i<7;i++) {
-                IOH_Delete32(CSM_CSAR(base,i));
-                IOH_Delete32(CSM_CSMR(base,i));
-                IOH_Delete32(CSM_CSCR(base,i));
-        }
+	for (i = 0; i < 7; i++) {
+		IOH_Delete32(CSM_CSAR(base, i));
+		IOH_Delete32(CSM_CSMR(base, i));
+		IOH_Delete32(CSM_CSCR(base, i));
+	}
 }
 
 static void
-Scm_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+Scm_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 	int i;
 	Scm *scm = (Scm *) owner;
-	IOH_New32(SCM_IPSBAR(base),ipsbar_read,ipsbar_write,scm);
-	IOH_New32(SCM_RAMBAR(base),rambar_read,rambar_write,scm);
-	IOH_New32(SCM_CRSR(base),crsr_read,crsr_write,scm);
-	IOH_New32(SCM_MPARK(base),mpark_read,mpark_write,scm);
-	IOH_New32(SCM_MPR(base),mpr_read,mpr_write,scm);
-	IOH_New32(SCM_PACR0(base),pacr0_read,pacr0_write,scm);
-	IOH_New32(SCM_PACR4(base),pacr4_read,pacr4_write,scm);
-	IOH_New32(SCM_PACR7(base),pacr7_read,pacr7_write,scm);
-	IOH_New32(SCM_GPACR0(base),gpacr0_read,gpacr0_write,scm);
-        for(i=0;i<7;i++) {
-                IOH_New32(CSM_CSAR(base,i),csar_read,csar_write,&scm->cs[i]);
-                IOH_New32(CSM_CSMR(base,i),csmr_read,csmr_write,&scm->cs[i]);
-                IOH_New32(CSM_CSCR(base,i),cscr_read,cscr_write,&scm->cs[i]);
-        }
+	IOH_New32(SCM_IPSBAR(base), ipsbar_read, ipsbar_write, scm);
+	IOH_New32(SCM_RAMBAR(base), rambar_read, rambar_write, scm);
+	IOH_New32(SCM_CRSR(base), crsr_read, crsr_write, scm);
+	IOH_New32(SCM_MPARK(base), mpark_read, mpark_write, scm);
+	IOH_New32(SCM_MPR(base), mpr_read, mpr_write, scm);
+	IOH_New32(SCM_PACR0(base), pacr0_read, pacr0_write, scm);
+	IOH_New32(SCM_PACR4(base), pacr4_read, pacr4_write, scm);
+	IOH_New32(SCM_PACR7(base), pacr7_read, pacr7_write, scm);
+	IOH_New32(SCM_GPACR0(base), gpacr0_read, gpacr0_write, scm);
+	for (i = 0; i < 7; i++) {
+		IOH_New32(CSM_CSAR(base, i), csar_read, csar_write, &scm->cs[i]);
+		IOH_New32(CSM_CSMR(base, i), csmr_read, csmr_write, &scm->cs[i]);
+		IOH_New32(CSM_CSCR(base, i), cscr_read, cscr_write, &scm->cs[i]);
+	}
 }
 
 /*
@@ -427,53 +428,53 @@ Scm_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
  ****************************************************************************
  */
 void
-MCF5282Scm_RegisterIpsbarDevice(Scm *scm,BusDevice *bdev,uint32_t ipsbar_offset) 
+MCF5282Scm_RegisterIpsbarDevice(Scm * scm, BusDevice * bdev, uint32_t ipsbar_offset)
 {
 	int i;
-	for(i=0;i<MAX_IPSDEVS;i++) {
-		if(scm->ipsdev[i] == NULL) {
+	for (i = 0; i < MAX_IPSDEVS; i++) {
+		if (scm->ipsdev[i] == NULL) {
 			scm->ipsdev[i] = bdev;
 			scm->ipsbar_offset[i] = ipsbar_offset;
 			break;
 		}
 	}
-	if(i == MAX_IPSDEVS) {
-		fprintf(stderr,"Not enough room for IPSDEVS, increment MAX_IPSDEVS\n");
+	if (i == MAX_IPSDEVS) {
+		fprintf(stderr, "Not enough room for IPSDEVS, increment MAX_IPSDEVS\n");
 		exit(1);
 	}
 	/* To lazy to add only a single mapping for the new device */
 	Scm_UpdateMappings(scm);
 }
+
 void
-MCF5282Scm_RegisterRambarDevice(Scm *scm,BusDevice *bdev) 
+MCF5282Scm_RegisterRambarDevice(Scm * scm, BusDevice * bdev)
 {
-	if(scm->rambar_dev) {
-		fprintf(stderr,"RAMBAR device already registered\n");
+	if (scm->rambar_dev) {
+		fprintf(stderr, "RAMBAR device already registered\n");
 		exit(1);
 	}
 	scm->rambar_dev = bdev;
-	fprintf(stderr,"Mapping RAMBAR device not implemented\n");
+	fprintf(stderr, "Mapping RAMBAR device not implemented\n");
 	//Scm_UpdateMappings(scm);
 }
 
 void
-MCF5282Csm_RegisterDevice(Scm *scm,BusDevice *dev,unsigned int cs_nr)
+MCF5282Csm_RegisterDevice(Scm * scm, BusDevice * dev, unsigned int cs_nr)
 {
-        ChipSelect *cs = &scm->cs[cs_nr];
-        if(cs_nr >= 7) {
-                fprintf(stderr,"Illegal Chip select %d\n",cs_nr);
-                exit(1);
-        }
-        cs = &scm->cs[cs_nr];
-        cs->dev = dev;
+	ChipSelect *cs = &scm->cs[cs_nr];
+	if (cs_nr >= 7) {
+		fprintf(stderr, "Illegal Chip select %d\n", cs_nr);
+		exit(1);
+	}
+	cs = &scm->cs[cs_nr];
+	cs->dev = dev;
 	Scm_UpdateMappings(scm);
 }
 
-
-MCF5282ScmCsm * 
+MCF5282ScmCsm *
 MCF5282_ScmCsmNew(const char *name)
 {
-	Scm *scm = sg_calloc(sizeof(Scm)); 
+	Scm *scm = sg_calloc(sizeof(Scm));
 	scm->ipsbar = 0x40000000;
 	scm->rambar = 0;
 #if 0
@@ -495,11 +496,11 @@ MCF5282_ScmCsmNew(const char *name)
 	scm->gpacr0;
 	scm->gpacr1;
 #endif
-	scm->bdev.first_mapping=NULL;
-        scm->bdev.Map=Scm_Map;
-        scm->bdev.UnMap=Scm_Unmap;
-        scm->bdev.owner=scm;
-        scm->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	MCF5282Scm_RegisterIpsbarDevice(scm,&scm->bdev,0);
-	return scm;	
+	scm->bdev.first_mapping = NULL;
+	scm->bdev.Map = Scm_Map;
+	scm->bdev.UnMap = Scm_Unmap;
+	scm->bdev.owner = scm;
+	scm->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	MCF5282Scm_RegisterIpsbarDevice(scm, &scm->bdev, 0);
+	return scm;
 }

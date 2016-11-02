@@ -8,6 +8,5 @@
  **********************************************************************************
  */
 
-
 #include <bus.h>
-BusDevice * IMX21_RtcNew(const char *name);
+BusDevice *IMX21_RtcNew(const char *name);

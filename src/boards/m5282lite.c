@@ -33,7 +33,7 @@
 static void
 create_clock_links()
 {
-//	Clock_Link("st.slck","pmc.slck");	
+//      Clock_Link("st.slck","pmc.slck");       
 }
 
 static void
@@ -50,22 +50,24 @@ create_i2c_devices()
 static int
 board_m5282lite_create()
 {
-        BusDevice *dev;
+	BusDevice *dev;
 	MCF5282ScmCsm *scmcsm;
-	Bus_Init(NULL,4*1024);
+	Bus_Init(NULL, 4 * 1024);
 	scmcsm = MCF5282_ScmCsmNew("scmcsm");
-	dev=AMDFlashBank_New("flash0");
-	MCF5282Csm_RegisterDevice(scmcsm,dev,CSM_CS0);
+	dev = AMDFlashBank_New("flash0");
+	MCF5282Csm_RegisterDevice(scmcsm, dev, CSM_CS0);
 	//dev = CFM_New("cfm");
 #if 0
-	if(dev) {
-                Mem_AreaAddMapping(dev,0xffe00000,2*1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-        }
+	if (dev) {
+		Mem_AreaAddMapping(dev, 0xffe00000, 2 * 1024 * 1024,
+				   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	}
 #endif
 	dev = SRam_New("sram0");
-	if(dev) {
-                Mem_AreaAddMapping(dev,0x04000000,64*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-        }
+	if (dev) {
+		Mem_AreaAddMapping(dev, 0x04000000, 64 * 1024,
+				   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	}
 	CF_CpuInit();
 	create_i2c_devices();
 	create_signal_links();
@@ -74,8 +76,9 @@ board_m5282lite_create()
 }
 
 static void
-board_m5282lite_run(Board *bd) {
-        CF_CpuRun();
+board_m5282lite_run(Board * bd)
+{
+	CF_CpuRun();
 }
 
 #define DEFAULTCONFIG \
@@ -92,17 +95,18 @@ board_m5282lite_run(Board *bd) {
 "\n"\
 
 static Board board_m5282lite = {
-        .name = "M5282LITE",
-        .description =  "M5282LITE",
-        .createBoard =  board_m5282lite_create,
-        .runBoard =     board_m5282lite_run,
-        .defaultconfig = DEFAULTCONFIG
+	.name = "M5282LITE",
+	.description = "M5282LITE",
+	.createBoard = board_m5282lite_create,
+	.runBoard = board_m5282lite_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
 #ifdef _SHARED_
 void
-_init() {
-        fprintf(stderr,"Loading Freescale M5282LITE development Board module\n");
-        Board_Register(&board_m5282lite);
+_init()
+{
+	fprintf(stderr, "Loading Freescale M5282LITE development Board module\n");
+	Board_Register(&board_m5282lite);
 }
 #endif

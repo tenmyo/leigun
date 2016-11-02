@@ -77,40 +77,38 @@
  * you can not link nonexisting Signals
  * ---------------------------------------------------------------
  */
-static void 
-create_signal_links() 
+static void
+create_signal_links()
 {
-	SigName_Link("i2cbus0000.sda","bbutil.gpio.13"); 
-	SigName_Link("i2cbus0000.scl","bbutil.gpio.14");
-	SigName_Link("i2cbus0000.cfg_eeprom.wc","bbutil.gpio.15");
+	SigName_Link("i2cbus0000.sda", "bbutil.gpio.13");
+	SigName_Link("i2cbus0000.scl", "bbutil.gpio.14");
+	SigName_Link("i2cbus0000.cfg_eeprom.wc", "bbutil.gpio.15");
 
-	SigName_Link("serialA.TxDmaReq","bbdma.1.FbrDmaReq");
-        SigName_Link("serialB.TxDmaReq","bbdma.3.FbrDmaReq");
-        SigName_Link("serialC.TxDmaReq","bbdma.5.FbrDmaReq");
-        SigName_Link("serialD.TxDmaReq","bbdma.7.FbrDmaReq");
+	SigName_Link("serialA.TxDmaReq", "bbdma.1.FbrDmaReq");
+	SigName_Link("serialB.TxDmaReq", "bbdma.3.FbrDmaReq");
+	SigName_Link("serialC.TxDmaReq", "bbdma.5.FbrDmaReq");
+	SigName_Link("serialD.TxDmaReq", "bbdma.7.FbrDmaReq");
 
-	SigName_Link("serialA.tx_irq","bbus.irq_satx");
-	SigName_Link("serialA.rx_irq","bbus.irq_sarx");
-	SigName_Link("serialB.tx_irq","bbus.irq_sbtx");
-	SigName_Link("serialB.rx_irq","bbus.irq_sbrx");
-	SigName_Link("serialC.tx_irq","bbus.irq_sctx");
-	SigName_Link("serialC.rx_irq","bbus.irq_scrx");
-	SigName_Link("serialD.tx_irq","bbus.irq_sdtx");
-	SigName_Link("serialD.rx_irq","bbus.irq_sdrx");
-
+	SigName_Link("serialA.tx_irq", "bbus.irq_satx");
+	SigName_Link("serialA.rx_irq", "bbus.irq_sarx");
+	SigName_Link("serialB.tx_irq", "bbus.irq_sbtx");
+	SigName_Link("serialB.rx_irq", "bbus.irq_sbrx");
+	SigName_Link("serialC.tx_irq", "bbus.irq_sctx");
+	SigName_Link("serialC.rx_irq", "bbus.irq_scrx");
+	SigName_Link("serialD.tx_irq", "bbus.irq_sdtx");
+	SigName_Link("serialD.rx_irq", "bbus.irq_sdrx");
 
 	/* Endian */
-        SigName_Link("bbutil.endian_serA","serialA.endian");
-        SigName_Link("bbutil.endian_serB","serialB.endian");
-        SigName_Link("bbutil.endian_serC","serialC.endian");
-        SigName_Link("bbutil.endian_serD","serialD.endian");
-	SigName_Link("bbutil.endian_usb","ns9750_ohci.endian");
-	SigName_Link("mmu.endian","ns9750_eth.dataendian");
-	SigName_Link("flash1.big_endian","memco.big_endian");
-
+	SigName_Link("bbutil.endian_serA", "serialA.endian");
+	SigName_Link("bbutil.endian_serB", "serialB.endian");
+	SigName_Link("bbutil.endian_serC", "serialC.endian");
+	SigName_Link("bbutil.endian_serD", "serialD.endian");
+	SigName_Link("bbutil.endian_usb", "ns9750_ohci.endian");
+	SigName_Link("mmu.endian", "ns9750_eth.dataendian");
+	SigName_Link("flash1.big_endian", "memco.big_endian");
 
 	/* DM9000 network chip */
-        SigName_Link("dm9000.irq","ns9750sysco.extirq0");
+	SigName_Link("dm9000.irq", "ns9750sysco.extirq0");
 }
 
 /*
@@ -120,19 +118,19 @@ create_signal_links()
  * ----------------------------------------------------
  */
 static void
-create_i2c_devices() 
+create_i2c_devices()
 {
 	I2C_Slave *i2c_slave;
 	I2C_SerDes *i2c_serdes0000;
 	i2c_serdes0000 = I2C_SerDesNew("i2cbus0000");
 
 	/* Configuration EEPRom with 64kBit */
-	i2c_slave = M24Cxx_New("M24C64","i2cbus0000.cfg_eeprom");
-	I2C_SerDesAddSlave(i2c_serdes0000,i2c_slave,0x50);
+	i2c_slave = M24Cxx_New("M24C64", "i2cbus0000.cfg_eeprom");
+	I2C_SerDesAddSlave(i2c_serdes0000, i2c_slave, 0x50);
 
 	/* Real Time Clock */
 	i2c_slave = PCF8563_New("i2cbus0000.rtc");
-	I2C_SerDesAddSlave(i2c_serdes0000,i2c_slave,0x51);
+	I2C_SerDesAddSlave(i2c_serdes0000, i2c_slave, 0x51);
 }
 
 /*
@@ -142,7 +140,8 @@ create_i2c_devices()
  * -----------------------------
  */
 static int
-board_facc_create() {
+board_facc_create()
+{
 	BusDevice *dev;
 	BusDevice *bbus;
 	BBusDMACtrl *bbdma;
@@ -150,68 +149,77 @@ board_facc_create() {
 	ArmCoprocessor *copro;
 	PHY_Device *phy;
 
-	Bus_Init(MMU_InvalidateTlb,4*1024);
+	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
-	copro = MMU9_Create("mmu",TARGET_BYTEORDER,MMU_ARM926EJS | MMUV_NS9750);
-	ARM9_RegisterCoprocessor(copro,15);
-	bbus=NS9xxx_BBusNew("NS9360","bbus");
-	bbdma=NS9750_BBusDMA_New("bbdma");
-        NS9750_SerialInit(bbdma);
-        NS9750_TimerInit("sysco");
-	memco = NS9750_MemCoInit("memco");
-	dev=NS9750_EthInit("ns9750_eth");
+	copro = MMU9_Create("mmu", TARGET_BYTEORDER, MMU_ARM926EJS | MMUV_NS9750);
+	ARM9_RegisterCoprocessor(copro, 15);
+	bbus = NS9xxx_BBusNew("NS9360", "bbus");
+	bbdma = NS9750_BBusDMA_New("bbdma");
 
-	phy=Lxt971a_New();
-	NS9750_EthRegisterPhy(dev,phy,0);
+	dev = NS9750Serial_New("serialA", bbdma);
+	Mem_AreaAddMapping(dev, 0x90200040, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	dev = NS9750Serial_New("serialB", bbdma);
+	Mem_AreaAddMapping(dev, 0x90200000, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	dev = NS9750Serial_New("serialC", bbdma);
+	Mem_AreaAddMapping(dev, 0x90300000, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	dev = NS9750Serial_New("serialD", bbdma);
+	Mem_AreaAddMapping(dev, 0x90300040, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+
+	NS9750_TimerInit("sysco");
+	memco = NS9750_MemCoInit("memco");
+	dev = NS9750_EthInit("ns9750_eth");
+
+	phy = Lxt971a_New("phy");
+	NS9750_EthRegisterPhy(dev, phy, 0);
 
 	NS9750Usb_New("ns9360_usb");
 
 	/* Now Create and Register the devices */
 	dev = DRam_New("dram0");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS4);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS4);
 	}
 	dev = DRam_New("dram1");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS5);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS5);
 	}
 	dev = DRam_New("dram2");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS6);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS6);
 	}
 	dev = DRam_New("dram3");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS7);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS7);
 	}
 
-	dev=AMDFlashBank_New("flash0");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS0);
+	dev = AMDFlashBank_New("flash0");
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS0);
 	}
 	dev = AMDFlashBank_New("flash1");
-	if(dev) {
-		NS9750_RegisterDevice(memco,dev,NS9750_CS1);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS1);
 	} else {
-		fprintf(stderr,"Warning ! no boot Flash available !\n");
+		fprintf(stderr, "Warning ! no boot Flash available !\n");
 		sleep(2);
 	}
-	dev = DM9000_New("dm9000",4);
-	if(dev) {
-        	NS9750_RegisterDevice(memco,dev,NS9750_CS2);
-	} 
+	dev = DM9000_New("dm9000", 4);
+	if (dev) {
+		NS9750_RegisterDevice(memco, dev, NS9750_CS2);
+	}
 
-	dev=LaccCAN_New();
-	NS9750_RegisterDevice(memco,dev,NS9750_CS3);
+	dev = LaccCAN_New();
+	NS9750_RegisterDevice(memco, dev, NS9750_CS3);
 
 	create_i2c_devices();
 	create_signal_links();
 	return 0;
 }
 
-
 static void
-board_facc_run(Board *bd) {
-        ARM9_Run();
+board_facc_run(Board * bd)
+{
+	ARM9_Run();
 }
 
 #define DEFAULTCONFIG \
@@ -229,17 +237,17 @@ board_facc_run(Board *bd) {
 "chips: 1\n" \
 "\n"
 
-static Board board_facc =  {
-	name: "FACC",
-	description: "Fantasy NS9360 ARM Controller Card",
-	createBoard: board_facc_create,
-	runBoard: board_facc_run, 
-	defaultconfig: DEFAULTCONFIG
+static Board board_facc = {
+	.name = "FACC",
+	.description = "Fantasy NS9360 ARM Controller Card",
+	.createBoard = board_facc_create,
+	.runBoard = board_facc_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
 __CONSTRUCTOR__ static void
-facc_init() {
-	fprintf(stderr,"Loading Fantasy ARM controller board module\n");
-        Board_Register(&board_facc);
+facc_init()
+{
+	fprintf(stderr, "Loading Fantasy ARM controller board module\n");
+	Board_Register(&board_facc);
 }
-

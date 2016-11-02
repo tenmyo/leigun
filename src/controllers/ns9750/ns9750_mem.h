@@ -27,7 +27,7 @@
 
 #define SYS_MSTATUS  	(0xa0700004)
 #define		MSTATUS_SA	(1<<2)
-#define 	MSTATUS_WBS	(1<<1)	
+#define 	MSTATUS_WBS	(1<<1)
 #define 	MSTATUS_BUSY	(1<<0)
 
 #define SYS_MCONFIG	(0xa0700008)
@@ -124,7 +124,6 @@
 #define SYS_MCS3B		(0xa0900208)
 #define SYS_MCS3M		(0xa090020c)
 
-
 typedef struct NS9750_MemController {
 	BusDevice *bdev[8];
 
@@ -143,7 +142,7 @@ typedef struct NS9750_MemController {
 	uint32_t mdyn_recover;
 	uint32_t mact_to_act;
 	uint32_t marfrsh_period;
-	uint32_t msrfrsh_exit; 
+	uint32_t msrfrsh_exit;
 	uint32_t macta_to_actb;
 	uint32_t mlmod_to_act_cmd;
 	uint32_t mstat_ext_wait;
@@ -189,8 +188,7 @@ typedef struct NS9750_MemController {
 	SigNode *big_endianNode;
 } NS9750_MemController;
 
-
 NS9750_MemController *NS9750_MemCoInit(const char *name);
-int NS9750_LoadFlash(NS9750_MemController *mcontr,char *filename);
-void NS9750_RegisterDevice(NS9750_MemController *,BusDevice *marea,uint32_t cs);
+int NS9750_LoadFlash(NS9750_MemController * mcontr, char *filename);
+void NS9750_RegisterDevice(NS9750_MemController *, BusDevice * marea, uint32_t cs);
 #endif

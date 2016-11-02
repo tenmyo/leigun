@@ -52,15 +52,14 @@
 #define dbgprintf(x...)
 #endif
 
-
 struct PCA9548 {
-        I2C_Slave i2c_slave;
+	I2C_Slave i2c_slave;
 	uint8_t ctrl_reg;
 	uint8_t ctrl_reg_new;
 	SigNode *sda;
 	SigNode *scl;
-        SigNode *sd[8];
-        SigNode *sc[8];
+	SigNode *sd[8];
+	SigNode *sc[8];
 	SigNode *reset;
 };
 
@@ -71,28 +70,30 @@ struct PCA9548 {
  * -----------------------------------------------------
  */
 static int
-pca9548_write(void *dev,uint8_t data) {
-        PCA9548 *pca = dev;
-	pca->ctrl_reg_new = data;
-        return I2C_ACK;
-};
-
-static int 
-pca9548_read(void *dev,uint8_t *data)
+pca9548_write(void *dev, uint8_t data)
 {
-        PCA9548 *pca = dev;
-	*data = pca->ctrl_reg;
-        return I2C_DONE;
+	PCA9548 *pca = dev;
+	pca->ctrl_reg_new = data;
+	return I2C_ACK;
 };
 
 static int
-pca9548_start(void *dev,int i2c_addr,int operation) {
-        PCA9548 *pca = dev;
-        dbgprintf("pca9548 start\n");
-	if(SigNode_Val(pca->reset) == SIG_LOW) {
+pca9548_read(void *dev, uint8_t * data)
+{
+	PCA9548 *pca = dev;
+	*data = pca->ctrl_reg;
+	return I2C_DONE;
+};
+
+static int
+pca9548_start(void *dev, int i2c_addr, int operation)
+{
+	PCA9548 *pca = dev;
+	dbgprintf("pca9548 start\n");
+	if (SigNode_Val(pca->reset) == SIG_LOW) {
 		return I2C_NACK;
 	}
-        return I2C_ACK;
+	return I2C_ACK;
 }
 
 /*
@@ -103,59 +104,62 @@ pca9548_start(void *dev,int i2c_addr,int operation) {
  * -----------------------------------------------
  */
 static void
-pca9548_stop(void *dev) {
+pca9548_stop(void *dev)
+{
 	int i;
-        PCA9548 *pca = dev;
+	PCA9548 *pca = dev;
 	uint8_t diff;
 	diff = pca->ctrl_reg ^ pca->ctrl_reg_new;
-	for(i=0;i<8;i++) {
-		if(!(diff & (1<<i))) {
+	for (i = 0; i < 8; i++) {
+		if (!(diff & (1 << i))) {
 			continue;
 		}
-		if(!(pca->ctrl_reg_new & (1<<i))) {
-			dbgprintf("unlink %d\n",i);
-			SigNode_RemoveLink(pca->sda,pca->sd[i]);
-			SigNode_RemoveLink(pca->scl,pca->sc[i]);
+		if (!(pca->ctrl_reg_new & (1 << i))) {
+			dbgprintf("unlink %d\n", i);
+			SigNode_RemoveLink(pca->sda, pca->sd[i]);
+			SigNode_RemoveLink(pca->scl, pca->sc[i]);
 		}
 	}
-	for(i=0;i<8;i++) {
-		if(!(diff & (1<<i))) {
+	for (i = 0; i < 8; i++) {
+		if (!(diff & (1 << i))) {
 			continue;
 		}
-		if(pca->ctrl_reg_new & (1<<i)) {
-			dbgprintf("link %d\n",i);
-			if(SigNode_Val(pca->sd[i]) != SIG_HIGH) {	
-				fprintf(stderr,"PCA9548: Warning, linking with nonhigh SDA line\n");
+		if (pca->ctrl_reg_new & (1 << i)) {
+			dbgprintf("link %d\n", i);
+			if (SigNode_Val(pca->sd[i]) != SIG_HIGH) {
+				fprintf(stderr,
+					"PCA9548: Warning, linking with nonhigh SDA line\n");
 			}
-			if(SigNode_Val(pca->sc[i]) != SIG_HIGH) {	
-				fprintf(stderr,"PCA9548: Warning, linking with nonhigh SCL line\n");
+			if (SigNode_Val(pca->sc[i]) != SIG_HIGH) {
+				fprintf(stderr,
+					"PCA9548: Warning, linking with nonhigh SCL line\n");
 			}
-			SigNode_Link(pca->sda,pca->sd[i]);
-			SigNode_Link(pca->scl,pca->sc[i]);
+			SigNode_Link(pca->sda, pca->sd[i]);
+			SigNode_Link(pca->scl, pca->sc[i]);
 		}
 	}
 	pca->ctrl_reg = pca->ctrl_reg_new;
-        dbgprintf("pca9548 stop val %02x\n",pca->ctrl_reg);
+	dbgprintf("pca9548 stop val %02x\n", pca->ctrl_reg);
 }
 
 static I2C_SlaveOps pca9548_ops = {
-        .start = pca9548_start,
-        .stop =  pca9548_stop,
-        .read =  pca9548_read,
-        .write = pca9548_write
+	.start = pca9548_start,
+	.stop = pca9548_stop,
+	.read = pca9548_read,
+	.write = pca9548_write
 };
 
-static void 
-reset_change(struct SigNode *node,int value,void *clientData)
+static void
+reset_change(struct SigNode *node, int value, void *clientData)
 {
-	PCA9548 *pca = (PCA9548*) clientData;
+	PCA9548 *pca = (PCA9548 *) clientData;
 	int i;
-	if(value == SIG_LOW) {
-		for(i=0;i<8;i++) {
-			if(pca->ctrl_reg & (1<<i)) {
+	if (value == SIG_LOW) {
+		for (i = 0; i < 8; i++) {
+			if (pca->ctrl_reg & (1 << i)) {
 				//fprintf(stderr,"unlink_r %d\n",i);
-				SigNode_RemoveLink(pca->sda,pca->sd[i]);
-				SigNode_RemoveLink(pca->scl,pca->sc[i]);
+				SigNode_RemoveLink(pca->sda, pca->sd[i]);
+				SigNode_RemoveLink(pca->scl, pca->sc[i]);
 			}
 		}
 		pca->ctrl_reg = 0;
@@ -163,38 +167,38 @@ reset_change(struct SigNode *node,int value,void *clientData)
 }
 
 I2C_Slave *
-PCA9548_New(char *name) {
-        PCA9548 *pca = sg_new(PCA9548);
-        I2C_Slave *i2c_slave;
-        int i;
-        i2c_slave = &pca->i2c_slave;
-        i2c_slave->devops = &pca9548_ops;
-        i2c_slave->dev = pca;
+PCA9548_New(char *name)
+{
+	PCA9548 *pca = sg_new(PCA9548);
+	I2C_Slave *i2c_slave;
+	int i;
+	i2c_slave = &pca->i2c_slave;
+	i2c_slave->devops = &pca9548_ops;
+	i2c_slave->dev = pca;
 	i2c_slave->speed = I2C_SPEED_FAST;
-        for(i=0;i<8;i++) {
-                pca->sd[i]=SigNode_New("%s.sd%d",name,i);
-                if(!pca->sd[i]) {
+	for (i = 0; i < 8; i++) {
+		pca->sd[i] = SigNode_New("%s.sd%d", name, i);
+		if (!pca->sd[i]) {
 			exit(1);
-                }
-                pca->sc[i]=SigNode_New("%s.sc%d",name,i);
-                if(!pca->sc[i]) {
+		}
+		pca->sc[i] = SigNode_New("%s.sc%d", name, i);
+		if (!pca->sc[i]) {
 			exit(1);
-                }
-        }
-        pca->scl=SigNode_New("%s.scl",name);
-        if(!pca->scl) {
+		}
+	}
+	pca->scl = SigNode_New("%s.scl", name);
+	if (!pca->scl) {
 		exit(1);
-        }
-        pca->sda=SigNode_New("%s.sda",name);
-        if(!pca->sda) {
+	}
+	pca->sda = SigNode_New("%s.sda", name);
+	if (!pca->sda) {
 		exit(1);
-        }
-	pca->reset = SigNode_New("%s.reset",name);
-	if(!pca->reset) {
+	}
+	pca->reset = SigNode_New("%s.reset", name);
+	if (!pca->reset) {
 		exit(1);
-	}	
-	SigNode_Trace(pca->reset,reset_change,pca);
-        fprintf(stderr,"PCA9548 I2C-Multiplexer \"%s\" created\n",name);
-        return i2c_slave;
+	}
+	SigNode_Trace(pca->reset, reset_change, pca);
+	fprintf(stderr, "PCA9548 I2C-Multiplexer \"%s\" created\n", name);
+	return i2c_slave;
 }
-

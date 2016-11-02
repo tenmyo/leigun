@@ -1,24 +1,23 @@
+#include <stdarg.h>
 /*
  ***************************************************************************************
  * Debug-Exporting of variables
  ***************************************************************************************
  */
 
-int DbgExport(int type,void *dataP,const char *format,...) __attribute__ ((format (printf, 3, 4)));
+int DbgExport(int type, void *dataP, const char *format, ...)
+    __attribute__ ((format(printf, 3, 4)));
+int DbgExportV(int type, void *dataP, const char *format, va_list ap);
 void DbgVars_Init(void);
-
-
 
 /*
  ***********************************************
  * Make the compiler warning if type is wrong
  ***********************************************
  */
-#define CHECK_TYPE(type,var) {		\
-        typedef type TestType(void);	\
-        TestType *testProc;		\
-        typeof(var) LaberBla(void) {return (typeof(var))0;};	\
-        testProc = LaberBla;		\
+#define CHECK_TYPE(type,var) {\
+	typedef type LaberBla; \
+	__attribute__((unused)) LaberBla *LaberBlax = &var; \
 }
 /*
  *****************************************************************
@@ -56,27 +55,28 @@ void DbgVars_Init(void);
         DbgExport(DBGT_UINT64_T,&dt,x);
 
 #define DbgExport_S8(dt,x...) \
-        CHECK_TYPE(uint8_t, dt); \
+        CHECK_TYPE(int8_t, dt); \
         DbgExport(DBGT_INT8_T,&dt,x);
 
 #define DbgExport_S16(dt,x...) \
-        CHECK_TYPE(uint16_t, dt); \
+        CHECK_TYPE(int16_t, dt); \
         DbgExport(DBGT_INT16_T,&dt,x);
 
 #define DbgExport_S32(dt,x...) \
-        CHECK_TYPE(uint32_t, dt); \
+        CHECK_TYPE(int32_t, dt); \
         DbgExport(DBGT_INT32_T,&dt,x);
 
 #define DbgExport_S64(dt,x...) \
-        CHECK_TYPE(uint64_t, dt); \
+        CHECK_TYPE(int64_t, dt); \
         DbgExport(DBGT_INT64_T,&dt,x);
 
 #define DbgExport_DBL(dt,x...) \
         CHECK_TYPE(double, dt); \
         DbgExport(DBGT_DOUBLE_T,&dt,x);
 
-typedef void DbgSetSymProc(void *clientData,uint32_t arg,uint64_t value);
-typedef uint64_t DbgGetSymProc(void *clientData,uint32_t arg);
+typedef void DbgSetSymProc(void *clientData, uint32_t arg, uint64_t value);
+typedef uint64_t DbgGetSymProc(void *clientData, uint32_t arg);
 
-int DbgSymHandler(DbgSetSymProc*,DbgGetSymProc,void *cd,uint32_t arg,const char *format,...) \
-	 __attribute__ ((format (printf, 5, 6)));
+int
+DbgSymHandler(DbgSetSymProc *, DbgGetSymProc, void *cd, uint32_t arg, const char *format, ...)
+    __attribute__ ((format(printf, 5, 6)));

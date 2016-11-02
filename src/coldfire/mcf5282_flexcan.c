@@ -64,7 +64,7 @@
 
 /* Offsets in messagebuffers */
 #define EXMSGB_CTRL_STAT(base)	((base)+0)
-#define EXMSGB_ID_HIGH(base)	((base)+2)	
+#define EXMSGB_ID_HIGH(base)	((base)+2)
 #define EXMSGB_ID_LOW(base)	((base)+4)
 #define EXMSGB_DATABYTE0(base)	((base)+6)
 #define EXMSGB_DATABYTE1(base)	((base)+7)
@@ -75,19 +75,18 @@
 #define EXMSGB_DATABYTE6(base)	((base)+0xc)
 #define EXMSGB_DATABYTE7(base)	((base)+0xd)
 
-
 typedef struct FlexCAN {
-        BusDevice bdev;
+	BusDevice bdev;
 } FlexCAN;
 
 static void
-FlexCAN_Unmap(void *owner,uint32_t base,uint32_t mask)
+FlexCAN_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 //        IOH_Delete32(SCM_IPSBAR(base));
 }
 
 static void
-FlexCAN_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+FlexCAN_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 //       FlexCAN *can = (FlexCAN *) owner;
 //        IOH_New32(SCM_IPSBAR(base),ipsbar_read,ipsbar_write,scm);
@@ -96,13 +95,12 @@ FlexCAN_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
 BusDevice *
 MCF5282_FlexCANNew(const char *name)
 {
-        FlexCAN *can = sg_calloc(sizeof(FlexCAN));
-        can->bdev.first_mapping=NULL;
-        can->bdev.Map=FlexCAN_Map;
-        can->bdev.UnMap=FlexCAN_Unmap;
-        can->bdev.owner=can;
-        can->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &can->bdev;
+	FlexCAN *can = sg_calloc(sizeof(FlexCAN));
+	can->bdev.first_mapping = NULL;
+	can->bdev.Map = FlexCAN_Map;
+	can->bdev.UnMap = FlexCAN_Unmap;
+	can->bdev.owner = can;
+	can->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &can->bdev;
 
 }
-

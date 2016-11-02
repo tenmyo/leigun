@@ -65,17 +65,24 @@
 #include "mainloop_events.h"
 #include "xy_tree.h"
 
-
 typedef struct XYFdSets {
-        fd_set rfds;
-        fd_set wfds;
+	fd_set rfds;
+	fd_set wfds;
 } XYFdSets;
 
+#ifdef __CYGWIN__
+#define USE_DUMMYPIPE 1
+#else
+#define USE_DUMMYPIPE 0
+#endif
 
-static int maxfd=0;
+static int maxfd = 0;
 static XYFdSets g_fdsets;
-static FIO_FileHandler *g_currentFH=NULL;
-static FIO_FileHandler *fileh_head=NULL;
+static FIO_FileHandler *g_currentFH = NULL;
+static FIO_FileHandler *fileh_head = NULL;
+#if USE_DUMMYPIPE == 1
+static int pipefd[2];
+#endif
 
 static pthread_t iothread;
 static pthread_mutex_t io_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -84,60 +91,66 @@ static XY_Tree host_timer_tree;
 static xy_node *first_host_timer_node = NULL;
 static pthread_mutex_t timer_mutex;
 
-static void 
-init_recursive_mutex(pthread_mutex_t *mutex) {
+static void
+init_recursive_mutex(pthread_mutex_t * mutex)
+{
 	pthread_mutexattr_t attr;
 	int result;
-	result = pthread_mutexattr_init (&attr);
+	result = pthread_mutexattr_init(&attr);
 	if (result != 0) {
-	   fprintf (stderr,"pthread_mutexattr_init: %s\n", strerror (result));
-	   exit(1);
-	}
-	result = pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
-	if (result != 0) {
-		   fprintf (stderr,"pthread_mutexattr_settype: %s\n", strerror (result));
+		fprintf(stderr, "pthread_mutexattr_init: %s\n", strerror(result));
 		exit(1);
 	}
-	pthread_mutex_init(mutex,&attr);
+	result = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	if (result != 0) {
+		fprintf(stderr, "pthread_mutexattr_settype: %s\n", strerror(result));
+		exit(1);
+	}
+	pthread_mutex_init(mutex, &attr);
 	pthread_mutexattr_destroy(&attr);
 }
 
 static inline void
-get_timer_lock(void) {
+get_timer_lock(void)
+{
 	pthread_mutex_lock(&timer_mutex);
 }
 
 static inline void
-put_timer_lock(void) {
+put_timer_lock(void)
+{
 	pthread_mutex_unlock(&timer_mutex);
 }
-
 
 /* -----------------------------------------------
  * Helper functions for timers in host domain
  * -----------------------------------------------
  */
 static int
-_is_later(const void *t1,const void *t2) {
-        struct timespec * time1 = (struct timespec *) t1;
-        struct timespec * time2 = (struct timespec *) t2;
-        if(time2->tv_sec < time1->tv_sec) {
-                return 1;
-        } else if (time2->tv_sec==time1->tv_sec) {
-                if(time2->tv_nsec < time1->tv_nsec) {
-                        return 1;
-                }
-        }
-        return 0;
-}
-static inline int
-is_later(struct timespec *time1,struct timespec *time2) {
-        return _is_later(time1,time2);
+_is_later(const void *t1, const void *t2)
+{
+	struct timespec *time1 = (struct timespec *)t1;
+	struct timespec *time2 = (struct timespec *)t2;
+	if (time2->tv_sec < time1->tv_sec) {
+		return 1;
+	} else if (time2->tv_sec == time1->tv_sec) {
+		if (time2->tv_nsec < time1->tv_nsec) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 static inline int
-is_timeouted(HostTimer *th,struct timespec *currenttime) {
-        return is_later(currenttime,&th->timeout);
+is_later(struct timespec *time1, struct timespec *time2)
+{
+	return _is_later(time1, time2);
+}
+
+static inline int
+is_timeouted(HostTimer * th, struct timespec *currenttime)
+{
+	return is_later(currenttime, &th->timeout);
 }
 
 /*
@@ -148,29 +161,30 @@ is_timeouted(HostTimer *th,struct timespec *currenttime) {
  * ---------------------------------------------------
  */
 static int
-calculate_remaining(HostTimer *th,struct timespec *remaining) {
-        struct timespec time;
+calculate_remaining(HostTimer * th, struct timespec *remaining)
+{
+	struct timespec time;
 	clock_gettime(CLOCK_MONOTONIC, &time);
-        if(time.tv_nsec > th->timeout.tv_nsec) {
-                remaining->tv_nsec = (1000000000 + th->timeout.tv_nsec)-time.tv_nsec;
-		if((time.tv_sec + 1) <= th->timeout.tv_sec) {
-                	remaining->tv_sec = th->timeout.tv_sec - time.tv_sec - 1;
+	if (time.tv_nsec > th->timeout.tv_nsec) {
+		remaining->tv_nsec = (1000000000 + th->timeout.tv_nsec) - time.tv_nsec;
+		if ((time.tv_sec + 1) <= th->timeout.tv_sec) {
+			remaining->tv_sec = th->timeout.tv_sec - time.tv_sec - 1;
 		} else {
 			remaining->tv_sec = 0;
 			remaining->tv_nsec = 0;
 			return 0;
 		}
-        } else {
-                remaining->tv_nsec = (th->timeout.tv_nsec-time.tv_nsec);
-		if(time.tv_sec <= th->timeout.tv_sec) {
-                	remaining->tv_sec = th->timeout.tv_sec-time.tv_sec;
+	} else {
+		remaining->tv_nsec = (th->timeout.tv_nsec - time.tv_nsec);
+		if (time.tv_sec <= th->timeout.tv_sec) {
+			remaining->tv_sec = th->timeout.tv_sec - time.tv_sec;
 		} else {
 			remaining->tv_sec = 0;
 			remaining->tv_nsec = 0;
 			return 0;
 		}
-        }
-        return 1;
+	}
+	return 1;
 }
 
 /* 
@@ -181,10 +195,15 @@ calculate_remaining(HostTimer *th,struct timespec *remaining) {
  * when the fds changes; 
  * --------------------------------------
  */
-static void 
-handle_sigusr1() {
-	// nothing
+static void
+handle_sigusr1()
+{
+#if USE_DUMMYPIPE == 1
+	char c = 0;
+	write(pipefd[1], &c, 1);
+#endif
 }
+
 /*
  * ----------------------------------------------------------
  * run_iothread
@@ -206,42 +225,60 @@ handle_sigusr1() {
  * ----------------------------------------------------------
  */
 
-void  *
-run_iothread(void *cd) {
-	fd_set rfds,wfds;
+void *
+run_iothread(void *cd)
+{
+	fd_set rfds, wfds;
 	int result;
 	struct timespec timeout;
 	struct sigaction sa;
-	sa.sa_handler = handle_sigusr1;        /* Establish signal handler */
-        sa.sa_flags = 0;
+#if USE_DUMMYPIPE == 1
+	if (pipe(pipefd) < 0) {
+		fprintf(stderr, "FIO: Dummy Pipe creation failed\n");
+		exit(1);
+	}
+	if (pipefd[0] > maxfd) {
+		maxfd = pipefd[0];
+	}
+	FD_SET(pipefd[0], &g_fdsets.rfds);
+	fcntl(pipefd[0], F_SETFL, O_NONBLOCK);	/* pipie might be not readable after pselect. Example: timeout */
+#endif
+	sa.sa_handler = handle_sigusr1;	/* Establish signal handler */
+	sa.sa_flags = 0;
 	sigset_t emptyset, blockset;
-        sigemptyset(&blockset);         /* Block SIGUSR1 */
+	sigemptyset(&blockset);	/* Block SIGUSR1 */
 	sigemptyset(&emptyset);
-        sigaddset(&blockset, SIGUSR1);
-        sigprocmask(SIG_BLOCK, &blockset, NULL);
-	sigaction(SIGUSR1,&sa,NULL); // fd change notification
-	while(1) {
+	sigaddset(&blockset, SIGUSR1);
+	sigprocmask(SIG_BLOCK, &blockset, NULL);
+	sigaction(SIGUSR1, &sa, NULL);	// fd change notification
+	while (1) {
+#if USE_DUMMYPIPE == 1
+		uint8_t c;
+#endif
 		rfds = g_fdsets.rfds;
 		wfds = g_fdsets.wfds;
-		get_timer_lock(); 
-		if(first_host_timer_node) {
+		get_timer_lock();
+		if (first_host_timer_node) {
 			HostTimer *first_timer = XY_NodeValue(first_host_timer_node);
-			calculate_remaining(first_timer,&timeout);
-			put_timer_lock(); 
-			/* whoever can change timers here has to send a signal */	
-			result = pselect(maxfd+1,&rfds,&wfds,NULL,&timeout,&emptyset);
+			calculate_remaining(first_timer, &timeout);
+			put_timer_lock();
+			/* whoever can change timers here has to send a signal */
+			result = pselect(maxfd + 1, &rfds, &wfds, NULL, &timeout, &emptyset);
 		} else {
-			put_timer_lock(); 
-			/* whoever can change timers here has to send a signal */	
-			result = pselect(maxfd+1,&rfds,&wfds,NULL,NULL,&emptyset);
+			put_timer_lock();
+			/* whoever can change timers here has to send a signal */
+			result = pselect(maxfd + 1, &rfds, &wfds, NULL, NULL, &emptyset);
 		}
-		if(result>0) {
+#if USE_DUMMYPIPE == 1
+		read(pipefd[0], &c, 1);
+#endif
+		if (result > 0) {
 			pthread_mutex_lock(&io_mutex);
 			mainloop_event_io = 1;
 			mainloop_event_pending = 1;
 
 			/* Let the IO thread sleep until IO is done */
-			pthread_cond_wait(&io_done,&io_mutex);
+			pthread_cond_wait(&io_done, &io_mutex);
 			pthread_mutex_unlock(&io_mutex);
 		}
 	}
@@ -256,8 +293,9 @@ run_iothread(void *cd) {
  * and invokes a handler. 
  * -----------------------------------------------------------------
  */
-static int 
-FIO_HandleIO(struct timespec *timeout) {
+static int
+FIO_HandleIO(struct timespec *timeout)
+{
 	int result;
 	XYFdSets fdsets;
 	FIO_FileHandler *fh;
@@ -265,55 +303,55 @@ FIO_HandleIO(struct timespec *timeout) {
 
 	fdsets.rfds = g_fdsets.rfds;
 	fdsets.wfds = g_fdsets.wfds;
-	result = pselect(maxfd+1,&fdsets.rfds,&fdsets.wfds,NULL,timeout,NULL);
-	if(mainloop_event_io) {
-		mainloop_event_io = 0;	
+	result = pselect(maxfd + 1, &fdsets.rfds, &fdsets.wfds, NULL, timeout, NULL);
+	if (mainloop_event_io) {
+		mainloop_event_io = 0;
 		wakeup = 1;
 	}
-	if(result>0) {
-restart:
-		for(fh=fileh_head;fh;fh=fh->next) {
-			int pendmask=0;
-			if(fh->busy) {
+	if (result > 0) {
+ restart:
+		for (fh = fileh_head; fh; fh = fh->next) {
+			int pendmask = 0;
+			if (fh->busy) {
 				continue;
 			}
-			if((fh->mask & FIO_READABLE) && FD_ISSET(fh->fd,&fdsets.rfds)) {
+			if ((fh->mask & FIO_READABLE) && FD_ISSET(fh->fd, &fdsets.rfds)) {
 				pendmask |= FIO_READABLE;
-				FD_CLR(fh->fd,&fdsets.rfds);
+				FD_CLR(fh->fd, &fdsets.rfds);
 			}
-			if((fh->mask & FIO_WRITABLE) && FD_ISSET(fh->fd,&fdsets.wfds)) {
+			if ((fh->mask & FIO_WRITABLE) && FD_ISSET(fh->fd, &fdsets.wfds)) {
 				pendmask |= FIO_WRITABLE;
-				FD_CLR(fh->fd,&fdsets.wfds);
+				FD_CLR(fh->fd, &fdsets.wfds);
 			}
-			if(pendmask) {
-				FIO_FileHandler *save=g_currentFH; // use stack for history
-				g_currentFH=fh;
-				fh->busy=1;
+			if (pendmask) {
+				FIO_FileHandler *save = g_currentFH;	// use stack for history
+				g_currentFH = fh;
+				fh->busy = 1;
 				//fprintf(stderr,"Calling fh proc \n");
-				fh->proc(fh->clientData,pendmask);
-				if(g_currentFH==fh) {
-					g_currentFH=save;
-					fh->busy=0;
+				fh->proc(fh->clientData, pendmask);
+				if (g_currentFH == fh) {
+					g_currentFH = save;
+					fh->busy = 0;
 				} else {
 					// fprintf(stderr,"Modification of fh from handler%p\n",save);
-					g_currentFH=save;
+					g_currentFH = save;
 					goto restart;
 				}
 			}
 		}
-	} else if(result == 0 ) { 
+	} else if (result == 0) {
 		struct timespec time;
 		get_timer_lock();
-		if(first_host_timer_node) {
-			HostTimer *timer=XY_NodeValue(first_host_timer_node);
-                	clock_gettime(CLOCK_MONOTONIC,&time);
-			if(is_timeouted(timer,&time)) {
+		if (first_host_timer_node) {
+			HostTimer *timer = XY_NodeValue(first_host_timer_node);
+			clock_gettime(CLOCK_MONOTONIC, &time);
+			if (is_timeouted(timer, &time)) {
 				// do something
 			}
 		}
 		put_timer_lock();
 	}
-	if(wakeup) {
+	if (wakeup) {
 		/* Now IO is handled, allow the IO-thread to run again */
 		pthread_mutex_lock(&io_mutex);
 		pthread_cond_signal(&io_done);
@@ -327,30 +365,31 @@ restart:
  * Do all outstanding IO-Events
  * --------------------------------------------------
  */
-void 
-FIO_HandleInput() {
+void
+FIO_HandleInput()
+{
 	int result;
 	struct timespec timeout;
-	timeout.tv_nsec=timeout.tv_sec=0;
-//	do { 	
-		result = FIO_HandleIO(&timeout);
-//	} while(result>0);
+	timeout.tv_nsec = timeout.tv_sec = 0;
+//      do {    
+	result = FIO_HandleIO(&timeout);
+//      } while(result>0);
 	return;
 }
 
-void 
-FIO_WaitEventTimeout(struct timespec *timeout) 
+void
+FIO_WaitEventTimeout(struct timespec *timeout)
 {
 	struct timespec remaining;
-	get_timer_lock(); 
-	if(first_host_timer_node) {
-		
+	get_timer_lock();
+	if (first_host_timer_node) {
+
 		HostTimer *first_timer = XY_NodeValue(first_host_timer_node);
-		calculate_remaining(first_timer,&remaining);
-	}		
-	put_timer_lock(); 
+		calculate_remaining(first_timer, &remaining);
+	}
+	put_timer_lock();
 	FIO_HandleIO(timeout);
-} 
+}
 
 /*
  * ---------------------------------------------------------------------
@@ -361,70 +400,70 @@ FIO_WaitEventTimeout(struct timespec *timeout)
  */
 
 void
-FIO_AddFileHandler(FIO_FileHandler *fh,int fd,int mask,FIO_FileProc *proc,void *clientData)
+FIO_AddFileHandler(FIO_FileHandler * fh, int fd, int mask, FIO_FileProc * proc, void *clientData)
 {
 
-        fh->fd=fd;
-        fh->mask=mask;
-        fh->proc=proc;
-        fh->clientData=clientData;
-        fh->busy=0;
+	fh->fd = fd;
+	fh->mask = mask;
+	fh->proc = proc;
+	fh->clientData = clientData;
+	fh->busy = 0;
 
-        if(fd>maxfd) {
-                maxfd=fd;
-        }
-        fh->next=fileh_head;
-        fh->prev=NULL;
-        if(fileh_head) {
-       		fileh_head->prev = fh;
+	if (fd > maxfd) {
+		maxfd = fd;
 	}
-        fileh_head=fh;
-	if(fh->mask&FIO_READABLE) {
-                FD_SET(fh->fd,&g_fdsets.rfds);
-        }
-        if(fh->mask&FIO_WRITABLE) {
-                FD_SET(fh->fd,&g_fdsets.wfds);
-        }
+	fh->next = fileh_head;
+	fh->prev = NULL;
+	if (fileh_head) {
+		fileh_head->prev = fh;
+	}
+	fileh_head = fh;
+	if (fh->mask & FIO_READABLE) {
+		FD_SET(fh->fd, &g_fdsets.rfds);
+	}
+	if (fh->mask & FIO_WRITABLE) {
+		FD_SET(fh->fd, &g_fdsets.wfds);
+	}
 	/* 
-         * The IO-Thread which needs to re-call select with new fds
-         *  so interrupt the old select with a signal  
-         */
-	pthread_kill(iothread,SIGUSR1);
+	 * The IO-Thread which needs to re-call select with new fds
+	 *  so interrupt the old select with a signal  
+	 */
+	pthread_kill(iothread, SIGUSR1);
 }
 
 void
-FIO_RemoveFileHandler(FIO_FileHandler *fh)
+FIO_RemoveFileHandler(FIO_FileHandler * fh)
 {
-        FIO_FileHandler *cursor;
-        if(fh->mask&FIO_READABLE) {
-                FD_CLR(fh->fd,&g_fdsets.rfds);
-        }
-        if(fh->mask&FIO_WRITABLE) {
-                FD_CLR(fh->fd,&g_fdsets.wfds);
-        }
-        if(fh->next)
-                fh->next->prev=fh->prev;
-        if(fh->prev) {
-                fh->prev->next = fh->next;
-        } else {
-                fileh_head = fh->next;
-        }
+	FIO_FileHandler *cursor;
+	if (fh->mask & FIO_READABLE) {
+		FD_CLR(fh->fd, &g_fdsets.rfds);
+	}
+	if (fh->mask & FIO_WRITABLE) {
+		FD_CLR(fh->fd, &g_fdsets.wfds);
+	}
+	if (fh->next)
+		fh->next->prev = fh->prev;
+	if (fh->prev) {
+		fh->prev->next = fh->next;
+	} else {
+		fileh_head = fh->next;
+	}
 
-        for(cursor=fileh_head;cursor; cursor=cursor->next) {
-                if(fh->fd!=cursor->fd) {
-                        continue;
-                }
-                if(cursor->mask&FIO_READABLE) {
-                        FD_SET(cursor->fd,&g_fdsets.rfds);
-                }
-                if(cursor->mask&FIO_WRITABLE) {
-                        FD_SET(cursor->fd,&g_fdsets.wfds);
-                }
-        }
-        if(g_currentFH==fh) {
-                g_currentFH=NULL;
-        }
-        return; // not found
+	for (cursor = fileh_head; cursor; cursor = cursor->next) {
+		if (fh->fd != cursor->fd) {
+			continue;
+		}
+		if (cursor->mask & FIO_READABLE) {
+			FD_SET(cursor->fd, &g_fdsets.rfds);
+		}
+		if (cursor->mask & FIO_WRITABLE) {
+			FD_SET(cursor->fd, &g_fdsets.wfds);
+		}
+	}
+	if (g_currentFH == fh) {
+		g_currentFH = NULL;
+	}
+	return;			// not found
 }
 
 /*
@@ -435,32 +474,33 @@ FIO_RemoveFileHandler(FIO_FileHandler *fh)
  * -------------------------------------------------------------------
  */
 
-static void 
-TcpAccept(void *cd,int mask) {
-        FIO_TcpServer *tserv = (FIO_TcpServer *)cd;
-        int sfd;
-        unsigned short port;
-        char *host;
-        unsigned long hostl;
-        socklen_t addrlen = sizeof(struct sockaddr_in);
-        struct sockaddr_in con;
-        //printf("accept mask %08x\n",mask);
-        sfd=accept(tserv->sock,(struct sockaddr *)&con,&addrlen);
-        if(sfd<0) {
-                //perror("accept failed errno %d\n",errno);
-                return;
-        }
-        port=ntohs(con.sin_port);
-        hostl=ntohl(con.sin_addr.s_addr);
-        //printf("connect from %s\n",inet_ntoa(con.sin_addr));
-        host=inet_ntoa(con.sin_addr);
-        if(sfd<0)
-                return;
-        if(tserv->proc) {
-                // printf("Call connect proc fd %d\n",sfd);
-                tserv->proc(sfd,host,port,tserv->clientData);
-        }
-        return;
+static void
+TcpAccept(void *cd, int mask)
+{
+	FIO_TcpServer *tserv = (FIO_TcpServer *) cd;
+	int sfd;
+	unsigned short port;
+	char *host;
+	unsigned long hostl;
+	socklen_t addrlen = sizeof(struct sockaddr_in);
+	struct sockaddr_in con;
+	//printf("accept mask %08x\n",mask);
+	sfd = accept(tserv->sock, (struct sockaddr *)&con, &addrlen);
+	if (sfd < 0) {
+		//perror("accept failed errno %d\n",errno);
+		return;
+	}
+	port = ntohs(con.sin_port);
+	hostl = ntohl(con.sin_addr.s_addr);
+	//printf("connect from %s\n",inet_ntoa(con.sin_addr));
+	host = inet_ntoa(con.sin_addr);
+	if (sfd < 0)
+		return;
+	if (tserv->proc) {
+		// printf("Call connect proc fd %d\n",sfd);
+		tserv->proc(sfd, host, port, tserv->clientData);
+	}
+	return;
 }
 
 /*
@@ -471,38 +511,39 @@ TcpAccept(void *cd,int mask) {
  * ----------------------------------------------------------------------------
  */
 int
-FIO_InitTcpServer(FIO_TcpServer *tserv,FIO_Accept *proc, void *clientData,
-                char *host,unsigned short port) {
-        struct sockaddr_in sa;
-        int optval;
-        int sock;
-        sock=socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
-        if(sock<0) {
-                perror("can't create socket");
-                return -1;
-        }
-        optval=1;
-        setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char *)&optval,sizeof(optval));
-        tserv->sock = sock;
-        fcntl(sock, F_SETFD, FD_CLOEXEC);
-        fcntl(sock, F_SETFL, O_NONBLOCK);
-        sa.sin_family = AF_INET;
-        sa.sin_port = htons(port);
-        sa.sin_addr.s_addr = inet_addr(host);
-        if(bind(sock,(struct sockaddr *)&sa, sizeof(struct sockaddr))<0) {
-                perror("can't bind");
-                close(sock);
-                return -1;
-        }
-        if (listen(sock,50)<0) {
-                perror("can't listen");
-                close(sock);
-                return -1;
-        }
-        tserv->proc = proc;
-        tserv->clientData = clientData;
-        FIO_AddFileHandler(&tserv->acc_fh,sock,FIO_READABLE ,TcpAccept,tserv);
-        return sock;
+FIO_InitTcpServer(FIO_TcpServer * tserv, FIO_Accept * proc, void *clientData,
+		  char *host, unsigned short port)
+{
+	struct sockaddr_in sa;
+	int optval;
+	int sock;
+	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock < 0) {
+		perror("can't create socket");
+		return -1;
+	}
+	optval = 1;
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
+	tserv->sock = sock;
+	fcntl(sock, F_SETFD, FD_CLOEXEC);
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+	sa.sin_family = AF_INET;
+	sa.sin_port = htons(port);
+	sa.sin_addr.s_addr = inet_addr(host);
+	if (bind(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr)) < 0) {
+		perror("can't bind");
+		close(sock);
+		return -1;
+	}
+	if (listen(sock, 50) < 0) {
+		perror("can't listen");
+		close(sock);
+		return -1;
+	}
+	tserv->proc = proc;
+	tserv->clientData = clientData;
+	FIO_AddFileHandler(&tserv->acc_fh, sock, FIO_READABLE, TcpAccept, tserv);
+	return sock;
 }
 
 /*
@@ -512,27 +553,28 @@ FIO_InitTcpServer(FIO_TcpServer *tserv,FIO_Accept *proc, void *clientData,
  * -----------------------------------------------------------
  */
 void
-FIO_Init() {
+FIO_Init()
+{
 	int result;
 	sigset_t blockset;
-	XY_InitTree(&host_timer_tree,_is_later,NULL,NULL,NULL);
+	XY_InitTree(&host_timer_tree, _is_later, NULL, NULL, NULL);
 	init_recursive_mutex(&timer_mutex);
 	FD_ZERO(&g_fdsets.rfds);
 	FD_ZERO(&g_fdsets.wfds);
 	/* 
- 	 * ------------------------------------------------------
-  	 * The IO-Thread uses SIGUSR1. Old pthreads library  
-         * sometimes sends signals to wrong threads, so it is
-         * better to block them in main thread
- 	 * ------------------------------------------------------
+	 * ------------------------------------------------------
+	 * The IO-Thread uses SIGUSR1. Old pthreads library  
+	 * sometimes sends signals to wrong threads, so it is
+	 * better to block them in main thread
+	 * ------------------------------------------------------
 	 */
-        sigemptyset(&blockset);
-        sigaddset(&blockset, SIGUSR1);
-        sigprocmask(SIG_BLOCK, &blockset, NULL);
-	result=pthread_create(&iothread, NULL,run_iothread, NULL);
-	if(result<0) {
+	sigemptyset(&blockset);
+	sigaddset(&blockset, SIGUSR1);
+	sigprocmask(SIG_BLOCK, &blockset, NULL);
+	result = pthread_create(&iothread, NULL, run_iothread, NULL);
+	if (result < 0) {
 		perror("IO-Thread creation failed\n");
-		exit(1765);
+		exit(1);
 	}
-	fprintf(stderr,"IO-Thread started\n");
+	fprintf(stderr, "IO-Thread started\n");
 }

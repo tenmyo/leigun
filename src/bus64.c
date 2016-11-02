@@ -48,33 +48,34 @@ typedef struct PageDirectory {
 } PageDirectory;
 
 static int level_shift[4] = { 50, 36, 22, 10 };
-static uint32_t level_mask[4] = { 0x3fff,0x3fff,0x3fff,0x0fff};
-static uint32_t level_nr_entries[4] = { 0x4000,0x4000,0x4000,0x1000};
+static uint32_t level_mask[4] = { 0x3fff, 0x3fff, 0x3fff, 0x0fff };
+static uint32_t level_nr_entries[4] = { 0x4000, 0x4000, 0x4000, 0x1000 };
 
-static uint8_t *flvl[16384]; 
+static uint8_t *flvl[16384];
 
 void *
-Bus64ToHVA(uint64_t addr) {
+Bus64ToHVA(uint64_t addr)
+{
 	int i;
 	int shift;
 	unsigned long pg_type;
-	uint32_t mask;	
-	uint8_t **ptr = flvl;	
-	for(i=0;i<4;i++) {
-		shift = level_shift[i];	
-		mask = level_mask[i];	
+	uint32_t mask;
+	uint8_t **ptr = flvl;
+	for (i = 0; i < 4; i++) {
+		shift = level_shift[i];
+		mask = level_mask[i];
 		int index = (addr >> shift) & mask;
-		ptr = (uint8_t **)ptr[index];		
-		pg_type = ((unsigned long) ptr) & PG_TYPE_MASK;
-		if(pg_type & PG_TRANS_FINISHED) {
-			ptr-=pg_type;
-			mask = ((1<<shift) - 1);
-				
+		ptr = (uint8_t **) ptr[index];
+		pg_type = ((unsigned long)ptr) & PG_TYPE_MASK;
+		if (pg_type & PG_TRANS_FINISHED) {
+			ptr -= pg_type;
+			mask = ((1 << shift) - 1);
+
 			return ptr + (addr & mask);
-		}	
+		}
 	}
 	/* Bug if reached */
-	return NULL;	
+	return NULL;
 }
 
 /* 
@@ -83,10 +84,10 @@ Bus64ToHVA(uint64_t addr) {
  * ---------------------------------------------------------------------------------- 
  */
 void
-Bus64_MapMem(uint64_t map_addr,uint8_t *start_mem,uint64_t devsize,uint64_t mapsize) 
+Bus64_MapMem(uint64_t map_addr, uint8_t * start_mem, uint64_t devsize, uint64_t mapsize)
 {
 	uint64_t addr;
-	for(addr=map_addr;addr < mapsize;addr += pagesize) {
-		
+	for (addr = map_addr; addr < mapsize; addr += pagesize) {
+
 	}
 }

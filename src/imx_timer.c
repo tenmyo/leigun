@@ -34,7 +34,6 @@
  *************************************************************************************************
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -58,12 +57,12 @@
 #define		TCTL_COMPEN		(1<<4)
 #define		TCTL_CLKSOURCE_MASK	(7<<1)
 #define		TCTL_CLKSOURCE_SHIFT	(1)
-#define 	TCTL_CLK_SOURCE(x)    (((x) & 0x7) <<  1)    /* clock source: */
-#define 	TCTL_CLK_SOURCE_STOP  TCTL_CLK_SOURCE(0x00)    /* stop count */
-#define 	TCTL_CLK_SOURCE_PC1   TCTL_CLK_SOURCE(0x01)    /* PERCLK1 to prescaler */
-#define 	TCTL_CLK_SOURCE_QPC1  TCTL_CLK_SOURCE(0x02)    /* PERCLK1 / 4 to prescaler */
-#define 	TCTL_CLK_SOURCE_TIN   TCTL_CLK_SOURCE(0x03)    /* TIN to prescaler */
-#define 	TCTL_CLK_SOURCE_32K   TCTL_CLK_SOURCE(0x04)    /* 32kHz clock to prescaler */
+#define 	TCTL_CLK_SOURCE(x)    (((x) & 0x7) <<  1)	/* clock source: */
+#define 	TCTL_CLK_SOURCE_STOP  TCTL_CLK_SOURCE(0x00)	/* stop count */
+#define 	TCTL_CLK_SOURCE_PC1   TCTL_CLK_SOURCE(0x01)	/* PERCLK1 to prescaler */
+#define 	TCTL_CLK_SOURCE_QPC1  TCTL_CLK_SOURCE(0x02)	/* PERCLK1 / 4 to prescaler */
+#define 	TCTL_CLK_SOURCE_TIN   TCTL_CLK_SOURCE(0x03)	/* TIN to prescaler */
+#define 	TCTL_CLK_SOURCE_32K   TCTL_CLK_SOURCE(0x04)	/* 32kHz clock to prescaler */
 
 #define		TCTL_TEN		(1<<0)
 
@@ -76,12 +75,12 @@
 #define		TSTAT_COMP	(1<<0)
 
 typedef struct IMX_Timer {
-	BusDevice bdev;	
+	BusDevice bdev;
 	int interrupt_posted;
 	SigNode *irqNode;
 	SigNode *toutNode;
 	SigNode *tinNode;
-	SigTrace *tinTrace;	
+	SigTrace *tinTrace;
 	CycleCounter_t last_timer_update;
 	CycleCounter_t saved_cpu_cycles;
 	CycleTimer event_timer;
@@ -95,11 +94,11 @@ typedef struct IMX_Timer {
 } IMX_Timer;
 
 static void
-software_reset(IMX_Timer *itmr) 
+software_reset(IMX_Timer * itmr)
 {
 
-	SigNode_Set(itmr->irqNode,SIG_HIGH); 
-	SigNode_Set(itmr->toutNode,SIG_LOW); 
+	SigNode_Set(itmr->irqNode, SIG_HIGH);
+	SigNode_Set(itmr->toutNode, SIG_LOW);
 	itmr->tctl = itmr->tctl & TCTL_TEN;
 	itmr->tprer = 0;
 	itmr->tcmp = 0xffffffff;
@@ -108,107 +107,107 @@ software_reset(IMX_Timer *itmr)
 	itmr->tstat = 0;
 }
 
-static void 
-update_interrupts(IMX_Timer *itmr) 
+static void
+update_interrupts(IMX_Timer * itmr)
 {
-	
+
 	int interrupt = 0;
-	if(itmr->tctl & TCTL_COMPEN) {
-		if(itmr->tstat & TSTAT_COMP) {
-			interrupt=1;	
+	if (itmr->tctl & TCTL_COMPEN) {
+		if (itmr->tstat & TSTAT_COMP) {
+			interrupt = 1;
 		}
 	}
-	if(itmr->tctl & TCTL_CAPTEN) {
-		if(itmr->tstat & TSTAT_CAPT) {
-			interrupt=1;
+	if (itmr->tctl & TCTL_CAPTEN) {
+		if (itmr->tstat & TSTAT_CAPT) {
+			interrupt = 1;
 		}
 	}
-	if(interrupt) {
-		if(!itmr->interrupt_posted) { 
-			SigNode_Set(itmr->irqNode,SIG_LOW);
+	if (interrupt) {
+		if (!itmr->interrupt_posted) {
+			SigNode_Set(itmr->irqNode, SIG_LOW);
 			itmr->interrupt_posted = 1;
 		}
 	} else {
-		if(itmr->interrupt_posted) {
-			SigNode_Set(itmr->irqNode,SIG_HIGH);
+		if (itmr->interrupt_posted) {
+			SigNode_Set(itmr->irqNode, SIG_HIGH);
 			itmr->interrupt_posted = 0;
 		}
 	}
 }
 
-static uint32_t 
-get_divider(IMX_Timer *itmr) 
+static uint32_t
+get_divider(IMX_Timer * itmr)
 {
 	int clksource;
-	uint32_t divider=2;
+	uint32_t divider = 2;
 	clksource = (itmr->tctl & TCTL_CLKSOURCE_MASK) >> TCTL_CLKSOURCE_SHIFT;
-	switch(clksource) {
-		case 0:	
-			return 0;
-		case 1:
-			divider = divider * ((itmr->tprer & 2047)+1);
-			break;
-		case 2:
-			divider = 4 * divider * ((itmr->tprer & 2047)+1);
-			break;
+	switch (clksource) {
+	    case 0:
+		    return 0;
+	    case 1:
+		    divider = divider * ((itmr->tprer & 2047) + 1);
+		    break;
+	    case 2:
+		    divider = 4 * divider * ((itmr->tprer & 2047) + 1);
+		    break;
 
-		case 3: /* TIN is clksource, events are not counted here */
-			return 0;
+	    case 3:		/* TIN is clksource, events are not counted here */
+		    return 0;
 
-		case 4:	/* 32 kHz */
-		case 5:	/* 32 kHz */
-		case 6:	/* 32 kHz */
-		case 7:	/* 32 kHz */
-			divider = CycleTimerRate_Get() >> 15;
-			//fprintf(stderr,"divider %d\n",divider); // jk
-			break;
+	    case 4:		/* 32 kHz */
+	    case 5:		/* 32 kHz */
+	    case 6:		/* 32 kHz */
+	    case 7:		/* 32 kHz */
+		    divider = CycleTimerRate_Get() >> 15;
+		    //fprintf(stderr,"divider %d\n",divider); // jk
+		    break;
 
-		default:
-			fprintf(stderr,"Unreachable code\n");
-			divider=0;
+	    default:
+		    fprintf(stderr, "Unreachable code\n");
+		    divider = 0;
 	}
 	return divider;
 }
 
 static void
-do_match_action(IMX_Timer *itmr)
+do_match_action(IMX_Timer * itmr)
 {
 	itmr->tstat |= TSTAT_COMP;
 	update_interrupts(itmr);
 }
 
 static void
-actualize_tcn(IMX_Timer *itmr)
+actualize_tcn(IMX_Timer * itmr)
 {
 	uint64_t timer_cycles;
 	uint32_t divider = 2;
 	uint64_t tcnew;
-	if(!(itmr->tctl & TCTL_TEN)) {
+	if (!(itmr->tctl & TCTL_TEN)) {
 		itmr->last_timer_update = CycleCounter_Get();
-		itmr->tcn = 0; /* Resets the timer to 0! */
-		return;	
+		itmr->tcn = 0;	/* Resets the timer to 0! */
+		return;
 	}
 	itmr->saved_cpu_cycles += CycleCounter_Get() - itmr->last_timer_update;
 	itmr->last_timer_update = CycleCounter_Get();
 	divider = get_divider(itmr);
-	if(!divider) {
+	if (!divider) {
 		return;
 	}
 	//fprintf(stderr,"saved %lld divider %d\n",itmr->saved_cpu_cycles,divider);
-	timer_cycles = itmr->saved_cpu_cycles / divider; 	
+	timer_cycles = itmr->saved_cpu_cycles / divider;
 	tcnew = itmr->tcn + timer_cycles;
-	if((itmr->tcn < itmr->tcmp) && (tcnew >= itmr->tcmp)) {
+	if ((itmr->tcn < itmr->tcmp) && (tcnew >= itmr->tcmp)) {
 		do_match_action(itmr);
-		if(itmr->tctl & TCTL_FRR) {
+		if (itmr->tctl & TCTL_FRR) {
 			tcnew = tcnew & 0xffffffff;
 		} else {
 			tcnew = tcnew % itmr->tcmp;
-		}	
+		}
 	}
-	itmr->tcn = tcnew;	
+	itmr->tcn = tcnew;
 #if 0
-	if(timer_cycles) {
-		fprintf(stderr,"new tcn %08x at %lx\n",itmr->tcn,CycleCounter_Get()); // jk
+	if (timer_cycles) {
+		fprintf(stderr, "new tcn %08x at %lx\n", itmr->tcn, CycleCounter_Get());	// jk
 	}
 #endif
 	itmr->saved_cpu_cycles -= timer_cycles * divider;
@@ -223,73 +222,73 @@ static void do_event(void *clientData);
  * ---------------------------------------------------------------
  */
 static void
-update_cmp_event_timer(IMX_Timer *itmr)
+update_cmp_event_timer(IMX_Timer * itmr)
 {
 	uint32_t tcyc_until_event;
 	CycleCounter_t ccyc_until_event;
 	uint32_t divider;
 	// enabled check is missing here
-	if(!(itmr->tctl & TCTL_TEN) || !(itmr->tctl & TCTL_COMPEN)) {
+	if (!(itmr->tctl & TCTL_TEN) || !(itmr->tctl & TCTL_COMPEN)) {
 		CycleTimer_Remove(&itmr->event_timer);
 		return;
 	}
-	if(itmr->tcn <= itmr->tcmp) {
-		tcyc_until_event = itmr->tcmp - itmr->tcn;			
+	if (itmr->tcn <= itmr->tcmp) {
+		tcyc_until_event = itmr->tcmp - itmr->tcn;
 	} else {
 		/* Free running mode stops at 0xffffffff */
-		if(!(itmr->tctl & TCTL_FRR)) {
+		if (!(itmr->tctl & TCTL_FRR)) {
 			CycleTimer_Remove(&itmr->event_timer);
 			return;
 		}
-		fprintf(stderr,"should not happen: to late\n");
-		tcyc_until_event = itmr->tcmp - itmr->tcn;			
+		fprintf(stderr, "should not happen: to late\n");
+		tcyc_until_event = itmr->tcmp - itmr->tcn;
 	}
 	divider = get_divider(itmr);
-	if(!divider) {
+	if (!divider) {
 		return;
 	}
-	ccyc_until_event = (uint64_t)divider * tcyc_until_event - itmr->saved_cpu_cycles; 	
+	ccyc_until_event = (uint64_t) divider *tcyc_until_event - itmr->saved_cpu_cycles;
 	//fprintf(stderr,"Cyc until %lld divider %d tcyc_until %d saved %lld\n",ccyc_until_event,divider,tcyc_until_event,itmr->saved_cpu_cycles);
-	if(CycleTimer_IsActive(&itmr->event_timer)) {
-		CycleTimer_Mod(&itmr->event_timer,ccyc_until_event);
+	if (CycleTimer_IsActive(&itmr->event_timer)) {
+		CycleTimer_Mod(&itmr->event_timer, ccyc_until_event);
 	} else {
-		CycleTimer_Add(&itmr->event_timer,ccyc_until_event,do_event,itmr);
+		CycleTimer_Add(&itmr->event_timer, ccyc_until_event, do_event, itmr);
 	}
 }
 
 static void
 do_event(void *clientData)
 {
-        IMX_Timer *itmr = (IMX_Timer *)clientData;
-        actualize_tcn(itmr);
-        update_cmp_event_timer(itmr);
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
+	actualize_tcn(itmr);
+	update_cmp_event_timer(itmr);
 }
 
-static void 
-capture(SigNode *node,int value,void *clientData)
+static void
+capture(SigNode * node, int value, void *clientData)
 {
 	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	int cap = (itmr->tctl & TCTL_CAP_MASK) >> TCTL_CAP_SHIFT;
-	switch(cap) {
-		case 0:
-			fprintf(stderr,"Should't happen\n");
-			break;
-		case 1:
-			if(value == SIG_HIGH) {
-				actualize_tcn(itmr);	
-				itmr->tcr = itmr->tcn;	
-			}
-			break;
-		case 2:
-			if(value == SIG_LOW) {
-				actualize_tcn(itmr);	
-				itmr->tcr = itmr->tcn;	
-			}
-			break;
-		case 3:
-			actualize_tcn(itmr);	
-			itmr->tcr = itmr->tcn;	
-			break;
+	switch (cap) {
+	    case 0:
+		    fprintf(stderr, "Should't happen\n");
+		    break;
+	    case 1:
+		    if (value == SIG_HIGH) {
+			    actualize_tcn(itmr);
+			    itmr->tcr = itmr->tcn;
+		    }
+		    break;
+	    case 2:
+		    if (value == SIG_LOW) {
+			    actualize_tcn(itmr);
+			    itmr->tcr = itmr->tcn;
+		    }
+		    break;
+	    case 3:
+		    actualize_tcn(itmr);
+		    itmr->tcr = itmr->tcn;
+		    break;
 	}
 }
 
@@ -332,33 +331,33 @@ capture(SigNode *node,int value,void *clientData)
  */
 
 static uint32_t
-tctl_read(void *clientData,uint32_t address,int rqlen)
+tctl_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*) clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	return itmr->tctl;
 }
 
 static void
-tctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tctl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*) clientData;
-	if(value & TCTL_SWR) {
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
+	if (value & TCTL_SWR) {
 		software_reset(itmr);
 		return;
 	}
 	actualize_tcn(itmr);
-	if((value & TCTL_CAP_MASK) == 0) {
-		if(itmr->tinTrace) {
-			SigNode_Untrace(itmr->tinNode,itmr->tinTrace);
+	if ((value & TCTL_CAP_MASK) == 0) {
+		if (itmr->tinTrace) {
+			SigNode_Untrace(itmr->tinNode, itmr->tinTrace);
 		}
 	} else {
-		if(!itmr->tinTrace) {
-			itmr->tinTrace = SigNode_Trace(itmr->tinNode,capture,itmr);
+		if (!itmr->tinTrace) {
+			itmr->tinTrace = SigNode_Trace(itmr->tinNode, capture, itmr);
 		}
 	}
 	itmr->tctl = value;
 	update_cmp_event_timer(itmr);
-        return;
+	return;
 }
 
 /*
@@ -368,20 +367,20 @@ tctl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------
  */
 static uint32_t
-tprer_read(void *clientData,uint32_t address,int rqlen)
+tprer_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	return itmr->tprer;
 }
 
 static void
-tprer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tprer_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	actualize_tcn(itmr);
 	itmr->tprer = value & 2047;
 	update_cmp_event_timer(itmr);
-        return;
+	return;
 }
 
 /*
@@ -392,20 +391,20 @@ tprer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------
  */
 static uint32_t
-tcmp_read(void *clientData,uint32_t address,int rqlen)
+tcmp_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	return itmr->tcmp;
 }
 
 static void
-tcmp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tcmp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	actualize_tcn(itmr);
 	itmr->tcmp = value;
 	update_cmp_event_timer(itmr);
-        return;
+	return;
 }
 
 /*
@@ -416,16 +415,17 @@ tcmp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-tcr_read(void *clientData,uint32_t address,int rqlen)
+tcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	return itmr->tcr;
 }
+
 static void
-tcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"TCR is read only\n");
-        return;
+	fprintf(stderr, "TCR is read only\n");
+	return;
 }
 
 /*
@@ -435,18 +435,19 @@ tcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------
  */
 static uint32_t
-tcn_read(void *clientData,uint32_t address,int rqlen)
+tcn_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	actualize_tcn(itmr);
 	Senseless_Report(200);
 	return itmr->tcn;
 }
+
 static void
-tcn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tcn_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Timer count is not writable\n");
-        return;
+	fprintf(stderr, "Timer count is not writable\n");
+	return;
 }
 
 /*
@@ -458,65 +459,66 @@ tcn_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------
  */
 static uint32_t
-tstat_read(void *clientData,uint32_t address,int rqlen)
+tstat_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
 	return itmr->tstat;
-}
-static void
-tstat_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-	IMX_Timer *itmr = (IMX_Timer*)clientData;
-	uint32_t clearbits = value & (TSTAT_COMP | TSTAT_CAPT);
-	itmr->tstat &= ~clearbits;
-	update_interrupts(itmr);
-        return;
 }
 
 static void
-IMXTimer_UnMap(void *owner,uint32_t base,uint32_t mask)
+tstat_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	IMX_Timer *itmr = (IMX_Timer *) clientData;
+	uint32_t clearbits = value & (TSTAT_COMP | TSTAT_CAPT);
+	itmr->tstat &= ~clearbits;
+	update_interrupts(itmr);
+	return;
+}
+
+static void
+IMXTimer_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
-	for(i=0;i<0x18;i+=4) {
-		IOH_Delete32(base+i);
+	for (i = 0; i < 0x18; i += 4) {
+		IOH_Delete32(base + i);
 	}
 }
 
 static void
-IMXTimer_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+IMXTimer_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-	IMX_Timer *itmr = (IMX_Timer *)owner;
-	IOH_New32(TCTL(base),tctl_read,tctl_write,itmr);
-	IOH_New32(TPRER(base),tprer_read,tprer_write,itmr);
-	IOH_New32(TCMP(base),tcmp_read,tcmp_write,itmr);
-	IOH_New32(TCR(base),tcr_read,tcr_write,itmr);
-	IOH_New32(TCN(base),tcn_read,tcn_write,itmr);
-	IOH_New32(TSTAT(base),tstat_read,tstat_write,itmr);
+	IMX_Timer *itmr = (IMX_Timer *) owner;
+	IOH_New32(TCTL(base), tctl_read, tctl_write, itmr);
+	IOH_New32(TPRER(base), tprer_read, tprer_write, itmr);
+	IOH_New32(TCMP(base), tcmp_read, tcmp_write, itmr);
+	IOH_New32(TCR(base), tcr_read, tcr_write, itmr);
+	IOH_New32(TCN(base), tcn_read, tcn_write, itmr);
+	IOH_New32(TSTAT(base), tstat_read, tstat_write, itmr);
 }
 
 BusDevice *
 IMXTimer_New(char *name)
 {
 	IMX_Timer *itmr = sg_new(IMX_Timer);
-	itmr->irqNode = SigNode_New("%s.irq",name);
-	if(!itmr->irqNode) {
-		fprintf(stderr,"Cannot create irqNode for \"%s\"\n",name);
+	itmr->irqNode = SigNode_New("%s.irq", name);
+	if (!itmr->irqNode) {
+		fprintf(stderr, "Cannot create irqNode for \"%s\"\n", name);
 		exit(1);
 	}
-	SigNode_Set(itmr->irqNode,SIG_HIGH); 
-	itmr->toutNode = SigNode_New("%s.tout",name);
-	if(!itmr->toutNode) {
-		fprintf(stderr,"Cannot create toutNode for \"%s\"\n",name);
+	SigNode_Set(itmr->irqNode, SIG_HIGH);
+	itmr->toutNode = SigNode_New("%s.tout", name);
+	if (!itmr->toutNode) {
+		fprintf(stderr, "Cannot create toutNode for \"%s\"\n", name);
 		exit(1);
 	}
-	SigNode_Set(itmr->toutNode,SIG_LOW); // The manual says it is reset ????
-	itmr->tinNode = SigNode_New("%s.tin",name);
+	SigNode_Set(itmr->toutNode, SIG_LOW);	// The manual says it is reset ????
+	itmr->tinNode = SigNode_New("%s.tin", name);
 	itmr->tcmp = 0xffffffff;
-	itmr->bdev.first_mapping=NULL;
-        itmr->bdev.Map=IMXTimer_Map;
-        itmr->bdev.UnMap=IMXTimer_UnMap;
-        itmr->bdev.owner=itmr;
-        itmr->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"IMX Timer Module \"%s\" created\n",name);
-        return &itmr->bdev;
+	itmr->bdev.first_mapping = NULL;
+	itmr->bdev.Map = IMXTimer_Map;
+	itmr->bdev.UnMap = IMXTimer_UnMap;
+	itmr->bdev.owner = itmr;
+	itmr->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "IMX Timer Module \"%s\" created\n", name);
+	return &itmr->bdev;
 }

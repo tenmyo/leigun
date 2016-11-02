@@ -14,12 +14,12 @@
 #include "sglib.h"
 
 struct Clock;
-typedef void ClockTraceProc(struct Clock *clock,void *clientData);
+typedef void ClockTraceProc(struct Clock *clock, void *clientData);
 
 typedef struct ClockTrace {
-        ClockTraceProc *proc;
-        void *clientData;
-        struct ClockTrace *next;
+	ClockTraceProc *proc;
+	void *clientData;
+	struct ClockTrace *next;
 } ClockTrace_t;
 
 typedef struct Clock {
@@ -27,7 +27,7 @@ typedef struct Clock {
 	char *name;
 	ClockTrace_t *traceHead;
 	/* derivation */
-	struct Clock *parent; 		
+	struct Clock *parent;
 
 	/* ratio to parent clock is described by nom/denom */
 	uint64_t derivation_nom;
@@ -47,11 +47,10 @@ typedef struct Clock {
 	SHashEntry *hash_entry;
 } Clock_t;
 
-
-void Clock_SetFreq(Clock_t *clock,uint64_t hz);
-ClockTrace_t *Clock_Trace(Clock_t *clock,ClockTraceProc *proc,void *traceData);
-void Clock_Untrace(Clock_t *,ClockTrace_t *);
-Clock_t * Clock_New(const char *format,...)  __attribute__ ((format (printf, 1, 2)));;
+void Clock_SetFreq(Clock_t * clock, uint64_t hz);
+ClockTrace_t *Clock_Trace(Clock_t * clock, ClockTraceProc * proc, void *traceData);
+void Clock_Untrace(Clock_t *, ClockTrace_t *);
+Clock_t *Clock_New(const char *format, ...) __attribute__ ((format(printf, 1, 2)));;
 
 /*
  ********************************************************************
@@ -59,16 +58,15 @@ Clock_t * Clock_New(const char *format,...)  __attribute__ ((format (printf, 1, 
  * Use integer variant Clock_Freq
  **********************************************************************
  */
-static inline double 
-Clock_DFreq(Clock_t *clock) 
+static inline double
+Clock_DFreq(Clock_t * clock)
 {
-	if(clock->acc_denom) {
+	if (clock->acc_denom) {
 		return (double)clock->acc_nom / clock->acc_denom;
 	} else {
 		return 0;
 	}
 }
-
 
 /*
  *******************************************************
@@ -83,23 +81,22 @@ Clock_DFreq(Clock_t *clock)
 #define Clock_Ratio(clock1,clock2) ((clock2)->acc_nom ? \
 	((clock1)->acc_nom * (clock2)->acc_denom / ((clock1)->acc_denom * (clock2)->acc_nom)) : ~UINT64_C(0))
 
-
 /*
  * -------------------------------------------------------------------
  * Make a clock to be derived from another clock by a fraction
  * -------------------------------------------------------------------
  */
 
-void Clock_MakeDerived(Clock_t *clock,Clock_t *parent,uint64_t nom,uint64_t denom);
-void Clock_Decouple(Clock_t *child);
-void Clock_DumpTree(Clock_t *top);
+void Clock_MakeDerived(Clock_t * clock, Clock_t * parent, uint64_t nom, uint64_t denom);
+void Clock_Decouple(Clock_t * child);
+void Clock_DumpTree(Clock_t * top);
 void ClocksInit(void);
 /* Special versions of make derived and decouple with ratio 1:1 and names */
-void Clock_Link(const char *child,const char *parent);
+void Clock_Link(const char *child, const char *parent);
 void Clock_Unlink(const char *child);
-Clock_t * Clock_Find(const char *format,...);
+Clock_t *Clock_Find(const char *format, ...);
 
-void Clock_MakeSystemMaster(Clock_t *clock);
+void Clock_MakeSystemMaster(Clock_t * clock);
 /**
  *********************************************************************
  * \fn FractionU64_t Clock_MasterRatio(Clock_t *clock);
@@ -107,5 +104,5 @@ void Clock_MakeSystemMaster(Clock_t *clock);
  * (Clock frequency) / (Master clock frequency)
  *********************************************************************
  */
-FractionU64_t Clock_MasterRatio(Clock_t *clock);
+FractionU64_t Clock_MasterRatio(Clock_t * clock);
 #endif

@@ -1,7 +1,7 @@
 /*
  *************************************************************************************************
  *
- * Load Binary , SRecord or IntelHex files to target Memory
+ * Load ELF, Binary, SRecord or IntelHex files to target Memory
  *
  * Status:
  *	Working
@@ -44,23 +44,25 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include "bus.h"
 #include "ihex.h"
 #include "srec.h"
 #include "configfile.h"
 #include "loader.h"
+#include "elfloader.h"
 
 /* Should be a linked list with many namepaces, but for now one is enough */
 
 LoadProc *firstLoadProc = NULL;
 void *firstLoadProcClientData = NULL;
 
-int  
-Loader_RegisterBus(const char *name,LoadProc *proc,void *clientData)
+int
+Loader_RegisterBus(const char *name, LoadProc * proc, void *clientData)
 {
-	firstLoadProc = proc;
-	firstLoadProcClientData = clientData;
-	return 0;
+    firstLoadProc = proc;
+    firstLoadProcClientData = clientData;
+    return 0;
 }
 
 /*
@@ -70,16 +72,16 @@ Loader_RegisterBus(const char *name,LoadProc *proc,void *clientData)
  * by using the address in the Read-memory Map. 
  * -----------------------------------------------------
  */
-static inline int 
-write_to_bus(uint32_t addr,uint8_t *buf,unsigned int count,int flags) 
+static inline int
+write_to_bus(uint32_t addr, uint8_t * buf, unsigned int count, int flags)
 {
-	return firstLoadProc(firstLoadProcClientData,addr,buf,count,flags);
+    return firstLoadProc(firstLoadProcClientData, addr, buf, count, flags);
 }
 
 typedef struct LoaderInfo {
-	int flags;
-	uint64_t region_start;
-	uint64_t region_end;
+    int flags;
+    uint64_t region_start;
+    uint64_t region_end;
 } LoaderInfo;
 /*
  * --------------------------------------------------------
@@ -88,37 +90,39 @@ typedef struct LoaderInfo {
  *	Is invoked by parser after parsing a data record
  * -------------------------------------------------------
  */
-static int 
-write_srec_to_bus(uint32_t addr,uint8_t *buf,int count,void *clientData) 
+static int
+write_srec_to_bus(uint32_t addr, uint8_t * buf, int count, void *clientData)
 {
-	LoaderInfo *li = (LoaderInfo *)clientData;
-	if(count <= 0) {
-		return 0;
-	}
-	if((addr < li->region_start) || ((addr + count - 1) > li->region_end)) {
-		fprintf(stderr,"S-Record is outside of memory region\n");
-		fprintf(stderr,"Region from 0x%08" PRIx64 " to 0x%08" PRIx64 "\n",li->region_start,li->region_end);
-		fprintf(stderr,"S-Record at 0x%08x\n",addr);
-		return -1;
-	} else {
-		write_to_bus(addr,buf,count,li->flags);
-	}
-	return 0;
+    LoaderInfo *li = (LoaderInfo *) clientData;
+    if (count <= 0) {
+        return 0;
+    }
+    if ((addr < li->region_start) || ((addr + count - 1) > li->region_end)) {
+        fprintf(stderr, "S-Record is outside of memory region\n");
+        fprintf(stderr, "Region from 0x%08" PRIx64 " to 0x%08" PRIx64 "\n",
+                li->region_start, li->region_end);
+        fprintf(stderr, "S-Record at 0x%08x\n", addr);
+        return -1;
+    } else {
+        write_to_bus(addr, buf, count, li->flags);
+    }
+    return 0;
 }
 
 static int
-Load_SRecords(char *filename,uint32_t startaddr,int flags,uint64_t region_size) 
+Load_SRecords(char *filename, uint32_t startaddr, int flags, uint64_t region_size)
 {
-	LoaderInfo li;		
-	li.flags = flags;
-	li.region_start = startaddr;
-	if(region_size > 0) {
-		li.region_end = startaddr + region_size - 1;
-	} else {
-		li.region_end = ~UINT64_C(0);
-	}
-	return XY_LoadSRecordFile(filename,write_srec_to_bus,&li);
+    LoaderInfo li;
+    li.flags = flags;
+    li.region_start = startaddr;
+    if (region_size > 0) {
+        li.region_end = startaddr + region_size - 1;
+    } else {
+        li.region_end = ~UINT64_C(0);
+    }
+    return XY_LoadSRecordFile(filename, write_srec_to_bus, &li);
 }
+
 /*
  * --------------------------------------------------
  * write_ihex_to_bus
@@ -126,35 +130,66 @@ Load_SRecords(char *filename,uint32_t startaddr,int flags,uint64_t region_size)
  *	is invoked after parsing a data record
  * --------------------------------------------------
  */
-static int 
-write_ihex_to_bus(uint32_t addr,uint8_t *buf,int count,void *cd) 
+static int
+write_ihex_to_bus(uint32_t addr, uint8_t * buf, int count, void *cd)
 {
-	LoaderInfo *li = (LoaderInfo *)cd;
-	if(count <= 0) {
-		return 0;
-	}
-	if((addr < li->region_start) || ((addr + count - 1) > li->region_end)) {
-		fprintf(stderr,"Ihex: Record at 0x%08x is outside of memory_region\n",addr);
-		return -1;
-	} else {
-		write_to_bus(addr,buf,count,li->flags);
-	}
-	return 0;
+    LoaderInfo *li = (LoaderInfo *) cd;
+    if (count <= 0) {
+        return 0;
+    }
+    if ((addr < li->region_start) || ((addr + count - 1) > li->region_end)) {
+        fprintf(stderr, "Ihex: Record at 0x%08x is outside of memory_region\n", addr);
+        return -1;
+    } else {
+        write_to_bus(addr, buf, count, li->flags);
+    }
+    return 0;
 }
 
 static int
-Load_IHex(char *filename,uint32_t startaddr,int flags,uint64_t region_size) 
+Load_IHex(char *filename, uint32_t startaddr, int flags, uint64_t region_size)
 {
-	LoaderInfo li;		
-	li.flags = flags;
-	li.region_start = startaddr;
-	if(region_size > 0) {
-		li.region_end = startaddr + region_size -1;
-	} else {
-		li.region_end = ~UINT64_C(0);
-	}
-	fprintf(stderr,"Loading Intel Hex Record file \"%s\"\n",filename);
-        return XY_LoadIHexFile(filename,write_ihex_to_bus,&li);;
+    LoaderInfo li;
+    li.flags = flags;
+    li.region_start = startaddr;
+    if (region_size > 0) {
+        li.region_end = startaddr + region_size - 1;
+    } else {
+        li.region_end = ~UINT64_C(0);
+    }
+    fprintf(stderr, "Loading Intel Hex Record file \"%s\"\n", filename);
+    return XY_LoadIHexFile(filename, write_ihex_to_bus, &li);;
+}
+
+static int
+write_elf_to_bus(uint64_t addr, uint8_t * buf, int64_t count, void *cd)
+{
+    LoaderInfo *li = (LoaderInfo *) cd;
+    if (count <= 0) {
+        return 0;
+    }
+    if ((addr < li->region_start) || ((addr + count - 1) > li->region_end)) {
+        fprintf(stderr, "Elf: Segment at 0x%" PRIx64 " is outside of memory_region\n", addr);
+        return -1;
+    } else {
+        write_to_bus(addr, buf, count, li->flags);
+    }
+    return 0;
+}
+
+static int
+Load_Elf(char *filename, uint32_t startaddr, int flags, uint64_t region_size)
+{
+    LoaderInfo li;
+    li.flags = flags;
+    li.region_start = startaddr;
+    if (region_size > 0) {
+        li.region_end = startaddr + region_size - 1;
+    } else {
+        li.region_end = ~UINT64_C(0);
+    }
+    fprintf(stderr, "Loading Elf file \"%s\"\n", filename);
+    return Elf_LoadFile(filename, write_elf_to_bus, &li);
 }
 
 /*
@@ -163,43 +198,43 @@ Load_IHex(char *filename,uint32_t startaddr,int flags,uint64_t region_size)
  * -----------------------------------------
  */
 int
-Load_Binary(char *filename,uint32_t addr,int flags,uint64_t maxlen) 
+Load_Binary(char *filename, uint32_t addr, int flags, uint64_t maxlen)
 {
-	int fd=open(filename,O_RDONLY);
-        int count;
-	int to_big = 0;
-        int64_t total=0;
-	uint8_t buf[4096];
-        if(fd<=0) {
-                fprintf(stderr,"Can not open file %s ",filename);
-                perror("");
-		return -1;
+    int fd = open(filename, O_RDONLY);
+    int count;
+    int to_big = 0;
+    int64_t total = 0;
+    uint8_t buf[4096];
+    if (fd <= 0) {
+        fprintf(stderr, "Can not open file %s ", filename);
+        perror("");
+        return -1;
+    }
+    while (1) {
+        count = read(fd, buf, 4096);
+        if (count == 0) {
+            close(fd);
+            return total;
+        } else if (count < 0) {
+            perror("error reading binary file");
+            return -1;
         }
-	while(1) {
-                count = read(fd,buf,4096);
-		if(count==0) {
-			close(fd);
-			return total;
-		} else if(count < 0) {
-			perror("error reading binary file");
-			return -1;
-		}
-		if(maxlen && (count + total > maxlen)) {
-			count = maxlen - total;
-			to_big = 1;
-		}
-		if(write_to_bus(addr,buf,count,flags) < 0) {
-			fprintf(stderr,"Binary loader: Can not write to bus at addr 0x%08x\n",addr);
-		}
-		total+=count;
-		addr+=count;
-		if(to_big) {
-			fprintf(stderr,"Binary file does not fit into memory region\n");
-			return -1;
-		}
-	}
-	close(fd);
-	return total;
+        if (maxlen && (count + total > maxlen)) {
+            count = maxlen - total;
+            to_big = 1;
+        }
+        if (write_to_bus(addr, buf, count, flags) < 0) {
+            fprintf(stderr, "Binary loader: Can not write to bus at addr 0x%08x\n", addr);
+        }
+        total += count;
+        addr += count;
+        if (to_big) {
+            fprintf(stderr, "Binary file does not fit into memory region\n");
+            return -1;
+        }
+    }
+    close(fd);
+    return total;
 }
 
 /*
@@ -209,26 +244,44 @@ Load_Binary(char *filename,uint32_t addr,int flags,uint64_t maxlen)
  * The load address is ignored for srecords
  * --------------------------------------------------------------
  */
-int64_t  
-Load_AutoType(char *filename,uint32_t load_addr,uint64_t region_size)  {
-	uint32_t swap;
-	int flags=0;
-	int len = strlen(filename);
-	if(Config_ReadUInt32(&swap,"loader","swap32") >=0) {
-		if(swap) {
-			flags=LOADER_FLAG_SWAP32;
-		}
-	}
-	fprintf(stderr,"Loading %s to 0x%08x flags %d\n",filename,load_addr,flags);
-	if((len>=5) && (!strcmp(filename+len-5,".srec"))){
-		return Load_SRecords(filename,load_addr,flags,region_size);
-	} else if((len>=4) && (!strcmp(filename+len-4,".s19"))){
-		return Load_SRecords(filename,load_addr,flags,region_size);
-	} else if((len>=4) && (!strcmp(filename+len-4,".mot"))){
-		return Load_SRecords(filename,load_addr,flags,region_size);
-	} else if((len>=4) && (!strcmp(filename+len-4,".hex"))){
-		return Load_IHex(filename,load_addr,flags,region_size);
-	} else {
-		return Load_Binary(filename,load_addr,flags,region_size);
-	}
+int64_t
+Load_AutoType(char *filename, uint32_t load_addr, uint64_t region_size)
+{
+    uint32_t swap;
+    int flags = 0;
+    int len = strlen(filename);
+    if (Config_ReadUInt32(&swap, "loader", "swap32") >= 0) {
+        if (swap) {
+            flags = LOADER_FLAG_SWAP32;
+        }
+    }
+    fprintf(stderr, "Loading %s to 0x%08x flags %d\n", filename, load_addr, flags);
+    if ((len >= 5) && (!strcmp(filename + len - 5, ".srec"))) {
+        return Load_SRecords(filename, load_addr, flags, region_size);
+    } else if ((len >= 4) && (!strcmp(filename + len - 4, ".s19"))) {
+        return Load_SRecords(filename, load_addr, flags, region_size);
+    } else if ((len >= 4) && (!strcmp(filename + len - 4, ".mot"))) {
+        return Load_SRecords(filename, load_addr, flags, region_size);
+    } else if ((len >= 4) && (!strcmp(filename + len - 4, ".aff"))) {
+        return Load_SRecords(filename, load_addr, flags, region_size);
+    } else if ((len >= 5) && (!strcmp(filename + len - 5, ".ihex"))) {
+        return Load_IHex(filename, load_addr, flags, region_size);
+    } else if ((len >= 4) && (!strcmp(filename + len - 4, ".elf"))) {
+        return Load_Elf(filename, load_addr, flags, region_size);
+    } else if ((len >= 4) && (!strcmp(filename + len - 4, ".bin"))) {
+        return Load_Binary(filename, load_addr, flags, region_size);
+    } else if ((len >= 4) && (!strcmp(filename + len - 4, ".hex"))) {
+        return Load_IHex(filename, load_addr, flags, region_size);
+    } else {
+        /* Automatic file format detection */
+        if (Elf_CheckElf(filename) == true) {
+            return Load_Elf(filename, load_addr, flags, region_size);
+        } else if (SRecord_FileIsSRecord(filename) == true) {
+            return Load_SRecords(filename, load_addr, flags, region_size);
+        } else if (IHex_FileIsIHex(filename) == true) {
+            return Load_IHex(filename, load_addr, flags, region_size);
+        } else {
+            return Load_Binary(filename, load_addr, flags, region_size);
+        }
+    }
 }

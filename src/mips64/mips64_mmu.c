@@ -9,7 +9,7 @@
 uint64_t
 Mips64MMU_Translate(uint64_t addr)
 {
-	return addr;	
+	return addr;
 }
 
 /*
@@ -25,7 +25,6 @@ Mips64MMU_Translate(uint64_t addr)
 #define ENTRY_LO_D		(1<<2)
 #define ENTRY_LO_V		(1<<1)
 #define ENTRY_LO_G		(1<<0)
-
 
 #define STATUS_CU3	(1<<31)
 #define STATUS_CU2	(1<<30)
@@ -61,14 +60,14 @@ Mips64MMU_Translate(uint64_t addr)
 #define STATUS_EXL	(1<<1)
 #define STATUS_IE	(1<<0)
 
-typedef void   MtcProc(void *clientData,uint32_t icode,uint64_t value);
-typedef uint64_t MfcProc(void *clientData,uint32_t icode);
+typedef void MtcProc(void *clientData, uint32_t icode, uint64_t value);
+typedef uint64_t MfcProc(void *clientData, uint32_t icode);
 
 typedef struct MIPS_SysCopro {
 	MtcProc *mtcproc[256];
 	MfcProc *mfcproc[256];
-	uint32_t r_Index; /* cp0 r=0, s=0 */
-	uint32_t r_Random; /* cp0, r=1, s=0 */
+	uint32_t r_Index;	/* cp0 r=0, s=0 */
+	uint32_t r_Random;	/* cp0, r=1, s=0 */
 	uint64_t r_EntryLo0;
 	uint64_t r_EntryLo1;
 	uint64_t r_Context;
@@ -76,7 +75,7 @@ typedef struct MIPS_SysCopro {
 	uint32_t r_PageGrain;
 	uint32_t r_Wired;
 	uint32_t r_HWREna;
-	uint64_t r_BadVAddr; /* 32 or 64 bit */
+	uint64_t r_BadVAddr;	/* 32 or 64 bit */
 	uint32_t r_Count;
 	uint64_t r_EntryHi;
 	uint32_t r_Compare;
@@ -96,41 +95,40 @@ typedef struct MIPS_SysCopro {
 } MIPS_SysCopro;
 
 uint32_t
-CP0_MFC(void *clientData,uint32_t icode) 
+CP0_MFC(void *clientData, uint32_t icode)
 {
 	MIPS_SysCopro *cop0 = (MIPS_SysCopro *) clientData;
-	int rd = (icode >> 11)	& 0x1f;
+	int rd = (icode >> 11) & 0x1f;
 	int sel = icode & 0x7;
 	int index = (rd << 3) || sel;
 	MfcProc *proc = cop0->mfcproc[index];
-	return proc(cop0,icode);
+	return proc(cop0, icode);
 }
 
 uint64_t
-CP0_DMFC(void *clientData,uint32_t icode) 
+CP0_DMFC(void *clientData, uint32_t icode)
 {
 	MIPS_SysCopro *cop0 = (MIPS_SysCopro *) clientData;
-	int rd = (icode >> 11)	& 0x1f;
+	int rd = (icode >> 11) & 0x1f;
 	int sel = icode & 0x7;
 	int index = (rd << 3) || sel;
 	MfcProc *proc = cop0->mfcproc[index];
-	return proc(cop0,icode);
+	return proc(cop0, icode);
 }
 
-
 void
-CP0_MTC(void *clientData,uint32_t icode,uint64_t value) 
+CP0_MTC(void *clientData, uint32_t icode, uint64_t value)
 {
 	MIPS_SysCopro *cop0 = (MIPS_SysCopro *) clientData;
-	int rd = (icode >> 11)	& 0x1f;
+	int rd = (icode >> 11) & 0x1f;
 	int sel = icode & 0x7;
 	int index = (rd << 3) || sel;
 	MtcProc *proc = cop0->mtcproc[index];
-	proc(cop0,icode,value);
+	proc(cop0, icode, value);
 }
 
 MIPS_SysCopro *
-MIPS_SysCoproNew() 
+MIPS_SysCoproNew()
 {
 	MIPS_SysCopro *cop0 = sg_new(MIPS_SysCopro);
 	return cop0;

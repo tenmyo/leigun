@@ -73,7 +73,7 @@
 typedef struct IMX21Pwm {
 	BusDevice bdev;
 	Clock_t *clk;
-	Clock_t *clk32;	
+	Clock_t *clk32;
 	SigNode *irqNode;
 	uint32_t pwmc;
 	uint16_t pwms[FIFO_SIZE];
@@ -84,20 +84,20 @@ typedef struct IMX21Pwm {
 } IMX21Pwm;
 
 static void
-update_interrupt(IMX21Pwm *pwm) 
+update_interrupt(IMX21Pwm * pwm)
 {
-	if((pwm->pwmc & PWMC_IRQ) && (pwm->pwmc & PWMC_IRQEN)) {
-		SigNode_Set(pwm->irqNode,SIG_LOW);
+	if ((pwm->pwmc & PWMC_IRQ) && (pwm->pwmc & PWMC_IRQEN)) {
+		SigNode_Set(pwm->irqNode, SIG_LOW);
 	} else {
-		SigNode_Set(pwm->irqNode,SIG_LOW);
+		SigNode_Set(pwm->irqNode, SIG_LOW);
 	}
 }
 
 static uint32_t
-pwmc_read(void *clientData,uint32_t address,int rqlen)
+pwmc_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Pwm *pwm = (IMX21Pwm *) clientData;
-	if(pwm->pwmc & PWMC_IRQ) {
+	if (pwm->pwmc & PWMC_IRQ) {
 		pwm->pwmc &= ~PWMC_IRQ;
 		update_interrupt(pwm);
 	}
@@ -105,108 +105,107 @@ pwmc_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-pwmc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pwmc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	static int count = 0;
 	IMX21Pwm *pwm = (IMX21Pwm *) clientData;
 	pwm->pwmc = (pwm->pwmc & 0xfff900a0) | (value & 0x0006ff5f);
 	update_interrupt(pwm);
-	if(count < 10) {
-		fprintf(stderr,"PWMC write not implemented\n");
+	if (count < 10) {
+		fprintf(stderr, "PWMC write not implemented\n");
 		count++;
 	}
 }
 
 static uint32_t
-pwms_read(void *clientData,uint32_t address,int rqlen)
+pwms_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PWMS read not implemented\n");
+	fprintf(stderr, "PWMS read not implemented\n");
 	return 0;
 }
 
 static void
-pwms_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pwms_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Pwm *pwm = (IMX21Pwm *) clientData;
-	if(FIFO_COUNT(pwm) < FIFO_SIZE) {
+	if (FIFO_COUNT(pwm) < FIFO_SIZE) {
 		/* Check for swap words missing here */
 		pwm->pwms[pwm->pwms_wp % FIFO_SIZE] = value;
 		pwm->pwms_wp++;
 	} else {
-		fprintf(stderr,"PWMS fifo overflow\n");
-	}	
-	fprintf(stderr,"PWMS write not implemented\n");
+		fprintf(stderr, "PWMS fifo overflow\n");
+	}
+	fprintf(stderr, "PWMS write not implemented\n");
 }
 
 static uint32_t
-pwmp_read(void *clientData,uint32_t address,int rqlen)
+pwmp_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMX21Pwm *pwm = (IMX21Pwm *) clientData;
-	return pwm->pwmp; 
+	return pwm->pwmp;
 }
 
 static void
-pwmp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pwmp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMX21Pwm *pwm = (IMX21Pwm *) clientData;
 	pwm->pwmp = value;
-	fprintf(stderr,"PWMP write not implemented\n");
+	fprintf(stderr, "PWMP write not implemented\n");
 }
 
 static uint32_t
-pwmcnt_read(void *clientData,uint32_t address,int rqlen)
+pwmcnt_read(void *clientData, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PWMCNT read not implemented\n");
+	fprintf(stderr, "PWMCNT read not implemented\n");
 	return 0;
 }
 
 static void
-pwmcnt_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pwmcnt_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"PWMCNT not writable\n");
+	fprintf(stderr, "PWMCNT not writable\n");
 }
 
 static void
-IMXPwm_UnMap(void *owner,uint32_t base,uint32_t mask)
+IMXPwm_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-	 IOH_Delete32(PWMC(base));
-	 IOH_Delete32(PWMS(base));
-	 IOH_Delete32(PWMP(base));
-	 IOH_Delete32(PWMCNT(base));
+	IOH_Delete32(PWMC(base));
+	IOH_Delete32(PWMS(base));
+	IOH_Delete32(PWMP(base));
+	IOH_Delete32(PWMCNT(base));
 }
 
 static void
-IMXPwm_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+IMXPwm_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	IMX21Pwm *pwm = (IMX21Pwm *) owner;
-        IOH_New32(PWMC(base),pwmc_read,pwmc_write,pwm);
-        IOH_New32(PWMS(base),pwms_read,pwms_write,pwm);
-        IOH_New32(PWMP(base),pwmp_read,pwmp_write,pwm);
-        IOH_New32(PWMCNT(base),pwmcnt_read,pwmcnt_write,pwm);
+	IOH_New32(PWMC(base), pwmc_read, pwmc_write, pwm);
+	IOH_New32(PWMS(base), pwms_read, pwms_write, pwm);
+	IOH_New32(PWMP(base), pwmp_read, pwmp_write, pwm);
+	IOH_New32(PWMCNT(base), pwmcnt_read, pwmcnt_write, pwm);
 
 }
 
 BusDevice *
-IMX21_PwmNew(const char *name) 
+IMX21_PwmNew(const char *name)
 {
 	IMX21Pwm *pwm;
 	pwm = sg_new(IMX21Pwm);
 	pwm->pwmc = 0x000000a0;
 	pwm->pwmp = 0xfffe;
 	pwm->pwmcnt = 0;
-	pwm->irqNode = SigNode_New("%s.irq",name);
-	if(!pwm->irqNode) {
-		fprintf(stderr,"IMX21-PWM: Creation of interrupt line failed\n");
+	pwm->irqNode = SigNode_New("%s.irq", name);
+	if (!pwm->irqNode) {
+		fprintf(stderr, "IMX21-PWM: Creation of interrupt line failed\n");
 		exit(1);
 	}
-	pwm->clk = Clock_New("%s.clk",name);
-	pwm->clk32 = Clock_New("%s.clk32",name);
+	pwm->clk = Clock_New("%s.clk", name);
+	pwm->clk32 = Clock_New("%s.clk32", name);
 	update_interrupt(pwm);
-	pwm->bdev.first_mapping=NULL;
-        pwm->bdev.Map=IMXPwm_Map;
-        pwm->bdev.UnMap=IMXPwm_UnMap;
-        pwm->bdev.owner=pwm;
-        pwm->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	pwm->bdev.first_mapping = NULL;
+	pwm->bdev.Map = IMXPwm_Map;
+	pwm->bdev.UnMap = IMXPwm_UnMap;
+	pwm->bdev.owner = pwm;
+	pwm->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &pwm->bdev;
 }
-

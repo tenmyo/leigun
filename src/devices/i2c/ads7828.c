@@ -67,10 +67,11 @@ struct ADS7828 {
  * ADS7828 Write state machine 
  * ------------------------------------
  */
-static int 
-ads7828_write(void *dev,uint8_t data) {
+static int
+ads7828_write(void *dev, uint8_t data)
+{
 	ADS7828 *ads = dev;
-	dbgprintf("ADS7828 Addr 0x%02x\n",data);
+	dbgprintf("ADS7828 Addr 0x%02x\n", data);
 	ads->cmd = data;
 	return I2C_ACK;
 };
@@ -81,119 +82,121 @@ ads7828_write(void *dev,uint8_t data) {
 #define PCF_AIN_THREE_DIFF 	(0x10)
 #define PCF_AIN_MIXED 		(0x20)
 #define PCF_AIN_TWO_DIFF 	(0x30)
-static int 
-ads7828_read(void *dev,uint8_t *data) 
+static int
+ads7828_read(void *dev, uint8_t * data)
 {
 	ADS7828 *ads = dev;
 	struct timeval tv;
-	int chsel = (ads->cmd&0xf0) >> 4;
+	int chsel = (ads->cmd & 0xf0) >> 4;
 	int pd = (ads->cmd & 0xc) >> 2;
 	int random;
-	if(ads->state==ADS_STATE_DATA0) {
-		if(pd!=3) {
-			fprintf(stderr,"ADS7828 Power Down mode %d not implemented\n",pd);
+	if (ads->state == ADS_STATE_DATA0) {
+		if (pd != 3) {
+			fprintf(stderr, "ADS7828 Power Down mode %d not implemented\n", pd);
 		}
-		gettimeofday(&tv,NULL);
-        	random = tv.tv_usec & 0xff;
+		gettimeofday(&tv, NULL);
+		random = tv.tv_usec & 0xff;
 		switch (chsel) {
-			case 0: 
-				ads->ad = ads->ain[0]-ads->ain[1] + random;
-				break;
-			case 1: 
-				ads->ad = ads->ain[2]-ads->ain[3] + random;
-				break;
-			case 2: 
-				ads->ad = ads->ain[4]-ads->ain[5] + random;
-				break;
-			case 3: 
-				ads->ad = ads->ain[6]-ads->ain[7] + random;
-				break;
-			case 4: 
-				ads->ad = ads->ain[1]-ads->ain[0] + random;
-				break;
-			case 5: 
-				ads->ad = ads->ain[3]-ads->ain[2] + random;
-				break;
-			case 6: 
-				ads->ad = ads->ain[5]-ads->ain[4] + random;
-				break;
-			case 7: 
-				ads->ad = ads->ain[7]-ads->ain[6] + random;
-				break;
-			case 8: 
-				ads->ad = ads->ain[0] + random;
-				break;
-			case 9: 
-				ads->ad = ads->ain[2] + random;
-				break;
-			case 10: 
-				ads->ad = ads->ain[4] + random;
-				break;
-			case 11: 
-				ads->ad = ads->ain[6] + random;
-				break;
-			case 12: 
-				ads->ad = ads->ain[1] + random;
-				break;
-			case 13: 
-				ads->ad = ads->ain[3] + random;
-				break;
-			case 14: 
-				ads->ad = ads->ain[5] + random;
-				break;
-			case 15: 
-				ads->ad = ads->ain[7] + random;
-				break;
+		    case 0:
+			    ads->ad = ads->ain[0] - ads->ain[1] + random;
+			    break;
+		    case 1:
+			    ads->ad = ads->ain[2] - ads->ain[3] + random;
+			    break;
+		    case 2:
+			    ads->ad = ads->ain[4] - ads->ain[5] + random;
+			    break;
+		    case 3:
+			    ads->ad = ads->ain[6] - ads->ain[7] + random;
+			    break;
+		    case 4:
+			    ads->ad = ads->ain[1] - ads->ain[0] + random;
+			    break;
+		    case 5:
+			    ads->ad = ads->ain[3] - ads->ain[2] + random;
+			    break;
+		    case 6:
+			    ads->ad = ads->ain[5] - ads->ain[4] + random;
+			    break;
+		    case 7:
+			    ads->ad = ads->ain[7] - ads->ain[6] + random;
+			    break;
+		    case 8:
+			    ads->ad = ads->ain[0] + random;
+			    break;
+		    case 9:
+			    ads->ad = ads->ain[2] + random;
+			    break;
+		    case 10:
+			    ads->ad = ads->ain[4] + random;
+			    break;
+		    case 11:
+			    ads->ad = ads->ain[6] + random;
+			    break;
+		    case 12:
+			    ads->ad = ads->ain[1] + random;
+			    break;
+		    case 13:
+			    ads->ad = ads->ain[3] + random;
+			    break;
+		    case 14:
+			    ads->ad = ads->ain[5] + random;
+			    break;
+		    case 15:
+			    ads->ad = ads->ain[7] + random;
+			    break;
 		}
-		*data = (ads->ad >> 8)&0xf;
+		*data = (ads->ad >> 8) & 0xf;
 		ads->state = ADS_STATE_DATA1;
 	} else if (ads->state == ADS_STATE_DATA1) {
 		*data = ads->ad & 0xff;
 		ads->state = ADS_STATE_DATA0;
 	}
-	dbgprintf("ADS7828 read 0x%02x\n",*data);
+	dbgprintf("ADS7828 read 0x%02x\n", *data);
 	return I2C_DONE;
 };
 
 static int
-ads7828_start(void *dev,int i2c_addr,int operation) {
+ads7828_start(void *dev, int i2c_addr, int operation)
+{
 	ADS7828 *ads = dev;
 	dbgprintf("ads7828 start\n");
 	ads->state = ADS_STATE_DATA0;
 	return I2C_ACK;
 }
 
-static void 
-ads7828_stop(void *dev) {
+static void
+ads7828_stop(void *dev)
+{
 	ADS7828 *ads = dev;
 	dbgprintf("ads7828 stop\n");
 	ads->state = ADS_STATE_DATA0;
 }
 
-
 static I2C_SlaveOps ads7828_ops = {
 	.start = ads7828_start,
-	.stop =  ads7828_stop,
-	.read =  ads7828_read,	
-	.write = ads7828_write	
+	.stop = ads7828_stop,
+	.read = ads7828_read,
+	.write = ads7828_write
 };
 
 I2C_Slave *
-ADS7828_New(char *name) {
-	ADS7828 *ads = sg_new(ADS7828); 
+ADS7828_New(char *name)
+{
+	ADS7828 *ads = sg_new(ADS7828);
 	I2C_Slave *i2c_slave;
-	ads->ain[0]= 3277; // 5
-	ads->ain[1]= 1650; 
-	ads->ain[2]= 789; 
-	ads->ain[3]= 1234;
-	ads->ain[4]= 3604; // 3v3
-	ads->ain[5]= 2334;
-	ads->ain[6]= 2534;
-	ads->ain[7]= 2500;
+	ads->ain[0] = 3277;	// 5
+	ads->ain[1] = 1650;
+	ads->ain[2] = 789;
+	ads->ain[3] = 1234;
+	ads->ain[4] = 3604;	// 3v3
+	ads->ain[5] = 2334;
+	ads->ain[6] = 2534;
+	ads->ain[7] = 2500;
 	i2c_slave = &ads->i2c_slave;
-	i2c_slave->devops = &ads7828_ops; 
+	i2c_slave->devops = &ads7828_ops;
 	i2c_slave->dev = ads;
 	i2c_slave->speed = I2C_SPEED_FAST;
-	fprintf(stderr,"ADS7828 12Bit 8-Channel A/D Converter \"%s\" created\n",name);
+	fprintf(stderr, "ADS7828 12Bit 8-Channel A/D Converter \"%s\" created\n", name);
 	return i2c_slave;
 }

@@ -1,4 +1,3 @@
 #include <bus.h>
 
-BusDevice * IMXUart_New(const char *name);
-
+BusDevice *IMXUart_New(const char *name);

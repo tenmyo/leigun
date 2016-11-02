@@ -50,13 +50,13 @@
 #include <sgstring.h>
 #include <serial.h>
 
-#define PSC_MR1(base) 		((base) + 0x00) 
+#define PSC_MR1(base) 		((base) + 0x00)
 #define PSC_MR2(base) 		((base) + 0x00)
 #define PSC_SR(base)		((base) + 0x04)
-#define PSC_CSR(base)		((base) + 0x04) 
+#define PSC_CSR(base)		((base) + 0x04)
 #define PSC_CR(base)		((base) + 0x08)
-#define PSC_RB(base)		((base) + 0x0c)  
-#define PSC_TB(base)		((base) + 0x0c)  
+#define PSC_RB(base)		((base) + 0x0c)
+#define PSC_TB(base)		((base) + 0x0c)
 #define PSC_IPCR(base)		((base) + 0x10)
 #define	PSC_ACR(base)		((base) + 0x10)
 #define PSC_ISR(base)		((base) + 0x14)
@@ -103,505 +103,468 @@ typedef struct Psc {
 } Psc;
 
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-csr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+csr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-rb_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-tb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ipcr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-acr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-isr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-isr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static void
-ctur_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static void
-ctlr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ccr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-ccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static void
-ac97slots_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ac97cmd_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-ac97cmd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ac97data_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
 static uint32_t
-ivr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-ivr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ip_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-op1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static void
-op0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-sicr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-sicr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ircr1_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-ircr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-ircr2_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-ircr2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-irsdr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-irsdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-irmdr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-irmdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-irfdr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
-}
-
-static void
-irfdr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
-
-static uint32_t
-rfnum_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
 static uint32_t
-tfnum_read(void *clientData,uint32_t address,int rqlen)
+rb_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
 static uint32_t
-rfdata_read(void *clientData,uint32_t address,int rqlen)
+ipcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rfdata_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+acr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-rfstat_read(void *clientData,uint32_t address,int rqlen)
+isr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rfstat_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+isr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
+static void
+ctur_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static void
+ctlr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
 
 static uint32_t
-rfcntl_read(void *clientData,uint32_t address,int rqlen)
+ccr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rfcntl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
+static void
+ac97slots_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
 
 static uint32_t
-rfalarm_read(void *clientData,uint32_t address,int rqlen)
+ac97cmd_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rfalarm_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ac97cmd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-rfrptr_read(void *clientData,uint32_t address,int rqlen)
+ac97data_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
-
-static void
-rfrptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
 
 static uint32_t
-rfwptr_read(void *clientData,uint32_t address,int rqlen)
+ivr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rfwptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ivr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-rflrfptr_read(void *clientData,uint32_t address,int rqlen)
+ip_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rflrfptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+op1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
+static void
+op0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
 
 static uint32_t
-rflwfptr_read(void *clientData,uint32_t address,int rqlen)
+sicr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-rflwfptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sicr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-tfdata_read(void *clientData,uint32_t address,int rqlen)
+ircr1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-tfdata_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ircr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-tfstat_read(void *clientData,uint32_t address,int rqlen)
+ircr2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-tfstat_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ircr2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-tfcntl_read(void *clientData,uint32_t address,int rqlen)
+irsdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-tfcntl_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irsdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-tfalarm_read(void *clientData,uint32_t address,int rqlen)
+irmdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-tfalarm_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irmdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-tfrptr_read(void *clientData,uint32_t address,int rqlen)
+irfdr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-tfrptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+irfdr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
-
 
 static uint32_t
-tfwptr_read(void *clientData,uint32_t address,int rqlen)
+rfnum_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
-
-static void
-tfwptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
 
 static uint32_t
-tflrfptr_read(void *clientData,uint32_t address,int rqlen)
+tfnum_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
-
-static void
-tflrfptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"PSC: register not implemented\n");
-}
-
 
 static uint32_t
-tflwfptr_read(void *clientData,uint32_t address,int rqlen)
+rfdata_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
-        return 0;
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
 }
 
 static void
-tflwfptr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rfdata_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PSC: register not implemented\n");
+	fprintf(stderr, "PSC: register not implemented\n");
 }
 
-
-
+static uint32_t
+rfstat_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
 
 static void
-Psc_Unmap(void *owner,uint32_t base,uint32_t mask)
+rfstat_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+rfcntl_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+rfcntl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+rfalarm_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+rfalarm_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+rfrptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+rfrptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+rfwptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+rfwptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+rflrfptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+rflrfptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+rflwfptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+rflwfptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tfdata_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tfdata_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tfstat_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tfstat_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tfcntl_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tfcntl_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tfalarm_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tfalarm_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tfrptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tfrptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tfwptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tfwptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tflrfptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tflrfptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static uint32_t
+tflwfptr_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+	return 0;
+}
+
+static void
+tflwfptr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "PSC: register not implemented\n");
+}
+
+static void
+Psc_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete8(PSC_MR1(base));
 	IOH_Delete16(PSC_SR(base));
@@ -647,59 +610,59 @@ Psc_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-Psc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+Psc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
-	Psc *psc = (Psc *)owner;
-	IOH_New8(PSC_MR1(base),mr_read,mr_write,psc); 
-	IOH_New16(PSC_SR(base),sr_read,csr_write,psc);
-	IOH_New8(PSC_CR(base),cr_read,cr_write,psc);
-	IOH_New32(PSC_RB(base),rb_read,tb_write,psc);
-	IOH_New8(PSC_IPCR(base),ipcr_read,acr_write,psc);
-	IOH_New16(PSC_ISR(base),isr_read,isr_write,psc);
-	IOH_New8(PSC_CTUR(base),NULL,ctur_write,psc);
-	IOH_New8(PSC_CTLR(base),NULL,ctlr_write,psc);	
-	IOH_New32(PSC_CCR(base),ccr_read,ccr_write,psc);
-	IOH_New32(PSC_AC97Slots(base),NULL,ac97slots_write,psc);	
-	IOH_New32(PSC_AC97CMD(base),ac97cmd_read,ac97cmd_write,psc);
-	IOH_New32(PSC_AC97Data(base),ac97data_read,NULL,psc);
-	IOH_New8(PSC_IVR(base),ivr_read,ivr_write,psc);	
-	IOH_New8(PSC_IP(base),ip_read,NULL,psc);	
-	IOH_New8(PSC_OP1(base),NULL,op1_write,psc);	
-	IOH_New8(PSC_OP0(base),NULL,op0_write,psc);	
-	IOH_New32(PSC_SICR(base),sicr_read,sicr_write,psc);
-	IOH_New8(PSC_IRCR1(base),ircr1_read,ircr1_write,psc);	
-	IOH_New8(PSC_IRCR2(base),ircr2_read,ircr2_write,psc);
-	IOH_New8(PSC_IRSDR(base),irsdr_read,irsdr_write,psc);
-	IOH_New8(PSC_IRMDR(base),irmdr_read,irmdr_write,psc);
-	IOH_New8(PSC_IRFDR(base),irfdr_read,irfdr_write,psc);
-	IOH_New16(PSC_RFNUM(base),rfnum_read,NULL,psc);
-	IOH_New16(PSC_TFNUM(base),tfnum_read,NULL,psc);
-	IOH_New32(PSC_RFDATA(base),rfdata_read,rfdata_write,psc);	
-	IOH_New16(PSC_RFSTAT(base),rfstat_read,rfstat_write,psc);
-	IOH_New16(PSC_RFCNTL(base),rfcntl_read,rfcntl_write,psc);
-	IOH_New16(PSC_RFALARM(base),rfalarm_read,rfalarm_write,psc);
-	IOH_New16(PSC_RFRPTR(base),rfrptr_read,rfrptr_write,psc);
-	IOH_New16(PSC_RFWPTR(base),rfwptr_read,rfwptr_write,psc);
-	IOH_New16(PSC_RFLRFPTR(base),rflrfptr_read,rflrfptr_write,psc);
-	IOH_New16(PSC_RFLWFPTR(base),rflwfptr_read,rflwfptr_write,psc);
-	IOH_New32(PSC_TFDATA(base),tfdata_read,tfdata_write,psc);	
-	IOH_New16(PSC_TFSTAT(base),tfstat_read,tfstat_write,psc);
-	IOH_New8(PSC_TFCNTL(base),tfcntl_read,tfcntl_write,psc);
-	IOH_New16(PSC_TFALARM(base),tfalarm_read,tfalarm_write,psc);	
-	IOH_New16(PSC_TFRPTR(base),tfrptr_read,tfrptr_write,psc);
-	IOH_New16(PSC_TFWPTR(base),tfwptr_read,tfwptr_write,psc);
-	IOH_New16(PSC_TFLRFPTR(base),tflrfptr_read,tflrfptr_write,psc);
-	IOH_New16(PSC_TFLWFPTR(base),tflwfptr_read,tflwfptr_write,psc);
+	Psc *psc = (Psc *) owner;
+	IOH_New8(PSC_MR1(base), mr_read, mr_write, psc);
+	IOH_New16(PSC_SR(base), sr_read, csr_write, psc);
+	IOH_New8(PSC_CR(base), cr_read, cr_write, psc);
+	IOH_New32(PSC_RB(base), rb_read, tb_write, psc);
+	IOH_New8(PSC_IPCR(base), ipcr_read, acr_write, psc);
+	IOH_New16(PSC_ISR(base), isr_read, isr_write, psc);
+	IOH_New8(PSC_CTUR(base), NULL, ctur_write, psc);
+	IOH_New8(PSC_CTLR(base), NULL, ctlr_write, psc);
+	IOH_New32(PSC_CCR(base), ccr_read, ccr_write, psc);
+	IOH_New32(PSC_AC97Slots(base), NULL, ac97slots_write, psc);
+	IOH_New32(PSC_AC97CMD(base), ac97cmd_read, ac97cmd_write, psc);
+	IOH_New32(PSC_AC97Data(base), ac97data_read, NULL, psc);
+	IOH_New8(PSC_IVR(base), ivr_read, ivr_write, psc);
+	IOH_New8(PSC_IP(base), ip_read, NULL, psc);
+	IOH_New8(PSC_OP1(base), NULL, op1_write, psc);
+	IOH_New8(PSC_OP0(base), NULL, op0_write, psc);
+	IOH_New32(PSC_SICR(base), sicr_read, sicr_write, psc);
+	IOH_New8(PSC_IRCR1(base), ircr1_read, ircr1_write, psc);
+	IOH_New8(PSC_IRCR2(base), ircr2_read, ircr2_write, psc);
+	IOH_New8(PSC_IRSDR(base), irsdr_read, irsdr_write, psc);
+	IOH_New8(PSC_IRMDR(base), irmdr_read, irmdr_write, psc);
+	IOH_New8(PSC_IRFDR(base), irfdr_read, irfdr_write, psc);
+	IOH_New16(PSC_RFNUM(base), rfnum_read, NULL, psc);
+	IOH_New16(PSC_TFNUM(base), tfnum_read, NULL, psc);
+	IOH_New32(PSC_RFDATA(base), rfdata_read, rfdata_write, psc);
+	IOH_New16(PSC_RFSTAT(base), rfstat_read, rfstat_write, psc);
+	IOH_New16(PSC_RFCNTL(base), rfcntl_read, rfcntl_write, psc);
+	IOH_New16(PSC_RFALARM(base), rfalarm_read, rfalarm_write, psc);
+	IOH_New16(PSC_RFRPTR(base), rfrptr_read, rfrptr_write, psc);
+	IOH_New16(PSC_RFWPTR(base), rfwptr_read, rfwptr_write, psc);
+	IOH_New16(PSC_RFLRFPTR(base), rflrfptr_read, rflrfptr_write, psc);
+	IOH_New16(PSC_RFLWFPTR(base), rflwfptr_read, rflwfptr_write, psc);
+	IOH_New32(PSC_TFDATA(base), tfdata_read, tfdata_write, psc);
+	IOH_New16(PSC_TFSTAT(base), tfstat_read, tfstat_write, psc);
+	IOH_New8(PSC_TFCNTL(base), tfcntl_read, tfcntl_write, psc);
+	IOH_New16(PSC_TFALARM(base), tfalarm_read, tfalarm_write, psc);
+	IOH_New16(PSC_TFRPTR(base), tfrptr_read, tfrptr_write, psc);
+	IOH_New16(PSC_TFWPTR(base), tfwptr_read, tfwptr_write, psc);
+	IOH_New16(PSC_TFLRFPTR(base), tflrfptr_read, tflrfptr_write, psc);
+	IOH_New16(PSC_TFLWFPTR(base), tflwfptr_read, tflwfptr_write, psc);
 }
 
 BusDevice *
-MPC5200_PSCNew(BusDevice *dpram,const char *name)
-{    
+MPC5200_PSCNew(BusDevice * dpram, const char *name)
+{
 	Psc *psc = sg_calloc(sizeof(Psc));
-	psc->bdev.first_mapping=NULL;
-        psc->bdev.Map=Psc_Map;
-        psc->bdev.UnMap=Psc_Unmap;
-        psc->bdev.owner=psc;
-        psc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	psc->bdev.first_mapping = NULL;
+	psc->bdev.Map = Psc_Map;
+	psc->bdev.UnMap = Psc_Unmap;
+	psc->bdev.owner = psc;
+	psc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &psc->bdev;
 }

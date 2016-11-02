@@ -48,28 +48,30 @@
 
 #endif
 
-
 enum en_endianness {
-	en_LITTLE_ENDIAN = 0,
-	en_BIG_ENDIAN = 1,
+    en_LITTLE_ENDIAN = 0,
+    en_BIG_ENDIAN = 1,
 };
 
 #ifndef __BYTE_ORDER
 #error __BYTE_ORDER undefined
 #endif
-#if __BYTE_ORDER == __BIG_ENDIAN 
+#if __BYTE_ORDER == __BIG_ENDIAN
 #define HOST_BYTEORDER en_BIG_ENDIAN
 
-#define host32_to_be(x)		(x)	
-#define host16_to_be(x)		(x)	
+#define host64_to_be(x)		(x)
+#define host32_to_be(x)		(x)
+#define host16_to_be(x)		(x)
 
-#define host32_to_le(x)		swap32(x)	
+#define host64_to_be(x)		swap64(x)
+#define host32_to_le(x)		swap32(x)
 #define host16_to_le(x)		swap16(x)
 
+#define be64_to_host(x)		(x)
 #define be32_to_host(x)		(x)
-#define be16_to_host(x)		(x)	
+#define be16_to_host(x)		(x)
 
-
+#define le64_to_host(x)     swap64(x)
 #define le32_to_host(x)		swap32(x)
 #define	le16_to_host(x)		swap16(x)
 
@@ -84,17 +86,17 @@ enum en_endianness {
 #define	target64_to_host(x) 	(x)
 #define	target64_to_le(x)   	swap64(x)
 #define	le64_to_target(x)   	swap64(x)
-#define host64_to_target(x)	(x)	
+#define host64_to_target(x)	(x)
 
 #define	target32_to_host(x) 	(x)
 #define	target32_to_le(x)   	swap32(x)
 #define	le32_to_target(x)   	swap32(x)
-#define host32_to_target(x)	(x)	
+#define host32_to_target(x)	(x)
 
 #define	target16_to_host(x) 	(x)
 #define	target16_to_le(x)   	swap16(x)
 #define	le16_to_target(x)   	swap16(x)
-#define host16_to_target(x)	(x)	
+#define host16_to_target(x)	(x)
 
 /*
  * ----------------------------------------------
@@ -117,10 +119,9 @@ enum en_endianness {
 #define		le16_to_target(x)   (x)
 #define		host16_to_target(x) swap16(x)
 
+#endif                          /* TARGET_BIG_ENDIAN */
 
-#endif /* TARGET_BIG_ENDIAN */
-
-#else 
+#else
 #define HOST_BYTEORDER en_LITTLE_ENDIAN
 /*
  * ----------------------------------
@@ -128,15 +129,19 @@ enum en_endianness {
  * ----------------------------------
  */
 
-#define host32_to_le(x)		(x)	
+#define host64_to_le(x)     (x)
+#define host32_to_le(x)		(x)
 #define	host16_to_le(x)		(x)
 
-#define host32_to_be(x)		swap32(x)	
-#define host16_to_be(x)		swap16(x)	
+#define host64_to_be(x)     swap64(x)
+#define host32_to_be(x)		swap32(x)
+#define host16_to_be(x)		swap16(x)
 
+#define le64_to_host(x)     (x)
 #define le32_to_host(x)		(x)
 #define le16_to_host(x)		(x)
 
+#define be64_to_host(x)     swap64(x)
 #define be32_to_host(x)		swap32(x)
 #define be16_to_host(x)		swap16(x)
 
@@ -151,17 +156,17 @@ enum en_endianness {
 #define	target64_to_host(x) 	swap64(x)
 #define	target64_to_le(x)   	swap64(x)
 #define	le64_to_target(x)   	swap64(x)
-#define host64_to_target(x)	swap64(x)	
+#define host64_to_target(x)	swap64(x)
 
 #define	target32_to_host(x) 	swap32(x)
 #define	target32_to_le(x)   	swap32(x)
 #define	le32_to_target(x)   	swap32(x)
-#define host32_to_target(x)	swap32(x)	
+#define host32_to_target(x)	swap32(x)
 
 #define	target16_to_host(x) 	swap16(x)
 #define	target16_to_le(x)   	swap16(x)
 #define	le16_to_target(x)   	swap16(x)
-#define host16_to_target(x)	swap16(x)	
+#define host16_to_target(x)	swap16(x)
 
 /*
  * ----------------------------------------------
@@ -185,11 +190,10 @@ enum en_endianness {
 #define		le16_to_target(x)   (x)
 #define		be16_to_target(x)   	swap16(x)
 
-
 #define		le32_to_target(x)   (x)
 #define		be32_to_target(x)   	swap32(x)
 #define 	le32_to_host(x)     (x)
 #endif
 
 #endif
-#endif /* BYTEORDER_H */
+#endif                          /* BYTEORDER_H */

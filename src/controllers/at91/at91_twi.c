@@ -47,18 +47,16 @@
 #include "at91_twi.h"
 #include "senseless.h"
 
-
 #if 0
 #define dbgprintf(x...) { fprintf(stderr,x); }
 #else
 #define dbgprintf(x...)
 #endif
 
-
 #define TWI_CR(base)	((base) + 0x00)
 #define		CR_SWRST	(1<<7)
-#define		CR_SVDIS	(1<<5) /* Only Versions with Slave */
-#define		CR_SVEN		(1<<4) /* Only Versions with Slave */
+#define		CR_SVDIS	(1<<5)	/* Only Versions with Slave */
+#define		CR_SVEN		(1<<4)	/* Only Versions with Slave */
 #define		CR_MSDIS	(1<<3)
 #define 	CR_MSEN		(1<<2)
 #define		CR_STOP		(1<<1)
@@ -85,7 +83,7 @@
 #define		CWGR_CLDIV_MASK		(0xff)
 #define		CWGR_CLDIV_SHIFT	(0)
 #define TWI_SR(base)	((base) + 0x20)
-#define		SR_EOSACC	(1<<11) /* Only Version with slave */
+#define		SR_EOSACC	(1<<11)	/* Only Version with slave */
 #define		SR_SCLWS	(1<<10)	/* Only Version with slave */
 #define		SR_ARBLST	(1<<9)	/* Only in some masters (SAM7SE) */
 #define		SR_NACK		(1<<8)
@@ -100,7 +98,7 @@
 #define TWI_IER(base)	((base) + 0x24)
 #define		IER_EOSACC	(1<<11)	/* Only Version with slave */
 #define 	IER_SCLWS	(1<<10)	/* Only Version with slave */
-#define		IER_ARBLST	(1<<9)	/* Only SAM7SE	*/
+#define		IER_ARBLST	(1<<9)	/* Only SAM7SE  */
 #define		IER_NACK	(1<<8)
 #define		IER_UNRE	(1<<7)
 #define		IER_OVRE	(1<<6)
@@ -113,7 +111,7 @@
 #define TWI_IDR(base)	((base) + 0x28)
 #define		IDR_EOSACC	(1<<11)	/* Only Version with slave */
 #define 	IDR_SCLWS	(1<<10)	/* Only Version with slave */
-#define		IDR_ARBLST	(1<<9)	/* Only SAM7SE	*/
+#define		IDR_ARBLST	(1<<9)	/* Only SAM7SE  */
 #define		IDR_NACK	(1<<8)
 #define		IDR_UNRE	(1<<7)
 #define		IDR_OVRE	(1<<6)
@@ -126,7 +124,7 @@
 #define TWI_IMR(base)	((base) + 0x2c)
 #define		IMR_EOSACC	(1<<11)	/* Only Version with slave */
 #define 	IMR_SCLWS	(1<<10)	/* Only Version with slave */
-#define		IMR_ARBLST	(1<<9)	/* Only SAM7SE	*/
+#define		IMR_ARBLST	(1<<9)	/* Only SAM7SE  */
 #define		IMR_NACK	(1<<8)
 #define		IMR_UNRE	(1<<7)
 #define		IMR_OVRE	(1<<6)
@@ -138,7 +136,7 @@
 #define TWI_RHR(base)	((base) + 0x30)
 #define TWI_THR(base) 	((base) + 0x34)
 
-#define CODE_MEM_SIZE (512) 
+#define CODE_MEM_SIZE (512)
 
 #define INSTR_SDA_L             (0x01000000)
 #define INSTR_SDA_H             (0x02000000)
@@ -166,19 +164,18 @@
 #define FEAT_SLAVE(twi) ((twi)->features & TWI_FEATURE_SLAVE)
 
 typedef struct I2C_Timing {
-        int speed;
-        uint32_t t_hdsta;
-        uint32_t t_low;
-        uint32_t t_high;
-        uint32_t t_susta;
-        uint32_t t_hddat_max;
-        uint32_t t_sudat;
-        uint32_t t_susto;
-        uint32_t t_buf;
+	int speed;
+	uint32_t t_hdsta;
+	uint32_t t_low;
+	uint32_t t_high;
+	uint32_t t_susta;
+	uint32_t t_hddat_max;
+	uint32_t t_sudat;
+	uint32_t t_susto;
+	uint32_t t_buf;
 } I2C_Timing;
 
-
-typedef struct AT91Twi  {
+typedef struct AT91Twi {
 	BusDevice bdev;
 	uint32_t features;
 	const char *name;
@@ -200,20 +197,19 @@ typedef struct AT91Twi  {
 	uint32_t thr;
 
 	/* The Processor */
-        SigTrace *sclStretchTrace;
-        CycleTimer ndelayTimer;
+	SigTrace *sclStretchTrace;
+	CycleTimer ndelayTimer;
 
 	uint8_t rxdata;
 	int ack;
-        uint16_t ip;
-        uint32_t icount;
-        uint32_t code[CODE_MEM_SIZE];
+	uint16_t ip;
+	uint32_t icount;
+	uint32_t code[CODE_MEM_SIZE];
 
-	
-        /* Slave functionality */
-        I2C_SerDes *serdes;
-        I2C_Slave i2c_slave;
-//	int sstate;
+	/* Slave functionality */
+	I2C_SerDes *serdes;
+	I2C_Slave i2c_slave;
+//      int sstate;
 } AT91Twi;
 
 #define T_HDSTA(twi) ((twi)->i2c_timing.t_hdsta)
@@ -226,13 +222,13 @@ typedef struct AT91Twi  {
 #define T_SUSTO(twi) ((twi)->i2c_timing.t_susto)
 #define T_BUF(twi) ((twi)->i2c_timing.t_buf)
 
-static void 
-update_interrupt(AT91Twi *twi) 
+static void
+update_interrupt(AT91Twi * twi)
 {
-	if(twi->sr & twi->imr) {
-		SigNode_Set(twi->irqNode,SIG_HIGH);
+	if (twi->sr & twi->imr) {
+		SigNode_Set(twi->irqNode, SIG_HIGH);
 	} else {
-		SigNode_Set(twi->irqNode,SIG_PULLDOWN);
+		SigNode_Set(twi->irqNode, SIG_PULLDOWN);
 	}
 }
 
@@ -245,18 +241,20 @@ update_interrupt(AT91Twi *twi)
  * -----------------------------------------------------------
  */
 static void
-mscript_check_ack(AT91Twi *twi) {
-        /* check ack of previous */
-        ADD_CODE(twi,INSTR_SDA_H);
-        ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
-        ADD_CODE(twi,INSTR_SCL_H);
-        ADD_CODE(twi,INSTR_SYNC);
-        ADD_CODE(twi,INSTR_NDELAY | T_HIGH(twi));
-        ADD_CODE(twi,INSTR_READ_ACK);
-        ADD_CODE(twi,INSTR_SCL_L);
-        ADD_CODE(twi,INSTR_NDELAY | T_HDDAT(twi));
-        ADD_CODE(twi,INSTR_CHECK_ACK);
+mscript_check_ack(AT91Twi * twi)
+{
+	/* check ack of previous */
+	ADD_CODE(twi, INSTR_SDA_H);
+	ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
+	ADD_CODE(twi, INSTR_SCL_H);
+	ADD_CODE(twi, INSTR_SYNC);
+	ADD_CODE(twi, INSTR_NDELAY | T_HIGH(twi));
+	ADD_CODE(twi, INSTR_READ_ACK);
+	ADD_CODE(twi, INSTR_SCL_L);
+	ADD_CODE(twi, INSTR_NDELAY | T_HDDAT(twi));
+	ADD_CODE(twi, INSTR_CHECK_ACK);
 }
+
 /* 
  * --------------------------------------------------------------
  * mscript_write_byte
@@ -266,30 +264,29 @@ mscript_check_ack(AT91Twi *twi) {
  * --------------------------------------------------------------
  */
 static void
-mscript_write_byte(AT91Twi * twi,uint8_t data)
+mscript_write_byte(AT91Twi * twi, uint8_t data)
 {
-        int i;
-        for(i=7;i>=0;i--) {
-                int bit = (data>>i) & 1;
-                if(bit) {
-                        ADD_CODE(twi,INSTR_SDA_H);
+	int i;
+	for (i = 7; i >= 0; i--) {
+		int bit = (data >> i) & 1;
+		if (bit) {
+			ADD_CODE(twi, INSTR_SDA_H);
 		} else {
-			ADD_CODE(twi,INSTR_SDA_L);
+			ADD_CODE(twi, INSTR_SDA_L);
 		}
-		ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
-		ADD_CODE(twi,INSTR_SCL_H);
-		ADD_CODE(twi,INSTR_SYNC);
-		ADD_CODE(twi,INSTR_NDELAY | T_HIGH(twi));
-		if(bit) {
-			ADD_CODE(twi,INSTR_CHECK_ARB);
+		ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
+		ADD_CODE(twi, INSTR_SCL_H);
+		ADD_CODE(twi, INSTR_SYNC);
+		ADD_CODE(twi, INSTR_NDELAY | T_HIGH(twi));
+		if (bit) {
+			ADD_CODE(twi, INSTR_CHECK_ARB);
 		}
-		ADD_CODE(twi,INSTR_SCL_L);
-		ADD_CODE(twi,INSTR_NDELAY | T_HDDAT(twi));
+		ADD_CODE(twi, INSTR_SCL_L);
+		ADD_CODE(twi, INSTR_NDELAY | T_HDDAT(twi));
 	}
 	mscript_check_ack(twi);
-	ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
+	ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
 }
-
 
 /*
  * --------------------------------------------------------
@@ -300,24 +297,25 @@ mscript_write_byte(AT91Twi * twi,uint8_t data)
  * --------------------------------------------------------
  */
 static void
-mscript_do_ack(AT91Twi *twi, int ack)
+mscript_do_ack(AT91Twi * twi, int ack)
 {
-	if(ack == ACK) {
-		ADD_CODE(twi,INSTR_SDA_L);
+	if (ack == ACK) {
+		ADD_CODE(twi, INSTR_SDA_L);
 	} else {
 		/* should already be in this state because do ack is done after reading only */
-		ADD_CODE(twi,INSTR_SDA_H);
+		ADD_CODE(twi, INSTR_SDA_H);
 	}
-	ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
-	ADD_CODE(twi,INSTR_SCL_H);
-	ADD_CODE(twi,INSTR_SYNC);
-	ADD_CODE(twi,INSTR_NDELAY | T_HIGH(twi));
-	if(ack == NACK) {
-		ADD_CODE(twi,INSTR_CHECK_ARB);
+	ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
+	ADD_CODE(twi, INSTR_SCL_H);
+	ADD_CODE(twi, INSTR_SYNC);
+	ADD_CODE(twi, INSTR_NDELAY | T_HIGH(twi));
+	if (ack == NACK) {
+		ADD_CODE(twi, INSTR_CHECK_ARB);
 	}
-	ADD_CODE(twi,INSTR_SCL_L);
-	ADD_CODE(twi,INSTR_NDELAY | T_HDDAT(twi));
+	ADD_CODE(twi, INSTR_SCL_L);
+	ADD_CODE(twi, INSTR_NDELAY | T_HDDAT(twi));
 }
+
 /*
  * -----------------------------------------------------------------
  * mscript_read_byte
@@ -327,20 +325,20 @@ mscript_do_ack(AT91Twi *twi, int ack)
  * -----------------------------------------------------------------
  */
 static void
-mscript_read_byte(AT91Twi *twi)
+mscript_read_byte(AT91Twi * twi)
 {
 	int i;
-	ADD_CODE(twi,INSTR_SDA_H);
-	for(i=7;i>=0;i--) {
-		ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
-		ADD_CODE(twi,INSTR_SCL_H);
-		ADD_CODE(twi,INSTR_SYNC);
-		ADD_CODE(twi,INSTR_NDELAY | T_HIGH(twi));
-		ADD_CODE(twi,INSTR_READ_SDA);
-		ADD_CODE(twi,INSTR_SCL_L);
-		ADD_CODE(twi,INSTR_NDELAY | (T_HDDAT(twi)));
+	ADD_CODE(twi, INSTR_SDA_H);
+	for (i = 7; i >= 0; i--) {
+		ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
+		ADD_CODE(twi, INSTR_SCL_H);
+		ADD_CODE(twi, INSTR_SYNC);
+		ADD_CODE(twi, INSTR_NDELAY | T_HIGH(twi));
+		ADD_CODE(twi, INSTR_READ_SDA);
+		ADD_CODE(twi, INSTR_SCL_L);
+		ADD_CODE(twi, INSTR_NDELAY | (T_HDDAT(twi)));
 	}
-	ADD_CODE(twi,INSTR_RXDATA_AVAIL);
+	ADD_CODE(twi, INSTR_RXDATA_AVAIL);
 }
 
 /*
@@ -352,17 +350,17 @@ mscript_read_byte(AT91Twi *twi)
  * ----------------------------------------------------------
  */
 static void
-mscript_stop(AT91Twi *twi)
+mscript_stop(AT91Twi * twi)
 {
 	dbgprintf("Append stop\n");
-	ADD_CODE(twi,INSTR_SDA_L);
-	ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
-	ADD_CODE(twi,INSTR_SCL_H);
-	ADD_CODE(twi,INSTR_SYNC);
-	ADD_CODE(twi,INSTR_NDELAY | T_SUSTO(twi));
-	ADD_CODE(twi,INSTR_SDA_H);
-	ADD_CODE(twi,INSTR_NDELAY | T_BUF(twi));
-	ADD_CODE(twi,INSTR_INTERRUPT | SR_TXCOMP);
+	ADD_CODE(twi, INSTR_SDA_L);
+	ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
+	ADD_CODE(twi, INSTR_SCL_H);
+	ADD_CODE(twi, INSTR_SYNC);
+	ADD_CODE(twi, INSTR_NDELAY | T_SUSTO(twi));
+	ADD_CODE(twi, INSTR_SDA_H);
+	ADD_CODE(twi, INSTR_NDELAY | T_BUF(twi));
+	ADD_CODE(twi, INSTR_INTERRUPT | SR_TXCOMP);
 }
 
 /*
@@ -378,25 +376,26 @@ mscript_stop(AT91Twi *twi)
 #define STARTMODE_REPSTART (1)
 #define STARTMODE_START (2)
 static void
-mscript_start(AT91Twi *twi,int startmode) {
+mscript_start(AT91Twi * twi, int startmode)
+{
 	/* For repeated start do not assume SDA and SCL state */
-	if(startmode == STARTMODE_REPSTART) {
-		ADD_CODE(twi,INSTR_SDA_H);
-		ADD_CODE(twi,INSTR_NDELAY | (T_LOW(twi)-T_HDDAT(twi)));
+	if (startmode == STARTMODE_REPSTART) {
+		ADD_CODE(twi, INSTR_SDA_H);
+		ADD_CODE(twi, INSTR_NDELAY | (T_LOW(twi) - T_HDDAT(twi)));
 
-		ADD_CODE(twi,INSTR_SCL_H);
-		ADD_CODE(twi,INSTR_SYNC);
-		ADD_CODE(twi,INSTR_NDELAY | T_HIGH(twi));
+		ADD_CODE(twi, INSTR_SCL_H);
+		ADD_CODE(twi, INSTR_SYNC);
+		ADD_CODE(twi, INSTR_NDELAY | T_HIGH(twi));
 	} else {
-		ADD_CODE(twi,INSTR_WAIT_BUS_FREE);
+		ADD_CODE(twi, INSTR_WAIT_BUS_FREE);
 	}
 
 	/* Generate a start condition */
-	ADD_CODE(twi,INSTR_CHECK_ARB);
-	ADD_CODE(twi,INSTR_SDA_L);
-	ADD_CODE(twi,INSTR_NDELAY | T_HDSTA(twi));
-	ADD_CODE(twi,INSTR_SCL_L);
-	ADD_CODE(twi,INSTR_NDELAY | T_HDDAT(twi));
+	ADD_CODE(twi, INSTR_CHECK_ARB);
+	ADD_CODE(twi, INSTR_SDA_L);
+	ADD_CODE(twi, INSTR_NDELAY | T_HDSTA(twi));
+	ADD_CODE(twi, INSTR_SCL_L);
+	ADD_CODE(twi, INSTR_NDELAY | T_HDDAT(twi));
 }
 
 /*
@@ -407,13 +406,14 @@ mscript_start(AT91Twi *twi,int startmode) {
  * ------------------------------------------------------------------
  */
 static void
-reset_interpreter(AT91Twi *twi) {
-        twi->code[0] = INSTR_END;
-        twi->ip = 0;
-        twi->icount=0;
-        twi->rxdata=0;
-        twi->ack=0;
-        CycleTimer_Remove(&twi->ndelayTimer);
+reset_interpreter(AT91Twi * twi)
+{
+	twi->code[0] = INSTR_END;
+	twi->ip = 0;
+	twi->icount = 0;
+	twi->rxdata = 0;
+	twi->ack = 0;
+	CycleTimer_Remove(&twi->ndelayTimer);
 }
 
 static void run_interpreter(void *clientData);
@@ -421,14 +421,14 @@ static void run_interpreter(void *clientData);
 static void
 scl_timeout(void *clientData)
 {
-        AT91Twi *twi = (AT91Twi *)clientData;
-	SigNode * dom = SigNode_FindDominant(twi->scl);
-	if(dom) {
-        	fprintf(stderr,"AT91Twi: I2C SCL seems to be blocked by %s\n",SigName(dom));
+	AT91Twi *twi = (AT91Twi *) clientData;
+	SigNode *dom = SigNode_FindDominant(twi->scl);
+	if (dom) {
+		fprintf(stderr, "AT91Twi: I2C SCL seems to be blocked by %s\n", SigName(dom));
 	} else {
-        	fprintf(stderr,"AT91Twi: I2C SCL seems to be blocked\n");
+		fprintf(stderr, "AT91Twi: I2C SCL seems to be blocked\n");
 	}
-        SigNode_Untrace(twi->scl,twi->sclStretchTrace);
+	SigNode_Untrace(twi->scl, twi->sclStretchTrace);
 }
 
 /*
@@ -439,130 +439,128 @@ scl_timeout(void *clientData)
  *      remove the timer and continue running the interpreter
  * -------------------------------------------------------------------
  */
-static void 
-scl_released(SigNode *node,int value,void *clientData)
+static void
+scl_released(SigNode * node, int value, void *clientData)
 {
-        AT91Twi *twi = (AT91Twi *)clientData;
-        if((value == SIG_PULLUP) || (value == SIG_HIGH)) {
-                SigNode_Untrace(twi->scl,twi->sclStretchTrace);
-                CycleTimer_Remove(&twi->ndelayTimer);
-                run_interpreter(clientData);
-        }
+	AT91Twi *twi = (AT91Twi *) clientData;
+	if ((value == SIG_PULLUP) || (value == SIG_HIGH)) {
+		SigNode_Untrace(twi->scl, twi->sclStretchTrace);
+		CycleTimer_Remove(&twi->ndelayTimer);
+		run_interpreter(clientData);
+	}
 }
 
-
-
 static int
-execute_instruction(AT91Twi *twi) {
-        uint32_t icode;
-        if(twi->ip >= CODE_MEM_SIZE) {
-                fprintf(stderr,"AT91Twi: corrupt I2C script\n");
-                return RET_EMU_ERROR;
-        }
-	if(twi->ip == (twi->icount % CODE_MEM_SIZE)) {
+execute_instruction(AT91Twi * twi)
+{
+	uint32_t icode;
+	if (twi->ip >= CODE_MEM_SIZE) {
+		fprintf(stderr, "AT91Twi: corrupt I2C script\n");
+		return RET_EMU_ERROR;
+	}
+	if (twi->ip == (twi->icount % CODE_MEM_SIZE)) {
 		return RET_DONE;
 	}
-        icode = twi->code[twi->ip];
+	icode = twi->code[twi->ip];
 	twi->ip = (twi->ip + 1) % CODE_MEM_SIZE;
-        switch(icode&0xff000000) {
-                case INSTR_SDA_H:
-                        dbgprintf("SDA_H %08x\n",icode);
-                        SigNode_Set(twi->sda,SIG_OPEN);
-                        break;
-                case INSTR_SDA_L:
-                        dbgprintf("SDA_L %08x\n",icode);
-                        SigNode_Set(twi->sda,SIG_LOW);
-                        break;
-                case INSTR_SCL_H:
-                        dbgprintf("SCL_H %08x\n",icode);
-                        SigNode_Set(twi->scl,SIG_OPEN);
-                        break;
-                case INSTR_SCL_L:
-                        dbgprintf("SCL_L %08x\n",icode);
-                        SigNode_Set(twi->scl,SIG_LOW);
-                        break;
+	switch (icode & 0xff000000) {
+	    case INSTR_SDA_H:
+		    dbgprintf("SDA_H %08x\n", icode);
+		    SigNode_Set(twi->sda, SIG_OPEN);
+		    break;
+	    case INSTR_SDA_L:
+		    dbgprintf("SDA_L %08x\n", icode);
+		    SigNode_Set(twi->sda, SIG_LOW);
+		    break;
+	    case INSTR_SCL_H:
+		    dbgprintf("SCL_H %08x\n", icode);
+		    SigNode_Set(twi->scl, SIG_OPEN);
+		    break;
+	    case INSTR_SCL_L:
+		    dbgprintf("SCL_L %08x\n", icode);
+		    SigNode_Set(twi->scl, SIG_LOW);
+		    break;
 
-                case INSTR_CHECK_ARB:
-			/* This core has no arbitration check */
-                        break;
+	    case INSTR_CHECK_ARB:
+		    /* This core has no arbitration check */
+		    break;
 
-                case INSTR_NDELAY:
-                        {
-                                uint32_t nsecs = icode & 0xffffff;
-                                int64_t cycles = NanosecondsToCycles(nsecs);
-                                CycleTimer_Add(&twi->ndelayTimer,cycles,run_interpreter,twi);
-                                dbgprintf("NDELAY %08x\n",icode);
-                        }
-                        return RET_DONE;
-                        break;
-		
-                case INSTR_SYNC:
-                        dbgprintf("SYNC %08x\n",icode);
-                        if(SigNode_Val(twi->scl)==SIG_LOW) {
-                                uint32_t msecs = 200;
-                                int64_t cycles =  MillisecondsToCycles(msecs);
-                                twi->sclStretchTrace = SigNode_Trace(twi->scl,scl_released,twi);
-                                CycleTimer_Add(&twi->ndelayTimer,cycles,scl_timeout,twi);
-                                return RET_DONE;
-                        }
-                        break;
+	    case INSTR_NDELAY:
+		    {
+			    uint32_t nsecs = icode & 0xffffff;
+			    int64_t cycles = NanosecondsToCycles(nsecs);
+			    CycleTimer_Add(&twi->ndelayTimer, cycles, run_interpreter, twi);
+			    dbgprintf("NDELAY %08x\n", icode);
+		    }
+		    return RET_DONE;
+		    break;
 
-                case INSTR_READ_SDA:
-                        if(SigNode_Val(twi->sda) == SIG_LOW) {
-                                twi->rxdata = (twi->rxdata<<1);
-                        } else {
-                                twi->rxdata = (twi->rxdata<<1) | 1;
-                        }
-                        break;
+	    case INSTR_SYNC:
+		    dbgprintf("SYNC %08x\n", icode);
+		    if (SigNode_Val(twi->scl) == SIG_LOW) {
+			    uint32_t msecs = 200;
+			    int64_t cycles = MillisecondsToCycles(msecs);
+			    twi->sclStretchTrace = SigNode_Trace(twi->scl, scl_released, twi);
+			    CycleTimer_Add(&twi->ndelayTimer, cycles, scl_timeout, twi);
+			    return RET_DONE;
+		    }
+		    break;
 
-                case INSTR_READ_ACK:
-                        dbgprintf("READ_ACK %08x\n",icode);
-                        if(SigNode_Val(twi->sda) == SIG_LOW) {
-                                twi->ack = ACK;
-                        } else {
-                                twi->ack = NACK;
-                        }
-                        break;
+	    case INSTR_READ_SDA:
+		    if (SigNode_Val(twi->sda) == SIG_LOW) {
+			    twi->rxdata = (twi->rxdata << 1);
+		    } else {
+			    twi->rxdata = (twi->rxdata << 1) | 1;
+		    }
+		    break;
 
-                case  INSTR_END:
-                        dbgprintf("ENDSCRIPT %08x\n",icode);
-			reset_interpreter(twi);
-                        return RET_DONE;
-                        break;
+	    case INSTR_READ_ACK:
+		    dbgprintf("READ_ACK %08x\n", icode);
+		    if (SigNode_Val(twi->sda) == SIG_LOW) {
+			    twi->ack = ACK;
+		    } else {
+			    twi->ack = NACK;
+		    }
+		    break;
 
-                case  INSTR_CHECK_ACK:
-                        dbgprintf("CHECK_ACK %08x\n",icode);
-                        if(twi->ack == NACK) {
-				/* I should urgently check if TXRDY is really set on NACK */
-				twi->sr |= SR_NACK | SR_TXRDY | SR_TXCOMP;
-				update_interrupt(twi);
-				return RET_DONE;
-                        }
-                        break;
+	    case INSTR_END:
+		    dbgprintf("ENDSCRIPT %08x\n", icode);
+		    reset_interpreter(twi);
+		    return RET_DONE;
+		    break;
 
-                case  INSTR_INTERRUPT:
-                        dbgprintf("INTERRUPT %08x\n",icode);
-			twi->sr |= icode & 0xffff;
-			update_interrupt(twi);
-                        break;
+	    case INSTR_CHECK_ACK:
+		    dbgprintf("CHECK_ACK %08x\n", icode);
+		    if (twi->ack == NACK) {
+			    /* I should urgently check if TXRDY is really set on NACK */
+			    twi->sr |= SR_NACK | SR_TXRDY | SR_TXCOMP;
+			    update_interrupt(twi);
+			    return RET_DONE;
+		    }
+		    break;
 
-                case  INSTR_RXDATA_AVAIL:
-                        dbgprintf("RXDATA_AVAIL %02x %08x\n",twi->rxdata,icode);
-			twi->rhr = twi->rxdata;
-                        break;
+	    case INSTR_INTERRUPT:
+		    dbgprintf("INTERRUPT %08x\n", icode);
+		    twi->sr |= icode & 0xffff;
+		    update_interrupt(twi);
+		    break;
 
-                case  INSTR_WAIT_BUS_FREE:
-			/* Wait bus free currently not implemented */
-			break;
+	    case INSTR_RXDATA_AVAIL:
+		    dbgprintf("RXDATA_AVAIL %02x %08x\n", twi->rxdata, icode);
+		    twi->rhr = twi->rxdata;
+		    break;
 
+	    case INSTR_WAIT_BUS_FREE:
+		    /* Wait bus free currently not implemented */
+		    break;
 
-                default:
-                        fprintf(stderr,"AT91Twi: I2C: Unknode icode %08x\n",icode);
-                        return RET_EMU_ERROR;
-                        break;
+	    default:
+		    fprintf(stderr, "AT91Twi: I2C: Unknode icode %08x\n", icode);
+		    return RET_EMU_ERROR;
+		    break;
 
-        }
-        return RET_DO_NEXT;
+	}
+	return RET_DO_NEXT;
 }
 
 /*
@@ -576,11 +574,11 @@ execute_instruction(AT91Twi *twi) {
 static void
 run_interpreter(void *clientData)
 {
-        AT91Twi *twi = (AT91Twi *) clientData;
-        int retval;
-        do {
-                retval = execute_instruction(twi);
-        } while(retval == RET_DO_NEXT);
+	AT91Twi *twi = (AT91Twi *) clientData;
+	int retval;
+	do {
+		retval = execute_instruction(twi);
+	} while (retval == RET_DO_NEXT);
 }
 
 /*
@@ -590,38 +588,39 @@ run_interpreter(void *clientData)
  * -----------------------------------------------------------------------------
  */
 static void
-start_interpreter(AT91Twi *twi) {
-        if(CycleTimer_IsActive(&twi->ndelayTimer)) {
-                dbgprintf("AT91Twi: Starting already running interp.\n");
-                return;
-        }
-        CycleTimer_Add(&twi->ndelayTimer,0,run_interpreter,twi);
+start_interpreter(AT91Twi * twi)
+{
+	if (CycleTimer_IsActive(&twi->ndelayTimer)) {
+		dbgprintf("AT91Twi: Starting already running interp.\n");
+		return;
+	}
+	CycleTimer_Add(&twi->ndelayTimer, 0, run_interpreter, twi);
 }
 
 static uint32_t
-cr_read(void *clientData,uint32_t address,int rqlen)
+cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Twi: Reading from write only Control register\n");
-        return 0;
+	fprintf(stderr, "AT91Twi: Reading from write only Control register\n");
+	return 0;
 }
 
 static void
-cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
 	int dir_read = !!(twi->mmr & MMR_MREAD);
 	int run = 0;
-	if(value & CR_MSEN) {
+	if (value & CR_MSEN) {
 		twi->sr |= SR_TXCOMP | SR_TXRDY;
 		twi->cr |= CR_MSEN;
 		twi->cr &= ~CR_MSDIS;
 	}
-	if(value & CR_MSDIS) {
+	if (value & CR_MSDIS) {
 		twi->cr &= ~CR_MSEN;
 		twi->cr |= CR_MSDIS;
 	}
-	if(twi->cr & CR_MSEN) {
-		if(value & CR_START) {
+	if (twi->cr & CR_MSEN) {
+		if (value & CR_START) {
 			uint16_t addr = (twi->mmr & MMR_DADR_MASK) >> MMR_DADR_SHIFT;
 			int iadrsz = (twi->mmr & MMR_IADRSZ_MASK) >> MMR_IADRSZ_SHIFT;
 			int i;
@@ -629,60 +628,60 @@ cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 			reset_interpreter(twi);
 			// fprintf(stderr,"Device addr is %02x addrsz %d, iaddr %08x read %d\n",addr,iadrsz,twi->iadr,dir_read); // jk
 
-			if(iadrsz) {
-				mscript_start(twi,STARTMODE_START);
-				mscript_write_byte(twi,(addr<<1));
-				for(i=iadrsz-1;i>=0;i--) {	
-					mscript_write_byte(twi,twi->iadr >> (i*8));
+			if (iadrsz) {
+				mscript_start(twi, STARTMODE_START);
+				mscript_write_byte(twi, (addr << 1));
+				for (i = iadrsz - 1; i >= 0; i--) {
+					mscript_write_byte(twi, twi->iadr >> (i * 8));
 				}
 			}
-			if(dir_read) {
+			if (dir_read) {
 				twi->sr &= ~(SR_TXCOMP | SR_RXRDY);
 				update_interrupt(twi);
 				dbgprintf("Read: append repstart\n");
-				if(iadrsz) {
-					mscript_start(twi,STARTMODE_REPSTART);
+				if (iadrsz) {
+					mscript_start(twi, STARTMODE_REPSTART);
 				} else {
-					mscript_start(twi,STARTMODE_START);
+					mscript_start(twi, STARTMODE_START);
 				}
-				mscript_write_byte(twi,(addr<<1) | dir_read);
+				mscript_write_byte(twi, (addr << 1) | dir_read);
 				mscript_read_byte(twi);
 			} else {
-				if(iadrsz == 0) {
-					mscript_start(twi,STARTMODE_START);
-					mscript_write_byte(twi,(addr<<1));
+				if (iadrsz == 0) {
+					mscript_start(twi, STARTMODE_START);
+					mscript_write_byte(twi, (addr << 1));
 				}
-				ADD_CODE(twi,INSTR_INTERRUPT | SR_TXRDY);
+				ADD_CODE(twi, INSTR_INTERRUPT | SR_TXRDY);
 			}
 			run = 1;
 		}
-		if(value & CR_STOP) {
-			if(dir_read) {
-				mscript_do_ack(twi,NACK);
-				ADD_CODE(twi,INSTR_INTERRUPT | SR_RXRDY);
-			} 
+		if (value & CR_STOP) {
+			if (dir_read) {
+				mscript_do_ack(twi, NACK);
+				ADD_CODE(twi, INSTR_INTERRUPT | SR_RXRDY);
+			}
 			mscript_stop(twi);
 			run = 1;
 			twi->cr |= CR_STOP;
 		} else {
 			twi->cr &= ~CR_STOP;
-			if(dir_read) {
-				ADD_CODE(twi,INSTR_INTERRUPT | SR_RXRDY);
+			if (dir_read) {
+				ADD_CODE(twi, INSTR_INTERRUPT | SR_RXRDY);
 			}
 		}
 	}
-	if(run) {
+	if (run) {
 		start_interpreter(twi);
 	}
-	if(FEAT_SLAVE(twi)) {
+	if (FEAT_SLAVE(twi)) {
 		uint32_t i2caddr = (twi->smr & SMR_SADR_MASK) >> SMR_SADR_SHIFT;
-		if((value & CR_SVEN) && !(twi->cr & CR_SVEN)) {
-                	I2C_SerDesAddSlave(twi->serdes,&twi->i2c_slave,i2caddr);
+		if ((value & CR_SVEN) && !(twi->cr & CR_SVEN)) {
+			I2C_SerDesAddSlave(twi->serdes, &twi->i2c_slave, i2caddr);
 			twi->cr |= CR_SVEN;
 			twi->cr &= ~CR_SVDIS;
 		}
-		if((value & CR_SVDIS) && (twi->cr & CR_SVEN)) {
-	 		I2C_SerDesDetachSlave(twi->serdes,&twi->i2c_slave);
+		if ((value & CR_SVDIS) && (twi->cr & CR_SVEN)) {
+			I2C_SerDesDetachSlave(twi->serdes, &twi->i2c_slave);
 			twi->cr &= ~CR_SVEN;
 			twi->cr |= CR_SVDIS;
 		}
@@ -690,62 +689,62 @@ cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-mmr_read(void *clientData,uint32_t address,int rqlen)
+mmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
-        return twi->mmr;
+	return twi->mmr;
 }
 
 static void
-mmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
 	twi->mmr = value & 0x007f1300;
 }
 
 static uint32_t
-smr_read(void *clientData,uint32_t address,int rqlen)
+smr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
-        return twi->smr;
+	return twi->smr;
 }
 
 static void
-smr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+smr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
 	/* Must be programmed before Salve mode is enabled. Write at other
 	   times has no effect */
-	if(twi->cr & CR_SVEN) {
-		fprintf(stderr,"SMR Warning: Programm slave address after Slave is enabled\n");
+	if (twi->cr & CR_SVEN) {
+		fprintf(stderr, "SMR Warning: Programm slave address after Slave is enabled\n");
 	} else {
 		twi->smr = value & 0x007f00;
 	}
 }
 
 static uint32_t
-iadr_read(void *clientData,uint32_t address,int rqlen)
+iadr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
-        return twi->iadr;
+	return twi->iadr;
 }
 
 static void
-iadr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+iadr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
 	twi->iadr = value & 0x00ffffff;
 }
 
 static uint32_t
-cwgr_read(void *clientData,uint32_t address,int rqlen)
+cwgr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
-        return twi->cwgr;
+	return twi->cwgr;
 }
 
 static void
-update_timings(AT91Twi *twi) 
+update_timings(AT91Twi * twi)
 {
 	I2C_Timing *timing = &twi->i2c_timing;
 	int tmc;
@@ -755,17 +754,17 @@ update_timings(AT91Twi *twi)
 	int lowtime;
 	int hightime;
 	/* Should also be updated on clock change */
-	if(Clock_Freq(twi->clk) >= 1) {
+	if (Clock_Freq(twi->clk) >= 1) {
 		tmc = 1000000000 / Clock_Freq(twi->clk);
 	} else {
 		tmc = 0xffff;
 	}
-	lowtime =  ((cldiv << ckdiv) + 3) * tmc;
+	lowtime = ((cldiv << ckdiv) + 3) * tmc;
 	hightime = ((chdiv << ckdiv) + 3) * tmc;
-	if(ckdiv > 5) {
-		fprintf(stderr,"AT91Twi: CKDIV must be <= 5 (see errata)\n");
+	if (ckdiv > 5) {
+		fprintf(stderr, "AT91Twi: CKDIV must be <= 5 (see errata)\n");
 	}
-	
+
 	timing->t_hdsta = hightime * 600 / 700;
 	timing->t_high = hightime * 600 / 700;
 	timing->t_susta = hightime * 600 / 700;
@@ -775,9 +774,10 @@ update_timings(AT91Twi *twi)
 	timing->t_low = lowtime * 1300 / 1300;
 	timing->t_hddat_max = lowtime * 900 / 1300;
 	timing->t_buf = lowtime * 1300 / 1300;
-        fprintf(stderr,"AT91Twi: cwgr %08x high_time %d, lowtime %d t_high %d\n",twi->cwgr,hightime,lowtime,timing->t_high);
+	fprintf(stderr, "AT91Twi: cwgr %08x high_time %d, lowtime %d t_high %d\n", twi->cwgr,
+		hightime, lowtime, timing->t_high);
 #if 0
-	if(Clock_Find("pmc.main_clk")) {
+	if (Clock_Find("pmc.main_clk")) {
 		Clock_DumpTree(Clock_Find("pmc.main_clk"));
 		//*(char*) 0 = 0;
 	}
@@ -790,16 +790,15 @@ update_timings(AT91Twi *twi)
  ********************************************************************************
  */
 static void
-ClockTrace(struct Clock *clock,void *clientData)
+ClockTrace(struct Clock *clock, void *clientData)
 {
-        AT91Twi *twi = (AT91Twi *) clientData;
-	dbgprintf(stderr,"New TWI clock is %f\n",freq);
-        update_timings(twi);
+	AT91Twi *twi = (AT91Twi *) clientData;
+	dbgprintf(stderr, "New TWI clock is %f\n", freq);
+	update_timings(twi);
 }
 
-
 static void
-cwgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cwgr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
 	twi->cwgr = value & 0x0007ffff;
@@ -807,125 +806,126 @@ cwgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Twi *twi = (AT91Twi *) clientData;
 	uint32_t sr = twi->sr;
-	if(!(sr & twi->imr) && !(sr & SR_RXRDY) && !(~sr & SR_TXRDY)) {
+	if (!(sr & twi->imr) && !(sr & SR_RXRDY) && !(~sr & SR_TXRDY)) {
 		Senseless_Report(200);
 	}
 	twi->sr &= ~SR_EOSACC;
-        return sr;
+	return sr;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Twi: SR is readonly\n");
+	fprintf(stderr, "AT91Twi: SR is readonly\n");
 }
 
 static uint32_t
-ier_read(void *clientData,uint32_t address,int rqlen)
+ier_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Twi: IER is write only");
-        return 0;
+	fprintf(stderr, "AT91Twi: IER is write only");
+	return 0;
 }
+
 static void
-ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Twi *twi = (AT91Twi*) clientData;
+	AT91Twi *twi = (AT91Twi *) clientData;
 	twi->imr |= value & 0x1c7;
 	update_interrupt(twi);
 }
 
 static uint32_t
-idr_read(void *clientData,uint32_t address,int rqlen)
+idr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Twi: IDR is writeonly\n");
-        return 0;
+	fprintf(stderr, "AT91Twi: IDR is writeonly\n");
+	return 0;
 }
 
 static void
-idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Twi *twi = (AT91Twi*) clientData;
+	AT91Twi *twi = (AT91Twi *) clientData;
 	twi->imr &= ~(value & 0x1c7);
 	update_interrupt(twi);
 }
 
 static uint32_t
-imr_read(void *clientData,uint32_t address,int rqlen)
+imr_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91Twi *twi = (AT91Twi*) clientData;
-        return twi->imr;
+	AT91Twi *twi = (AT91Twi *) clientData;
+	return twi->imr;
 }
 
 static void
-imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Twi: IMR is readonly\n");
+	fprintf(stderr, "AT91Twi: IMR is readonly\n");
 }
 
 static uint32_t
-rhr_read(void *clientData,uint32_t address,int rqlen)
+rhr_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91Twi *twi = (AT91Twi*) clientData;
+	AT91Twi *twi = (AT91Twi *) clientData;
 	uint32_t rhr = twi->rhr;
-	if(twi->sr & SR_RXRDY) {
+	if (twi->sr & SR_RXRDY) {
 		twi->sr &= ~SR_RXRDY;
-		if(twi->sr & SR_SCLWS) {
+		if (twi->sr & SR_SCLWS) {
 			twi->sr &= ~SR_SCLWS;
-                	SerDes_UnstretchScl(twi->serdes);
-        	}
+			SerDes_UnstretchScl(twi->serdes);
+		}
 		// if(state == READ) 
 		/* Should be some state check instead */
-		if(twi->cr & CR_MSEN) {
-			if(!(twi->cr & CR_STOP)) {
-				mscript_do_ack(twi,ACK);
+		if (twi->cr & CR_MSEN) {
+			if (!(twi->cr & CR_STOP)) {
+				mscript_do_ack(twi, ACK);
 				mscript_read_byte(twi);
-				ADD_CODE(twi,INSTR_INTERRUPT | SR_RXRDY);
+				ADD_CODE(twi, INSTR_INTERRUPT | SR_RXRDY);
 				start_interpreter(twi);
 			}
 		}
 		// 
 		update_interrupt(twi);
 	}
-	dbgprintf("AT91Twi: read byte %02x\n",twi->rhr);
-        return rhr;
+	dbgprintf("AT91Twi: read byte %02x\n", twi->rhr);
+	return rhr;
 }
 
 static void
-rhr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rhr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Twi: Writing to readonly Receive Holding Register\n");
+	fprintf(stderr, "AT91Twi: Writing to readonly Receive Holding Register\n");
 }
 
 static uint32_t
-thr_read(void *clientData,uint32_t address,int rqlen)
+thr_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91Twi *twi = (AT91Twi *)clientData;
-	fprintf(stderr,"AT91Twi: Reading from write only Transmit Holding Register\n");
-        return twi->thr;
+	AT91Twi *twi = (AT91Twi *) clientData;
+	fprintf(stderr, "AT91Twi: Reading from write only Transmit Holding Register\n");
+	return twi->thr;
 }
 
 static void
-thr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+thr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Twi *twi = (AT91Twi *)clientData;
+	AT91Twi *twi = (AT91Twi *) clientData;
 	/* Should only be done if in master mode */
-	if(twi->cr & CR_MSEN) {
-		if(twi->sr & SR_TXRDY) {
+	if (twi->cr & CR_MSEN) {
+		if (twi->sr & SR_TXRDY) {
 			twi->thr = value;
-			dbgprintf("AT91Twi: write byte %02x\n",value);
-			mscript_write_byte(twi,twi->thr);
-			ADD_CODE(twi,INSTR_INTERRUPT | SR_TXRDY);
+			dbgprintf("AT91Twi: write byte %02x\n", value);
+			mscript_write_byte(twi, twi->thr);
+			ADD_CODE(twi, INSTR_INTERRUPT | SR_TXRDY);
 			start_interpreter(twi);
 		}
 	}
 	/* In write mode TXCOMP goes low on write thr  and high on stop condition */
 	twi->sr &= ~(SR_TXCOMP | SR_TXRDY);
 	/* State check if really in slave read mode missing here ?? */
-	if(twi->sr & SR_SCLWS) {
+	if (twi->sr & SR_SCLWS) {
 		twi->sr &= ~SR_SCLWS;
 		SerDes_UnstretchScl(twi->serdes);
 	}
@@ -933,31 +933,31 @@ thr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static void
-AT91Twi_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Twi_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91Twi *twi = (AT91Twi*) owner;
-	IOH_New32(TWI_CR(base),cr_read,cr_write,twi);
-	IOH_New32(TWI_MMR(base),mmr_read,mmr_write,twi);
-	if(FEAT_SLAVE(twi)) {	
-		IOH_New32(TWI_SMR(base),smr_read,smr_write,twi);
+	AT91Twi *twi = (AT91Twi *) owner;
+	IOH_New32(TWI_CR(base), cr_read, cr_write, twi);
+	IOH_New32(TWI_MMR(base), mmr_read, mmr_write, twi);
+	if (FEAT_SLAVE(twi)) {
+		IOH_New32(TWI_SMR(base), smr_read, smr_write, twi);
 	}
-	IOH_New32(TWI_IADR(base),iadr_read,iadr_write,twi);
-	IOH_New32(TWI_CWGR(base),cwgr_read,cwgr_write,twi);
-	IOH_New32(TWI_SR(base),sr_read,sr_write,twi);
-	IOH_New32(TWI_IER(base),ier_read,ier_write,twi);
-	IOH_New32(TWI_IDR(base),idr_read,idr_write,twi);
-	IOH_New32(TWI_IMR(base),imr_read,imr_write,twi);
-	IOH_New32(TWI_RHR(base),rhr_read,rhr_write,twi);
-	IOH_New32(TWI_THR(base),thr_read,thr_write,twi);
+	IOH_New32(TWI_IADR(base), iadr_read, iadr_write, twi);
+	IOH_New32(TWI_CWGR(base), cwgr_read, cwgr_write, twi);
+	IOH_New32(TWI_SR(base), sr_read, sr_write, twi);
+	IOH_New32(TWI_IER(base), ier_read, ier_write, twi);
+	IOH_New32(TWI_IDR(base), idr_read, idr_write, twi);
+	IOH_New32(TWI_IMR(base), imr_read, imr_write, twi);
+	IOH_New32(TWI_RHR(base), rhr_read, rhr_write, twi);
+	IOH_New32(TWI_THR(base), thr_read, thr_write, twi);
 }
 
 static void
-AT91Twi_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Twi_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-        AT91Twi *twi = (AT91Twi*) owner;
+	AT91Twi *twi = (AT91Twi *) owner;
 	IOH_Delete32(TWI_CR(base));
 	IOH_Delete32(TWI_MMR(base));
-	if(FEAT_SLAVE(twi)) {	
+	if (FEAT_SLAVE(twi)) {
 		IOH_Delete32(TWI_SMR(base));
 	}
 	IOH_Delete32(TWI_IADR(base));
@@ -971,7 +971,6 @@ AT91Twi_UnMap(void *owner,uint32_t base,uint32_t mask)
 
 }
 
-
 /*
  * -----------------------------------------------------------
  * slave_write
@@ -981,10 +980,10 @@ AT91Twi_UnMap(void *owner,uint32_t base,uint32_t mask)
  * -----------------------------------------------------------
  */
 static int
-twislave_write(void *dev,uint8_t data)
+twislave_write(void *dev, uint8_t data)
 {
-        AT91Twi *twi = (AT91Twi*) dev;
-	if(twi->sr  & SR_RXRDY) {
+	AT91Twi *twi = (AT91Twi *) dev;
+	if (twi->sr & SR_RXRDY) {
 		twi->sr |= SR_SCLWS;
 		return I2C_STRETCH_SCL;
 	} else {
@@ -1004,18 +1003,17 @@ twislave_write(void *dev,uint8_t data)
  */
 
 static int
-twislave_read(void *dev,uint8_t *data)
+twislave_read(void *dev, uint8_t * data)
 {
-        AT91Twi *twi = (AT91Twi*) dev;
-	if(twi->sr & SR_TXRDY) {
+	AT91Twi *twi = (AT91Twi *) dev;
+	if (twi->sr & SR_TXRDY) {
 		*data = twi->thr;
-		return I2C_DONE;	
+		return I2C_DONE;
 	} else {
 		twi->sr |= SR_SCLWS;
 		return I2C_STRETCH_SCL;
 	}
 }
-
 
 /*
  * --------------------------------------
@@ -1024,16 +1022,16 @@ twislave_read(void *dev,uint8_t *data)
  * --------------------------------------
  */
 static int
-twislave_start(void *dev,int i2c_addr,int operation)
+twislave_start(void *dev, int i2c_addr, int operation)
 {
-        AT91Twi *twi = (AT91Twi*) dev;
+	AT91Twi *twi = (AT91Twi *) dev;
 	twi->sr |= SR_SVACC;
-	if(operation == I2C_READ) {
+	if (operation == I2C_READ) {
 		twi->sr |= SR_SVREAD;
 	} else if (operation == I2C_READ) {
 		twi->sr &= ~SR_SVREAD;
 	} else {
-                return I2C_NACK;
+		return I2C_NACK;
 	}
 	update_interrupt(twi);
 	return I2C_ACK;
@@ -1042,13 +1040,12 @@ twislave_start(void *dev,int i2c_addr,int operation)
 static void
 twislave_stop(void *dev)
 {
-        AT91Twi *twi = (AT91Twi*) dev;
+	AT91Twi *twi = (AT91Twi *) dev;
 	twi->sr &= ~SR_SVACC;
 	twi->sr |= SR_EOSACC;
 	update_interrupt(twi);
 	return;
 }
-
 
 /*
  * --------------------------------------------------------
@@ -1064,8 +1061,8 @@ twislave_read_ack(void *dev, int ack)
 {
 	AT91Twi *twi = (AT91Twi *) dev;
 	twi->sr |= SR_TXRDY;
-	if(ack == I2C_ACK) {
-		
+	if (ack == I2C_ACK) {
+
 	} else if (ack == I2C_NACK) {
 		twi->sr |= SR_NACK;
 		update_interrupt(twi);
@@ -1075,71 +1072,70 @@ twislave_read_ack(void *dev, int ack)
 
 static I2C_SlaveOps twislave_ops = {
 	.start = twislave_start,
-	.stop =  twislave_stop,
-	.read =  twislave_read,
+	.stop = twislave_stop,
+	.read = twislave_read,
 	.write = twislave_write,
-	.read_ack =  twislave_read_ack
+	.read_ack = twislave_read_ack
 };
 
 BusDevice *
-AT91Twi_New(const char *name,uint32_t features)
+AT91Twi_New(const char *name, uint32_t features)
 {
-	char *sdaname = (char*)alloca(strlen(name)+50);
-        char *sclname = (char*)alloca(strlen(name)+50);
+	char *sdaname = (char *)alloca(strlen(name) + 50);
+	char *sclname = (char *)alloca(strlen(name) + 50);
 	I2C_Slave *i2c_slave;
-        AT91Twi *twi = sg_new(AT91Twi);
+	AT91Twi *twi = sg_new(AT91Twi);
 
-        twi->name = sg_strdup(name);
-        twi->irqNode = SigNode_New("%s.irq",name);
-	sprintf(sdaname,"%s.sda",name);
-	sprintf(sclname,"%s.scl",name);
-        twi->sda = SigNode_New("%s",sdaname);
-        twi->scl = SigNode_New("%s",sclname);
-        if(!twi->irqNode || !twi->sda || !twi->scl) {
-                fprintf(stderr,"AT91Twi: Can not create signal lines\n");
-                exit(1);
-        }
-	
-	if(features & TWI_FEATURE_SLAVE) {
+	twi->name = sg_strdup(name);
+	twi->irqNode = SigNode_New("%s.irq", name);
+	sprintf(sdaname, "%s.sda", name);
+	sprintf(sclname, "%s.scl", name);
+	twi->sda = SigNode_New("%s", sdaname);
+	twi->scl = SigNode_New("%s", sclname);
+	if (!twi->irqNode || !twi->sda || !twi->scl) {
+		fprintf(stderr, "AT91Twi: Can not create signal lines\n");
+		exit(1);
+	}
+
+	if (features & TWI_FEATURE_SLAVE) {
 		/* Create the slave */
-		char *slvname = (char*)alloca(strlen(name)+50);
-		char *slvsdaname = (char*)alloca(strlen(name)+50);
-		char *slvsclname = (char*)alloca(strlen(name)+50);
+		char *slvname = (char *)alloca(strlen(name) + 50);
+		char *slvsdaname = (char *)alloca(strlen(name) + 50);
+		char *slvsclname = (char *)alloca(strlen(name) + 50);
 		i2c_slave = &twi->i2c_slave;
 		i2c_slave->devops = &twislave_ops;
 		i2c_slave->dev = (void *)twi;
 		i2c_slave->speed = I2C_SPEED_FAST;
 
-		sprintf(slvname,"%s.slave",name);
+		sprintf(slvname, "%s.slave", name);
 		twi->serdes = I2C_SerDesNew(slvname);
 
 		/* Connect the scl and sda from slave with master */
-		sprintf(slvsclname,"%s.slave.scl",name);
-		SigName_Link(sclname,slvsclname);
+		sprintf(slvsclname, "%s.slave.scl", name);
+		SigName_Link(sclname, slvsclname);
 
-		sprintf(slvsdaname,"%s.slave.sda",name);
-		SigName_Link(sdaname,slvsclname);
+		sprintf(slvsdaname, "%s.slave.sda", name);
+		SigName_Link(sdaname, slvsclname);
 	}
 
-        SigNode_Set(twi->irqNode,SIG_PULLDOWN);
-	twi->clk = Clock_New("%s.clk",name);
+	SigNode_Set(twi->irqNode, SIG_PULLDOWN);
+	twi->clk = Clock_New("%s.clk", name);
 	/* Should be connected to mclk instead of be set here */
-	twi->clkTrace = Clock_Trace(twi->clk,ClockTrace,twi);
-        twi->bdev.first_mapping=NULL;
-        twi->bdev.Map=AT91Twi_Map;
-        twi->bdev.UnMap=AT91Twi_UnMap;
-        twi->bdev.owner=twi;
-        twi->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	if(features & TWI_FEATURE_SLAVE) {
-		twi->sr = 0xf009; 
+	twi->clkTrace = Clock_Trace(twi->clk, ClockTrace, twi);
+	twi->bdev.first_mapping = NULL;
+	twi->bdev.Map = AT91Twi_Map;
+	twi->bdev.UnMap = AT91Twi_UnMap;
+	twi->bdev.owner = twi;
+	twi->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	if (features & TWI_FEATURE_SLAVE) {
+		twi->sr = 0xf009;
 	} else {
-		twi->sr = 8; 
+		twi->sr = 8;
 	}
 	twi->features = features;
 	reset_interpreter(twi);
 	update_timings(twi);
-        update_interrupt(twi);
-        fprintf(stderr,"AT91RM9200 TWI \"%s\" created\n",name);
-        return &twi->bdev;
+	update_interrupt(twi);
+	fprintf(stderr, "AT91RM9200 TWI \"%s\" created\n", name);
+	return &twi->bdev;
 }
-

@@ -2,7 +2,7 @@
 #define DRAM_H
 #include <bus.h>
 
-BusDevice* DRam_New(char *name);
+BusDevice *DRam_New(char *name);
 
 /* SDRAM Commands taken from qimonda HYE18L256160BFL-7.5 documentation */
 
@@ -31,8 +31,8 @@ BusDevice* DRam_New(char *name);
 #define SDRCYC_MANSELFREFRESH	(29)
 
 typedef struct DRam_SpecialCycle {
-	int magic; /* must be in first location */
+	int magic;		/* must be in first location */
 	int cycletype;
-}  DRam_SpecialCycle_t;
+} DRam_SpecialCycle_t;
 
 #endif

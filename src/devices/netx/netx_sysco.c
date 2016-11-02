@@ -123,41 +123,42 @@ typedef struct NetXSysco {
 } NetXSysco;
 
 static uint32_t
-boo_sr_read(void *clientData,uint32_t address,int rqlen)
+boo_sr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-boo_sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+boo_sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-ioc_cr_read(void *clientData,uint32_t address,int rqlen)
+ioc_cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-ioc_cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ioc_cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
+
 static uint32_t
-ioc_mr_read(void *clientData,uint32_t address,int rqlen)
+ioc_mr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-ioc_mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ioc_mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 /* 
@@ -166,134 +167,133 @@ ioc_mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *****************************************************************
  */
 static uint32_t
-res_cr_read(void *clientData,uint32_t address,int rqlen)
+res_cr_read(void *clientData, uint32_t address, int rqlen)
 {
-	NetXSysco *sc = (NetXSysco *) clientData;	
-        return sc->reg_res_cr;
+	NetXSysco *sc = (NetXSysco *) clientData;
+	return sc->reg_res_cr;
 }
 
 static void
-res_cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+res_cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	NetXSysco *sc = (NetXSysco *) clientData;	
-	sc->reg_res_cr = value; 
-	if(value & RES_CR_FIRMW_RES && (value & RES_CR_FIRMW_RES_EN)) {
-		fprintf(stderr,"Reset by System controller\n");
+	NetXSysco *sc = (NetXSysco *) clientData;
+	sc->reg_res_cr = value;
+	if (value & RES_CR_FIRMW_RES && (value & RES_CR_FIRMW_RES_EN)) {
+		fprintf(stderr, "Reset by System controller\n");
 		exit(0);
 	}
 }
 
 static uint32_t
-phy_control_read(void *clientData,uint32_t address,int rqlen)
+phy_control_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-phy_control_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phy_control_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-rev_read(void *clientData,uint32_t address,int rqlen)
+rev_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-rev_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+rev_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-ioc_access_key_read(void *clientData,uint32_t address,int rqlen)
+ioc_access_key_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-ioc_access_key_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ioc_access_key_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-wdg_tr_read(void *clientData,uint32_t address,int rqlen)
+wdg_tr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-wdg_tr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wdg_tr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-wdg_ctr_read(void *clientData,uint32_t address,int rqlen)
+wdg_ctr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-wdg_ctr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wdg_ctr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-wdg_irq_timeout_read(void *clientData,uint32_t address,int rqlen)
+wdg_irq_timeout_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-wdg_irq_timeout_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wdg_irq_timeout_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static uint32_t
-wdg_res_timeout_read(void *clientData,uint32_t address,int rqlen)
+wdg_res_timeout_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-        return 0;
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
+	return 0;
 }
 
 static void
-wdg_res_timeout_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wdg_res_timeout_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"Sysco register %08x not implemented\n",address);
-}
-
-
-static void
-NetXSysco_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
-{
-        NetXSysco *sc = (NetXSysco *) owner;
-	IOH_New32(SYS_BOO_SR(base),boo_sr_read,boo_sr_write,sc);
-	IOH_New32(SYS_IOC_CR(base),ioc_cr_read,ioc_cr_write,sc);
-	IOH_New32(SYS_IOC_MR(base),ioc_mr_read,ioc_mr_write,sc);
-	IOH_New32(SYS_RES_CR(base),res_cr_read,res_cr_write,sc);
-	IOH_New32(SYS_PHY_CONTROL(base),phy_control_read,phy_control_write,sc);
-	IOH_New32(SYS_REV(base),rev_read,rev_write,sc);
-	IOH_New32(SYS_IOC_ACCESS_KEY(base),ioc_access_key_read,ioc_access_key_write,sc);
-	IOH_New32(SYS_WDG_TR(base),wdg_tr_read,wdg_tr_write,sc);
-	IOH_New32(SYS_WDG_CTR(base),wdg_ctr_read,wdg_ctr_write,sc);
-	IOH_New32(SYS_WDG_IRQ_TIMEOUT(base),wdg_irq_timeout_read,wdg_irq_timeout_write,sc);
-	IOH_New32(SYS_WDG_RES_TIMEOUT(base),wdg_res_timeout_read,wdg_res_timeout_write,sc);
+	fprintf(stderr, "Sysco register %08x not implemented\n", address);
 }
 
 static void
-NetXSysco_UnMap(void *owner,uint32_t base,uint32_t mask)
+NetXSysco_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
+{
+	NetXSysco *sc = (NetXSysco *) owner;
+	IOH_New32(SYS_BOO_SR(base), boo_sr_read, boo_sr_write, sc);
+	IOH_New32(SYS_IOC_CR(base), ioc_cr_read, ioc_cr_write, sc);
+	IOH_New32(SYS_IOC_MR(base), ioc_mr_read, ioc_mr_write, sc);
+	IOH_New32(SYS_RES_CR(base), res_cr_read, res_cr_write, sc);
+	IOH_New32(SYS_PHY_CONTROL(base), phy_control_read, phy_control_write, sc);
+	IOH_New32(SYS_REV(base), rev_read, rev_write, sc);
+	IOH_New32(SYS_IOC_ACCESS_KEY(base), ioc_access_key_read, ioc_access_key_write, sc);
+	IOH_New32(SYS_WDG_TR(base), wdg_tr_read, wdg_tr_write, sc);
+	IOH_New32(SYS_WDG_CTR(base), wdg_ctr_read, wdg_ctr_write, sc);
+	IOH_New32(SYS_WDG_IRQ_TIMEOUT(base), wdg_irq_timeout_read, wdg_irq_timeout_write, sc);
+	IOH_New32(SYS_WDG_RES_TIMEOUT(base), wdg_res_timeout_read, wdg_res_timeout_write, sc);
+}
+
+static void
+NetXSysco_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(SYS_BOO_SR(base));
 	IOH_Delete32(SYS_IOC_CR(base));
@@ -308,17 +308,16 @@ NetXSysco_UnMap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(SYS_WDG_RES_TIMEOUT(base));
 }
 
-
 BusDevice *
-NetXSysco_New(const char *devname) {
-        NetXSysco *sc = sg_new(NetXSysco);
-        sc->bdev.first_mapping = NULL;
-        sc->bdev.Map = NetXSysco_Map;
-        sc->bdev.UnMap = NetXSysco_UnMap;
-        sc->bdev.owner = sc;
-        sc->bdev.hw_flags = MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+NetXSysco_New(const char *devname)
+{
+	NetXSysco *sc = sg_new(NetXSysco);
+	sc->bdev.first_mapping = NULL;
+	sc->bdev.Map = NetXSysco_Map;
+	sc->bdev.UnMap = NetXSysco_UnMap;
+	sc->bdev.owner = sc;
+	sc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 
-        fprintf(stderr,"Created NetX System Controller \"%s\"\n",devname);
-        return &sc->bdev;
+	fprintf(stderr, "Created NetX System Controller \"%s\"\n", devname);
+	return &sc->bdev;
 }
-

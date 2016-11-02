@@ -1,2 +1,2 @@
 #include "bus.h"
-BusDevice * TCC8K_DramcNew(const char *name);
+BusDevice *TCC8K_DramcNew(const char *name);

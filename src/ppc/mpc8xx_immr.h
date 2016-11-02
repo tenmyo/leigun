@@ -9,7 +9,7 @@
  */
 
 #define MPC8xx_SIUMCR	(0)
-#define		EARB	(1<<31)	
+#define		EARB	(1<<31)
 #define 	EARP(x)	(((x)>>28)&7)
 #define		DSHW	(1<<23)
 #define 	DBGC(x)	(((x)>>21)&3)
@@ -48,10 +48,10 @@
 #define 	SIMASK_IRM(irq,x) ((x)&(1<<((31-(irq))<<1)))
 
 #define MPC8xx_SIEL	(0x18)
-#define 	SIEL_ED(irq,x)  ((x)&(1<<((31-(irq))<<1))) 
+#define 	SIEL_ED(irq,x)  ((x)&(1<<((31-(irq))<<1)))
 
 #define MPC8xx_SIVEC	(0x1c)
-#define		SIVEC_INTC (0xff)	
+#define		SIVEC_INTC (0xff)
 
 #define	MPC8xx_TESR (0x20)
 #define		IEXT	(1<<13)
@@ -60,7 +60,6 @@
 #define		DEXT	(1<<5)
 #define		DTMT	(1<<4)
 #define		DPB(x)	(((x)&0xf))
-
 
 #define MPC8xx_BR(x)    (0x100+((x)<<3))
 #define         BR_BA(x)        ((x)&0xffff8000)
@@ -82,7 +81,6 @@
 #define         OR_SETA(x)      (((x)>>3)&0x1)
 #define         OR_TRLX(x)      (((x)>>2)&0x1)
 #define         OR_EHTR(x)      (((x)>>1)&0x1)
-
 
 #define MPC8xx_MAR      (0x164)
 #define MPC8xx_MCR      (0x168)
@@ -108,4 +106,3 @@
 #define MPC8xx_SCCRK	(0x380)
 #define MPC8xx_PLPRCRK  (0x384)
 #define MPC8xx_RSRK	(0x388)
-

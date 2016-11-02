@@ -1,2 +1,1 @@
-BusDevice * TCC8K_TimerModNew(const char *name);
-
+BusDevice *TCC8K_TimerModNew(const char *name);

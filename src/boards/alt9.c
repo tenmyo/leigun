@@ -21,21 +21,24 @@ board_alt9_create()
 	MCS51_Init("mcs51");
 	return 0;
 }
+
 static void
-board_alt9_run(Board *bd) {
-        MCS51_Run();
+board_alt9_run(Board * bd)
+{
+	MCS51_Run();
 }
 
 Board board_alt9 = {
-        .name = "ALT9",
-        .description =  "Alt-9 8051 example board",
-        .createBoard =  board_alt9_create,
-        .runBoard =     board_alt9_run,
-        .defaultconfig = DEFAULTCONFIG
+	.name = "ALT9",
+	.description = "Alt-9 8051 example board",
+	.createBoard = board_alt9_create,
+	.runBoard = board_alt9_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
 __CONSTRUCTOR__ static void
-alt9_init() {
-        fprintf(stderr,"Loading ALT-9 Board module\n");
-        Board_Register(&board_alt9);
+alt9_init()
+{
+	fprintf(stderr, "Loading ALT-9 Board module\n");
+	Board_Register(&board_alt9);
 }

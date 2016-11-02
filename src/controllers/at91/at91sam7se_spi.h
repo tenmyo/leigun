@@ -1,2 +1,2 @@
 #include "bus.h"
-BusDevice * AT91Sam7Se_SpiNew(const char *name);
+BusDevice *AT91Sam7Se_SpiNew(const char *name);

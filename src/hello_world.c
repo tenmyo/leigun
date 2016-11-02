@@ -51,7 +51,6 @@
 #define dbgprintf(x...)
 #endif
 
-
 #define HELLO_PRINT_REG(base)	((base)+0)
 #define HELLO_INT_TRIGGER(base)	((base)+0x4)
 #define HELLO_INT_MASK(base)	((base)+0x8)
@@ -60,15 +59,14 @@
 
 #define MAX_PHYS	(32)
 typedef struct HelloWorldDev {
-        BusDevice bdev; 	/* HelloWorldDev inherits from BusDevice */
-	char *name;		/* The instance name 			 */
-	SigNode *irqNode;	/* The interrupt Line 			 */
+	BusDevice bdev;		/* HelloWorldDev inherits from BusDevice */
+	char *name;		/* The instance name                     */
+	SigNode *irqNode;	/* The interrupt Line                    */
 
 	/* The registers */
 	uint32_t int_mask;
 	uint32_t int_status;
 } HelloWorldDev;
-
 
 /*
  * --------------------------------------------------------------------------------------
@@ -77,12 +75,12 @@ typedef struct HelloWorldDev {
  * --------------------------------------------------------------------------------------
  */
 static void
-update_interrupt(HelloWorldDev *hwd) 
+update_interrupt(HelloWorldDev * hwd)
 {
-	if(hwd->int_status & hwd->int_mask) {
-		SigNode_Set(hwd->irqNode,SIG_LOW);
+	if (hwd->int_status & hwd->int_mask) {
+		SigNode_Set(hwd->irqNode, SIG_LOW);
 	} else {
-		SigNode_Set(hwd->irqNode,SIG_PULLUP);
+		SigNode_Set(hwd->irqNode, SIG_PULLUP);
 	}
 }
 
@@ -93,16 +91,16 @@ update_interrupt(HelloWorldDev *hwd)
  * --------------------------------------------------------
  */
 static uint32_t
-hello_print_read(void *clientData,uint32_t address,int rqlen)
+hello_print_read(void *clientData, uint32_t address, int rqlen)
 {
 	//HelloWorldDev *hwd = (HelloWorldDev *)clientData;
 	return 0x08154711;
 }
 
 static void
-hello_print_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+hello_print_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"Hello world %08x\n",value);
+	fprintf(stderr, "Hello world %08x\n", value);
 }
 
 /*
@@ -113,18 +111,19 @@ hello_print_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------
  */
 static uint32_t
-int_trigger_read(void *clientData,uint32_t address,int rqlen)
+int_trigger_read(void *clientData, uint32_t address, int rqlen)
 {
-	return 0; 
+	return 0;
 }
 
 static void
-int_trigger_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+int_trigger_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	HelloWorldDev *hwd = (HelloWorldDev *)clientData;
+	HelloWorldDev *hwd = (HelloWorldDev *) clientData;
 	hwd->int_status |= INT_SOFTINT;
 	update_interrupt(hwd);
 }
+
 /*
  * ----------------------------------------------------------------------
  * The Interrupt mask register allows enabling/disabling the Interrupts
@@ -132,16 +131,16 @@ int_trigger_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------
  */
 static uint32_t
-int_mask_read(void *clientData,uint32_t address,int rqlen)
+int_mask_read(void *clientData, uint32_t address, int rqlen)
 {
-	HelloWorldDev *hwd = (HelloWorldDev *)clientData;
-	return hwd->int_mask; 
+	HelloWorldDev *hwd = (HelloWorldDev *) clientData;
+	return hwd->int_mask;
 }
 
 static void
-int_mask_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+int_mask_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	HelloWorldDev *hwd = (HelloWorldDev *)clientData;
+	HelloWorldDev *hwd = (HelloWorldDev *) clientData;
 	hwd->int_mask = value;
 	update_interrupt(hwd);
 }
@@ -154,61 +153,58 @@ int_mask_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------
  */
 static uint32_t
-int_status_read(void *clientData,uint32_t address,int rqlen)
+int_status_read(void *clientData, uint32_t address, int rqlen)
 {
-	HelloWorldDev *hwd = (HelloWorldDev *)clientData;
-	return hwd->int_status; 
+	HelloWorldDev *hwd = (HelloWorldDev *) clientData;
+	return hwd->int_status;
 }
 
 static void
-int_status_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+int_status_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	HelloWorldDev *hwd = (HelloWorldDev *)clientData;
+	HelloWorldDev *hwd = (HelloWorldDev *) clientData;
 	hwd->int_status &= ~value;
 	update_interrupt(hwd);
 }
 
-
 static void
-HelloWorldDev_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+HelloWorldDev_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        HelloWorldDev *hwd = (HelloWorldDev*) owner;
-	IOH_New32(HELLO_PRINT_REG(base),hello_print_read,hello_print_write,hwd);
-	IOH_New32(HELLO_INT_TRIGGER(base),int_trigger_read,int_trigger_write,hwd);
-	IOH_New32(HELLO_INT_MASK(base),int_mask_read,int_mask_write,hwd);
-	IOH_New32(HELLO_INT_STATUS(base),int_status_read,int_status_write,hwd);
+	HelloWorldDev *hwd = (HelloWorldDev *) owner;
+	IOH_New32(HELLO_PRINT_REG(base), hello_print_read, hello_print_write, hwd);
+	IOH_New32(HELLO_INT_TRIGGER(base), int_trigger_read, int_trigger_write, hwd);
+	IOH_New32(HELLO_INT_MASK(base), int_mask_read, int_mask_write, hwd);
+	IOH_New32(HELLO_INT_STATUS(base), int_status_read, int_status_write, hwd);
 }
 
 static void
-HelloWorldDev_UnMap(void *owner,uint32_t base,uint32_t mask)
+HelloWorldDev_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(HELLO_PRINT_REG(base));
 	IOH_Delete32(HELLO_INT_TRIGGER(base));
 	IOH_Delete32(HELLO_INT_MASK(base));
 	IOH_Delete32(HELLO_INT_STATUS(base));
-	
+
 }
 
-
-
 BusDevice *
-HelloWorldDev_New(const char *name) 
+HelloWorldDev_New(const char *name)
 {
 	HelloWorldDev *hwd = sg_new(HelloWorldDev);
-	hwd->irqNode = SigNode_New("%s.irq",name);
-	if(!hwd->irqNode) {
-		fprintf(stderr,"HelloWorldDevice: Can't create interrupt request line\n");
+	hwd->irqNode = SigNode_New("%s.irq", name);
+	if (!hwd->irqNode) {
+		fprintf(stderr, "HelloWorldDevice: Can't create interrupt request line\n");
 		exit(1);
 	}
-	SigNode_Set(hwd->irqNode,SIG_PULLDOWN);
+	SigNode_Set(hwd->irqNode, SIG_PULLDOWN);
 
 	/* Initialize the registers */
 	hwd->int_mask = 0x00;
-	hwd->bdev.first_mapping=NULL;
-        hwd->bdev.Map=HelloWorldDev_Map;
-        hwd->bdev.UnMap=HelloWorldDev_UnMap;
-        hwd->bdev.owner=hwd;
-        hwd->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        fprintf(stderr,"HelloWorld Device \"%s\" created\n",name);
-        return &hwd->bdev;
+	hwd->bdev.first_mapping = NULL;
+	hwd->bdev.Map = HelloWorldDev_Map;
+	hwd->bdev.UnMap = HelloWorldDev_UnMap;
+	hwd->bdev.owner = hwd;
+	hwd->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "HelloWorld Device \"%s\" created\n", name);
+	return &hwd->bdev;
 }

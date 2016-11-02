@@ -49,7 +49,7 @@
 #include <senseless.h>
 #include <sgstring.h>
 
-#define CFU_UMR1(base)		((base) + 0x0) 
+#define CFU_UMR1(base)		((base) + 0x0)
 #define CFU_USR(base)		((base) + 0x4)
 #define CFU_UCSR(base)		((base) + 0x4)
 #define CFU_UCR(base)		((base) + 0x8)
@@ -70,158 +70,156 @@ typedef struct CFUart {
 } CFUart;
 
 static uint32_t
-umr1_read(void *clientData,uint32_t address,int rqlen)
+umr1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: umr1 not implemented\n");
-        return 0;
-}
-
-static void
-umr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"CFUart: umr1 not implemented\n");
-}
-
-static uint32_t
-usr_read(void *clientData,uint32_t address,int rqlen) 
-{
-        fprintf(stderr,"CFUart: usr not implemented\n");
+	fprintf(stderr, "CFUart: umr1 not implemented\n");
 	return 0;
 }
 
 static void
-ucsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+umr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: ucsr not implemented\n");
+	fprintf(stderr, "CFUart: umr1 not implemented\n");
 }
 
 static uint32_t
-ucr_read(void *clientData,uint32_t address,int rqlen)
+usr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: UCR is not readable\n");
-        return 0;
+	fprintf(stderr, "CFUart: usr not implemented\n");
+	return 0;
 }
 
 static void
-ucr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ucsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: ucr not implemented\n");
+	fprintf(stderr, "CFUart: ucsr not implemented\n");
 }
 
 static uint32_t
-urb_read(void *clientData,uint32_t address,int rqlen)
+ucr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: urb not implemented\n");
-        return 0;
+	fprintf(stderr, "CFUart: UCR is not readable\n");
+	return 0;
 }
 
 static void
-utb_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ucr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: utb not implemented\n");
-}
-
-
-static uint32_t
-uipcr_read(void *clientData,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"CFUart: uipcr not implemented\n");
-        return 0;
-}
-
-static void
-uacr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
-{
-        fprintf(stderr,"CFUart: uacr not implemented\n");
+	fprintf(stderr, "CFUart: ucr not implemented\n");
 }
 
 static uint32_t
-uisr_read(void *clientData,uint32_t address,int rqlen)
+urb_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uisr not implemented\n");
-        return 0;
+	fprintf(stderr, "CFUart: urb not implemented\n");
+	return 0;
 }
 
 static void
-uimr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+utb_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uimr not implemented\n");
+	fprintf(stderr, "CFUart: utb not implemented\n");
 }
 
 static uint32_t
-ubg1_read(void *clientData,uint32_t address,int rqlen)
+uipcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: ubg1 not readable\n");
-        return 0;
+	fprintf(stderr, "CFUart: uipcr not implemented\n");
+	return 0;
 }
 
 static void
-ubg1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+uacr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: ubg1 not implemented\n");
+	fprintf(stderr, "CFUart: uacr not implemented\n");
 }
 
 static uint32_t
-ubg2_read(void *clientData,uint32_t address,int rqlen)
+uisr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: ubg2 not readable\n");
-        return 0;
+	fprintf(stderr, "CFUart: uisr not implemented\n");
+	return 0;
 }
 
 static void
-ubg2_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+uimr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: ubg2 not implemented\n");
+	fprintf(stderr, "CFUart: uimr not implemented\n");
 }
 
 static uint32_t
-uip_read(void *clientData,uint32_t address,int rqlen)
+ubg1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uip not implemented\n");
-        return 0;
+	fprintf(stderr, "CFUart: ubg1 not readable\n");
+	return 0;
 }
 
 static void
-uip_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ubg1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uip is not writable\n");
+	fprintf(stderr, "CFUart: ubg1 not implemented\n");
 }
 
 static uint32_t
-uop1_read(void *clientData,uint32_t address,int rqlen)
+ubg2_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uop1 is not readable\n");
-        return 0;
+	fprintf(stderr, "CFUart: ubg2 not readable\n");
+	return 0;
 }
 
 static void
-uop1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ubg2_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uop1 is not implemented\n");
+	fprintf(stderr, "CFUart: ubg2 not implemented\n");
 }
 
 static uint32_t
-uop0_read(void *clientData,uint32_t address,int rqlen)
+uip_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uop0 is not readable\n");
-        return 0;
+	fprintf(stderr, "CFUart: uip not implemented\n");
+	return 0;
 }
 
 static void
-uop0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+uip_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"CFUart: uop0 is not implemented\n");
+	fprintf(stderr, "CFUart: uip is not writable\n");
 }
 
+static uint32_t
+uop1_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "CFUart: uop1 is not readable\n");
+	return 0;
+}
 
 static void
-CFU_Unmap(void *owner,uint32_t base,uint32_t mask)
+uop1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        IOH_Delete16(CFU_UMR1(base));
-        IOH_Delete16(CFU_USR(base));
-        IOH_Delete16(CFU_UCR(base));
-        IOH_Delete16(CFU_UCR(base));
-        IOH_Delete16(CFU_UIPCR(base));
+	fprintf(stderr, "CFUart: uop1 is not implemented\n");
+}
+
+static uint32_t
+uop0_read(void *clientData, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "CFUart: uop0 is not readable\n");
+	return 0;
+}
+
+static void
+uop0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
+{
+	fprintf(stderr, "CFUart: uop0 is not implemented\n");
+}
+
+static void
+CFU_Unmap(void *owner, uint32_t base, uint32_t mask)
+{
+	IOH_Delete16(CFU_UMR1(base));
+	IOH_Delete16(CFU_USR(base));
+	IOH_Delete16(CFU_UCR(base));
+	IOH_Delete16(CFU_UCR(base));
+	IOH_Delete16(CFU_UIPCR(base));
 	IOH_Delete16(CFU_UISR(base));
 	IOH_Delete16(CFU_UBG1(base));
 	IOH_Delete16(CFU_UBG2(base));
@@ -231,31 +229,31 @@ CFU_Unmap(void *owner,uint32_t base,uint32_t mask)
 }
 
 static void
-CFU_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+CFU_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
-        CFUart *cfu = (CFUart *) owner;
-        IOH_New16(CFU_UMR1(base),umr1_read,umr1_write,cfu);
-        IOH_New16(CFU_USR(base),usr_read,ucsr_write,cfu);
-        IOH_New16(CFU_UCR(base),ucr_read,ucr_write,cfu);
-        IOH_New16(CFU_UCR(base),urb_read,utb_write,cfu);
-        IOH_New16(CFU_UIPCR(base),uipcr_read,uacr_write,cfu);
-	IOH_New16(CFU_UISR(base),uisr_read,uimr_write,cfu);
-	IOH_New16(CFU_UBG1(base),ubg1_read,ubg1_write,cfu);
-	IOH_New16(CFU_UBG2(base),ubg2_read,ubg2_write,cfu);
-	IOH_New16(CFU_UIP(base),uip_read,uip_write,cfu);
-	IOH_New16(CFU_UOP1(base),uop1_read,uop1_write,cfu);
-	IOH_New16(CFU_UOP0(base),uop0_read,uop0_write,cfu);
+	CFUart *cfu = (CFUart *) owner;
+	IOH_New16(CFU_UMR1(base), umr1_read, umr1_write, cfu);
+	IOH_New16(CFU_USR(base), usr_read, ucsr_write, cfu);
+	IOH_New16(CFU_UCR(base), ucr_read, ucr_write, cfu);
+	IOH_New16(CFU_UCR(base), urb_read, utb_write, cfu);
+	IOH_New16(CFU_UIPCR(base), uipcr_read, uacr_write, cfu);
+	IOH_New16(CFU_UISR(base), uisr_read, uimr_write, cfu);
+	IOH_New16(CFU_UBG1(base), ubg1_read, ubg1_write, cfu);
+	IOH_New16(CFU_UBG2(base), ubg2_read, ubg2_write, cfu);
+	IOH_New16(CFU_UIP(base), uip_read, uip_write, cfu);
+	IOH_New16(CFU_UOP1(base), uop1_read, uop1_write, cfu);
+	IOH_New16(CFU_UOP0(base), uop0_read, uop0_write, cfu);
 }
 
 BusDevice *
 MCF5282_UartNew(const char *name)
 {
 	CFUart *cfu = sg_calloc(sizeof(CFUart));
-        cfu->bdev.first_mapping=NULL;
-        cfu->bdev.Map=CFU_Map;
-        cfu->bdev.UnMap=CFU_Unmap;
-        cfu->bdev.owner=cfu;
-        cfu->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &cfu->bdev;
+	cfu->bdev.first_mapping = NULL;
+	cfu->bdev.Map = CFU_Map;
+	cfu->bdev.UnMap = CFU_Unmap;
+	cfu->bdev.owner = cfu;
+	cfu->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &cfu->bdev;
 
 }

@@ -134,27 +134,27 @@ typedef struct Fec {
 } Fec;
 
 static void
-Fec_Unmap(void *owner,uint32_t base,uint32_t mask)
+Fec_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
 //        IOH_Delete32(SCM_IPSBAR(base));
 }
 
 static void
-Fec_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+Fec_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
 //       Fec *fec = (Fec *) owner;
 //        IOH_New32(SCM_IPSBAR(base),ipsbar_read,ipsbar_write,scm);
 }
 
 BusDevice *
-MCF5282_FecNew(const char *name) 
+MCF5282_FecNew(const char *name)
 {
 	Fec *fec = sg_calloc(sizeof(Fec));
-        fec->bdev.first_mapping=NULL;
-        fec->bdev.Map=Fec_Map;
-        fec->bdev.UnMap=Fec_Unmap;
-        fec->bdev.owner=fec;
-        fec->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &fec->bdev;
+	fec->bdev.first_mapping = NULL;
+	fec->bdev.Map = Fec_Map;
+	fec->bdev.UnMap = Fec_Unmap;
+	fec->bdev.owner = fec;
+	fec->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &fec->bdev;
 
 }

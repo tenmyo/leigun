@@ -43,7 +43,7 @@
 #include "at91_pit.h"
 #include "cycletimer.h"
 #include "clock.h"
-#include "senseless.h"	
+#include "senseless.h"
 
 #define PIT_MR(base)	((base) + 0x00)
 #define		MR_PITIEN	(1 << 25)
@@ -62,7 +62,7 @@ typedef struct AT91Pit {
 	//uint32_t regPIIR;
 	uint64_t lastActualizeCycles;
 	CycleCounter_t accCycles;
-	SigNode	*sigIrq;
+	SigNode *sigIrq;
 	Clock_t *clkIn;
 	Clock_t *clkPit;
 } AT91Pit;
@@ -74,19 +74,19 @@ typedef struct AT91Pit {
 #endif
 
 static void
-update_interrupt(AT91Pit *pit) 
+update_interrupt(AT91Pit * pit)
 {
-	if((pit->regSR & SR_PITS) && (pit->regMR & MR_PITIEN)) {
+	if ((pit->regSR & SR_PITS) && (pit->regMR & MR_PITIEN)) {
 		dbgprintf("PIT irq\n");
-		SigNode_Set(pit->sigIrq,SIG_HIGH);
+		SigNode_Set(pit->sigIrq, SIG_HIGH);
 	} else {
 		dbgprintf("PIT unirq\n");
-		SigNode_Set(pit->sigIrq,SIG_PULLDOWN);
+		SigNode_Set(pit->sigIrq, SIG_PULLDOWN);
 	}
 }
 
 static void
-actualize_counter(AT91Pit *pit) 
+actualize_counter(AT91Pit * pit)
 {
 	CycleCounter_t cycles = CycleCounter_Get();
 	CycleCounter_t diffCycles;
@@ -96,7 +96,7 @@ actualize_counter(AT91Pit *pit)
 	uint32_t picnt;
 	FractionU64_t frac;
 	frac = Clock_MasterRatio(pit->clkPit);
-	if(!frac.nom || !frac.denom) {
+	if (!frac.nom || !frac.denom) {
 		return;
 	}
 	diffCycles = cycles - pit->lastActualizeCycles;
@@ -105,14 +105,14 @@ actualize_counter(AT91Pit *pit)
 	cntrCycles = pit->accCycles / (frac.denom / frac.nom);
 	//fprintf(stderr,"+ %lu, acc %lu, nom %llu, denom %llu\n",cntrCycles,pit->accCycles,frac.nom,frac.denom);
 	pit->accCycles = pit->accCycles - cntrCycles * (frac.denom / frac.nom);
-	pivPeriod = (pit->regMR & 0xfffff) + 1;	
+	pivPeriod = (pit->regMR & 0xfffff) + 1;
 	pivValue = pit->regPIVR & 0xfffff;
 	picnt = pit->regPIVR >> 20;
 	pivValue = pivValue + cntrCycles;
-//	fprintf(stderr,"pivValue %08llx period %08x, MR %08x\n",pivValue,pivPeriod, pit->regMR);
-	if(pivValue >= pivPeriod) {
-		if(pit->regMR & MR_PITEN) {
-			picnt += pivValue / pivPeriod; 
+//      fprintf(stderr,"pivValue %08llx period %08x, MR %08x\n",pivValue,pivPeriod, pit->regMR);
+	if (pivValue >= pivPeriod) {
+		if (pit->regMR & MR_PITEN) {
+			picnt += pivValue / pivPeriod;
 			pivValue = pivValue % pivPeriod;
 		} else {
 			pivValue = 0;
@@ -130,27 +130,27 @@ actualize_counter(AT91Pit *pit)
  ********************************************************************************************************
  */
 static void
-update_timeout(AT91Pit *pit) 
+update_timeout(AT91Pit * pit)
 {
 	FractionU64_t frac;
 	uint64_t pivCycles;
 	uint64_t pivPeriod;
 	CycleCounter_t cycles;
-	if((pit->regMR & MR_PITIEN) == 0) {
+	if ((pit->regMR & MR_PITIEN) == 0) {
 		CycleTimer_Remove(&pit->eventTimer);
 		return;
 	}
-	if(pit->regSR & SR_PITS) {
+	if (pit->regSR & SR_PITS) {
 		//fprintf(stderr,"Already PITS\n");
 		//return;
-	}	
+	}
 	frac = Clock_MasterRatio(pit->clkPit);
-	pivPeriod = (pit->regMR & 0xfffff) + 1;	
+	pivPeriod = (pit->regMR & 0xfffff) + 1;
 	pivCycles = pivPeriod - (pit->regPIVR & 0xfffff);
-	if(frac.nom) {
+	if (frac.nom) {
 		cycles = pivCycles * (frac.denom / frac.nom);
 	} else {
-		fprintf(stderr,"nom is 0\n");
+		fprintf(stderr, "nom is 0\n");
 		cycles = 1000;
 	}
 	cycles -= pit->accCycles;
@@ -159,7 +159,8 @@ update_timeout(AT91Pit *pit)
 }
 
 static void
-timer_event(void *eventData) {
+timer_event(void *eventData)
+{
 	AT91Pit *pit = eventData;
 	//fprintf(stderr,"Now Timer event %llu\n",CycleCounter_Get());
 	actualize_counter(pit);
@@ -167,38 +168,38 @@ timer_event(void *eventData) {
 }
 
 static uint32_t
-mr_read(void *clientData,uint32_t address,int rqlen)
+mr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pit *pit = clientData;
-        return pit->regMR;
+	return pit->regMR;
 }
 
 static void
-mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Pit *pit = clientData;
 	actualize_counter(pit);
-        //fprintf(stderr,"PIT MR: 0x%08x \n",value);
-	pit->regMR = value & (0xfffff | MR_PITIEN | MR_PITEN); 
+	//fprintf(stderr,"PIT MR: 0x%08x \n",value);
+	pit->regMR = value & (0xfffff | MR_PITIEN | MR_PITEN);
 	update_timeout(pit);
 }
 
 static uint32_t
-sr_read(void *clientData,uint32_t address,int rqlen)
+sr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pit *pit = clientData;
 	actualize_counter(pit);
-        return pit->regSR;
+	return pit->regSR;
 }
 
 static void
-sr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT SR is readonly\n");
+	fprintf(stderr, "PIT SR is readonly\n");
 }
 
 static uint32_t
-pivr_read(void *clientData,uint32_t address,int rqlen)
+pivr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pit *pit = clientData;
 	uint32_t pivr;
@@ -207,16 +208,16 @@ pivr_read(void *clientData,uint32_t address,int rqlen)
 	update_interrupt(pit);
 	update_timeout(pit);
 	Senseless_Report(150);
-	dbgprintf("PIVR %u\n",pit->regPIVR);
+	dbgprintf("PIVR %u\n", pit->regPIVR);
 	pivr = pit->regPIVR;
-	pit->regPIVR &= 0x000fffff; 
-        return pivr; 
+	pit->regPIVR &= 0x000fffff;
+	return pivr;
 }
 
 static void
-pivr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pivr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT PIVR not implemented\n");
+	fprintf(stderr, "PIT PIVR not implemented\n");
 }
 
 /**
@@ -225,46 +226,46 @@ pivr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  *******************************************************************************
  */
 static uint32_t
-piir_read(void *clientData,uint32_t address,int rqlen)
+piir_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Pit *pit = clientData;
 	actualize_counter(pit);
 	Senseless_Report(200);
-        return pit->regPIVR;
+	return pit->regPIVR;
 }
 
 static void
-piir_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+piir_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT is readonly\n");
+	fprintf(stderr, "PIT is readonly\n");
 }
 
 static void
-AT91Pit_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Pit_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        AT91Pit *pit = (AT91Pit*) owner;
-        IOH_New32(PIT_MR(base),mr_read,mr_write,pit);
-        IOH_New32(PIT_SR(base),sr_read,sr_write,pit);
-        IOH_New32(PIT_PIVR(base),pivr_read,pivr_write,pit);
-        IOH_New32(PIT_PIIR(base),piir_read,piir_write,pit);
+	AT91Pit *pit = (AT91Pit *) owner;
+	IOH_New32(PIT_MR(base), mr_read, mr_write, pit);
+	IOH_New32(PIT_SR(base), sr_read, sr_write, pit);
+	IOH_New32(PIT_PIVR(base), pivr_read, pivr_write, pit);
+	IOH_New32(PIT_PIIR(base), piir_read, piir_write, pit);
 }
 
 static void
-AT91Pit_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Pit_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete32(PIT_MR(base));
-        IOH_Delete32(PIT_SR(base));
-        IOH_Delete32(PIT_PIVR(base));
-        IOH_Delete32(PIT_PIIR(base));
+	IOH_Delete32(PIT_MR(base));
+	IOH_Delete32(PIT_SR(base));
+	IOH_Delete32(PIT_PIVR(base));
+	IOH_Delete32(PIT_PIIR(base));
 }
 
 BusDevice *
 AT91Pit_New(const char *name)
 {
 	AT91Pit *pit = sg_new(AT91Pit);
-	pit->sigIrq = SigNode_New("%s.irq",name);
-	if(!pit->sigIrq) {
-		fprintf(stderr,"Can not create signal lines for AT91Pit\n");
+	pit->sigIrq = SigNode_New("%s.irq", name);
+	if (!pit->sigIrq) {
+		fprintf(stderr, "Can not create signal lines for AT91Pit\n");
 		exit(1);
 	}
 	pit->bdev.first_mapping = NULL;
@@ -272,12 +273,11 @@ AT91Pit_New(const char *name)
 	pit->bdev.UnMap = AT91Pit_UnMap;
 	pit->bdev.owner = pit;
 	pit->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
-	pit->clkIn = Clock_New("%s.clk",name);
-	pit->clkPit = Clock_New("%s.pit_clk",name);
-	CycleTimer_Init(&pit->eventTimer,timer_event,pit);
-	Clock_MakeDerived(pit->clkPit,pit->clkIn,1,16);
+	pit->clkIn = Clock_New("%s.clk", name);
+	pit->clkPit = Clock_New("%s.pit_clk", name);
+	CycleTimer_Init(&pit->eventTimer, timer_event, pit);
+	Clock_MakeDerived(pit->clkPit, pit->clkIn, 1, 16);
 	update_interrupt(pit);
-	fprintf(stderr,"AT91 PIT \"%s\" created\n",name);
+	fprintf(stderr, "AT91 PIT \"%s\" created\n", name);
 	return &pit->bdev;
 }
-

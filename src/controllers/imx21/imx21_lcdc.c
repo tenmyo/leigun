@@ -59,17 +59,17 @@
 #endif
 
 #define LCDC_BASE_ADDR  0x10021000
-#define LCDC_LSSAR(base)   ((base) + 0x00)  //  32bit lcdc screen start addr reg
-#define LCDC_LSR(base)     ((base) + 0x04)  //  32bit lcdc size reg
+#define LCDC_LSSAR(base)   ((base) + 0x00)	//  32bit lcdc screen start addr reg
+#define LCDC_LSR(base)     ((base) + 0x04)	//  32bit lcdc size reg
 #define		LSR_XMAX_MASK	(0x3f<<20)
 #define		LSR_XMAX_SHIFT	(20)
 #define		LSR_YMAX_MASK	(0x3ff)
 #define		LSR_YMAX_SHIFT	(0)
 
-#define LCDC_LVPWR(base)   ((base) + 0x08)  //  32bit lcdc virtual page width reg
+#define LCDC_LVPWR(base)   ((base) + 0x08)	//  32bit lcdc virtual page width reg
 #define		LVPWR_VPW_MASK	(0x3ff)
 #define		LVPWR_VPW_SHIFT	(0)
-#define LCDC_LCPR(base)    ((base) + 0x0C)  //  32bit lcd cursor position reg
+#define LCDC_LCPR(base)    ((base) + 0x0C)	//  32bit lcd cursor position reg
 #define		LCPR_CC_MASK	(3<<30)
 #define		LCPR_CC_SHIFT	(30)
 #define		LCPR_OP		(1<<28)
@@ -77,7 +77,7 @@
 #define		LCPR_CXP_SHIFT	(16)
 #define		LCPR_CYP_MASK	(0x3ff<<0)
 #define		LCPR_CYP_SHIFT	(0)
-#define LCDC_LCWHBR(base)  ((base) + 0x10)  //  32bit lcd cursor width/heigh/blink
+#define LCDC_LCWHBR(base)  ((base) + 0x10)	//  32bit lcd cursor width/heigh/blink
 #define		LCWHBR_BK_EN	(1<<31)
 #define		LCWHBR_CW_MASK	(0x1f<<24)
 #define		LCWHBR_CW_SHIFT	(24)
@@ -85,14 +85,14 @@
 #define		LCWHBR_CH_SHIFT (16)
 #define		LCWHBR_BD_MASK	(0xff<<0)
 #define		LCWHBR_BD_SHIFT	(0)
-#define LCDC_LCCMR(base)   ((base) + 0x14)  //  32bit lcd color cursor mapping reg
+#define LCDC_LCCMR(base)   ((base) + 0x14)	//  32bit lcd color cursor mapping reg
 #define		LCCMR_CUR_COL_R_MASK	(0x3f<<12)
 #define		LCCMR_CUR_COL_R_SHIFT	(12)
 #define		LCCMR_CUR_COL_G_MASK	(0x3f<<6)
 #define		LCCMR_CUR_COL_G_SHIFT	(6)
 #define		LCCMR_CUR_COL_B_MASK	(0x3f)
 #define		LCCMR_CUR_COL_B_SHIFT	(0)
-#define LCDC_LPCR(base)    ((base) + 0x18)  //  32bit lcdc panel config reg
+#define LCDC_LPCR(base)    ((base) + 0x18)	//  32bit lcdc panel config reg
 #define		LPCR_TFT		(1<<31)
 #define		LPCR_COLOR		(1<<30)
 #define		LPCR_PBSIZ_MASK		(3<<28)
@@ -125,22 +125,22 @@
 #define		LPCR_SHARP		(1<<6)
 #define		LPCR_PCD_MASK		(0x3f<<0)
 #define		LPCR_PCD_SHIFT		(0)
-#define LCDC_LHCR(base)    ((base) + 0x1C)  //  32bit lcdc horizontal config reg
+#define LCDC_LHCR(base)    ((base) + 0x1C)	//  32bit lcdc horizontal config reg
 #define		LHCR_H_WIDTH_MASK	(0x3f << 26)
 #define		LHCR_H_WIDTH_SHIFT	(26)
 #define		LHCR_H_WAIT_1_MASK	(0xff<<8)
-#define		LHCR_H_WAIT_1_SHIFT	(8) 
+#define		LHCR_H_WAIT_1_SHIFT	(8)
 #define		LHCR_H_WAIT_2_MASK	(0xff<<0)
 #define		LHCR_H_WAIT_2_SHIFT	(0)
-#define LCDC_LVCR(base)    ((base) + 0x20)  //  32bit lcdc vertical config reg
+#define LCDC_LVCR(base)    ((base) + 0x20)	//  32bit lcdc vertical config reg
 #define		LVCR_V_WIDTH_MASK	(0x3f<<26)
 #define		LVCR_V_WIDTH_SHIFT	(26)
 #define		LVCR_V_WAIT_1_MASK	(0xff<<8)
 #define		LVCR_V_WAIT_1_SHIFT	(8)
-#define LCDC_LPOR(base)    ((base) + 0x24)  //  32bit lcdc panning offset reg
+#define LCDC_LPOR(base)    ((base) + 0x24)	//  32bit lcdc panning offset reg
 #define		LPOR_POS_MASK		(0x1f)
 #define		LPOR_POS_SHIFT		(0)
-#define LCDC_LSCR(base)    ((base) + 0x28)  //  32bit lcdc sharp config 1 reg
+#define LCDC_LSCR(base)    ((base) + 0x28)	//  32bit lcdc sharp config 1 reg
 #define		LSCR_PS_RISE_DELAY_MASK		(0x3f<<26)
 #define		LSCR_PS_RISE_DELAY_SHIFT	(26)
 #define		LSCR_CLS_RISE_DELAY_MASK	(0xff<<16)
@@ -151,7 +151,7 @@
 #define		LSCR_GRAY2_SHIFT		(4)
 #define		LSCR_GRAY1_MASK			(0xf)
 #define		LSCR_GRAY1_SHIFT		(0)
-#define LCDC_LPCCR(base)   ((base) + 0x2C)  //  32bit lcdc pwm contrast ctrl reg
+#define LCDC_LPCCR(base)   ((base) + 0x2C)	//  32bit lcdc pwm contrast ctrl reg
 #define		LPCCR_CLS_HI_WIDTH_MASK		(0x1ff<<16)
 #define		LPCCR_CLS_HI_WIDTH_SHIFT	(16)
 #define		LPCCR_LDMSK			(1<<15)
@@ -160,19 +160,19 @@
 #define		LPCCR_CC_EN			(1<<8)
 #define		LPCCR_PW_MASK			(0xff<<0)
 #define		LPCCR_PW_SHIFT			(0)
-#define LCDC_LDCR(base)    ((base) + 0x30)  //  32bit lcdc dma control reg
+#define LCDC_LDCR(base)    ((base) + 0x30)	//  32bit lcdc dma control reg
 #define		LDCR_BURST			(1<<31)
 #define		LDCR_HM_MASK			(0x1f<<16)
 #define		LDCR_HM_SHIFT			(16)
 #define		LDCR_TM_MASK			(0x1f<<0)
 #define		LDCR_TM_SHIFT			(0)
-#define LCDC_LRMCR(base)   ((base) + 0x34)  //  32bit lcdc refresh mode ctrl reg
+#define LCDC_LRMCR(base)   ((base) + 0x34)	//  32bit lcdc refresh mode ctrl reg
 #define		LRMCR_SELF_REF			(1<<0)
-#define LCDC_LICR(base)    ((base) + 0x38)  //  32bit lcdc interrupt config reg
+#define LCDC_LICR(base)    ((base) + 0x38)	//  32bit lcdc interrupt config reg
 #define		LICR_GW_INT_CON		(1<<4)
 #define		LICR_INT_SYN		(1<<2)
 #define		LICR_INT_CON		(1<<0)
-#define LCDC_LIER(base)    ((base) + 0x3C)  //  32bit lcdc interrupt enable reg
+#define LCDC_LIER(base)    ((base) + 0x3C)	//  32bit lcdc interrupt enable reg
 #define		LIER_GW_UDR_ERR_EN	(1<<7)
 #define		LIER_GW_ERR_RES_EN	(1<<6)
 #define		LIER_GW_EOF_EN		(1<<5)
@@ -181,7 +181,7 @@
 #define		LIER_ERR_RES_EN		(1<<2)
 #define		LIER_EOF_EN		(1<<1)
 #define		LIER_BOF_EN		(1<<0)
-#define LCDC_LISR(base)    ((base) + 0x40)  //  32bit lcdc interrupt status reg
+#define LCDC_LISR(base)    ((base) + 0x40)	//  32bit lcdc interrupt status reg
 #define		LISR_GW_UDR_ERR		(1<<7)
 #define		LISR_GW_ERR_RES		(1<<6)
 #define		LISR_GW_EOF		(1<<5)
@@ -191,24 +191,24 @@
 #define		LISR_EOF		(1<<1)
 #define		LISR_BOF		(1<<0)
 
-#define LCDC_LGWSAR(base)  ((base) + 0x50)  //  32bit lcdc graphic win start add
-#define LCDC_LGWSR(base)   ((base) + 0x54)  //  32bit lcdc graphic win size reg
+#define LCDC_LGWSAR(base)  ((base) + 0x50)	//  32bit lcdc graphic win start add
+#define LCDC_LGWSR(base)   ((base) + 0x54)	//  32bit lcdc graphic win size reg
 #define		LGWSR_GWW_MASK		(0x3f<<20)
 #define		LGWSR_GWW_SHIFT		(20)
 #define		LGWSR_GWH_MASK		(0x3ff<<0)
 #define		LGWSR_GWH_SHIFT		(0)
-#define LCDC_LGWVPWR(base) ((base) + 0x58)  //  32bit lcdc graphic win virtual pg
+#define LCDC_LGWVPWR(base) ((base) + 0x58)	//  32bit lcdc graphic win virtual pg
 #define		LGWVPWR_GWVPW_MASK	(0x3ff<<0)
 #define		LGWVPWR_GWVPW_SHIFT	(0)
-#define LCDC_LGWPOR(base)  ((base) + 0x5C)  //  32bit lcdc graphic win pan offset
+#define LCDC_LGWPOR(base)  ((base) + 0x5C)	//  32bit lcdc graphic win pan offset
 #define		LGWPOR_GWPO_MASK	(0x1f<<0)
 #define		LGWPOR_GWPO_SHIFT	(0)
-#define LCDC_LGWPR(base)   ((base) + 0x60)  //  32bit lcdc graphic win positon reg
+#define LCDC_LGWPR(base)   ((base) + 0x60)	//  32bit lcdc graphic win positon reg
 #define		LGWPR_GWXP_MASK		(0x3ff<<16)
 #define		LGWPR_GWXP_SHIFT	(16)
 #define		LGWPR_GWYP_MASK		(0x3ff)
 #define		LGWPR_GWYP_SHIFT	(0)
-#define LCDC_LGWCR(base)   ((base) + 0x64)  //  32bit lcdc graphic win control reg
+#define LCDC_LGWCR(base)   ((base) + 0x64)	//  32bit lcdc graphic win control reg
 #define		LGWCR_GWAV_MASK		(0xff<<24)
 #define		LGWCR_GWAV_SHIFT	(24)
 #define		LGWCR_GWCKE		(1<<23)
@@ -220,7 +220,7 @@
 #define		LGWCR_GWCKG_SHIFT	(6)
 #define		LGWCR_GWCKB_MASK	(0x3f<<0)
 #define		LGWCR_GWCKB_SHIFT	(0)
-#define LCDC_LGWDCR(base)  ((base) + 0x68)  //  32bit lcdc graphic win DMA control reg
+#define LCDC_LGWDCR(base)  ((base) + 0x68)	//  32bit lcdc graphic win DMA control reg
 #define		LGWDCR_GWBT		(1<<31)
 #define		LGWDCR_GWHM_MASK	(0xf<<16)
 #define		LGWDCR_GWHM_SHIFT	(16)
@@ -239,9 +239,9 @@ typedef struct IMXLcdc {
 	BusDevice bdev;
 	RfbServer *rfbserv;
 	int interrupt_posted;
-	Clock_t *clk;	
+	Clock_t *clk;
 	Clock_t *clk_pixel;
-        SigNode *irqNode;
+	SigNode *irqNode;
 	uint32_t lssar;
 	uint32_t lsr;
 	uint32_t lvpwr;
@@ -262,7 +262,7 @@ typedef struct IMXLcdc {
 	uint32_t lgwsar;
 	uint32_t lgwsr;
 	uint32_t lgwvpwr;
-	uint32_t lgwpor; 
+	uint32_t lgwpor;
 	uint32_t lgwpr;
 	uint32_t lgwcr;
 	uint32_t lgwdcr;
@@ -276,7 +276,7 @@ typedef struct IMXLcdc {
 	uint64_t update_fifo_wp;
 	uint64_t update_fifo_rp;
 	FbDisplay *display;
-} IMXLcdc; 
+} IMXLcdc;
 
 /*
  * -------------------------------------------
@@ -284,144 +284,144 @@ typedef struct IMXLcdc {
  * -------------------------------------------
  */
 static void
-update_display(void *clientData) 
+update_display(void *clientData)
 {
-	IMXLcdc *lcdc = (IMXLcdc*)clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	uint32_t addr;
 	uint8_t *data;
 	FbUpdateRequest fbudrq;
-	while(UPDATE_FIFO_COUNT(lcdc) > 0) {
+	while (UPDATE_FIFO_COUNT(lcdc) > 0) {
 		addr = lcdc->dirty_addr[lcdc->update_fifo_rp & UPDATE_FIFO_MASK];
-		addr &= ~(lcdc->page_size-1);
+		addr &= ~(lcdc->page_size - 1);
 		Mem_TracePage(addr);
 		lcdc->update_fifo_rp++;
 		data = Bus_GetHVARead(addr);
-		if(data) {
+		if (data) {
 			fbudrq.offset = addr - lcdc->lssar;
 			fbudrq.count = lcdc->page_size;
 			fbudrq.fbdata = data;
-			FbDisplay_UpdateRequest(lcdc->display,&fbudrq);
+			FbDisplay_UpdateRequest(lcdc->display, &fbudrq);
 		}
 	}
 }
 
 static void
-update_fbformat(IMXLcdc *lcdc) 
+update_fbformat(IMXLcdc * lcdc)
 {
 	FbFormat fbf;
-	uint32_t bpix = lcdc->lpcr &  LPCR_BPIX_MASK;
+	uint32_t bpix = lcdc->lpcr & LPCR_BPIX_MASK;
 	FbDisplay *display = lcdc->display;
-	int endsel = lcdc->lpcr & LPCR_END_SEL; 
-	if(endsel)
-		fprintf(stderr,"LCDC warning: big endian mode not implemented\n");
-	switch(bpix) {
-		case LPCR_BPIX_1:
-		case LPCR_BPIX_2:
-		case LPCR_BPIX_4:
-		case LPCR_BPIX_8:
-			fprintf(stderr,"LCDC Warn: unsupported bits per pixel\n");
-			return;
+	int endsel = lcdc->lpcr & LPCR_END_SEL;
+	if (endsel)
+		fprintf(stderr, "LCDC warning: big endian mode not implemented\n");
+	switch (bpix) {
+	    case LPCR_BPIX_1:
+	    case LPCR_BPIX_2:
+	    case LPCR_BPIX_4:
+	    case LPCR_BPIX_8:
+		    fprintf(stderr, "LCDC Warn: unsupported bits per pixel\n");
+		    return;
 
-		case LPCR_BPIX_18:
-			fbf.red_bits = 6;
-			fbf.red_shift = 2;
-			fbf.green_bits = 6;
-			fbf.green_shift = 10;
-			fbf.blue_bits = 6;
-			fbf.blue_shift = 18;
-			fbf.bits_per_pixel = 32;
-			fbf.depth = 18;
-			break;
+	    case LPCR_BPIX_18:
+		    fbf.red_bits = 6;
+		    fbf.red_shift = 2;
+		    fbf.green_bits = 6;
+		    fbf.green_shift = 10;
+		    fbf.blue_bits = 6;
+		    fbf.blue_shift = 18;
+		    fbf.bits_per_pixel = 32;
+		    fbf.depth = 18;
+		    break;
 
-		case LPCR_BPIX_12: 
-			fbf.red_bits = 4; 
-			fbf.green_bits = 4; 
-			fbf.blue_bits = 4; 
-			fbf.red_shift = 8;
-			fbf.green_shift = 4;
-			fbf.blue_shift = 0;
-			fbf.bits_per_pixel = 16;
-			fbf.depth = 12;
-			break;
+	    case LPCR_BPIX_12:
+		    fbf.red_bits = 4;
+		    fbf.green_bits = 4;
+		    fbf.blue_bits = 4;
+		    fbf.red_shift = 8;
+		    fbf.green_shift = 4;
+		    fbf.blue_shift = 0;
+		    fbf.bits_per_pixel = 16;
+		    fbf.depth = 12;
+		    break;
 
-		case LPCR_BPIX_16:
-			fbf.red_bits = 5; 
-			fbf.green_bits = 6; 
-			fbf.blue_bits = 5; 
-			fbf.red_shift = 11;
-			fbf.green_shift = 5;
-			fbf.blue_shift = 0;
-			fbf.bits_per_pixel = 16;
-			fbf.depth = 16;
-			break;
-			
+	    case LPCR_BPIX_16:
+		    fbf.red_bits = 5;
+		    fbf.green_bits = 6;
+		    fbf.blue_bits = 5;
+		    fbf.red_shift = 11;
+		    fbf.green_shift = 5;
+		    fbf.blue_shift = 0;
+		    fbf.bits_per_pixel = 16;
+		    fbf.depth = 16;
+		    break;
+
 	}
-	FbDisplay_SetFbFormat(display,&fbf);
+	FbDisplay_SetFbFormat(display, &fbf);
 }
 
 static void
-lcdc_mem_trace(void *clientData, uint32_t value,uint32_t addr, int rqlen)
+lcdc_mem_trace(void *clientData, uint32_t value, uint32_t addr, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
-	if(UPDATE_FIFO_COUNT(lcdc) == UPDATE_FIFO_SIZE) {
+	if (UPDATE_FIFO_COUNT(lcdc) == UPDATE_FIFO_SIZE) {
 		update_display(lcdc);
 	}
-	lcdc->dirty_addr[lcdc->update_fifo_wp & UPDATE_FIFO_MASK] = addr;	
+	lcdc->dirty_addr[lcdc->update_fifo_wp & UPDATE_FIFO_MASK] = addr;
 	lcdc->update_fifo_wp++;
-	if(!CycleTimer_IsActive(&lcdc->updateTimer)) {
-		CycleTimer_Mod(&lcdc->updateTimer,MillisecondsToCycles(10));
+	if (!CycleTimer_IsActive(&lcdc->updateTimer)) {
+		CycleTimer_Mod(&lcdc->updateTimer, MillisecondsToCycles(10));
 	}
-//	fprintf(stderr,"Update at address %08x\n",addr);
+//      fprintf(stderr,"Update at address %08x\n",addr);
 }
 
 static void
-update_memory_traces(IMXLcdc *lcdc) 
+update_memory_traces(IMXLcdc * lcdc)
 {
-	uint32_t start,end,length;
-	int vpw,height;
+	uint32_t start, end, length;
+	int vpw, height;
 	int i;
 
-	vpw = lcdc->lvpwr & LVPWR_VPW_MASK; 
-	height = ((lcdc->lsr & LSR_YMAX_MASK)); 
+	vpw = lcdc->lvpwr & LVPWR_VPW_MASK;
+	height = ((lcdc->lsr & LSR_YMAX_MASK));
 	start = lcdc->lssar;
 	length = (vpw << 2) * height;
-	end = start + length - 1;	
-	if((lcdc->trace_length == length) && (lcdc->trace_start == start)) {
+	end = start + length - 1;
+	if ((lcdc->trace_length == length) && (lcdc->trace_start == start)) {
 		return;
 	}
-	if(lcdc->trace_length) {
-		IOH_DeleteRegion(lcdc->trace_start,lcdc->trace_length) ;
-		Mem_UntraceRegion(lcdc->trace_start,lcdc->trace_length);
+	if (lcdc->trace_length) {
+		IOH_DeleteRegion(lcdc->trace_start, lcdc->trace_length);
+		Mem_UntraceRegion(lcdc->trace_start, lcdc->trace_length);
 	}
-	if(!lcdc->display) {
+	if (!lcdc->display) {
 		return;
 	}
 	/* Clear all outstanding updates */
-	lcdc->update_fifo_rp=lcdc->update_fifo_wp;
+	lcdc->update_fifo_rp = lcdc->update_fifo_wp;
 
-	if((start >= 0xc0000000) && (end <=  0xc7ffffff) && (length > 0)) {
-		dbgprintf("updating traced page list %08x to %08x\n",start,end);
-		IOH_NewRegion(start,length,NULL,lcdc_mem_trace,0,lcdc);
+	if ((start >= 0xc0000000) && (end <= 0xc7ffffff) && (length > 0)) {
+		dbgprintf("updating traced page list %08x to %08x\n", start, end);
+		IOH_NewRegion(start, length, NULL, lcdc_mem_trace, 0, lcdc);
 		lcdc->trace_length = length;
 		lcdc->trace_start = start;
 		/* 
 		 * Trigger the trace a first time because all pages are dirty 
 		 * after address change 
 		 */
-		for(i=0;i<length;i+=lcdc->page_size) {
-			lcdc_mem_trace(lcdc,0,i+start,0);	
+		for (i = 0; i < length; i += lcdc->page_size) {
+			lcdc_mem_trace(lcdc, 0, i + start, 0);
 		}
 	}
 }
 
 static void
-update_interrupt(IMXLcdc *lcdc) 
+update_interrupt(IMXLcdc * lcdc)
 {
-	if(lcdc->lisr & lcdc->lier) {
-		SigNode_Set(lcdc->irqNode,SIG_LOW);
+	if (lcdc->lisr & lcdc->lier) {
+		SigNode_Set(lcdc->irqNode, SIG_LOW);
 	} else {
-		SigNode_Set(lcdc->irqNode,SIG_HIGH);
-	} 
+		SigNode_Set(lcdc->irqNode, SIG_HIGH);
+	}
 }
 
 /*
@@ -434,14 +434,14 @@ update_interrupt(IMXLcdc *lcdc)
  * --------------------------------------------------------------------
  */
 static uint32_t
-lssar_read(void *clientData,uint32_t address,int rqlen)
+lssar_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lssar;
 }
 
 static void
-lssar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lssar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lssar = value & 0xfffffffc;
@@ -457,14 +457,14 @@ lssar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------------------------
  */
 static uint32_t
-lsr_read(void *clientData,uint32_t address,int rqlen)
+lsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lsr;
 }
 
 static void
-lsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lsr = value & 0x03f003ff;
@@ -481,14 +481,14 @@ lsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------------
  */
 static uint32_t
-lvpwr_read(void *clientData,uint32_t address,int rqlen)
+lvpwr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lvpwr;
 }
 
 static void
-lvpwr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lvpwr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lvpwr = value & 0x3ff;
@@ -510,14 +510,14 @@ lvpwr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------------------
  */
 static uint32_t
-lcpr_read(void *clientData,uint32_t address,int rqlen)
+lcpr_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc*) clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lcpr;
 }
 
 static void
-lcpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lcpr = value & 0xd7ff03ff;;
@@ -534,14 +534,14 @@ lcpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------
  */
 static uint32_t
-lcwhbr_read(void *clientData,uint32_t address,int rqlen)
+lcwhbr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lcwhbr;
 }
 
 static void
-lcwhbr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lcwhbr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lcwhbr = value & 0x9f1f00ff;
@@ -557,14 +557,14 @@ lcwhbr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------------------
  */
 static uint32_t
-lccmr_read(void *clientData,uint32_t address,int rqlen)
+lccmr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lccmr;
 }
 
 static void
-lccmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lccmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lccmr = value & 0x0003ffff;
@@ -617,20 +617,20 @@ lccmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------------------------
  */
 static uint32_t
-lpcr_read(void *clientData,uint32_t address,int rqlen)
+lpcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lpcr;
 }
 
 static void
-lpcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lpcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	int pclkdiv = (value & 0x3f) + 1;
 	lcdc->lpcr = value;
 	update_fbformat(lcdc);
-	Clock_MakeDerived(lcdc->clk_pixel,lcdc->clk,1,pclkdiv);
+	Clock_MakeDerived(lcdc->clk_pixel, lcdc->clk, 1, pclkdiv);
 }
 
 /*
@@ -643,14 +643,14 @@ lpcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -------------------------------------------------------------------------------
  */
 static uint32_t
-lhcr_read(void *clientData,uint32_t address,int rqlen)
+lhcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lhcr;
 }
 
 static void
-lhcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lhcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lhcr = value & 0xfc00ffff;
@@ -666,14 +666,14 @@ lhcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------------------------
  */
 static uint32_t
-lvcr_read(void *clientData,uint32_t address,int rqlen)
+lvcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lvcr;
 }
 
 static void
-lvcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lvcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lvcr = value & 0xfc00ffff;
@@ -688,14 +688,14 @@ lvcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------------------
  */
 static uint32_t
-lpor_read(void *clientData,uint32_t address,int rqlen)
+lpor_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lpor;
 }
 
 static void
-lpor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lpor_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lpor = value & 0x1f;
@@ -710,14 +710,14 @@ lpor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------------------------
  */
 static uint32_t
-lscr_read(void *clientData,uint32_t address,int rqlen)
+lscr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lscr;
 }
 
 static void
-lscr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lscr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lscr = value & 0xfcff0fff;
@@ -740,14 +740,14 @@ lscr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------------------------
  */
 static uint32_t
-lpccr_read(void *clientData,uint32_t address,int rqlen)
+lpccr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lpccr;
 }
 
 static void
-lpccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lpccr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lpccr = value & 0x01ff87ff;
@@ -763,14 +763,14 @@ lpccr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------------------
  */
 static uint32_t
-ldcr_read(void *clientData,uint32_t address,int rqlen)
+ldcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->ldcr;
 }
 
 static void
-ldcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ldcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->ldcr = value & 0x800f000f;
@@ -784,14 +784,14 @@ ldcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------------
  */
 static uint32_t
-lrmcr_read(void *clientData,uint32_t address,int rqlen)
+lrmcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
-	return lcdc->lrmcr; 
+	return lcdc->lrmcr;
 }
 
 static void
-lrmcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lrmcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lrmcr = value & 1;
@@ -814,19 +814,19 @@ lrmcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------------
  */
 static uint32_t
-licr_read(void *clientData,uint32_t address,int rqlen)
+licr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->licr;
 }
 
 static void
-licr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+licr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	/* Manual says GW_INT_CON is readonly. I think this is wrong. Please test */
 	lcdc->licr = value & 0x15;
-	fprintf(stderr,"LCDC: write reg %08x not implemented\n",address);
+	fprintf(stderr, "LCDC: write reg %08x not implemented\n", address);
 }
 
 /*
@@ -845,14 +845,14 @@ licr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------
  */
 static uint32_t
-lier_read(void *clientData,uint32_t address,int rqlen)
+lier_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lier;
 }
 
 static void
-lier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lier = value & 0xff;
@@ -875,11 +875,10 @@ lier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------
  */
 
-
 static uint32_t
-lisr_read(void *clientData,uint32_t address,int rqlen)
+lisr_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc *)clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	uint32_t lier = lcdc->lier;
 	lcdc->lier = 0;
 	update_interrupt(lcdc);
@@ -887,9 +886,9 @@ lisr_read(void *clientData,uint32_t address,int rqlen)
 }
 
 static void
-lisr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lisr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	fprintf(stderr,"LCDC: LISR is not writable\n");
+	fprintf(stderr, "LCDC: LISR is not writable\n");
 }
 
 /*
@@ -901,19 +900,20 @@ lisr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ---------------------------------------------------------------------------------------
  */
 static uint32_t
-lgwsar_read(void *clientData,uint32_t address,int rqlen)
+lgwsar_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc*) clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwsar;
 }
 
 static void
-lgwsar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwsar_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc*) clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lgwsar = value & ~3;
-	fprintf(stderr,"LCDC: write reg %08x not implemented\n",address);
+	fprintf(stderr, "LCDC: write reg %08x not implemented\n", address);
 }
+
 /*
  * --------------------------------------------------------------------------------------
  * LGWSR
@@ -924,18 +924,19 @@ lgwsar_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * --------------------------------------------------------------------------------------
  */
 static uint32_t
-lgwsr_read(void *clientData,uint32_t address,int rqlen)
+lgwsr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwsr;
 }
 
 static void
-lgwsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lgwsr = value & 0x03f003ff;
 }
+
 /*
  * -----------------------------------------------------------------------------------
  * LGWVPWR
@@ -945,16 +946,16 @@ lgwsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * -----------------------------------------------------------------------------------
  */
 static uint32_t
-lgwvpwr_read(void *clientData,uint32_t address,int rqlen)
+lgwvpwr_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc *)clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwvpwr;
 }
 
 static void
-lgwvpwr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwvpwr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc *)clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lgwvpwr = value & 0x3ff;
 }
 
@@ -966,14 +967,14 @@ lgwvpwr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ------------------------------------------------------------------------------------
  */
 static uint32_t
-lgwpor_read(void *clientData,uint32_t address,int rqlen)
+lgwpor_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwpor;
 }
 
 static void
-lgwpor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwpor_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lgwpor = value & 0x1f;
@@ -988,17 +989,17 @@ lgwpor_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------------
  */
 static uint32_t
-lgwpr_read(void *clientData,uint32_t address,int rqlen)
+lgwpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwpr;
 }
 
 static void
-lgwpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
-	lcdc->lgwpr = value & 0x03ff03ff; 
+	lcdc->lgwpr = value & 0x03ff03ff;
 }
 
 /*
@@ -1016,18 +1017,18 @@ lgwpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  */
 
 static uint32_t
-lgwcr_read(void *clientData,uint32_t address,int rqlen)
+lgwcr_read(void *clientData, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwcr;
 }
 
 static void
-lgwcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	IMXLcdc *lcdc = (IMXLcdc *) clientData;
-	lcdc->lgwcr = value & 0xffe3ffff;	
-	fprintf(stderr,"LCDC: write reg %08x not implemented\n",address);
+	lcdc->lgwcr = value & 0xffe3ffff;
+	fprintf(stderr, "LCDC: write reg %08x not implemented\n", address);
 }
 
 /*
@@ -1040,22 +1041,21 @@ lgwcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
  * ----------------------------------------------------------------------------------
  */
 static uint32_t
-lgwdcr_read(void *clientData,uint32_t address,int rqlen)
+lgwdcr_read(void *clientData, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc*) clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	return lcdc->lgwdcr;
 }
 
 static void
-lgwdcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+lgwdcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	IMXLcdc *lcdc = (IMXLcdc*) clientData;
+	IMXLcdc *lcdc = (IMXLcdc *) clientData;
 	lcdc->lgwdcr = value & 0x801f001f;
 }
- 
- 
+
 static void
-IMXLcdc_UnMap(void *owner,uint32_t base,uint32_t mapsize)
+IMXLcdc_UnMap(void *owner, uint32_t base, uint32_t mapsize)
 {
 	IOH_Delete32(LCDC_LSSAR(base));
 	IOH_Delete32(LCDC_LSR(base));
@@ -1084,60 +1084,60 @@ IMXLcdc_UnMap(void *owner,uint32_t base,uint32_t mapsize)
 }
 
 static void
-IMXLcdc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+IMXLcdc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-	IMXLcdc * lcd = (IMXLcdc *) owner;
-	IOH_New32(LCDC_LSSAR(base),lssar_read,lssar_write,lcd);
-	IOH_New32(LCDC_LSR(base),lsr_read,lsr_write,lcd);
-	IOH_New32(LCDC_LVPWR(base),lvpwr_read,lvpwr_write,lcd);
-	IOH_New32(LCDC_LCPR(base),lcpr_read,lcpr_write,lcd);
-	IOH_New32(LCDC_LCWHBR(base),lcwhbr_read,lcwhbr_write,lcd);
-	IOH_New32(LCDC_LCCMR(base),lccmr_read,lccmr_write,lcd);
-	IOH_New32(LCDC_LPCR(base),lpcr_read,lpcr_write,lcd);
-	IOH_New32(LCDC_LHCR(base),lhcr_read,lhcr_write,lcd);
-	IOH_New32(LCDC_LVCR(base),lvcr_read,lvcr_write,lcd);
-	IOH_New32(LCDC_LPOR(base),lpor_read,lpor_write,lcd);
-	IOH_New32(LCDC_LSCR(base),lscr_read,lscr_write,lcd);
-	IOH_New32(LCDC_LPCCR(base),lpccr_read,lpccr_write,lcd);
-	IOH_New32(LCDC_LDCR(base),ldcr_read,ldcr_write,lcd);
-	IOH_New32(LCDC_LRMCR(base),lrmcr_read,lrmcr_write,lcd);
-	IOH_New32(LCDC_LICR(base),licr_read,licr_write,lcd);
-	IOH_New32(LCDC_LIER(base),lier_read,lier_write,lcd);
-	IOH_New32(LCDC_LISR(base),lisr_read,lisr_write,lcd);
-	IOH_New32(LCDC_LGWSAR(base),lgwsar_read,lgwsar_write,lcd);
-	IOH_New32(LCDC_LGWSR(base),lgwsr_read,lgwsr_write,lcd);
-	IOH_New32(LCDC_LGWVPWR(base),lgwvpwr_read,lgwvpwr_write,lcd);
-	IOH_New32(LCDC_LGWPOR(base),lgwpor_read,lgwpor_write,lcd);
-	IOH_New32(LCDC_LGWPR(base),lgwpr_read,lgwpr_write,lcd);
-	IOH_New32(LCDC_LGWCR(base),lgwcr_read,lgwcr_write,lcd);
-	IOH_New32(LCDC_LGWDCR(base),lgwdcr_read,lgwdcr_write,lcd);
+	IMXLcdc *lcd = (IMXLcdc *) owner;
+	IOH_New32(LCDC_LSSAR(base), lssar_read, lssar_write, lcd);
+	IOH_New32(LCDC_LSR(base), lsr_read, lsr_write, lcd);
+	IOH_New32(LCDC_LVPWR(base), lvpwr_read, lvpwr_write, lcd);
+	IOH_New32(LCDC_LCPR(base), lcpr_read, lcpr_write, lcd);
+	IOH_New32(LCDC_LCWHBR(base), lcwhbr_read, lcwhbr_write, lcd);
+	IOH_New32(LCDC_LCCMR(base), lccmr_read, lccmr_write, lcd);
+	IOH_New32(LCDC_LPCR(base), lpcr_read, lpcr_write, lcd);
+	IOH_New32(LCDC_LHCR(base), lhcr_read, lhcr_write, lcd);
+	IOH_New32(LCDC_LVCR(base), lvcr_read, lvcr_write, lcd);
+	IOH_New32(LCDC_LPOR(base), lpor_read, lpor_write, lcd);
+	IOH_New32(LCDC_LSCR(base), lscr_read, lscr_write, lcd);
+	IOH_New32(LCDC_LPCCR(base), lpccr_read, lpccr_write, lcd);
+	IOH_New32(LCDC_LDCR(base), ldcr_read, ldcr_write, lcd);
+	IOH_New32(LCDC_LRMCR(base), lrmcr_read, lrmcr_write, lcd);
+	IOH_New32(LCDC_LICR(base), licr_read, licr_write, lcd);
+	IOH_New32(LCDC_LIER(base), lier_read, lier_write, lcd);
+	IOH_New32(LCDC_LISR(base), lisr_read, lisr_write, lcd);
+	IOH_New32(LCDC_LGWSAR(base), lgwsar_read, lgwsar_write, lcd);
+	IOH_New32(LCDC_LGWSR(base), lgwsr_read, lgwsr_write, lcd);
+	IOH_New32(LCDC_LGWVPWR(base), lgwvpwr_read, lgwvpwr_write, lcd);
+	IOH_New32(LCDC_LGWPOR(base), lgwpor_read, lgwpor_write, lcd);
+	IOH_New32(LCDC_LGWPR(base), lgwpr_read, lgwpr_write, lcd);
+	IOH_New32(LCDC_LGWCR(base), lgwcr_read, lgwcr_write, lcd);
+	IOH_New32(LCDC_LGWDCR(base), lgwdcr_read, lgwdcr_write, lcd);
 
 }
 
 BusDevice *
-IMX21_LcdcNew(const char *name,FbDisplay *display)
+IMX21_LcdcNew(const char *name, FbDisplay * display)
 {
 	IMXLcdc *lcdc = sg_new(IMXLcdc);
-	if(!display) {
-		fprintf(stderr,"i.MX21 LCD controller requires a valid display\n");
+	if (!display) {
+		fprintf(stderr, "i.MX21 LCD controller requires a valid display\n");
 		exit(1);
 	}
-	lcdc->irqNode = SigNode_New("%s.irq",name);
-	if(!lcdc->irqNode) {
-		fprintf(stderr,"LCDC: creation of irq node failed\n");
+	lcdc->irqNode = SigNode_New("%s.irq", name);
+	if (!lcdc->irqNode) {
+		fprintf(stderr, "LCDC: creation of irq node failed\n");
 		exit(1);
 	}
 	lcdc->display = display;
 	lcdc->page_size = Mem_SmallPageSize();
 	lcdc->ldcr = 0x80080004;
-	CycleTimer_Init(&lcdc->updateTimer,update_display,lcdc);
-	lcdc->bdev.first_mapping=NULL;
-        lcdc->bdev.Map=IMXLcdc_Map;
-        lcdc->bdev.UnMap=IMXLcdc_UnMap;
-        lcdc->bdev.owner=lcdc;
-        lcdc->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	lcdc->clk = Clock_New("%s.clk",name);
-	lcdc->clk_pixel = Clock_New("%s.pixelclk",name);
-        fprintf(stderr,"i.MX21 LCD-Controller \"%s\" created\n",name);
-        return &lcdc->bdev;
+	CycleTimer_Init(&lcdc->updateTimer, update_display, lcdc);
+	lcdc->bdev.first_mapping = NULL;
+	lcdc->bdev.Map = IMXLcdc_Map;
+	lcdc->bdev.UnMap = IMXLcdc_UnMap;
+	lcdc->bdev.owner = lcdc;
+	lcdc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	lcdc->clk = Clock_New("%s.clk", name);
+	lcdc->clk_pixel = Clock_New("%s.pixelclk", name);
+	fprintf(stderr, "i.MX21 LCD-Controller \"%s\" created\n", name);
+	return &lcdc->bdev;
 }

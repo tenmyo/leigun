@@ -38,7 +38,7 @@
 #include "bus.h"
 #include "sja1000.h"
 #include "lacc_can.h"
-#include "ns9750_timer.h" /* Unclean, interrupts should be done with signals */
+#include "ns9750_timer.h"	/* Unclean, interrupts should be done with signals */
 #include "sgstring.h"
 
 #define NR_SJAS (2)
@@ -52,47 +52,49 @@ typedef struct LaccCAN {
  * Identify CPLD 
  * --------------------------------------------
  */
-static uint32_t 
-version_read(void *clientData,uint32_t addr,int rqlen) 
+static uint32_t
+version_read(void *clientData, uint32_t addr, int rqlen)
 {
 	return 0x13;
 }
+
 static void
-LaccCAN_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags) {
-        LaccCAN *lcan = module_owner;
+LaccCAN_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
+{
+	LaccCAN *lcan = module_owner;
 	int i;
-	for(i=0;i<NR_SJAS;i++) {
+	for (i = 0; i < NR_SJAS; i++) {
 		//printf("Map at %08x\n",base+i*0x200);
-		SJA1000_Map(lcan->sja[i],base+i*0x200);
-	} 
-	IOH_New8(base + 0x3ff,version_read,NULL,NULL);
+		SJA1000_Map(lcan->sja[i], base + i * 0x200);
+	}
+	IOH_New8(base + 0x3ff, version_read, NULL, NULL);
 
 }
 
 static void
-LaccCAN_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
-        LaccCAN *lcan = module_owner;
-        int i;
-	for(i=0;i<NR_SJAS;i++) {
+LaccCAN_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
+{
+	LaccCAN *lcan = module_owner;
+	int i;
+	for (i = 0; i < NR_SJAS; i++) {
 		//printf("UnMap at %08x\n",base+i*0x200);
-		SJA1000_UnMap(lcan->sja[i],base+i*0x200);
+		SJA1000_UnMap(lcan->sja[i], base + i * 0x200);
 	}
 	IOH_Delete8(base + 0x3ff);
 }
 
-
 BusDevice *
-LaccCAN_New() {
+LaccCAN_New()
+{
 	LaccCAN *lcan = sg_new(LaccCAN);
 
-        lcan->bdev.first_mapping=NULL;
-        lcan->bdev.Map=LaccCAN_Map;
-        lcan->bdev.UnMap=LaccCAN_UnMap;
-        lcan->bdev.owner=lcan;
-        lcan->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	lcan->sja[0]= SJA1000_New(&lcan->bdev,"acc_can0");
-	lcan->sja[1]= SJA1000_New(&lcan->bdev,"acc_can1");
-	fprintf(stderr,"Dual SJA1000 CAN-Controller module created\n");
-        return &lcan->bdev;
+	lcan->bdev.first_mapping = NULL;
+	lcan->bdev.Map = LaccCAN_Map;
+	lcan->bdev.UnMap = LaccCAN_UnMap;
+	lcan->bdev.owner = lcan;
+	lcan->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	lcan->sja[0] = SJA1000_New(&lcan->bdev, "acc_can0");
+	lcan->sja[1] = SJA1000_New(&lcan->bdev, "acc_can1");
+	fprintf(stderr, "Dual SJA1000 CAN-Controller module created\n");
+	return &lcan->bdev;
 }
-

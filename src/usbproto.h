@@ -28,10 +28,10 @@
 #define USB_PID_NYET            (0x6)
 
 /* Special packets */
-#define USB_PID_ERR             (0xc) /* This is a handshake */
-#define USB_PID_PRE             (0xc) /* This is a token */	
-#define USB_PID_SPLIT           (0x8) /* This is a token */	
-#define USB_PID_PING            (0x4) /* This is a token */
+#define USB_PID_ERR             (0xc)	/* This is a handshake */
+#define USB_PID_PRE             (0xc)	/* This is a token */
+#define USB_PID_SPLIT           (0x8)	/* This is a token */
+#define USB_PID_PING            (0x4)	/* This is a token */
 #define USB_PID_RESERVED        (0)
 
 /* PIDs from 0xf0 are used as special signaling (SE0 reset for example) */
@@ -43,14 +43,14 @@
 
 #define USB_MAX_PKTLEN (1024)
 typedef struct UsbPacket {
-        uint8_t pid;
-        uint8_t addr;   /* 7  Bits */
-        uint8_t epnum;   /* 4  Bits */
-        uint16_t fnumb; /* 11 Bits, only in SOF */
-        uint8_t data[USB_MAX_PKTLEN];
-        int len;
+	uint8_t pid;
+	uint8_t addr;		/* 7  Bits */
+	uint8_t epnum;		/* 4  Bits */
+	uint16_t fnumb;		/* 11 Bits, only in SOF */
+	uint8_t data[USB_MAX_PKTLEN];
+	int len;
 	uint8_t token_crc;	/* 5 Bits */
-        uint16_t crc16;
+	uint16_t crc16;
 } UsbPacket;
 
 #endif

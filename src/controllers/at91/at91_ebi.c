@@ -121,49 +121,52 @@ typedef struct AT91Ebi {
 	uint32_t ebi_csa;
 	uint32_t ebi_cfgr;
 	uint32_t smc_csr[8];
-	uint32_t sdramc_mr;	
-	uint32_t sdramc_tr;	
-	uint32_t sdramc_cr;	
-	uint32_t sdramc_srr;	
-	uint32_t sdramc_lpr;	
-	uint32_t sdramc_imr;	
-	uint32_t sdramc_isr;	
+	uint32_t sdramc_mr;
+	uint32_t sdramc_tr;
+	uint32_t sdramc_cr;
+	uint32_t sdramc_srr;
+	uint32_t sdramc_lpr;
+	uint32_t sdramc_imr;
+	uint32_t sdramc_isr;
 	uint32_t bfc;
 } AT91Ebi;
 
 static void
-update_interrupt(AT91Ebi *ebi) 
+update_interrupt(AT91Ebi * ebi)
 {
 
 }
+
 static uint32_t
-ebi_csa_read(void *clientData,uint32_t address,int rqlen)
+ebi_csa_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->ebi_csa;
 }
 
 static void
-ebi_csa_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ebi_csa_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->ebi_csa = value & 0x1b;
 }
 
 static uint32_t
-ebi_cfgr_read(void *clientData,uint32_t address,int rqlen)
+ebi_cfgr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->ebi_cfgr;
 }
+
 static void
-ebi_cfgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+ebi_cfgr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->ebi_cfgr = (value & 1);
 }
+
 static uint32_t
-smc_csr_read(void *clientData,uint32_t address,int rqlen)
+smc_csr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	int wsen;
@@ -172,116 +175,130 @@ smc_csr_read(void *clientData,uint32_t address,int rqlen)
 	int index = ((address - 0x70) >> 2) & 7;
 	value = ebi->smc_csr[index];
 	wsen = !!(value & CSR_WSEN);
-	if(!wsen) {
-		value &= ~CSR_NWS_MASK; 
+	if (!wsen) {
+		value &= ~CSR_NWS_MASK;
 	}
 	return value;
 }
+
 static void
-smc_csr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+smc_csr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	/* Shit hack */
 	int index = ((address - 0x70) >> 2) & 7;
 	value = value & 0x7703ffff;
-	uint16_t rwhold,rwsetup,acss,drp,dbw,bat,tdf,wsen,nws;
+	uint16_t rwhold, rwsetup, acss, drp, dbw, bat, tdf, wsen, nws;
 
 	rwhold = (value & CSR_RWHOLD_MASK) >> CSR_RWHOLD_SHIFT;
-	rwsetup = (value & CSR_RWSETUP_MASK) >> CSR_RWSETUP_SHIFT; 
+	rwsetup = (value & CSR_RWSETUP_MASK) >> CSR_RWSETUP_SHIFT;
 	acss = (value & CSR_ACSS_MASK) >> CSR_ACSS_SHIFT;
-	drp  = !!(value & CSR_DRP);
+	drp = !!(value & CSR_DRP);
 	dbw = (value & CSR_DBW_MASK) >> CSR_DBW_SHIFT;
 	bat = !!(value & CSR_BAT);
 	tdf = (value & CSR_TDF_MASK) >> CSR_TDF_SHIFT;
 	wsen = !!(value & CSR_WSEN);
 	nws = (value & CSR_NWS_MASK) >> CSR_NWS_SHIFT;
-	fprintf(stderr,"*** AT91Ebi: %08x CSR%d: rwhold %d, rwsetup %d, acss %d, drp %d, dbw %d, bat %d,tdf %d wsen %d, nws %d\n",value,
-		index,rwhold,rwsetup,acss,drp,dbw,bat,tdf,wsen,nws);
+	fprintf(stderr,
+		"*** AT91Ebi: %08x CSR%d: rwhold %d, rwsetup %d, acss %d, drp %d, dbw %d, bat %d,tdf %d wsen %d, nws %d\n",
+		value, index, rwhold, rwsetup, acss, drp, dbw, bat, tdf, wsen, nws);
 	ebi->smc_csr[index] = value;
 }
+
 static uint32_t
-sdramc_mr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_mr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_mr;
 }
+
 static void
-sdramc_mr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_mr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->sdramc_mr = value & 0x1f;
 }
+
 static uint32_t
-sdramc_tr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_tr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_tr;
 }
+
 static void
-sdramc_tr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_tr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->sdramc_tr = value & 0xfff;
 }
+
 static uint32_t
-sdramc_cr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_cr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_cr;
 }
+
 static void
-sdramc_cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->sdramc_cr = value & 0x7fffffff;
 }
+
 static uint32_t
-sdramc_srr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_srr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_srr;
 }
+
 static void
-sdramc_srr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_srr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->sdramc_srr = value & 1;
 }
+
 static uint32_t
-sdramc_lpr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_lpr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_lpr;
 }
+
 static void
-sdramc_lpr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_lpr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->sdramc_lpr = value & 1;
 }
+
 static uint32_t
-sdramc_ier_read(void *clientData,uint32_t address,int rqlen)
+sdramc_ier_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Ebi: SDRAMC_IER is not readable\n");
+	fprintf(stderr, "AT91Ebi: SDRAMC_IER is not readable\n");
 	return 0;
 }
+
 static void
-sdramc_ier_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_ier_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
-	ebi->sdramc_imr |= value & 1;	
+	ebi->sdramc_imr |= value & 1;
 	update_interrupt(ebi);
 }
 
 static uint32_t
-sdramc_idr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_idr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Ebi: SDRAMC_IDR is not readable\n");
+	fprintf(stderr, "AT91Ebi: SDRAMC_IDR is not readable\n");
 	return 0;
 }
 
 static void
-sdramc_idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_idr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->sdramc_imr &= ~(value & 1);
@@ -289,71 +306,75 @@ sdramc_idr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
 }
 
 static uint32_t
-sdramc_imr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_imr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_imr;
 }
+
 static void
-sdramc_imr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_imr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Ebi: SDRAMC_IMR is not writable\n");
+	fprintf(stderr, "AT91Ebi: SDRAMC_IMR is not writable\n");
 }
 
 static uint32_t
-sdramc_isr_read(void *clientData,uint32_t address,int rqlen)
+sdramc_isr_read(void *clientData, uint32_t address, int rqlen)
 {
 	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->sdramc_isr;
 }
+
 static void
-sdramc_isr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+sdramc_isr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"AT91Ebi: SDRAMC_ISR is not writeable\n");
+	fprintf(stderr, "AT91Ebi: SDRAMC_ISR is not writeable\n");
 }
+
 static uint32_t
-bfc_read(void *clientData,uint32_t address,int rqlen)
+bfc_read(void *clientData, uint32_t address, int rqlen)
 {
-	AT91Ebi *ebi = (AT91Ebi *)clientData;
+	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	return ebi->bfc;
 }
+
 static void
-bfc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bfc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-	AT91Ebi *ebi = (AT91Ebi *)clientData;
+	AT91Ebi *ebi = (AT91Ebi *) clientData;
 	ebi->bfc = value & 0x000f37ff;
 }
 
 static void
-AT91Ebi_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+AT91Ebi_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-	AT91Ebi *ebi = (AT91Ebi*) owner;
+	AT91Ebi *ebi = (AT91Ebi *) owner;
 	int i;
-	IOH_New32(EBI_CSA(base),ebi_csa_read,ebi_csa_write,ebi);
-	IOH_New32(EBI_CFGR(base),ebi_cfgr_read,ebi_cfgr_write,ebi);
-	for(i=0;i<8;i++) {
-		IOH_New32(SMC_CSR(base,i),smc_csr_read,smc_csr_write,ebi);
+	IOH_New32(EBI_CSA(base), ebi_csa_read, ebi_csa_write, ebi);
+	IOH_New32(EBI_CFGR(base), ebi_cfgr_read, ebi_cfgr_write, ebi);
+	for (i = 0; i < 8; i++) {
+		IOH_New32(SMC_CSR(base, i), smc_csr_read, smc_csr_write, ebi);
 	}
-	IOH_New32(SDRAMC_MR(base),sdramc_mr_read,sdramc_mr_write,ebi);
-	IOH_New32(SDRAMC_TR(base),sdramc_tr_read,sdramc_tr_write,ebi);
-	IOH_New32(SDRAMC_CR(base),sdramc_cr_read,sdramc_cr_write,ebi);
-	IOH_New32(SDRAMC_SRR(base),sdramc_srr_read,sdramc_srr_write,ebi);
-	IOH_New32(SDRAMC_LPR(base),sdramc_lpr_read,sdramc_lpr_write,ebi);
-	IOH_New32(SDRAMC_IER(base),sdramc_ier_read,sdramc_ier_write,ebi);
-	IOH_New32(SDRAMC_IDR(base),sdramc_idr_read,sdramc_idr_write,ebi);
-	IOH_New32(SDRAMC_IMR(base),sdramc_imr_read,sdramc_imr_write,ebi);
-	IOH_New32(SDRAMC_ISR(base),sdramc_isr_read,sdramc_isr_write,ebi);
-	IOH_New32(BFC_MR(base),bfc_read,bfc_write,ebi);
+	IOH_New32(SDRAMC_MR(base), sdramc_mr_read, sdramc_mr_write, ebi);
+	IOH_New32(SDRAMC_TR(base), sdramc_tr_read, sdramc_tr_write, ebi);
+	IOH_New32(SDRAMC_CR(base), sdramc_cr_read, sdramc_cr_write, ebi);
+	IOH_New32(SDRAMC_SRR(base), sdramc_srr_read, sdramc_srr_write, ebi);
+	IOH_New32(SDRAMC_LPR(base), sdramc_lpr_read, sdramc_lpr_write, ebi);
+	IOH_New32(SDRAMC_IER(base), sdramc_ier_read, sdramc_ier_write, ebi);
+	IOH_New32(SDRAMC_IDR(base), sdramc_idr_read, sdramc_idr_write, ebi);
+	IOH_New32(SDRAMC_IMR(base), sdramc_imr_read, sdramc_imr_write, ebi);
+	IOH_New32(SDRAMC_ISR(base), sdramc_isr_read, sdramc_isr_write, ebi);
+	IOH_New32(BFC_MR(base), bfc_read, bfc_write, ebi);
 }
 
 static void
-AT91Ebi_UnMap(void *owner,uint32_t base,uint32_t mask)
+AT91Ebi_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	int i;
 	IOH_Delete32(EBI_CSA(base));
 	IOH_Delete32(EBI_CFGR(base));
-	for(i=0;i<8;i++) {	
-		IOH_Delete32(SMC_CSR(base,i));
+	for (i = 0; i < 8; i++) {
+		IOH_Delete32(SMC_CSR(base, i));
 	}
 	IOH_Delete32(SDRAMC_MR(base));
 	IOH_Delete32(SDRAMC_TR(base));
@@ -368,26 +389,26 @@ AT91Ebi_UnMap(void *owner,uint32_t base,uint32_t mask)
 }
 
 BusDevice *
-AT91Ebi_New(const char *name) 
+AT91Ebi_New(const char *name)
 {
 	AT91Ebi *ebi = sg_new(AT91Ebi);
 	int i;
 	ebi->ebi_csa = 0;
 	ebi->ebi_cfgr = 0;
-	for(i=0;i<8;i++) {
+	for (i = 0; i < 8; i++) {
 		ebi->smc_csr[i] = 0x2000;
 	}
-	ebi->sdramc_mr = 0x10;	
+	ebi->sdramc_mr = 0x10;
 	ebi->sdramc_tr = 0x800;
 	ebi->sdramc_cr = 0x2a99c140;
 	ebi->sdramc_lpr = 0;
 	ebi->sdramc_imr = 0;
 	ebi->sdramc_isr = 0;
 	ebi->bfc = 0;
-	ebi->bdev.first_mapping=NULL;
-        ebi->bdev.Map=AT91Ebi_Map;
-        ebi->bdev.UnMap=AT91Ebi_UnMap;
-        ebi->bdev.owner=ebi;
-        ebi->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
+	ebi->bdev.first_mapping = NULL;
+	ebi->bdev.Map = AT91Ebi_Map;
+	ebi->bdev.UnMap = AT91Ebi_UnMap;
+	ebi->bdev.owner = ebi;
+	ebi->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	return &ebi->bdev;
 }

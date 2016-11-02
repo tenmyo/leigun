@@ -31,13 +31,13 @@
 #include "mainloop_events.h"
 
 #define M16C_FLG_CARRY          (1<<0)
-#define M16C_FLG_D		(1<<1) /* DEBUG */
+#define M16C_FLG_D		(1<<1)	/* DEBUG */
 #define M16C_FLG_ZERO           (1<<2)
 #define M16C_FLG_SIGN           (1<<3)
 #define M16C_FLG_BANK           (1<<4)
 #define M16C_FLG_OVERFLOW       (1<<5)
-#define M16C_FLG_I            	(1<<6) /* IEN */
-#define M16C_FLG_U          	(1<<7) /* STKPS */
+#define M16C_FLG_I            	(1<<6)	/* IEN */
+#define M16C_FLG_U          	(1<<7)	/* STKPS */
 #define M16C_FLG_IPL_SHIFT      (12)
 #define M16C_FLG_IPL_MSK	(0x7000)
 
@@ -59,20 +59,20 @@
 #define M16C_SIG_RESTART_IDEC    (0x10)
 
 typedef struct M16C_RegBank {
-        uint16_t  r0,r2;
-        uint16_t  r1,r3;
-        uint16_t  a0,a1;
-        uint16_t  fb;
-        uint32_t  pc :20; // :20;
-        uint32_t  intb :20; //:20;
-        uint16_t  usp;
-        uint16_t  isp;
-	uint16_t  sp; // copy of current working
-        uint16_t  sb;
-        uint16_t  flg;
+	uint16_t r0, r2;
+	uint16_t r1, r3;
+	uint16_t a0, a1;
+	uint16_t fb;
+	uint32_t pc:20;		// :20;
+	uint32_t intb:20;	//:20;
+	uint16_t usp;
+	uint16_t isp;
+	uint16_t sp;		// copy of current working
+	uint16_t sb;
+	uint16_t flg;
 } M16C_RegBank;
 
-typedef void M16C_AckIrqProc(BusDevice *intco,uint32_t pending_intno);
+typedef void M16C_AckIrqProc(BusDevice * intco, uint32_t pending_intno);
 
 typedef struct M16C_Cpu {
 
@@ -81,8 +81,8 @@ typedef struct M16C_Cpu {
 	uint16_t icode;
 
 	uint32_t signals;
-        uint32_t signals_raw;
-        uint32_t signals_mask;
+	uint32_t signals_raw;
+	uint32_t signals_mask;
 	Throttle *throttle;
 
 	int pending_ilvl;
@@ -138,93 +138,98 @@ M16C_Cpu gm16c;
 
 #define M16C_REG_SB	(gm16c.regs.sb)
 #define M16C_REG_FLG	(gm16c.regs.flg)
-#define M16C_SET_REG_FLG(value) M16C_SetRegFlg(value);	
+#define M16C_SET_REG_FLG(value) M16C_SetRegFlg(value);
 #define ICODE()		(gm16c.icode)
 
-
-static inline uint32_t 
-ICODE16(void) {
+static inline uint32_t
+ICODE16(void)
+{
 	return gm16c.icode;
 }
 
-static inline uint32_t 
-ICODE8(void) {
+static inline uint32_t
+ICODE8(void)
+{
 	return gm16c.icode >> 8;
 }
 
 static inline uint8_t
-M16C_Read8(uint32_t addr) 
+M16C_Read8(uint32_t addr)
 {
-	return Bus_Read8(addr);	
+	return Bus_Read8(addr);
 }
+
 static inline uint16_t
-M16C_Read16(uint32_t addr) 
+M16C_Read16(uint32_t addr)
 {
-	return Bus_Read16(addr);	
+	return Bus_Read16(addr);
 }
 
 static inline uint32_t
-M16C_Read24(uint32_t addr) 
+M16C_Read24(uint32_t addr)
 {
-        uint32_t data = Bus_Read8(addr);
-        data |= Bus_Read8(addr + 1) << 8;
-        data |= Bus_Read8(addr + 2) << 16;
-        return data;
+	uint32_t data = Bus_Read8(addr);
+	data |= Bus_Read8(addr + 1) << 8;
+	data |= Bus_Read8(addr + 2) << 16;
+	return data;
 }
 
 static inline uint16_t
-M16C_IFetch(uint32_t addr) 
+M16C_IFetch(uint32_t addr)
 {
-        uint16_t data = Bus_Read8(addr) << 8;;
-        data |= Bus_Read8(addr + 1);
-        return data;
+	uint16_t data = Bus_Read8(addr) << 8;;
+	data |= Bus_Read8(addr + 1);
+	return data;
 }
 
 static inline void
-M16C_Write8(uint8_t value,uint32_t addr) 
+M16C_Write8(uint8_t value, uint32_t addr)
 {
-	return Bus_Write8(value,addr);
+	return Bus_Write8(value, addr);
 }
 
 static inline void
-M16C_Write16(uint16_t value,uint32_t addr)
+M16C_Write16(uint16_t value, uint32_t addr)
 {
-	return Bus_Write16(value,addr);
+	return Bus_Write16(value, addr);
 }
 
 static inline void
-M16C_Write24(uint32_t value,uint32_t addr) 
+M16C_Write24(uint32_t value, uint32_t addr)
 {
-	Bus_Write8(value,addr);
-	Bus_Write8((value >> 8),addr + 1);
-	Bus_Write8((value >> 16),addr + 2);
+	Bus_Write8(value, addr);
+	Bus_Write8((value >> 8), addr + 1);
+	Bus_Write8((value >> 16), addr + 2);
 }
 
 static inline void
-M16C_UpdateSignals(void) {
-        gm16c.signals = gm16c.signals_raw & gm16c.signals_mask;
-        if(gm16c.signals) {
-                mainloop_event_pending = 1;
-        }
+M16C_UpdateSignals(void)
+{
+	gm16c.signals = gm16c.signals_raw & gm16c.signals_mask;
+	if (gm16c.signals) {
+		mainloop_event_pending = 1;
+	}
 }
 
 void M16C_SetRegFlg(uint16_t flg);
 void M16C_SyncRegSets(void);
 
 static inline void
-M16C_PostSignal(uint32_t signal) {
-        gm16c.signals_raw |= signal;
-        M16C_UpdateSignals();
+M16C_PostSignal(uint32_t signal)
+{
+	gm16c.signals_raw |= signal;
+	M16C_UpdateSignals();
 }
 
 static inline void
-M16C_UnpostSignal(uint32_t signal) {
-        gm16c.signals_raw &= ~signal;
-        gm16c.signals = gm16c.signals_raw & gm16c.signals_mask;
+M16C_UnpostSignal(uint32_t signal)
+{
+	gm16c.signals_raw &= ~signal;
+	gm16c.signals = gm16c.signals_raw & gm16c.signals_mask;
 }
 
-void M16C_PostILevel(int ilvl,int int_no);
+void M16C_PostILevel(int ilvl, int int_no);
 
-M16C_Cpu * M16C_CpuNew(const char *instancename,M16C_AckIrqProc *,BusDevice *intco);
+M16C_Cpu *M16C_CpuNew(const char *instancename, M16C_AckIrqProc *, BusDevice * intco);
 void M16C_Run(void);
 #endif

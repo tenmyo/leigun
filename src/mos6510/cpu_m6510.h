@@ -10,7 +10,7 @@ typedef struct Mos6510 {
 	uint8_t reg_X;
 	uint8_t reg_Pstat;
 	uint8_t reg_Sp;
-	uint8_t icode; /* ICODE of current instruction */
+	uint8_t icode;		/* ICODE of current instruction */
 } Mos6510;
 
 extern Mos6510 g_Mos6510;
@@ -27,84 +27,85 @@ extern Mos6510 g_Mos6510;
 #define ICODE	(g_Mos6510.icode)
 
 static inline uint8_t
-MOS_GetAcc(void) 
+MOS_GetAcc(void)
 {
-	return g_Mos6510.reg_Acc;	
+	return g_Mos6510.reg_Acc;
 }
 
 static inline void
-MOS_SetAcc(uint8_t value) 
+MOS_SetAcc(uint8_t value)
 {
 	g_Mos6510.reg_Acc = value;
 }
 
 static inline uint8_t
-MOS_GetX(void) 
+MOS_GetX(void)
 {
-	return g_Mos6510.reg_X;	
+	return g_Mos6510.reg_X;
 }
 
 static inline void
-MOS_SetX(uint8_t value) 
+MOS_SetX(uint8_t value)
 {
 	g_Mos6510.reg_X = value;
 }
 
 static inline uint8_t
-MOS_GetY(void) 
+MOS_GetY(void)
 {
-	return g_Mos6510.reg_X;	
+	return g_Mos6510.reg_X;
 }
 
 static inline void
-MOS_SetY(uint8_t value) 
+MOS_SetY(uint8_t value)
 {
 	g_Mos6510.reg_Y = value;
 }
 
 static inline uint8_t
-MOS_GetSP(void) 
+MOS_GetSP(void)
 {
-	return g_Mos6510.reg_Sp;	
+	return g_Mos6510.reg_Sp;
 }
 
 static inline void
-MOS_SetSP(uint8_t value) 
+MOS_SetSP(uint8_t value)
 {
 	g_Mos6510.reg_Sp = value;
 }
 
 static inline uint16_t
-MOS_GetPC(void) 
+MOS_GetPC(void)
 {
-	return g_Mos6510.reg_Pc;	
+	return g_Mos6510.reg_Pc;
 }
 
 static inline void
-MOS_SetPC(uint16_t value) 
+MOS_SetPC(uint16_t value)
 {
 	g_Mos6510.reg_Pc = value;
 }
 
 static inline void
-MOS_IncPC(void) 
+MOS_IncPC(void)
 {
 	g_Mos6510.reg_Pc++;
 }
+
 static inline void
-MOS_NextCycle(void) 
+MOS_NextCycle(void)
 {
 	CycleCounter++;
 }
 
-static inline uint8_t 
-Mem_Read8(uint16_t addr) 
+static inline uint8_t
+Mem_Read8(uint16_t addr)
 {
 	return 0;
 }
 
-static inline uint8_t 
-Mem_Write8(uint8_t val,uint16_t addr) 
+static inline uint8_t
+Mem_Write8(uint8_t val, uint16_t addr)
 {
 	return 0;
 }

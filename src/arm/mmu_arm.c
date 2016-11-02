@@ -51,8 +51,8 @@
 
 #ifdef DEBUG
 #define dbgprintf(x...) { if(unlikely(debugflags & DEBUG_MMU)) { fprintf(stderr,x); } }
-#else 
-#define dbgprintf(x...) 
+#else
+#define dbgprintf(x...)
 #endif
 
 /* Enter a Physical address to the Tlb */
@@ -65,12 +65,13 @@ STlbEntry stlb_write[STLB_SIZE];
 uint32_t stlb_version;
 
 static void
-stlb_init(void) {
+stlb_init(void)
+{
 	int i;
-	for(i=0;i<STLB_SIZE;i++) {
-		stlb_ifetch[i].version=0;
-		stlb_read[i].version=0;
-		stlb_write[i].version=0;
+	for (i = 0; i < STLB_SIZE; i++) {
+		stlb_ifetch[i].version = 0;
+		stlb_read[i].version = 0;
+		stlb_write[i].version = 0;
 	}
 }
 
@@ -82,27 +83,29 @@ stlb_init(void) {
  * -------------------------------------------------------
  */
 void
-enter_hva_to_both_tlbe_read(uint32_t va,uint8_t *hva) 
+enter_hva_to_both_tlbe_read(uint32_t va, uint8_t * hva)
 {
 	STlbEntry *stlbe;
-	int index = STLB_INDEX(va); 
-	stlbe = stlb_read+index;	
-	tlbe_read.hva = stlbe->hva = hva-(va&0x3ff);
+	int index = STLB_INDEX(va);
+	stlbe = stlb_read + index;
+	tlbe_read.hva = stlbe->hva = hva - (va & 0x3ff);
 	tlbe_read.va = stlbe->va = va & 0xfffffc00;
 	tlbe_read.cpu_mode = stlbe->cpu_mode = ARM_SIGNALING_MODE;
 	stlbe->version = stlb_version;
 }
+
 void
-enter_hva_to_both_tlbe_write(uint32_t va,uint8_t *hva) 
+enter_hva_to_both_tlbe_write(uint32_t va, uint8_t * hva)
 {
 	STlbEntry *stlbe;
-	int index = STLB_INDEX(va); 
-	stlbe = stlb_write+index;	
-	tlbe_write.hva = stlbe->hva = hva-(va&0x3ff);
+	int index = STLB_INDEX(va);
+	stlbe = stlb_write + index;
+	tlbe_write.hva = stlbe->hva = hva - (va & 0x3ff);
 	tlbe_write.va = stlbe->va = va & 0xfffffc00;
 	tlbe_write.cpu_mode = stlbe->cpu_mode = ARM_SIGNALING_MODE;
 	stlbe->version = stlb_version;
 }
+
 /*
  * -----------------------------------------
  * First level tlb  Physical address
@@ -110,19 +113,21 @@ enter_hva_to_both_tlbe_write(uint32_t va,uint8_t *hva)
  */
 
 static inline void
-enter_pa_to_tlbe_read(uint32_t va,uint32_t pa) {
-	tlbe_read.va=va&0xfffffc00;
-	tlbe_read.pa=pa&0xfffffc00;
-	tlbe_read.cpu_mode=ARM_SIGNALING_MODE;
-	tlbe_read.hva=NULL;
+enter_pa_to_tlbe_read(uint32_t va, uint32_t pa)
+{
+	tlbe_read.va = va & 0xfffffc00;
+	tlbe_read.pa = pa & 0xfffffc00;
+	tlbe_read.cpu_mode = ARM_SIGNALING_MODE;
+	tlbe_read.hva = NULL;
 }
 
 static inline void
-enter_pa_to_tlbe_write(uint32_t va,uint32_t pa) {
-	tlbe_write.va=va&0xfffffc00;
-	tlbe_write.pa=pa&0xfffffc00;
-	tlbe_write.cpu_mode=ARM_SIGNALING_MODE;
-	tlbe_write.hva=NULL;
+enter_pa_to_tlbe_write(uint32_t va, uint32_t pa)
+{
+	tlbe_write.va = va & 0xfffffc00;
+	tlbe_write.pa = pa & 0xfffffc00;
+	tlbe_write.cpu_mode = ARM_SIGNALING_MODE;
+	tlbe_write.hva = NULL;
 }
 
 /*
@@ -133,37 +138,41 @@ enter_pa_to_tlbe_write(uint32_t va,uint32_t pa) {
  */
 
 static inline void
-enter_hva_to_tlbe_write(uint32_t va,uint8_t *hva) {
-	tlbe_write.va=va&0xfffffc00;
-	tlbe_write.hva=hva-(va&0x3ff);
-	tlbe_write.cpu_mode=ARM_SIGNALING_MODE;
+enter_hva_to_tlbe_write(uint32_t va, uint8_t * hva)
+{
+	tlbe_write.va = va & 0xfffffc00;
+	tlbe_write.hva = hva - (va & 0x3ff);
+	tlbe_write.cpu_mode = ARM_SIGNALING_MODE;
 }
 
-
 static inline void
-invalidate_stlb() {
+invalidate_stlb()
+{
 	stlb_version++;
-	if(unlikely(!stlb_version)) {
+	if (unlikely(!stlb_version)) {
 		stlb_init();
 		stlb_version++;
 	}
 }
 
 static inline void
-invalidate_tlb() {
-	tlbe_ifetch.cpu_mode=~0;
-	tlbe_write.cpu_mode=~0;
-	tlbe_read.cpu_mode=~0;
+invalidate_tlb()
+{
+	tlbe_ifetch.cpu_mode = ~0;
+	tlbe_write.cpu_mode = ~0;
+	tlbe_read.cpu_mode = ~0;
 	invalidate_stlb();
 }
+
 /*
  * -------------------------------------------------------------------
  * Invalidate TLB
  * 	for external access (Reset,Memory Controller reconfiguration)
  * -------------------------------------------------------------------
  */
-void 
-MMU_InvalidateTlb() {
+void
+MMU_InvalidateTlb()
+{
 	invalidate_tlb();
 }
 
@@ -178,157 +187,165 @@ MMU_InvalidateTlb() {
 #define SLPD_TYPE_TINY   (3)
 
 uint32_t
-_MMU_Read32(uint32_t addr) {
+_MMU_Read32(uint32_t addr)
+{
 	uint32_t taddr;
 	uint8_t *hva;
 	/* HVA match is alredy done in inline part !!! */
-	if(likely(TLB_MATCH(tlbe_read,addr))) {
-		taddr=tlbe_read.pa | ((addr) &0x3ff);	
-	} else {  
-		taddr=MMU9_TranslateAddress(addr,MMU_ACCESS_DATA_READ);
-		hva=Bus_GetHVARead(taddr);
-		if(hva) {
-			enter_hva_to_both_tlbe_read(addr,hva);
+	if (likely(TLB_MATCH(tlbe_read, addr))) {
+		taddr = tlbe_read.pa | ((addr) & 0x3ff);
+	} else {
+		taddr = MMU9_TranslateAddress(addr, MMU_ACCESS_DATA_READ);
+		hva = Bus_GetHVARead(taddr);
+		if (hva) {
+			enter_hva_to_both_tlbe_read(addr, hva);
 			return HMemRead32(hva);
 		} else {
-			enter_pa_to_tlbe_read(addr,taddr);
+			enter_pa_to_tlbe_read(addr, taddr);
 		}
 	}
-	return IO_Read32(taddr);	
+	return IO_Read32(taddr);
 }
 
 uint16_t
-_MMU_Read16(uint32_t addr) {
+_MMU_Read16(uint32_t addr)
+{
 	uint32_t taddr;
 	uint8_t *hva;
 	/* HVA case already done in inline part */
-	if(likely(TLB_MATCH(tlbe_read,addr))) {
-		taddr=tlbe_read.pa | ((addr) &0x3ff);	
-	} else {  
-		taddr=MMU9_TranslateAddress(addr,MMU_ACCESS_DATA_READ);
-		hva=Bus_GetHVARead(taddr);
-		if(hva) {
-			enter_hva_to_both_tlbe_read(addr,hva);
+	if (likely(TLB_MATCH(tlbe_read, addr))) {
+		taddr = tlbe_read.pa | ((addr) & 0x3ff);
+	} else {
+		taddr = MMU9_TranslateAddress(addr, MMU_ACCESS_DATA_READ);
+		hva = Bus_GetHVARead(taddr);
+		if (hva) {
+			enter_hva_to_both_tlbe_read(addr, hva);
 			return HMemRead16(hva);
 		} else {
-			enter_pa_to_tlbe_read(addr,taddr);
+			enter_pa_to_tlbe_read(addr, taddr);
 		}
 	}
-	return IO_Read16(taddr);	
+	return IO_Read16(taddr);
 }
 
 uint8_t
-_MMU_Read8(uint32_t addr) {
+_MMU_Read8(uint32_t addr)
+{
 	uint32_t taddr;
 	/* HVA part already done in inline part */
-	if(likely(TLB_MATCH(tlbe_read,addr))) {
-		taddr=tlbe_read.pa | ((addr) &0x3ff);	
-	} else {  
+	if (likely(TLB_MATCH(tlbe_read, addr))) {
+		taddr = tlbe_read.pa | ((addr) & 0x3ff);
+	} else {
 		uint8_t *hva;
-		taddr=MMU9_TranslateAddress(addr,MMU_ACCESS_DATA_READ);
-		hva=Bus_GetHVARead(taddr);
-		if(hva) {
-			enter_hva_to_both_tlbe_read(addr,hva);
+		taddr = MMU9_TranslateAddress(addr, MMU_ACCESS_DATA_READ);
+		hva = Bus_GetHVARead(taddr);
+		if (hva) {
+			enter_hva_to_both_tlbe_read(addr, hva);
 			return HMemRead8(hva);
 		} else {
-			enter_pa_to_tlbe_read(addr,taddr);
+			enter_pa_to_tlbe_read(addr, taddr);
 		}
 	}
-	return IO_Read8(taddr);	
+	return IO_Read8(taddr);
 }
 
 void
-MMU_Write32(uint32_t value,uint32_t addr) {
+MMU_Write32(uint32_t value, uint32_t addr)
+{
 	uint32_t taddr;
 	uint8_t *hva;
-	if(likely(TLB_MATCH(tlbe_write,addr))) {
-		if(TLBE_IS_HVA(tlbe_write)) { 
-			hva=tlbe_write.hva+(addr&0x3ff);
-			HMemWrite32(value,hva);
+	if (likely(TLB_MATCH(tlbe_write, addr))) {
+		if (TLBE_IS_HVA(tlbe_write)) {
+			hva = tlbe_write.hva + (addr & 0x3ff);
+			HMemWrite32(value, hva);
 			return;
 		} else {
-			taddr=tlbe_write.pa | ((addr) &0x3ff);	
+			taddr = tlbe_write.pa | ((addr) & 0x3ff);
 		}
-	} else if((hva=STLB_MATCH_HVA(stlb_write,addr))) {
-		enter_hva_to_tlbe_write(addr,hva);
-		HMemWrite32(value,hva);
+	} else if ((hva = STLB_MATCH_HVA(stlb_write, addr))) {
+		enter_hva_to_tlbe_write(addr, hva);
+		HMemWrite32(value, hva);
 		return;
-	} else {  
-		taddr=MMU9_TranslateAddress(addr,MMU_ACCESS_DATA_WRITE);
-		hva=Bus_GetHVAWrite(taddr);
-		if(hva) {
-			enter_hva_to_both_tlbe_write(addr,hva);
-			HMemWrite32(value,hva);
+	} else {
+		taddr = MMU9_TranslateAddress(addr, MMU_ACCESS_DATA_WRITE);
+		hva = Bus_GetHVAWrite(taddr);
+		if (hva) {
+			enter_hva_to_both_tlbe_write(addr, hva);
+			HMemWrite32(value, hva);
 			return;
 		} else {
-			enter_pa_to_tlbe_write(addr,taddr);
+			enter_pa_to_tlbe_write(addr, taddr);
 		}
 	}
-	IO_Write32(value,taddr);
+	IO_Write32(value, taddr);
 }
 
 void
-MMU_Write16(uint16_t value,uint32_t addr) {
+MMU_Write16(uint16_t value, uint32_t addr)
+{
 	uint8_t *hva;
 	uint32_t taddr;
-	addr=addr^mmu_word_addr_xor;
-	if(likely(TLB_MATCH(tlbe_write,addr))) {
-		if(TLBE_IS_HVA(tlbe_write)) { 
-			hva=tlbe_write.hva+(addr&0x3ff);
-			HMemWrite16(value,hva);
+	addr = addr ^ mmu_word_addr_xor;
+	if (likely(TLB_MATCH(tlbe_write, addr))) {
+		if (TLBE_IS_HVA(tlbe_write)) {
+			hva = tlbe_write.hva + (addr & 0x3ff);
+			HMemWrite16(value, hva);
 			return;
 		} else {
-			taddr=tlbe_write.pa | ((addr) &0x3ff);	
+			taddr = tlbe_write.pa | ((addr) & 0x3ff);
 		}
-	} else if((hva=STLB_MATCH_HVA(stlb_write,addr))) {
-		enter_hva_to_tlbe_write(addr,hva);
-		HMemWrite16(value,hva);
+	} else if ((hva = STLB_MATCH_HVA(stlb_write, addr))) {
+		enter_hva_to_tlbe_write(addr, hva);
+		HMemWrite16(value, hva);
 		return;
-	} else {  
-		taddr=MMU9_TranslateAddress(addr,MMU_ACCESS_DATA_WRITE);
-		hva=Bus_GetHVAWrite(taddr);
-		if(hva) {
-			enter_hva_to_both_tlbe_write(addr,hva);
-			HMemWrite16(value,hva);
+	} else {
+		taddr = MMU9_TranslateAddress(addr, MMU_ACCESS_DATA_WRITE);
+		hva = Bus_GetHVAWrite(taddr);
+		if (hva) {
+			enter_hva_to_both_tlbe_write(addr, hva);
+			HMemWrite16(value, hva);
 			return;
 		} else {
-			enter_pa_to_tlbe_write(addr,taddr);
+			enter_pa_to_tlbe_write(addr, taddr);
 		}
 	}
-	IO_Write16(value,taddr);	
-}
-void
-MMU_Write8(uint8_t value,uint32_t addr) {
-	uint8_t *hva;
-	uint32_t taddr=addr;
-	addr=addr^mmu_byte_addr_xor;
-	if(likely(TLB_MATCH(tlbe_write,addr))) {
-		if(TLBE_IS_HVA(tlbe_write)) { 
-			hva=tlbe_write.hva+(addr&0x3ff);
-			HMemWrite8(value,hva);
-			return;
-		} else {
-			taddr=tlbe_write.pa | ((addr) &0x3ff);	
-		}
-	} else if((hva=STLB_MATCH_HVA(stlb_write,addr))) {
-		enter_hva_to_tlbe_write(addr,hva);
-		HMemWrite8(value,hva);
-		return;
-	} else {  
-		taddr=MMU9_TranslateAddress(addr,MMU_ACCESS_DATA_WRITE);
-		hva=Bus_GetHVAWrite(taddr);
-		if(hva) {
-			enter_hva_to_both_tlbe_write(addr,hva);
-			HMemWrite8(value,hva);
-			return;
-		} else {
-			enter_pa_to_tlbe_write(addr,taddr);
-		}
-	}
-	IO_Write8(value,taddr);	
+	IO_Write16(value, taddr);
 }
 
 void
-MMU_ArmInit(void) {
+MMU_Write8(uint8_t value, uint32_t addr)
+{
+	uint8_t *hva;
+	uint32_t taddr = addr;
+	addr = addr ^ mmu_byte_addr_xor;
+	if (likely(TLB_MATCH(tlbe_write, addr))) {
+		if (TLBE_IS_HVA(tlbe_write)) {
+			hva = tlbe_write.hva + (addr & 0x3ff);
+			HMemWrite8(value, hva);
+			return;
+		} else {
+			taddr = tlbe_write.pa | ((addr) & 0x3ff);
+		}
+	} else if ((hva = STLB_MATCH_HVA(stlb_write, addr))) {
+		enter_hva_to_tlbe_write(addr, hva);
+		HMemWrite8(value, hva);
+		return;
+	} else {
+		taddr = MMU9_TranslateAddress(addr, MMU_ACCESS_DATA_WRITE);
+		hva = Bus_GetHVAWrite(taddr);
+		if (hva) {
+			enter_hva_to_both_tlbe_write(addr, hva);
+			HMemWrite8(value, hva);
+			return;
+		} else {
+			enter_pa_to_tlbe_write(addr, taddr);
+		}
+	}
+	IO_Write8(value, taddr);
+}
+
+void
+MMU_ArmInit(void)
+{
 	stlb_init();
 }

@@ -8,5 +8,4 @@
  */
 
 #include <bus.h>
-BusDevice * IMX21_EimNew(const char *name);
-
+BusDevice *IMX21_EimNew(const char *name);

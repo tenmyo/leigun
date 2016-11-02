@@ -67,28 +67,30 @@
  * --------------------------------------------------
  */
 static int
-split_args(char *str,char *argv[],int maxargs) {
+split_args(char *str, char *argv[], int maxargs)
+{
 	int i;
-	int inspace=1;
-	int argc=0;
-	for(i=0;*str;i++,str++) {
-		if((*str!=' ') && (*str != '\t')) {
-			if(inspace) {
-				argv[argc]=str;
+	int inspace = 1;
+	int argc = 0;
+	for (i = 0; *str; i++, str++) {
+		if ((*str != ' ') && (*str != '\t')) {
+			if (inspace) {
+				argv[argc] = str;
 				argc++;
-				if(argc>=maxargs) {
-					fprintf(stderr,"Shared library list to long\n");
+				if (argc >= maxargs) {
+					fprintf(stderr, "Shared library list to long\n");
 					exit(32424);
 				}
 			}
-			inspace=0;
+			inspace = 0;
 		} else {
-			inspace=1;
-			*str=0;
+			inspace = 1;
+			*str = 0;
 		}
 	}
 	return argc;
 }
+
 /*
  * ---------------------------------------
  * Split a path-string at ';' or ':'
@@ -96,53 +98,55 @@ split_args(char *str,char *argv[],int maxargs) {
  * ---------------------------------------
  */
 static int
-split_path(char *str,char *argv[],int maxargs) {
+split_path(char *str, char *argv[], int maxargs)
+{
 	int i;
-	int insemicolon=1;
-	int argc=0;
-	for(i=0;*str;i++,str++) {
-		if((*str==';')) {
-			insemicolon=1;
-			*str=0;
-		} else if((*str==':')) {
-			insemicolon=1;
-			*str=0;
+	int insemicolon = 1;
+	int argc = 0;
+	for (i = 0; *str; i++, str++) {
+		if ((*str == ';')) {
+			insemicolon = 1;
+			*str = 0;
+		} else if ((*str == ':')) {
+			insemicolon = 1;
+			*str = 0;
 		} else {
-			if(insemicolon) {
-				argv[argc]=str;
+			if (insemicolon) {
+				argv[argc] = str;
 				argc++;
-				if(argc>=maxargs) {
-					fprintf(stderr,"Path has to many components\n");
+				if (argc >= maxargs) {
+					fprintf(stderr, "Path has to many components\n");
 					exit(32424);
 				}
 			}
-			insemicolon=0;
+			insemicolon = 0;
 		}
 	}
 	return argc;
 }
+
 /*
  * ----------------------------------------------------
  * Load a shared library and call its init function
  * ----------------------------------------------------
  */
 static int
-Shlib_Load(const char *dirname,const char *basenm) 
+Shlib_Load(const char *dirname, const char *basenm)
 {
-	char *path = alloca(strlen(dirname)+strlen(basenm)+2);
+	char *path = alloca(strlen(dirname) + strlen(basenm) + 2);
 	void *dlhandle;
 	struct stat stat_buf;
-	sprintf(path,"%s/%s",dirname,basenm);
-	if(stat(path,&stat_buf)<0) {
+	sprintf(path, "%s/%s", dirname, basenm);
+	if (stat(path, &stat_buf) < 0) {
 		//fprintf(stderr,"Can't stat\"%s\", dirname \"%s\"\n",path,dirname);
-		return -1;	
+		return -1;
 	}
-	dlhandle = dlopen(path,RTLD_NOW | RTLD_GLOBAL);
-	if(!dlhandle)  {
-		fprintf (stderr,"dlopen error: %s\n",dlerror());
+	dlhandle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+	if (!dlhandle) {
+		fprintf(stderr, "dlopen error: %s\n", dlerror());
 		exit(3508);
 	}
-	return 0;	
+	return 0;
 }
 
 #define MAXSHLIBS (30)
@@ -156,7 +160,8 @@ Shlib_Load(const char *dirname,const char *basenm)
  ***********************************************************
  */
 void
-Shlibs_Init(void) {
+Shlibs_Init(void)
+{
 	char *shlibs;
 	char *libpath;
 	char *pathdup;
@@ -164,37 +169,39 @@ Shlibs_Init(void) {
 	char *dirs[MAXDIRS];
 	int libc;
 	int dirc;
-	int i,j;
-	shlibs = Config_ReadVar("global","libs");
-	if(!shlibs)
+	int i, j;
+	shlibs = Config_ReadVar("global", "libs");
+	if (!shlibs)
 		return;
-	libc=split_args(shlibs,libs,MAXSHLIBS);
-	libpath = Config_ReadVar("global","libpath");
-	if(!libpath) {
-		libpath=".";
+	libc = split_args(shlibs, libs, MAXSHLIBS);
+	libpath = Config_ReadVar("global", "libpath");
+	if (!libpath) {
+		libpath = ".";
 	}
 	pathdup = sg_strdup(libpath);
-	dirc=split_path(pathdup,dirs,MAXDIRS);
-	for(i=0;i<libc;i++) {
-		int retval=-2;
-		for(j=0;j<dirc;j++) {
-			retval = Shlib_Load(dirs[j],libs[i]); 
-			if(retval>=0) {
+	dirc = split_path(pathdup, dirs, MAXDIRS);
+	for (i = 0; i < libc; i++) {
+		int retval = -2;
+		for (j = 0; j < dirc; j++) {
+			retval = Shlib_Load(dirs[j], libs[i]);
+			if (retval >= 0) {
 				break;
-			}	
+			}
 		}
-		if(retval<0) {
-			fprintf(stderr,"Can not open lib \"%s\" in path \"%s\"\n",libs[i],libpath);
+		if (retval < 0) {
+			fprintf(stderr, "Can not open lib \"%s\" in path \"%s\"\n", libs[i],
+				libpath);
 			exit(34223);
 		}
 	}
 	free(pathdup);
 }
+
 #ifdef SHLIB_TEST
-int 
-main() {
-	Shlib_Load("libbla.so");	
-	Shlib_Load("laber.so.2.3");	
+int
+main()
+{
+	Shlib_Load("libbla.so");
+	Shlib_Load("laber.so.2.3");
 }
 #endif
-

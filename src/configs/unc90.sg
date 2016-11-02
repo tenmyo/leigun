@@ -1,8 +1,7 @@
 [global]
 board: UNC90 
 imagedir: /home/user/emulator/unc90
-libpath: 
-libs: 
+random_seed: 12345678901234
 dbgwait: 0
 
 [emac]

@@ -23,24 +23,21 @@ SRCFILES:=softgun.c \
 	pl190_irq.c arm_vfp.c xy_tree.c xy_hash.c bus.c signode.c \
 	ste10_100.c m93c46.c linux-tap.c fio.c \
 	dram.c sram.c amdflash.c usb_ohci.c cycletimer.c \
-	configfile.c lxt971a.c ml6652.c  loader.c i2c_serdes.c i82559.c\
+	configfile.c ml6652.c elfloader.c loader.c i2c_serdes.c i82559.c\
 	pc16550.c rom.c \
 	ihex.c srec.c shlib.c mainloop_events.c diskimage.c \
-	aitc.c imx_timer.c serial.c cs8900.c mmcard.c \
+	aitc.c imx_timer.c serial.c cs8900.c \
 	clock.c rfbserver.c sht71.c keyboard.c matrix_keyboard.c \
 	usbdevice.c usbstdrq.c\
 	djet460.c relais.c  senseless.c \
-	lh79520_uart.c \
-	hello_world.c lh79520_ssp.c logical.c sgstring.c \
-	s3c2410_intco.c s3c2410_nand.c s3c2410_memco.c s3c2410_uart.c \
-	parport_pc.c lh79520_rcpc.c mmc_crc.c crc32.c tx49xx_sio.c \
+	hello_world.c logical.c sgstring.c \
+	parport_pc.c crc32.c tx49xx_sio.c \
 	isp1105.c  filesystem.c nullsound.c \
-	alsasound.c sound.c sd_spi.c fbdisplay.c strhash.c \
+	alsasound.c sound.c fbdisplay.c strhash.c \
 	debugvars.c debugger.c sglib.c crc8.c spidevice.c jtag_tap.c \
-	crc16.c mmcdev.c nand.c throttle.c 
+	crc16.c mmcdev.c nand.c throttle.c cleanup.c rtc.c mouse.c
 
 
-# SHSRC := 
 TARGETS := .depend version.c subdirs softgun 
 INSTALL_BINS := softgun 
 default: all
@@ -53,7 +50,7 @@ include $(patsubst %,%/module.mk,$(SUBMODULES))
 
 OBJS := $(SRCFILES:.c=.o) version.o 
 OBJS_BE :=$(SRCFILES:.c=.be.o) version.be.o 
-
+ 
 #
 # Generate shared libraries from a LIST of SHLIBS 
 # each defining a variable called SHOBJS_$(library)
@@ -76,14 +73,24 @@ $(SHLIBS): %.so:  $$(addsuffix .po,$$(basename $$($$(foreach x,$$(basename $$(no
 	$(CC) $(SHAREDCFLAGS) $(DEFS) $(SHAREDLDFLAGS) $(CFLAGS) $^ -o $@
 
 ALL_SRCS := $(SRCFILES) $(SHSRCS)
+DEPFILES := $(ALL_SRCS:.c=.d)
+#DEPFILES = $(foreach f,$(XDEPFILES),.dep/$f)
 
 all: $(TARGETS) $(SHOBJS) $(SHLIBS)
-	@#echo "Targets: " $(TARGETS)
+	@#$(ECHO) "Targets: " $(TARGETS)
 
 subdirs: $(SUBDIRS)
 
 $(SUBDIRS):
 	@if [ -d $@ ]; then $(MAKE) -C $@; fi
+
+vpath %.d .dep
+%.d: %.c
+	mkdir -p .dep/$(shell dirname $<) && $(CC) -MT $(shell x=$(<); $(ECHO) -n $${x%%.c};).o -MM  \
+			$(INCLUDES)  $< -o .dep/$@
+
+bla.x: bla.c 
+	echo $(shell x=$(<); $(ECHO) -n $${x%%.c};).o ;
 
 version.c:
 	$(shell $(ECHO) "/*" >> $@;) \
@@ -111,7 +118,7 @@ install: $(INSTALL_BINS)
 
 
 softgun: $(OBJS) 
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LDLIBS) 
 
 boards/libboards.a:
 	$(MAKE) -C boards libboards.a
@@ -119,18 +126,17 @@ boards/libboards.a:
 depend: .depend
 
 #####################################################
-# make depend does not work for shared libraries 
+# make depend does not work for shared libraries
 # currently  (needs an .so dependecy not an .o)
 #####################################################
-.depend:
-	rm -f .depend
-	for file in $(ALL_SRCS); do \
-		var=$$(dirname $$file); \
-		$(ECHO) -n "$$var/" > .tmpdepend; \
-		$(CC) -MM  $(INCLUDES)  $$file >> .tmpdepend && \
-		cat .tmpdepend >> .depend; \
+.depend:	$(DEPFILES)
+	echo $^
+	rm -f .depend .tmpdepend
+	for file in $(DEPFILES) ; do \
+		cat .dep/$$file >> .tmpdepend; \
 	done; \
-	rm -f .tmpdepend
+	mv .tmpdepend $@ 
+
 
 clean:
 	rm -f $(TARGETS)  $(OBJS)
@@ -139,4 +145,5 @@ clean:
 			$(MAKE) -C $$dir clean; \
 		fi; \
 	done; \
-	rm -f $(SHOBJS) $(SHLIBS) .depend .tmpdepend
+	rm -f $(SHOBJS) $(SHLIBS) .depend .tmpdepend; \
+	rm -rf .dep 

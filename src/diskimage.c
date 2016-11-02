@@ -38,7 +38,6 @@
  *************************************************************************************************
  */
 
-
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -61,32 +60,33 @@
  * new non-sparse diskimages
  * ------------------------------------------------------------------------
  */
-static int 
-diskimage_fill(DiskImage *di,uint8_t emptyval) {
+static int
+diskimage_fill(DiskImage * di, uint8_t emptyval)
+{
 	int i;
 	uint8_t buf[1024];
-	int64_t count; /* must be signed because file might be oversized */
+	int64_t count;		/* must be signed because file might be oversized */
 	off_t pos;
-	if((pos = lseek(di->fd,0,SEEK_END))==(off_t)-1) {
+	if ((pos = lseek(di->fd, 0, SEEK_END)) == (off_t) - 1) {
 		perror("lseek64 on flashfile failed");
 		return -1;
 	}
 	count = di->size - pos;
-	for(i = 0;i < sizeof(buf);i++) {
-		buf[i]=emptyval;
+	for (i = 0; i < sizeof(buf); i++) {
+		buf[i] = emptyval;
 	}
-	while(count >= (int64_t)sizeof(buf)) {
+	while (count >= (int64_t) sizeof(buf)) {
 		int result;
-		result = write(di->fd,buf,sizeof(buf));
-		if(result <= 0) {
+		result = write(di->fd, buf, sizeof(buf));
+		if (result <= 0) {
 			perror("write failed");
 			break;
 		} else {
 			count -= result;
 		}
 	}
-	while(count > 0) {
-		if(write(di->fd,buf,1) <= 0) {
+	while (count > 0) {
+		if (write(di->fd, buf, 1) <= 0) {
 			perror("write failed");
 			break;
 		}
@@ -95,48 +95,49 @@ diskimage_fill(DiskImage *di,uint8_t emptyval) {
 	return 0;
 }
 
-static int 
-diskimage_sparse_fill(DiskImage *di,uint8_t emptyval) {
+static int
+diskimage_sparse_fill(DiskImage * di, uint8_t emptyval)
+{
 	off_t pos;
-	if(di->size < 1) {
-		fprintf(stderr,"Sparse diskimage is < 1 Byte\n");
+	if (di->size < 1) {
+		fprintf(stderr, "Sparse diskimage is < 1 Byte\n");
 		return -1;
 	}
-	if((pos = lseek(di->fd,0,SEEK_END))==-1) {
+	if ((pos = lseek(di->fd, 0, SEEK_END)) == -1) {
 		perror("lseek64 on flashfile failed");
 		return -1;
 	}
-	if(pos >= di->size) {
+	if (pos >= di->size) {
 		return 0;
 	}
-	if((pos=lseek(di->fd,di->size-1,SEEK_SET)) != (di->size-1)) {
+	if ((pos = lseek(di->fd, di->size - 1, SEEK_SET)) != (di->size - 1)) {
 		perror("lseek64 on sparse file failed");
 		return -1;
 	}
-	if(write(di->fd,&emptyval,1) != 1) {
+	if (write(di->fd, &emptyval, 1) != 1) {
 		perror("writing last byte of sparse diskimage failed");
 		return -1;
 	}
 	return 0;
 }
 
-static int 
-check_fill(DiskImage *di,int flags) 
+static int
+check_fill(DiskImage * di, int flags)
 {
 	uint8_t emptyval;
-	if(flags & DI_CREAT_FF) {
+	if (flags & DI_CREAT_FF) {
 		emptyval = 0xff;
 	} else {
 		emptyval = 0x00;
 	}
-	if(flags & DI_SPARSE) {
-		if(diskimage_sparse_fill(di,emptyval) < 0) {
-			fprintf(stderr,"Filling the sparse diskimage failed\n");
+	if (flags & DI_SPARSE) {
+		if (diskimage_sparse_fill(di, emptyval) < 0) {
+			fprintf(stderr, "Filling the sparse diskimage failed\n");
 			return -1;
 		}
 	} else {
-		if(diskimage_fill(di,emptyval) < 0) {
-			fprintf(stderr,"Filling the diskimage failed\n");
+		if (diskimage_fill(di, emptyval) < 0) {
+			fprintf(stderr, "Filling the diskimage failed\n");
 			return -1;
 		}
 	}
@@ -148,8 +149,8 @@ check_fill(DiskImage *di,int flags)
  * Return the size of a block device in bytes
  ************************************************************************
  */
-static uint64_t 
-blockdev_get_size(DiskImage *di)
+static uint64_t
+blockdev_get_size(DiskImage * di)
 {
 #if 0
 	uint64_t size;
@@ -157,115 +158,117 @@ blockdev_get_size(DiskImage *di)
 	return size;
 #endif
 	return 0;
-} 
+}
 
 DiskImage *
-DiskImage_Open(const char *name,uint64_t size,int flags) {
+DiskImage_Open(const char *name, uint64_t size, int flags)
+{
 	DiskImage *di;
 	struct stat stat;
 	di = sg_new(DiskImage);
 	di->size = size;
 	di->flags = flags;
-	if(flags & DI_RDWR) {
-		if(flags & (DI_CREAT_FF | DI_CREAT_00)) {
-			di->fd=open(name,O_RDWR|O_CREAT | O_LARGEFILE,0644);
+	if (flags & DI_RDWR) {
+		if (flags & (DI_CREAT_FF | DI_CREAT_00)) {
+			di->fd = open(name, O_RDWR | O_CREAT | O_LARGEFILE, 0644);
 		} else {
-			di->fd=open(name,O_RDWR | O_LARGEFILE,0644);
+			di->fd = open(name, O_RDWR | O_LARGEFILE, 0644);
 		}
 	} else {
-		di->fd=open(name,O_RDONLY);
+		di->fd = open(name, O_RDONLY);
 	}
-	if(di->fd < 0) {
-		fprintf(stderr,"Can't open image \"%s\" ",name);
+	if (di->fd < 0) {
+		fprintf(stderr, "Can't open image \"%s\" ", name);
 		perror("");
 		free(di);
 		return NULL;
 	}
-	if(flock(di->fd,LOCK_EX|LOCK_NB)<0) {
-		fprintf(stderr,"Can't get lock for diskimage \"%s\"\n",name);
+	if (flock(di->fd, LOCK_EX | LOCK_NB) < 0) {
+		fprintf(stderr, "Can't get lock for diskimage \"%s\"\n", name);
 		close(di->fd);
 		free(di);
 		return NULL;
 	}
-	if(fstat(di->fd, &stat) < 0) {
-		fprintf(stderr,"Stat on diskimage failed\n");
+	if (fstat(di->fd, &stat) < 0) {
+		fprintf(stderr, "Stat on diskimage failed\n");
 		exit(1);
 	}
-	if((stat.st_mode & S_IFMT) == S_IFBLK) {
-		fprintf(stderr,"Diskimage \"%s\" is a block device\n",name);
-		if(size) {
-			fprintf(stderr,"Can not set the size of a block device\n");
+	if ((stat.st_mode & S_IFMT) == S_IFBLK) {
+		fprintf(stderr, "Diskimage \"%s\" is a block device\n", name);
+		if (size) {
+			fprintf(stderr, "Can not set the size of a block device\n");
 			exit(1);
 		}
 		di->size = blockdev_get_size(di);
-		fprintf(stderr,"Block device access not implemented\n");
+		fprintf(stderr, "Block device access not implemented\n");
 		exit(1);
-	} else if((stat.st_mode & S_IFMT) == S_IFREG) {
-		fprintf(stderr,"Diskimage \"%s\" is a regular file\n",name);
-		if(check_fill(di,flags) < 0) {
+	} else if ((stat.st_mode & S_IFMT) == S_IFREG) {
+		fprintf(stderr, "Diskimage \"%s\" is a regular file\n", name);
+		if (check_fill(di, flags) < 0) {
 			close(di->fd);
 			free(di);
 			return NULL;
 		}
 	} else {
-		fprintf(stderr,"Diskimage \"%s\" is of unknown type\n",name);
+		fprintf(stderr, "Diskimage \"%s\" is of unknown type\n", name);
 	}
 	return di;
 }
 
 int
-DiskImage_Read(DiskImage *di,off_t ofs,uint8_t *buf,int count) 
+DiskImage_Read(DiskImage * di, off_t ofs, uint8_t * buf, int count)
 {
 	int result;
 	int cnt;
-	if(lseek(di->fd,ofs,SEEK_SET) != ofs) {
+	if (lseek(di->fd, ofs, SEEK_SET) != ofs) {
 		return -EINVAL;
 	}
-	for(cnt=0;cnt < count;) {
-		result = read(di->fd,buf+cnt,count);
-		if(result<=0) {
-			if(cnt) {
+	for (cnt = 0; cnt < count;) {
+		result = read(di->fd, buf + cnt, count);
+		if (result <= 0) {
+			if (cnt) {
 				return cnt;
 			} else {
 				return result;
 			}
-		} 	
+		}
 		cnt += result;
 	}
 	return cnt;
-	
+
 }
+
 int
-DiskImage_Write(DiskImage *di,off_t ofs,const uint8_t *buf,int count) 
+DiskImage_Write(DiskImage * di, off_t ofs, const uint8_t * buf, int count)
 {
 	int result;
 	int cnt;
-	if(lseek(di->fd,ofs,SEEK_SET) != ofs) {
+	if (lseek(di->fd, ofs, SEEK_SET) != ofs) {
 		return -EINVAL;
 	}
-	for(cnt=0;cnt < count;) {
-		result = write(di->fd,buf+cnt,count);
-		if(result<=0) {
-			if(cnt) {
+	for (cnt = 0; cnt < count;) {
+		result = write(di->fd, buf + cnt, count);
+		if (result <= 0) {
+			if (cnt) {
 				return cnt;
 			} else {
 				return result;
 			}
-		} 	
+		}
 		cnt += result;
 	}
 	return cnt;
 }
 
 void *
-DiskImage_Mmap(DiskImage *di) 
+DiskImage_Mmap(DiskImage * di)
 {
-	if(di->flags & DI_RDWR) {
-		di->map = mmap(0,di->size,PROT_READ|PROT_WRITE,MAP_SHARED,di->fd,0);
+	if (di->flags & DI_RDWR) {
+		di->map = mmap(0, di->size, PROT_READ | PROT_WRITE, MAP_SHARED, di->fd, 0);
 	} else {
-		di->map = mmap(0,di->size,PROT_READ,MAP_SHARED,di->fd,0);
+		di->map = mmap(0, di->size, PROT_READ, MAP_SHARED, di->fd, 0);
 	}
-	if(di->map == (void*)-1) {
+	if (di->map == (void *)-1) {
 		perror("mmap of diskimage failed");
 		close(di->fd);
 		free(di);
@@ -275,13 +278,13 @@ DiskImage_Mmap(DiskImage *di)
 }
 
 void
-DiskImage_Close(DiskImage *di) 
+DiskImage_Close(DiskImage * di)
 {
-	if(di->map) {
-		munmap(di->map,di->size);
-		di->map=NULL;
+	if (di->map) {
+		munmap(di->map, di->size);
+		di->map = NULL;
 	}
-	flock(di->fd,LOCK_UN);
+	flock(di->fd, LOCK_UN);
 	close(di->fd);
 	free(di);
 }

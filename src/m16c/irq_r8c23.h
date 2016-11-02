@@ -1,6 +1,6 @@
 #include "m16c_cpu.h"
-BusDevice * R8C23IntCo_New(const char *name);
-void R8C23_AckIrq(BusDevice *intco_bdev,uint32_t intno);
+BusDevice *R8C23IntCo_New(const char *name);
+void R8C23_AckIrq(BusDevice * intco_bdev, uint32_t intno);
 
 #define R8C_INT_BRK			(0)
 #define R8C_INT_CAN0_WAKE_UP		(3)
@@ -23,4 +23,3 @@ void R8C23_AckIrq(BusDevice *intco_bdev,uint32_t intno);
 #define R8C_INT_INT1			(25)
 #define R8C_INT_INT3			(26)
 #define R8C_INT_INT0			(29)
-

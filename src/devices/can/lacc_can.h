@@ -1,1 +1,1 @@
-BusDevice * LaccCAN_New();
+BusDevice *LaccCAN_New();

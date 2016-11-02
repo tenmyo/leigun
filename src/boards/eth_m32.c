@@ -63,6 +63,7 @@
 #include "compiler_extensions.h"
 #include "enc28j60.h"
 #include "lcd_hd44780.h"
+#include "ds1337.h"
 
 typedef struct EthM32 {
 	AVR8_Adc *adc;
@@ -151,7 +152,7 @@ link_signals(EthM32 *em32) {
 
 	SigName_Link("sr.wdReset","avr.wdReset");
 
-#if 0
+
 	/* TWI slave using port C */
         SigName_Link("twi.scl","portC.pvov0");
         SigName_Link("twi.ddoe_scl","portC.ddoe0");
@@ -159,9 +160,11 @@ link_signals(EthM32 *em32) {
         SigName_Link("twi.sda","portC.pvov1");
         SigName_Link("twi.ddoe_sda","portC.ddoe1");
         SigName_Link("twi.pvoe_sda","portC.pvoe1");
-#endif
+
 	/* HSync */
 	/* Link the SPI interface to the IO port */
+	
+	
 	SigName_Link("spi0.ss","portB.pvov4");
 	SigName_Link("spi0.ddoe_ss","portB.ddoe4");
 	SigName_Link("spi0.ddov_ss","portB.ddov4");
@@ -238,14 +241,34 @@ link_signals(EthM32 *em32) {
         SigName_Link("portC.P5","lcd0.RW");
         SigName_Link("portC.P6","lcd0.E");
 
+	//SigName_Link("i2cbus.sda","twi.sda");
+        //SigName_Link("i2cbus.scl","twi.scl");
 
+	SigName_Link("portC.P0","i2cbus.scl");
+	SigName_Link("portC.P1","i2cbus.sda");
 }
+static void
+create_i2c_devices()
+{
+        I2C_Slave *i2c_slave;
+        I2C_SerDes *i2c_serdes;
+        i2c_serdes = I2C_SerDesNew("i2cbus");
 
+        i2c_slave = DS1337_New("i2cbus.ds1337");
+        I2C_SerDesAddSlave(i2c_serdes,i2c_slave,0x68);
+}
 static int
 board_em32_create()
 {
 	EthM32 *em32 = sg_new(EthM32);
-
+	ATMUsartRegisterMap usartRegMap = {
+		.addrUCSRA = 0,
+		.addrUCSRB = 1,
+		.addrUCSRC = 2,
+		.addrUBRRL = 4,
+		.addrUBRRH = 5,
+		.addrUDR = 6,
+	};
 
 	FbDisplay_New("lcd0",&em32->display,&em32->keyboard,NULL,NULL);
         if(!em32->display) {
@@ -259,8 +282,10 @@ board_em32_create()
         //}
 
 	AVR8_Init("avr");
-	ATM644_UsartNew("usart0",0xc0);
-	ATM644_UsartNew("usart1",0xc8);
+	usartRegMap.addrBase = 0xc0;
+	ATM644_UsartNew("usart0",&usartRegMap);
+	usartRegMap.addrBase = 0xc8;
+	ATM644_UsartNew("usart1",&usartRegMap);
 	AVR8_EEPromNew("eeprom","3f4041",2048);
 	ATM644_Timer02New("timer0",0x44,0);
 	ATM644_Timer1New("timer1");
@@ -293,6 +318,7 @@ board_em32_create()
 	if(em32->display) {
 		HD44780_LcdNew("lcd0", em32->display);
 	}
+	create_i2c_devices();
 	link_signals(em32);
 	return 0;
 }

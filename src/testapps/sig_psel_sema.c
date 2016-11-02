@@ -32,15 +32,15 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-
 sem_t sem;
 
 static pthread_t testthread;
 uint32_t count = 0;
 
 static void
-handle_sigusr1() {
-        // nothing
+handle_sigusr1()
+{
+	// nothing
 }
 
 /*
@@ -49,26 +49,27 @@ handle_sigusr1() {
  * from main thread.
  * ----------------------------------------------------------------
  */
-void  *
-psel_test(void *cd) {
+void *
+psel_test(void *cd)
+{
 	int result;
 	struct sigaction sa;
 	sigset_t emptyset, blockset;
-	sa.sa_handler = handle_sigusr1;        /* Establish signal handler */
-        sa.sa_flags = 0;
-        sigemptyset(&blockset);         /* Block SIGUSR1 */
-        sigemptyset(&emptyset);
-        sigaddset(&blockset, SIGUSR1);
-        sigprocmask(SIG_BLOCK, &blockset, NULL);
-        sigaction(SIGUSR1,&sa,NULL); // fd change notification
-	for(count=0;count<1000000;count++) {
-		 /* Now IO is handled, allow the IO-thread to run again */
+	sa.sa_handler = handle_sigusr1;	/* Establish signal handler */
+	sa.sa_flags = 0;
+	sigemptyset(&blockset);	/* Block SIGUSR1 */
+	sigemptyset(&emptyset);
+	sigaddset(&blockset, SIGUSR1);
+	sigprocmask(SIG_BLOCK, &blockset, NULL);
+	sigaction(SIGUSR1, &sa, NULL);	// fd change notification
+	for (count = 0; count < 1000000; count++) {
+		/* Now IO is handled, allow the IO-thread to run again */
 		//fprintf(stdout,"\r%d  ",count);
 		sem_post(&sem);
- 		result = pselect(0,NULL,NULL,NULL,NULL,&emptyset);
- 		//result = select(0,NULL,NULL,NULL,NULL);
+		result = pselect(0, NULL, NULL, NULL, NULL, &emptyset);
+		//result = select(0,NULL,NULL,NULL,NULL);
 	}
-	fprintf(stderr,"Signal/pselect/semaphore test successful\n");
+	fprintf(stderr, "Signal/pselect/semaphore test successful\n");
 	exit(0);
 }
 
@@ -79,25 +80,28 @@ psel_test(void *cd) {
  * to second thread
  * -----------------------------------------------------------------------------
  */
-int 
-main(int argc,char *argv[]) {
+int
+main(int argc, char *argv[])
+{
 	int result;
 	struct timeval now;
 	struct timespec timeout;
-	sem_init(&sem,1,0);
- 	result=pthread_create(&testthread, NULL,psel_test, NULL);
+	sem_init(&sem, 1, 0);
+	result = pthread_create(&testthread, NULL, psel_test, NULL);
 	sleep(1);
-	while(1) {
-		gettimeofday(&now,NULL);
-		timeout.tv_nsec = now.tv_usec *1000;
-		timeout.tv_sec = now.tv_sec+1;
-		result = sem_timedwait(&sem,&timeout);
-		pthread_kill(testthread,SIGUSR1);
-		gettimeofday(&now,NULL);
-		if(result == 0) {
+	while (1) {
+		gettimeofday(&now, NULL);
+		timeout.tv_nsec = now.tv_usec * 1000;
+		timeout.tv_sec = now.tv_sec + 1;
+		result = sem_timedwait(&sem, &timeout);
+		pthread_kill(testthread, SIGUSR1);
+		gettimeofday(&now, NULL);
+		if (result == 0) {
 			continue;
 		}
-		fprintf(stderr,"Timeout after %d pselects! your Signal/pselect/semaphore implementation is broken\n",count);
+		fprintf(stderr,
+			"Timeout after %d pselects! your Signal/pselect/semaphore implementation is broken\n",
+			count);
 	}
 	exit(0);
 }

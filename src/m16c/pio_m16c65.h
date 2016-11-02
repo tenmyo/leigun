@@ -5,4 +5,4 @@
  */
 
 #include "bus.h"
-BusDevice * M16C65_PioNew(const char *name);
+BusDevice *M16C65_PioNew(const char *name);

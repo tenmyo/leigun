@@ -118,5 +118,17 @@ void avr8_swap(void);
 void avr8_tst(void);
 void avr8_wdr(void);
 void avr8_undef(void);
-void AVR8_InitInstructions(AVR8_Cpu *avr);
+
+/* Instructions for 22/24 bit PC only */
+void avr8_call_24(void);
+void avr8_icall_24(void); 
+void avr8_jmp_24(void); 
+void avr8_lpm1_24(void); 
+void avr8_lpm2_24(void); 
+void avr8_lpm3_24(void); 
+void avr8_rcall_24(void); 
+void avr8_ret_24(void); 
+void avr8_reti_24(void); 
+
+void AVR8_InitInstructions(AVR8_Cpu * avr);
 #endif

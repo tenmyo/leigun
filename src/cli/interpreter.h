@@ -34,14 +34,13 @@
 #define CMD_RESULT_ERROR	(-1)
 #define CMD_RESULT_BADARGS	(-2)
 #define CMD_RESULT_ABORT	(-3)
-typedef struct Interp  Interp;
-typedef struct InterpCmd InterpCmd; 
+typedef struct Interp Interp;
+typedef struct InterpCmd InterpCmd;
 
+Interp *Interp_New(Channel * chan);
+void Interp_Del(Interp * interp);
 
-Interp * Interp_New(Channel *chan); 
-void Interp_Del(Interp *interp);
-
-void Interp_AppendResult(Interp *interp,const char *format,...);
+void Interp_AppendResult(Interp * interp, const char *format, ...);
 /*
  ***************************************************************
  * Interp_FinishDelayed
@@ -49,14 +48,14 @@ void Interp_AppendResult(Interp *interp,const char *format,...);
  *	delayed execution is finished
  ***************************************************************
  */
-void Interp_FinishDelayed(Interp *interp,int cmd_retcode);
-typedef void AbortDelayedProc(Interp *interp,void *clientData);
-void Interp_SetAbortProc(Interp *interp,AbortDelayedProc *proc,void *clientData);
+void Interp_FinishDelayed(Interp * interp, int cmd_retcode);
+typedef void AbortDelayedProc(Interp * interp, void *clientData);
+void Interp_SetAbortProc(Interp * interp, AbortDelayedProc * proc, void *clientData);
 
-typedef struct CmdRegistry  CmdRegistry;
+typedef struct CmdRegistry CmdRegistry;
 void CmdRegistry_Init(void);
 
-typedef int CmdProc (Interp *interp,void *clientData,int argc,char *argv[]);
-int Cmd_Register(const char *cmdname,CmdProc *,void *clientData);
+typedef int CmdProc(Interp * interp, void *clientData, int argc, char *argv[]);
+int Cmd_Register(const char *cmdname, CmdProc *, void *clientData);
 
 #endif

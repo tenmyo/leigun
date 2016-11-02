@@ -28,27 +28,28 @@
 #include <at91sam_efc.h>
 
 static void
-board_sam7a3_ek_run(Board *bd) {
-        ARM9_Run();
+board_sam7a3_ek_run(Board * bd)
+{
+	ARM9_Run();
 }
 
 static int
 board_sam7a3_ek_create()
 {
-//	ArmCoprocessor *copro;
-	BusDevice *dev,*flash,*efc;
+//      ArmCoprocessor *copro;
+	BusDevice *dev, *flash, *efc;
 
-        Bus_Init(MMU_InvalidateTlb,4*1024);
-        ARM9_New();
+	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
+	ARM9_New();
 	dev = SRam_New("iram");
-        Mem_AreaAddMapping(dev,0x00200000,1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-        //Mem_AreaAddMapping(dev,0x00000000,1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	AT91SAM7_EfcNew(&flash,&efc,"efc","iflash");
+	Mem_AreaAddMapping(dev, 0x00200000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	//Mem_AreaAddMapping(dev,0x00000000,1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	AT91SAM7_EfcNew(&flash, &efc, "efc", "iflash");
 
 	/* Before remap only */
-        Mem_AreaAddMapping(flash,0x00000000,1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-        Mem_AreaAddMapping(flash,0x00100000,1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	
+	Mem_AreaAddMapping(flash, 0x00000000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	Mem_AreaAddMapping(flash, 0x00100000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+
 	return 0;
 }
 
@@ -67,17 +68,18 @@ board_sam7a3_ek_create()
 "\n"
 
 Board board_sam7a3_ek = {
-        .name = "AT91SAM7A3_EK",
-        .description =  "Atmel SAM7A3 Evaluation Kit",
-        .createBoard =  board_sam7a3_ek_create,
-        .runBoard =     board_sam7a3_ek_run,
-        .defaultconfig = DEFAULTCONFIG
+	.name = "AT91SAM7A3_EK",
+	.description = "Atmel SAM7A3 Evaluation Kit",
+	.createBoard = board_sam7a3_ek_create,
+	.runBoard = board_sam7a3_ek_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
 #ifdef _SHARED_
 void
-_init() {
-        fprintf(stderr,"Loading SAM7A3 Board module\n");
-        Board_Register(&board_sam7a3_ek);
+_init()
+{
+	fprintf(stderr, "Loading SAM7A3 Board module\n");
+	Board_Register(&board_sam7a3_ek);
 }
 #endif

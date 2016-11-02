@@ -38,7 +38,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
-#include "keysymdef.h" 
+#include "keysymdef.h"
 #include "keyboard.h"
 #include "signode.h"
 #include "cycletimer.h"
@@ -53,7 +53,7 @@
 #endif
 #define NR_KEYS 5
 
-typedef struct NaviSwitch5  {
+typedef struct NaviSwitch5 {
 	const char *name;
 	int active_level;
 	int inactive_level;
@@ -65,13 +65,12 @@ typedef struct OutPad {
 } OutPad;
 
 static OutPad kpsigs[] = {
-	{ "up" },
-	{ "down" },
-	{ "left" },
-	{ "right" },
-	{ "push" },
+	{"up"},
+	{"down"},
+	{"left"},
+	{"right"},
+	{"push"},
 };
-
 
 /*
  *********************************************************************
@@ -79,42 +78,41 @@ static OutPad kpsigs[] = {
  * 	This handler is feed by the keyboard when a event is detected
  *********************************************************************
  */
-static void 
-handle_key_event(void *clientData,KeyEvent *ev) 
+static void
+handle_key_event(void *clientData, KeyEvent * ev)
 {
-	NaviSwitch5 *ns = (NaviSwitch5*) clientData;
+	NaviSwitch5 *ns = (NaviSwitch5 *) clientData;
 	unsigned int index;
 	SigNode *sigKey;
-	switch(ev->key) {
-		case XK_Up:
-			index = 0;
-			break;				
-		case XK_Down:
-			index = 1;
-			break;				
-		case XK_Left:
-			index = 2;
-			break;				
-		case XK_Right:
-			index = 3;
-			break;				
-		case XK_Return:
-			index = 4;
-			break;				
-		default:
-			return;
+	switch (ev->key) {
+	    case XK_Up:
+		    index = 0;
+		    break;
+	    case XK_Down:
+		    index = 1;
+		    break;
+	    case XK_Left:
+		    index = 2;
+		    break;
+	    case XK_Right:
+		    index = 3;
+		    break;
+	    case XK_Return:
+		    index = 4;
+		    break;
+	    default:
+		    return;
 	}
-	if(index >= NR_KEYS) {
+	if (index >= NR_KEYS) {
 		return;
 	}
-	sigKey = ns->sigKey[index]; 
-	if(ev->down) {
-		SigNode_Set(sigKey,ns->active_level);
+	sigKey = ns->sigKey[index];
+	if (ev->down) {
+		SigNode_Set(sigKey, ns->active_level);
 	} else {
-		SigNode_Set(sigKey,ns->inactive_level);
+		SigNode_Set(sigKey, ns->inactive_level);
 	}
 }
-
 
 /*
  ************************************************************
@@ -123,17 +121,16 @@ handle_key_event(void *clientData,KeyEvent *ev)
  */
 
 static void
-create_keypad_signals(NaviSwitch5 *ns) 
+create_keypad_signals(NaviSwitch5 * ns)
 {
 	int i;
-	for(i = 0; i < NR_KEYS; i++) {
-		ns->sigKey[i] = SigNode_New("%s.%s",
-				ns->name,kpsigs[i].signal_name);
-		if(!ns->sigKey[i]) {
-			fprintf(stderr,"Can not create keypad signal %d\n",i);
+	for (i = 0; i < NR_KEYS; i++) {
+		ns->sigKey[i] = SigNode_New("%s.%s", ns->name, kpsigs[i].signal_name);
+		if (!ns->sigKey[i]) {
+			fprintf(stderr, "Can not create keypad signal %d\n", i);
 			exit(1);
 		}
-		SigNode_Set(ns->sigKey[i],ns->inactive_level);
+		SigNode_Set(ns->sigKey[i], ns->inactive_level);
 	}
 }
 
@@ -146,65 +143,61 @@ create_keypad_signals(NaviSwitch5 *ns)
  **********************************************************************
  */
 void
-NaviSwitch5_New(const char *name,Keyboard *keyboard) 
+NaviSwitch5_New(const char *name, Keyboard * keyboard)
 {
 	char *active;
 	char *inactive;
 	NaviSwitch5 *ns = sg_new(NaviSwitch5);
 	ns->name = name;
-	active = Config_ReadVar(name,"active");
-	inactive = Config_ReadVar(name,"inactive");
-	if(active) {
-		if(strcmp(active,"high") == 0) {
+	active = Config_ReadVar(name, "active");
+	inactive = Config_ReadVar(name, "inactive");
+	if (active) {
+		if (strcmp(active, "high") == 0) {
 			ns->active_level = SIG_HIGH;
-		} else if(strcmp(active,"low") == 0) {
+		} else if (strcmp(active, "low") == 0) {
 			ns->active_level = SIG_LOW;
-		} else if(strcmp(active,"force_high") == 0) {
+		} else if (strcmp(active, "force_high") == 0) {
 			ns->active_level = SIG_FORCE_HIGH;
-		} else if(strcmp(active,"force_low") == 0) {
+		} else if (strcmp(active, "force_low") == 0) {
 			ns->active_level = SIG_FORCE_LOW;
-		} else if(strcmp(active,"pullup") == 0) {
+		} else if (strcmp(active, "pullup") == 0) {
 			ns->active_level = SIG_PULLUP;
-		} else if(strcmp(active,"pulldown") == 0) {
+		} else if (strcmp(active, "pulldown") == 0) {
 			ns->active_level = SIG_PULLUP;
-		} else if(strcmp(active,"open") == 0) {
+		} else if (strcmp(active, "open") == 0) {
 			ns->active_level = SIG_OPEN;
 		} else {
-			fprintf(stderr,"Syntax error %s: Bad level %s\n",
-				name,active);
+			fprintf(stderr, "Syntax error %s: Bad level %s\n", name, active);
 		}
 	} else {
 		ns->active_level = SIG_LOW;
 	}
-	if(active) {
-		if(strcmp(inactive,"high") == 0) {
+	if (active) {
+		if (strcmp(inactive, "high") == 0) {
 			ns->inactive_level = SIG_HIGH;
-		} else if(strcmp(inactive,"low") == 0) {
+		} else if (strcmp(inactive, "low") == 0) {
 			ns->inactive_level = SIG_LOW;
-		} else if(strcmp(inactive,"force_high") == 0) {
+		} else if (strcmp(inactive, "force_high") == 0) {
 			ns->inactive_level = SIG_FORCE_HIGH;
-		} else if(strcmp(inactive,"force_low") == 0) {
+		} else if (strcmp(inactive, "force_low") == 0) {
 			ns->inactive_level = SIG_FORCE_LOW;
-		} else if(strcmp(inactive,"pullup") == 0) {
+		} else if (strcmp(inactive, "pullup") == 0) {
 			ns->inactive_level = SIG_PULLUP;
-		} else if(strcmp(inactive,"pulldown") == 0) {
+		} else if (strcmp(inactive, "pulldown") == 0) {
 			ns->inactive_level = SIG_PULLUP;
-		} else if(strcmp(inactive,"open") == 0) {
+		} else if (strcmp(inactive, "open") == 0) {
 			ns->inactive_level = SIG_OPEN;
 		} else {
-			fprintf(stderr,"Syntax error %s: Bad level %s\n",
-				name,active);
+			fprintf(stderr, "Syntax error %s: Bad level %s\n", name, active);
 		}
 	} else {
 		ns->inactive_level = SIG_PULLUP;
 	}
 	create_keypad_signals(ns);
-	if(keyboard) {
-		Keyboard_AddListener(keyboard,handle_key_event,ns);
+	if (keyboard) {
+		Keyboard_AddListener(keyboard, handle_key_event, ns);
 	} else {
-		fprintf(stderr,"Warning: No input source for keyboard \"%s\"\n"
-			,name);
+		fprintf(stderr, "Warning: No input source for keyboard \"%s\"\n", name);
 	}
-	fprintf(stderr,"5 Way Navi-Switch keyboard \"%s\" created\n",name);
+	fprintf(stderr, "5 Way Navi-Switch keyboard \"%s\" created\n", name);
 }
-

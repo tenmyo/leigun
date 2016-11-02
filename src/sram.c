@@ -44,39 +44,40 @@
 typedef struct SRam {
 	BusDevice bdev;
 	uint8_t *host_mem;
-	uint32_t  size;
+	uint32_t size;
 	uint32_t flags;
 } SRam;
 
 static void
-SRam_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags) 
+SRam_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
 	SRam *sram = module_owner;
-	flags &= MEM_FLAG_READABLE|MEM_FLAG_WRITABLE;
-	Mem_MapRange(base,sram->host_mem,sram->size,mapsize,flags);
+	flags &= MEM_FLAG_READABLE | MEM_FLAG_WRITABLE;
+	Mem_MapRange(base, sram->host_mem, sram->size, mapsize, flags);
 }
 
 static void
-SRam_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
-	Mem_UnMapRange(base,mapsize); 
+SRam_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
+{
+	Mem_UnMapRange(base, mapsize);
 }
 
-static uint32_t 
-parse_memsize (char *str)
+static uint32_t
+parse_memsize(char *str)
 {
 	uint32_t size;
 	char c;
-	if(sscanf(str,"%d",&size)!=1) {
+	if (sscanf(str, "%d", &size) != 1) {
 		return 0;
 	}
-	if(sscanf(str,"%d%c",&size,&c)==1) {
+	if (sscanf(str, "%d%c", &size, &c) == 1) {
 		return size;
 	}
-	switch(tolower((unsigned char)c)) {
-		case 'm':		
-			return size*1024*1024;
-		case 'k':		
-			return size*1024;
+	switch (tolower((unsigned char)c)) {
+	    case 'm':
+		    return size * 1024 * 1024;
+	    case 'k':
+		    return size * 1024;
 	}
 	return 0;
 }
@@ -87,30 +88,31 @@ parse_memsize (char *str)
  * --------------------
  */
 BusDevice *
-SRam_New(char *sram_name) {
+SRam_New(char *sram_name)
+{
 	char *sizestr;
-	uint32_t size=0;
+	uint32_t size = 0;
 	SRam *sram;
-	sizestr=Config_ReadVar(sram_name,"size");
-	if(sizestr) {
-		size=parse_memsize(sizestr);
-		if(size==0) {
-			fprintf(stderr,"SRAM bank \"%s\" not present\n",sram_name);
+	sizestr = Config_ReadVar(sram_name, "size");
+	if (sizestr) {
+		size = parse_memsize(sizestr);
+		if (size == 0) {
+			fprintf(stderr, "SRAM bank \"%s\" not present\n", sram_name);
 			return NULL;
 		}
 	} else {
-		fprintf(stderr,"SRAM bank \"%s\" not present\n",sram_name);
+		fprintf(stderr, "SRAM bank \"%s\" not present\n", sram_name);
 		return NULL;
 	}
 	sram = sg_new(SRam);
 	sram->host_mem = sg_calloc(size);
-	memset(sram->host_mem,0xff,size);
-	sram->size=size;
-	sram->bdev.first_mapping=NULL;
-	sram->bdev.Map=SRam_Map;
-	sram->bdev.UnMap=SRam_UnMap;
-	sram->bdev.owner=sram;
-	sram->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	fprintf(stderr,"SRAM bank \"%s\" with  size %.1fkB\n",sram_name,size/1024.);
+	memset(sram->host_mem, 0xff, size);
+	sram->size = size;
+	sram->bdev.first_mapping = NULL;
+	sram->bdev.Map = SRam_Map;
+	sram->bdev.UnMap = SRam_UnMap;
+	sram->bdev.owner = sram;
+	sram->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "SRAM bank \"%s\" with  size %.1fkB\n", sram_name, size / 1024.);
 	return &sram->bdev;
 }

@@ -54,42 +54,43 @@
 #endif
 
 typedef enum TapState {
-        TapExit2DR = 0x0,
-        TapExit1DR = 0x1,
-        TapShiftDR = 0x2,
-        TapPauseDR = 0x3,
-        TapSelectIRScan = 0x4,
-        TapUpdateDR = 0x5,
-        TapCaptureDR = 0x6,
-        TapSelectDRScan = 0x7,
-        TapExit2IR = 0x8,
-        TapExit1IR = 0x9,
-        TapShiftIR = 0xa,
-        TapPauseIR = 0xb,
-        TapRunTestIdle = 0xc,
-        TapUpdateIR = 0xd,
-        TapCaptureIR = 0xe,
-        TapTestLogicReset = 0xf
+	TapExit2DR = 0x0,
+	TapExit1DR = 0x1,
+	TapShiftDR = 0x2,
+	TapPauseDR = 0x3,
+	TapSelectIRScan = 0x4,
+	TapUpdateDR = 0x5,
+	TapCaptureDR = 0x6,
+	TapSelectDRScan = 0x7,
+	TapExit2IR = 0x8,
+	TapExit1IR = 0x9,
+	TapShiftIR = 0xa,
+	TapPauseIR = 0xb,
+	TapRunTestIdle = 0xc,
+	TapUpdateIR = 0xd,
+	TapCaptureIR = 0xe,
+	TapTestLogicReset = 0xf
 } TapState;
 
 __UNUSED__ static char *statenames[0x10] = {
-       "TapExit2DR",
-       "TapExit1DR",
-        "TapShiftDR",
-        "TapPauseDR",
-        "TapSelectIRScan",
-        "TapUpdateDR",
-        "TapCaptureDR",
-        "TapSelectDRScan",
-        "TapExit2IR",
-        "TapExit1IR",
-        "TapShiftIR",
-        "TapPauseIR",
-        "TapRunTestIdle",
-        "TapUpdateIR",
-        "TapCaptureIR",
-        "TapTestLogicReset",
+	"TapExit2DR",
+	"TapExit1DR",
+	"TapShiftDR",
+	"TapPauseDR",
+	"TapSelectIRScan",
+	"TapUpdateDR",
+	"TapCaptureDR",
+	"TapSelectDRScan",
+	"TapExit2IR",
+	"TapExit1IR",
+	"TapShiftIR",
+	"TapPauseIR",
+	"TapRunTestIdle",
+	"TapUpdateIR",
+	"TapCaptureIR",
+	"TapTestLogicReset",
 };
+
 typedef struct JTAG_Tap {
 	char *name;
 	JTAG_Operations *jops;
@@ -113,10 +114,10 @@ typedef struct JTAG_Tap {
  *******************************************************************************
  */
 static void
-store_shiftdata(JTAG_Tap *tap,uint8_t *data,int shiftlen) 
+store_shiftdata(JTAG_Tap * tap, uint8_t * data, int shiftlen)
 {
-	if(!data && shiftlen) {
-		fprintf(stderr,"Bug: Shiftlen %d, but no databuffer\n",shiftlen);
+	if (!data && shiftlen) {
+		fprintf(stderr, "Bug: Shiftlen %d, but no databuffer\n", shiftlen);
 		exit(1);
 	}
 	tap->shift_data = data;
@@ -131,29 +132,28 @@ store_shiftdata(JTAG_Tap *tap,uint8_t *data,int shiftlen)
  **********************************************************************************
  */
 static void
-write_tdo(JTAG_Tap *tap) 
+write_tdo(JTAG_Tap * tap)
 {
 	int bit;
 	int by;
 	int tdo;
-	if(!tap->shift_data || !tap->shiftlen) {
+	if (!tap->shift_data || !tap->shiftlen) {
 		return;
 	}
-	if(tap->bitorder == JTAG_TAP_ORDER_MSBFIRST)
-	{
+	if (tap->bitorder == JTAG_TAP_ORDER_MSBFIRST) {
 		bit = tap->shiftlen - 1;
 		by = 0;
-		bit = 7 - (bit & 7);	
+		bit = 7 - (bit & 7);
 	} else {
 		bit = tap->shiftlen - 1;
-		by = bit >> 3;	
+		by = bit >> 3;
 		bit = bit & 7;
 	}
 	tdo = (tap->shift_data[by] >> bit) & 1;
-	if(tdo) {
-		SigNode_Set(tap->tdo,SIG_HIGH);
+	if (tdo) {
+		SigNode_Set(tap->tdo, SIG_HIGH);
 	} else {
-		SigNode_Set(tap->tdo,SIG_LOW);
+		SigNode_Set(tap->tdo, SIG_LOW);
 	}
 }
 
@@ -166,247 +166,247 @@ write_tdo(JTAG_Tap *tap)
  ***********************************************************************
  */
 static void
-shiftin_tdi(JTAG_Tap *tap) 
+shiftin_tdi(JTAG_Tap * tap)
 {
-	int tdi; 
+	int tdi;
 	int bytes = (tap->shiftlen + 7) >> 3;
 	int i;
 	uint8_t carry;
-	if(!tap->shift_data || !tap->shiftlen) {
+	if (!tap->shift_data || !tap->shiftlen) {
 		return;
 	}
 	tdi = SigNode_Val(tap->tdi);
-	dbgprintf("Shiftin %d\n",tdi);
-	if(tap->bitorder == JTAG_TAP_ORDER_MSBFIRST)
-	{
-		if(tdi == SIG_HIGH) {
+	dbgprintf("Shiftin %d\n", tdi);
+	if (tap->bitorder == JTAG_TAP_ORDER_MSBFIRST) {
+		if (tdi == SIG_HIGH) {
 			carry = 0x80;
 		} else {
 			carry = 0;
 		}
-		for(i = bytes - 1; i >= 0; i--) {
+		for (i = bytes - 1; i >= 0; i--) {
 			uint8_t nextcarry;
 			nextcarry = (tap->shift_data[i] & 1) << 7;
-			tap->shift_data[i] = (tap->shift_data[i] >> 1) | carry; 
+			tap->shift_data[i] = (tap->shift_data[i] >> 1) | carry;
 			carry = nextcarry;
-		}	
+		}
 	} else {
-		if(tdi == SIG_HIGH) {
+		if (tdi == SIG_HIGH) {
 			carry = 0x1;
 		} else {
 			carry = 0;
 		}
-		for(i = 0; i < bytes;i++) {
+		for (i = 0; i < bytes; i++) {
 			uint8_t nextcarry;
 			nextcarry = (tap->shift_data[i] & 0x80) >> 7;
-			tap->shift_data[i] = (tap->shift_data[i] << 1) | carry; 
+			tap->shift_data[i] = (tap->shift_data[i] << 1) | carry;
 			carry = nextcarry;
-		}	
+		}
 	}
 }
 
-static void 
-traceNTrst(SigNode *sig,int value,void *clientData)
+static void
+traceNTrst(SigNode * sig, int value, void *clientData)
 {
 	return;
 }
 
-static void 
-traceTck(SigNode *sig,int value,void *clientData)
+static void
+traceTck(SigNode * sig, int value, void *clientData)
 {
 	JTAG_Tap *tap = (JTAG_Tap *) clientData;
 	int tms;
 	uint8_t *dataP;
 	int datalen;
-	if(value == SIG_LOW) {
+	if (value == SIG_LOW) {
 		/* 
 		 *************************************************
 		 * Sampling is done on the rising edge 
 		 * TDO changes on falling edge
 		 *************************************************
 		 */
-		switch(tap->tapState) {
-			case TapShiftIR:
-			case TapShiftDR:
-				write_tdo(tap);
-				break;
-			default:
-				break;
+		switch (tap->tapState) {
+		    case TapShiftIR:
+		    case TapShiftDR:
+			    write_tdo(tap);
+			    break;
+		    default:
+			    break;
 		}
-		return; 
+		return;
 	}
 	tms = SigNode_Val(tap->tms);
-	dbgprintf("PCLK with tms %d, tdi %d\n",tms,SigNode_Val(tap->tdi));
-	if(tms == SIG_LOW) {
-		switch(tap->tapState) {
-			case TapExit2DR:
-				tap->tapState = TapShiftDR;
-				/* write TDO */
-				break;
+	dbgprintf("PCLK with tms %d, tdi %d\n", tms, SigNode_Val(tap->tdi));
+	if (tms == SIG_LOW) {
+		switch (tap->tapState) {
+		    case TapExit2DR:
+			    tap->tapState = TapShiftDR;
+			    /* write TDO */
+			    break;
 
-			case TapExit1DR:
-				tap->tapState = TapPauseDR;
-				break;
-				
-			case TapShiftDR:
-				/* Write TDO */
-				/* Get TDI and shift in */
-				shiftin_tdi(tap);
-				break;
+		    case TapExit1DR:
+			    tap->tapState = TapPauseDR;
+			    break;
 
-			case TapPauseDR:
-				break; 
+		    case TapShiftDR:
+			    /* Write TDO */
+			    /* Get TDI and shift in */
+			    shiftin_tdi(tap);
+			    break;
 
-			case TapSelectIRScan:
-				tap->tapState = TapCaptureIR;
-				datalen = 0; /* For the not handled case */
-				tap->jops->captureIR(tap->owner,&dataP,&datalen);
-				store_shiftdata(tap,dataP,datalen);
-				break;
+		    case TapPauseDR:
+			    break;
 
-			case TapUpdateDR:
-				tap->tapState = TapRunTestIdle;
-				break;
+		    case TapSelectIRScan:
+			    tap->tapState = TapCaptureIR;
+			    datalen = 0;	/* For the not handled case */
+			    tap->jops->captureIR(tap->owner, &dataP, &datalen);
+			    store_shiftdata(tap, dataP, datalen);
+			    break;
 
-			case TapCaptureDR:
-				tap->tapState = TapShiftDR;	
-				break;
+		    case TapUpdateDR:
+			    tap->tapState = TapRunTestIdle;
+			    break;
 
-			case TapSelectDRScan:
-				tap->tapState = TapCaptureDR;	
-				datalen = 0; /* For the not handled case */
-				tap->jops->captureDR(tap->owner,&dataP,&datalen);
-				store_shiftdata(tap,dataP,datalen);
-				break;
+		    case TapCaptureDR:
+			    tap->tapState = TapShiftDR;
+			    break;
 
-			case TapExit2IR:
-				tap->tapState = TapShiftIR;
-				break;
+		    case TapSelectDRScan:
+			    tap->tapState = TapCaptureDR;
+			    datalen = 0;	/* For the not handled case */
+			    tap->jops->captureDR(tap->owner, &dataP, &datalen);
+			    store_shiftdata(tap, dataP, datalen);
+			    break;
 
-			case TapExit1IR:
-				tap->tapState = TapPauseIR;
-				break;
+		    case TapExit2IR:
+			    tap->tapState = TapShiftIR;
+			    break;
 
-			case TapShiftIR:
-				shiftin_tdi(tap);
-				break;
+		    case TapExit1IR:
+			    tap->tapState = TapPauseIR;
+			    break;
 
-			case TapPauseIR:
-				break;
+		    case TapShiftIR:
+			    shiftin_tdi(tap);
+			    break;
 
-			case TapRunTestIdle:
-				break;
+		    case TapPauseIR:
+			    break;
 
-			case TapUpdateIR:
-				tap->tapState = TapRunTestIdle;	
-				break;
+		    case TapRunTestIdle:
+			    break;
 
-			case TapCaptureIR:
-				tap->tapState = TapShiftIR;	
-				break;
+		    case TapUpdateIR:
+			    tap->tapState = TapRunTestIdle;
+			    break;
 
-			case TapTestLogicReset:
-				tap->tapState = TapRunTestIdle;
-				break;
+		    case TapCaptureIR:
+			    tap->tapState = TapShiftIR;
+			    break;
+
+		    case TapTestLogicReset:
+			    tap->tapState = TapRunTestIdle;
+			    break;
 		}
-	} else if(tms == SIG_HIGH) {
-		switch(tap->tapState) {
-			case TapExit2DR:
-				tap->tapState = TapUpdateDR;
-				tap->jops->updateDR(tap->owner);
-				break;
+	} else if (tms == SIG_HIGH) {
+		switch (tap->tapState) {
+		    case TapExit2DR:
+			    tap->tapState = TapUpdateDR;
+			    tap->jops->updateDR(tap->owner);
+			    break;
 
-			case TapExit1DR:
-				tap->tapState = TapUpdateDR;
-				tap->jops->updateDR(tap->owner);
-				break;	
+		    case TapExit1DR:
+			    tap->tapState = TapUpdateDR;
+			    tap->jops->updateDR(tap->owner);
+			    break;
 
-			case TapShiftDR:
-				tap->tapState = TapExit1DR;
-				shiftin_tdi(tap);
-				break;
+		    case TapShiftDR:
+			    tap->tapState = TapExit1DR;
+			    shiftin_tdi(tap);
+			    break;
 
-			case TapPauseDR:
-				tap->tapState = TapExit2DR;
-				break;
+		    case TapPauseDR:
+			    tap->tapState = TapExit2DR;
+			    break;
 
-			case TapSelectIRScan:
-				tap->tapState = TapTestLogicReset;
-				break;
+		    case TapSelectIRScan:
+			    tap->tapState = TapTestLogicReset;
+			    break;
 
-			case TapUpdateDR:
-				tap->tapState = TapSelectDRScan;
-				break;
+		    case TapUpdateDR:
+			    tap->tapState = TapSelectDRScan;
+			    break;
 
-			case TapCaptureDR:
-				tap->tapState = TapExit1DR;	
-				break;
+		    case TapCaptureDR:
+			    tap->tapState = TapExit1DR;
+			    break;
 
-			case TapSelectDRScan:
-				tap->tapState = TapSelectIRScan;
-				break;
+		    case TapSelectDRScan:
+			    tap->tapState = TapSelectIRScan;
+			    break;
 
-			case TapExit2IR:
-				tap->tapState = TapUpdateIR;
-				tap->jops->updateIR(tap->owner);
-				break;
+		    case TapExit2IR:
+			    tap->tapState = TapUpdateIR;
+			    tap->jops->updateIR(tap->owner);
+			    break;
 
-			case TapExit1IR:
-				tap->tapState = TapUpdateIR;
-				tap->jops->updateIR(tap->owner);
-				break;
-				
-			case TapShiftIR:
-				tap->tapState = TapExit1IR;
-				shiftin_tdi(tap);
-				break;
+		    case TapExit1IR:
+			    tap->tapState = TapUpdateIR;
+			    tap->jops->updateIR(tap->owner);
+			    break;
 
-			case TapPauseIR:
-				tap->tapState = TapExit2IR;
-				break;
+		    case TapShiftIR:
+			    tap->tapState = TapExit1IR;
+			    shiftin_tdi(tap);
+			    break;
 
-			case TapRunTestIdle:
-				tap->tapState = TapSelectDRScan;
-				break;
+		    case TapPauseIR:
+			    tap->tapState = TapExit2IR;
+			    break;
 
-			case TapUpdateIR:
-				tap->tapState = TapSelectDRScan;
-				break;
+		    case TapRunTestIdle:
+			    tap->tapState = TapSelectDRScan;
+			    break;
 
-			case TapCaptureIR:
-				tap->tapState = TapExit1IR;
-				break;
+		    case TapUpdateIR:
+			    tap->tapState = TapSelectDRScan;
+			    break;
 
-			case TapTestLogicReset:
-				break;
+		    case TapCaptureIR:
+			    tap->tapState = TapExit1IR;
+			    break;
+
+		    case TapTestLogicReset:
+			    break;
 		}
 	}
 #if 1
-	{ 
+	{
 		static int oldstate;
-		if(tap->tapState != oldstate) {
-			dbgprintf("%d->%s\n",tms,statenames[tap->tapState]);
+		if (tap->tapState != oldstate) {
+			dbgprintf("%d->%s\n", tms, statenames[tap->tapState]);
 			oldstate = tap->tapState;
 		}
 	}
 #endif
 	return;
 }
+
 void
-JTagTap_New(const char *name,JTAG_Operations *jops,void *owner) 
+JTagTap_New(const char *name, JTAG_Operations * jops, void *owner)
 {
-	JTAG_Tap *tap;	
+	JTAG_Tap *tap;
 	tap = sg_new(JTAG_Tap);
 	tap->name = sg_strdup(name);
 	tap->jops = jops;
 	tap->owner = owner;
-	tap->tdi = SigNode_New("%s.tdi",name);
-	tap->tdo = SigNode_New("%s.tdo",name);
-	tap->tms = SigNode_New("%s.tms",name);
-	tap->tck = SigNode_New("%s.tck",name);
-	tap->nTrst = SigNode_New("%s.nTrst",name);
+	tap->tdi = SigNode_New("%s.tdi", name);
+	tap->tdo = SigNode_New("%s.tdo", name);
+	tap->tms = SigNode_New("%s.tms", name);
+	tap->tck = SigNode_New("%s.tck", name);
+	tap->nTrst = SigNode_New("%s.nTrst", name);
 	tap->tapState = TapTestLogicReset;
 	tap->bitorder = jops->bitorder;
-	SigNode_Trace(tap->tck,traceTck,tap);
-	SigNode_Trace(tap->nTrst,traceNTrst,tap);
+	SigNode_Trace(tap->tck, traceTck, tap);
+	SigNode_Trace(tap->nTrst, traceNTrst, tap);
 }

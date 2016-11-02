@@ -47,16 +47,17 @@ typedef struct XMac {
 } XMac;
 
 static void
-XMac_Map(void *module_owner,uint32_t base,uint32_t mapsize,uint32_t flags) 
+XMac_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 {
 	XMac *xmac = module_owner;
-	flags &= MEM_FLAG_READABLE|MEM_FLAG_WRITABLE;
-	Mem_MapRange(base,xmac->host_mem,xmac->size,mapsize,flags);
+	flags &= MEM_FLAG_READABLE | MEM_FLAG_WRITABLE;
+	Mem_MapRange(base, xmac->host_mem, xmac->size, mapsize, flags);
 }
 
 static void
-XMac_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
-	Mem_UnMapRange(base,mapsize); 
+XMac_UnMap(void *module_owner, uint32_t base, uint32_t mapsize)
+{
+	Mem_UnMapRange(base, mapsize);
 }
 
 /*
@@ -65,16 +66,17 @@ XMac_UnMap(void *module_owner,uint32_t base,uint32_t mapsize) {
  **************************************
  */
 BusDevice *
-XMac_New(const char *name) {
+XMac_New(const char *name)
+{
 	XMac *xmac;
 	xmac = sg_new(XMac);
 	xmac->size = 0x1000;
-	xmac->host_mem=sg_calloc(xmac->size);
-	xmac->bdev.first_mapping=NULL;
-	xmac->bdev.Map=XMac_Map;
-	xmac->bdev.UnMap=XMac_UnMap;
-	xmac->bdev.owner=xmac;
-	xmac->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-	fprintf(stderr,"XPEC \"%s\" created\n",name);
+	xmac->host_mem = sg_calloc(xmac->size);
+	xmac->bdev.first_mapping = NULL;
+	xmac->bdev.Map = XMac_Map;
+	xmac->bdev.UnMap = XMac_UnMap;
+	xmac->bdev.owner = xmac;
+	xmac->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	fprintf(stderr, "XPEC \"%s\" created\n", name);
 	return &xmac->bdev;
 }

@@ -44,41 +44,41 @@
 #include <unistd.h>
 #include "dj460interp.h"
 int
-main(int argc,char *argv[]) 
+main(int argc, char *argv[])
 {
 	Dj460Interp *interp;
 	int fd;
 	int count;
 	uint8_t buf[4096];
-	int result,result2;
-	if(argc < 3) {
-		fprintf(stderr,"Syntax:\n\t%s pclfile.pcl <outputdir>\n\n",argv[0]);
+	int result, result2;
+	if (argc < 3) {
+		fprintf(stderr, "Syntax:\n\t%s pclfile.pcl <outputdir>\n\n", argv[0]);
 		exit(1);
 	}
-	fd = open(argv[1],O_RDONLY);
-	if(fd<0) {
+	fd = open(argv[1], O_RDONLY);
+	if (fd < 0) {
 		perror("can not open pcl file");
 		exit(1);
-	}	
-	
-	interp =  Dj460Interp_New(argv[2]);
+	}
+
+	interp = Dj460Interp_New(argv[2]);
 	do {
-		result = read(fd,buf,sizeof(buf));
-		if(result < 0) {
+		result = read(fd, buf, sizeof(buf));
+		if (result < 0) {
 			perror("error reading pcl file");
 			exit(1);
 		} else if (result == 0) {
 			Dj460Interp_Reset(interp);
 			exit(0);
 		}
-		for(count = 0;count<result;) {
-			result2 = Dj460Interp_Feed(interp,buf,result);
-			if(result2<=0) {
-				fprintf(stderr,"Can not feed the interpreter\n");
+		for (count = 0; count < result;) {
+			result2 = Dj460Interp_Feed(interp, buf, result);
+			if (result2 <= 0) {
+				fprintf(stderr, "Can not feed the interpreter\n");
 				break;
-			}	
-			count+=result2;
+			}
+			count += result2;
 		}
-	} while(1);
-	exit(0);	
+	} while (1);
+	exit(0);
 }

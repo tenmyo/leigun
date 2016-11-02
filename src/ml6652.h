@@ -1,1 +1,1 @@
-PHY_Device * ML6652_New(); 
+PHY_Device *ML6652_New();

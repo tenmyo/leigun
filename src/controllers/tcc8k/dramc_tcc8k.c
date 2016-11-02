@@ -6,7 +6,7 @@
 #include "cycletimer.h"
 
 #define REG0_CONTROL(base) 	((base) + 0x000)
-#define REG1_STATUS(base)	((base) + 0x004) 
+#define REG1_STATUS(base)	((base) + 0x004)
 #define REG2_REFTIMER(base)  	((base) + 0x008)
 #define REG3_WRBFTMOUT(base)	((base) + 0x00C)
 #define REG4_PDEMR(base)	((base) + 0x010)
@@ -75,438 +75,439 @@ typedef struct TCC_Dramc {
 } TCC_Dramc;
 
 static uint32_t
-control_read(void *clientData,uint32_t address,int rqlen)
+control_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-control_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+control_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-status_read(void *clientData,uint32_t address,int rqlen)
+status_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-status_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+status_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-reftimer_read(void *clientData,uint32_t address,int rqlen)
+reftimer_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-reftimer_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+reftimer_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-wrbftmout_read(void *clientData,uint32_t address,int rqlen)
+wrbftmout_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-wrbftmout_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+wrbftmout_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-pdemr_read(void *clientData,uint32_t address,int rqlen)
+pdemr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-pdemr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pdemr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-mrs_read(void *clientData,uint32_t address,int rqlen)
+mrs_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Dramc *dramc = clientData;
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return dramc->regMrs;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return dramc->regMrs;
 }
 
 static void
-mrs_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+mrs_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Dramc *dramc = clientData;
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 	dramc->regMrs = value & 0x3FF7;
 }
 
 static uint32_t
-emrs_read(void *clientData,uint32_t address,int rqlen)
+emrs_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-emrs_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+emrs_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-trcd_read(void *clientData,uint32_t address,int rqlen)
+trcd_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-trcd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+trcd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-trp_read(void *clientData,uint32_t address,int rqlen)
+trp_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-trp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+trp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-trc_read(void *clientData,uint32_t address,int rqlen)
+trc_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-trc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+trc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-tras_read(void *clientData,uint32_t address,int rqlen)
+tras_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-tras_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tras_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-cas_read(void *clientData,uint32_t address,int rqlen)
+cas_read(void *clientData, uint32_t address, int rqlen)
 {
 	TCC_Dramc *dramc = clientData;
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return dramc->regCas;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return dramc->regCas;
 }
 
 static void
-cas_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+cas_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	TCC_Dramc *dramc = clientData;
 	dramc->regCas = value & 0xf;
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-trfc_read(void *clientData,uint32_t address,int rqlen)
+trfc_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-trfc_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+trfc_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-tmrd_read(void *clientData,uint32_t address,int rqlen)
+tmrd_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-tmrd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+tmrd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-twr_read(void *clientData,uint32_t address,int rqlen)
+twr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-twr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+twr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-twtr_read(void *clientData,uint32_t address,int rqlen)
+twtr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-twtr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+twtr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-txsnr_read(void *clientData,uint32_t address,int rqlen)
+txsnr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-txsnr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+txsnr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-txsrd_read(void *clientData,uint32_t address,int rqlen)
+txsrd_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-txsrd_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+txsrd_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-txp_read(void *clientData,uint32_t address,int rqlen)
+txp_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-txp_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+txp_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-memcfg_read(void *clientData,uint32_t address,int rqlen)
+memcfg_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-memcfg_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+memcfg_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-bcr0_read(void *clientData,uint32_t address,int rqlen)
+bcr0_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-bcr0_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bcr0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-bcr1_read(void *clientData,uint32_t address,int rqlen)
+bcr1_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-bcr1_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+bcr1_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phycr_read(void *clientData,uint32_t address,int rqlen)
+phycr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phycr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phycr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phypdcr_read(void *clientData,uint32_t address,int rqlen)
+phypdcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return PHYPDCR_PDFL | PHYPDCR_PDFL;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return PHYPDCR_PDFL | PHYPDCR_PDFL;
 }
 
 static void
-phypdcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phypdcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phypdcfgr_read(void *clientData,uint32_t address,int rqlen)
+phypdcfgr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phypdcfgr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phypdcfgr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phygcr_read(void *clientData,uint32_t address,int rqlen)
+phygcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phygcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phygcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phyrslc0cr_read(void *clientData,uint32_t address,int rqlen)
+phyrslc0cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phyrslc0cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phyrslc0cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phyrslc1cr_read(void *clientData,uint32_t address,int rqlen)
+phyrslc1cr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phyrslc1cr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phyrslc1cr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static uint32_t
-phyclkdelcr_read(void *clientData,uint32_t address,int rqlen)
+phyclkdelcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phyclkdelcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phyclkdelcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
+
 static uint32_t
-phydlllckvfcr_read(void *clientData,uint32_t address,int rqlen)
+phydlllckvfcr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Register not complete\n",__func__);
-        return 0;
+	fprintf(stderr, "TCC8K DRAMC: %s: Register not complete\n", __func__);
+	return 0;
 }
 
 static void
-phydlllckvfcr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+phydlllckvfcr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"TCC8K DRAMC: %s: Write 0x%08x \n",__func__,value);
+	fprintf(stderr, "TCC8K DRAMC: %s: Write 0x%08x \n", __func__, value);
 }
 
 static void
-TDramc_Map(void *owner,uint32_t base,uint32_t mask,uint32_t flags)
+TDramc_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
-        TCC_Dramc *dramc = owner;
-	IOH_New32(REG0_CONTROL(base),control_read,control_write,dramc);
-	IOH_New32(REG1_STATUS(base),status_read,status_write,dramc);
-	IOH_New32(REG2_REFTIMER(base),reftimer_read,reftimer_write,dramc);
-	IOH_New32(REG3_WRBFTMOUT(base),wrbftmout_read,wrbftmout_write,dramc);
-	IOH_New32(REG4_PDEMR(base),pdemr_read,pdemr_write,dramc);
-	IOH_New32(REG5_MRS(base),mrs_read,mrs_write,dramc);
-	IOH_New32(REG6_EMRS(base),emrs_read,emrs_write,dramc);
-	IOH_New32(REG7_TRCD(base),trcd_read,trcd_write,dramc);
-	IOH_New32(REG8_TRP(base),trp_read,trp_write,dramc);
-	IOH_New32(REG9_TRC(base),trc_read,trc_write,dramc);
-	IOH_New32(REG10_TRAS(base),tras_read,tras_write,dramc);
-	IOH_New32(REG11_CAS(base),cas_read,cas_write,dramc);
-	IOH_New32(REG12_TRFC(base),trfc_read,trfc_write,dramc);
-	IOH_New32(REG13_TMRD(base),tmrd_read,tmrd_write,dramc);
-	IOH_New32(REG14_TWR(base),twr_read,twr_write,dramc);
-	IOH_New32(REG15_TWTR(base),twtr_read,twtr_write,dramc);
-	IOH_New32(REG16_TXSNR(base),txsnr_read,txsnr_write,dramc);
-	IOH_New32(REG17_TXSRD(base),txsrd_read,txsrd_write,dramc);
-	IOH_New32(REG18_TXP(base),txp_read,txp_write,dramc);
-	IOH_New32(REG19_MEMCFG(base),memcfg_read,memcfg_write,dramc);
-	IOH_New32(REG20_BCR0(base),bcr0_read,bcr0_write,dramc);
-	IOH_New32(REG21_BCR1(base),bcr1_read,bcr1_write,dramc);
-	IOH_New32(REG24_PHYCR(base),phycr_read,phycr_write,dramc);
-	IOH_New32(REG25_PHYPDCR(base),phypdcr_read,phypdcr_write,dramc);
-	IOH_New32(REG26_PHYPDCFGR(base),phypdcfgr_read,phypdcfgr_write,dramc);
-	IOH_New32(REG27_PHYGCR(base),phygcr_read,phygcr_write,dramc);
-	IOH_New32(REG28_PHYRSLC0CR(base),phyrslc0cr_read,phyrslc0cr_write,dramc);
-	IOH_New32(REG29_PHYRSLC1CR(base),phyrslc1cr_read,phyrslc1cr_write,dramc);
-	IOH_New32(REG36_PHYCLKDELCR(base),phyclkdelcr_read,phyclkdelcr_write,dramc);
-	IOH_New32(REG37_PHYDLLLCKVFCR(base),phydlllckvfcr_read,phydlllckvfcr_write,dramc);
+	TCC_Dramc *dramc = owner;
+	IOH_New32(REG0_CONTROL(base), control_read, control_write, dramc);
+	IOH_New32(REG1_STATUS(base), status_read, status_write, dramc);
+	IOH_New32(REG2_REFTIMER(base), reftimer_read, reftimer_write, dramc);
+	IOH_New32(REG3_WRBFTMOUT(base), wrbftmout_read, wrbftmout_write, dramc);
+	IOH_New32(REG4_PDEMR(base), pdemr_read, pdemr_write, dramc);
+	IOH_New32(REG5_MRS(base), mrs_read, mrs_write, dramc);
+	IOH_New32(REG6_EMRS(base), emrs_read, emrs_write, dramc);
+	IOH_New32(REG7_TRCD(base), trcd_read, trcd_write, dramc);
+	IOH_New32(REG8_TRP(base), trp_read, trp_write, dramc);
+	IOH_New32(REG9_TRC(base), trc_read, trc_write, dramc);
+	IOH_New32(REG10_TRAS(base), tras_read, tras_write, dramc);
+	IOH_New32(REG11_CAS(base), cas_read, cas_write, dramc);
+	IOH_New32(REG12_TRFC(base), trfc_read, trfc_write, dramc);
+	IOH_New32(REG13_TMRD(base), tmrd_read, tmrd_write, dramc);
+	IOH_New32(REG14_TWR(base), twr_read, twr_write, dramc);
+	IOH_New32(REG15_TWTR(base), twtr_read, twtr_write, dramc);
+	IOH_New32(REG16_TXSNR(base), txsnr_read, txsnr_write, dramc);
+	IOH_New32(REG17_TXSRD(base), txsrd_read, txsrd_write, dramc);
+	IOH_New32(REG18_TXP(base), txp_read, txp_write, dramc);
+	IOH_New32(REG19_MEMCFG(base), memcfg_read, memcfg_write, dramc);
+	IOH_New32(REG20_BCR0(base), bcr0_read, bcr0_write, dramc);
+	IOH_New32(REG21_BCR1(base), bcr1_read, bcr1_write, dramc);
+	IOH_New32(REG24_PHYCR(base), phycr_read, phycr_write, dramc);
+	IOH_New32(REG25_PHYPDCR(base), phypdcr_read, phypdcr_write, dramc);
+	IOH_New32(REG26_PHYPDCFGR(base), phypdcfgr_read, phypdcfgr_write, dramc);
+	IOH_New32(REG27_PHYGCR(base), phygcr_read, phygcr_write, dramc);
+	IOH_New32(REG28_PHYRSLC0CR(base), phyrslc0cr_read, phyrslc0cr_write, dramc);
+	IOH_New32(REG29_PHYRSLC1CR(base), phyrslc1cr_read, phyrslc1cr_write, dramc);
+	IOH_New32(REG36_PHYCLKDELCR(base), phyclkdelcr_read, phyclkdelcr_write, dramc);
+	IOH_New32(REG37_PHYDLLLCKVFCR(base), phydlllckvfcr_read, phydlllckvfcr_write, dramc);
 }
 
 static void
-TDramc_UnMap(void *owner,uint32_t base,uint32_t mask)
+TDramc_UnMap(void *owner, uint32_t base, uint32_t mask)
 {
 	IOH_Delete32(REG0_CONTROL(base));
 	IOH_Delete32(REG1_STATUS(base));
@@ -539,15 +540,16 @@ TDramc_UnMap(void *owner,uint32_t base,uint32_t mask)
 	IOH_Delete32(REG36_PHYCLKDELCR(base));
 	IOH_Delete32(REG37_PHYDLLLCKVFCR(base));
 }
+
 BusDevice *
-TCC8K_DramcNew(const char *name) 
+TCC8K_DramcNew(const char *name)
 {
 	TCC_Dramc *dramc = sg_new(TCC_Dramc);
-        dramc->bdev.first_mapping = NULL;
-        dramc->bdev.Map = TDramc_Map;
-        dramc->bdev.UnMap = TDramc_UnMap;
-        dramc->bdev.owner = dramc;
-        dramc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	dramc->bdev.first_mapping = NULL;
+	dramc->bdev.Map = TDramc_Map;
+	dramc->bdev.UnMap = TDramc_UnMap;
+	dramc->bdev.owner = dramc;
+	dramc->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
 	dramc->regCas = 3;
 	return &dramc->bdev;
 }

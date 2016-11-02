@@ -39,7 +39,6 @@
 #include "mmu_arm9.h"
 #include "sglib.h"
 
-
 #if 0
 #define dbgprintf(x...) dbgprintf(x)
 #else
@@ -49,58 +48,62 @@
 #define ISNEG(x) ((x)&(1<<31))
 #define ISNOTNEG(x) (!((x)&(1<<31)))
 
-
 #define CONDITION_INDEX(condition,cpsr) ((condition) | (((cpsr)>>24)&0xf0))
 
 static inline int
-thumb_check_condition(uint32_t condition) {
-        if(likely((condition & 0x0f) == 0x0e)) {
-                return 1;
-        } else {
-                return ARM_ConditionMap[CONDITION_INDEX(condition,REG_CPSR)];
-        }
+thumb_check_condition(uint32_t condition)
+{
+	if (likely((condition & 0x0f) == 0x0e)) {
+		return 1;
+	} else {
+		return ARM_ConditionMap[CONDITION_INDEX(condition, REG_CPSR)];
+	}
 }
 
 static inline uint32_t
-sub_carry(uint32_t op1,uint32_t op2,uint32_t result) {
-        if( ((ISNEG(op1) && ISNOTNEG(op2))
-          || (ISNEG(op1) && ISNOTNEG(result))
-          || (ISNOTNEG(op2) && ISNOTNEG(result)))) {
-                        return FLAG_C;
-        } else {
-                return 0;
-        }
+sub_carry(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if (((ISNEG(op1) && ISNOTNEG(op2))
+	     || (ISNEG(op1) && ISNOTNEG(result))
+	     || (ISNOTNEG(op2) && ISNOTNEG(result)))) {
+		return FLAG_C;
+	} else {
+		return 0;
+	}
 }
 
 static inline uint32_t
-add_carry(uint32_t op1,uint32_t op2,uint32_t result) {
-        if( ((ISNEG(op1) && ISNEG(op2))
-          || (ISNEG(op1) && ISNOTNEG(result))
-          || (ISNEG(op2) && ISNOTNEG(result)))) {
-                        return FLAG_C;
-        } else {
-                return 0;
-        }
+add_carry(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if (((ISNEG(op1) && ISNEG(op2))
+	     || (ISNEG(op1) && ISNOTNEG(result))
+	     || (ISNEG(op2) && ISNOTNEG(result)))) {
+		return FLAG_C;
+	} else {
+		return 0;
+	}
 }
 
 static inline uint32_t
-sub_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
-        if ((ISNOTNEG (op1) && ISNEG (op2) && ISNEG (result)) ||
-          (ISNEG (op1) && ISNOTNEG (op2) && ISNOTNEG (result))) {
-                return FLAG_V;
-        } else {
-                return 0;
-        }
+sub_overflow(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if ((ISNOTNEG(op1) && ISNEG(op2) && ISNEG(result)) ||
+	    (ISNEG(op1) && ISNOTNEG(op2) && ISNOTNEG(result))) {
+		return FLAG_V;
+	} else {
+		return 0;
+	}
 }
 
 static inline uint32_t
-add_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
-        if ((ISNEG (op1) && ISNEG (op2) && ISNOTNEG (result))
-          || (ISNOTNEG (op1) && ISNOTNEG (op2) && ISNEG (result))) {
-                return FLAG_V;
-        } else {
-                return 0;
-        }
+add_overflow(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	if ((ISNEG(op1) && ISNEG(op2) && ISNOTNEG(result))
+	    || (ISNOTNEG(op1) && ISNOTNEG(op2) && ISNEG(result))) {
+		return FLAG_V;
+	} else {
+		return 0;
+	}
 }
 
 /**
@@ -110,30 +113,31 @@ add_overflow(uint32_t op1,uint32_t op2,uint32_t result) {
  * v1
  ****************************************************************
  */
-void 
-th_adc() {
+void
+th_adc()
+{
 	uint32_t icode = ICODE;
-        int rm,rd;
-        uint32_t carry;
-        uint32_t cpsr = REG_CPSR;
-        uint32_t Rm,Rd,result;
-        rd = icode & 7;
-        rm = (icode >> 3) & 7;
-	Rm=Thumb_ReadReg(rm);
-	Rd=Thumb_ReadReg(rd);
-        carry = cpsr & FLAG_C;
-	result = Rd + Rm + !!carry; 
+	int rm, rd;
+	uint32_t carry;
+	uint32_t cpsr = REG_CPSR;
+	uint32_t Rm, Rd, result;
+	rd = icode & 7;
+	rm = (icode >> 3) & 7;
+	Rm = Thumb_ReadReg(rm);
+	Rd = Thumb_ReadReg(rd);
+	carry = cpsr & FLAG_C;
+	result = Rd + Rm + !!carry;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= add_carry(Rd,Rm,result);
-	cpsr |= add_overflow(Rd,Rm,result);
-	REG_CPSR=cpsr;
-        Thumb_WriteReg(result,rd);
-  	dbgprintf("Thumb adc not tested\n");
+	cpsr |= add_carry(Rd, Rm, result);
+	cpsr |= add_overflow(Rd, Rm, result);
+	REG_CPSR = cpsr;
+	Thumb_WriteReg(result, rd);
+	dbgprintf("Thumb adc not tested\n");
 }
 
 /**
@@ -142,29 +146,30 @@ th_adc() {
  * v1 
  *********************************************************
  */
-void 
-th_add_1() {
-        int rn,rd;
+void
+th_add_1()
+{
+	int rn, rd;
 	uint32_t icode = ICODE;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t cpsr = REG_CPSR;
 	uint32_t immed3;
-        uint32_t Rn,Rd;
-        rd = icode & 7;
-        rn = (icode >> 3) & 7;
+	uint32_t Rn, Rd;
+	rd = icode & 7;
+	rn = (icode >> 3) & 7;
 	immed3 = (ICODE >> 6) & 7;
 	Rn = Thumb_ReadReg(rn);
 	Rd = Rn + immed3;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= add_carry(Rn,immed3,Rd);
-	cpsr |= add_overflow(Rn,immed3,Rd);
-	REG_CPSR=cpsr;
-        Thumb_WriteReg(Rd,rd);
-  	dbgprintf("Thumb add_1 not tested\n");
+	cpsr |= add_carry(Rn, immed3, Rd);
+	cpsr |= add_overflow(Rn, immed3, Rd);
+	REG_CPSR = cpsr;
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb add_1 not tested\n");
 }
 
 /**
@@ -174,28 +179,29 @@ th_add_1() {
  * v1
  *************************************************************
  */
-void 
-th_add_2() {
-        int rd;
+void
+th_add_2()
+{
+	int rd;
 	uint32_t icode = ICODE;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t cpsr = REG_CPSR;
 	uint32_t immed8;
-        uint32_t Rd;
+	uint32_t Rd;
 	uint32_t result;
-	immed8 = (icode  & 0xff);
-        rd = (icode >> 8) & 7;
+	immed8 = (icode & 0xff);
+	rd = (icode >> 8) & 7;
 	Rd = Thumb_ReadReg(rd);
 	result = Rd + immed8;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= add_carry(Rd,immed8,result);
-	cpsr |= add_overflow(Rd,immed8,result);
+	cpsr |= add_carry(Rd, immed8, result);
+	cpsr |= add_overflow(Rd, immed8, result);
 	REG_CPSR = cpsr;
-        Thumb_WriteReg(result,rd);
+	Thumb_WriteReg(result, rd);
 	dbgprintf("Thumb add_2 not tested\n");
 }
 
@@ -206,28 +212,29 @@ th_add_2() {
  * v1
  *****************************************************
  */
-void 
-th_add_3() {
-        int rd,rn,rm;
+void
+th_add_3()
+{
+	int rd, rn, rm;
 	uint32_t icode = ICODE;
-        uint32_t cpsr = REG_CPSR;
-        uint32_t Rd,Rm,Rn;
-        rd = icode & 7;
+	uint32_t cpsr = REG_CPSR;
+	uint32_t Rd, Rm, Rn;
+	rd = icode & 7;
 	rn = (icode >> 3) & 7;
 	rm = (icode >> 6) & 7;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	Rd = Rn + Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= add_carry( Rn, Rm, Rd );
-	cpsr |= add_overflow( Rn, Rm, Rd );
+	cpsr |= add_carry(Rn, Rm, Rd);
+	cpsr |= add_overflow(Rn, Rm, Rd);
 	REG_CPSR = cpsr;
-        Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb add_3 not tested\n");
 }
 
@@ -238,17 +245,19 @@ th_add_3() {
  * v1
  ******************************************************* 
  */
-void th_add_4() {
-        int rd,rm;
+void
+th_add_4()
+{
+	int rd, rm;
 	uint32_t icode = ICODE;
-        uint32_t Rd,Rm;
+	uint32_t Rd, Rm;
 	uint32_t result;
-        rd = (icode & 7) | ((icode >> 4) & 8);
+	rd = (icode & 7) | ((icode >> 4) & 8);
 	rm = (icode >> 3) & 0xf;
 	Rd = Thumb_ReadHighReg(rd);
 	Rm = Thumb_ReadHighReg(rm);
 	result = Rd + Rm;
-        Thumb_WriteReg(result,rd);
+	Thumb_WriteReg(result, rd);
 	dbgprintf("Thumb add_4 not tested\n");
 }
 
@@ -259,12 +268,14 @@ void th_add_4() {
  * v1
  *****************************************************************
  */
-void th_add_5() {
-	int rd  = (ICODE >> 8) & 7;
+void
+th_add_5()
+{
+	int rd = (ICODE >> 8) & 7;
 	uint32_t immed_8 = ICODE & 0xff;
 	uint32_t result;
-	result  = (THUMB_GET_NNIA & 0xfffffffc) + (immed_8 << 2);
-        Thumb_WriteReg(result,rd);
+	result = (THUMB_GET_NNIA & 0xfffffffc) + (immed_8 << 2);
+	Thumb_WriteReg(result, rd);
 	dbgprintf("Thumb add_5 not tested\n");
 }
 
@@ -276,12 +287,14 @@ void th_add_5() {
  * v1
  *****************************************************************
  */
-void th_add_6() {
-	int rd  = (ICODE >> 8) & 7;
+void
+th_add_6()
+{
+	int rd = (ICODE >> 8) & 7;
 	uint32_t immed_8 = ICODE & 0xff;
 	uint32_t result;
-	result  = Thumb_ReadReg(13) + (immed_8 << 2);
-        Thumb_WriteReg(result,rd);
+	result = Thumb_ReadReg(13) + (immed_8 << 2);
+	Thumb_WriteReg(result, rd);
 	dbgprintf("Thumb add_6 not tested\n");
 }
 
@@ -292,13 +305,15 @@ void th_add_6() {
  * v1 
  ***************************************************************
  */
-void th_add_7() {
+void
+th_add_7()
+{
 	uint32_t immed_7 = ICODE & 0x7f;
 	uint32_t result;
-	result  = Thumb_ReadReg(13) + (immed_7 << 2);
-        Thumb_WriteReg(result,13);
+	result = Thumb_ReadReg(13) + (immed_7 << 2);
+	Thumb_WriteReg(result, 13);
 	dbgprintf("Thumb add_7 not tested\n");
-		
+
 }
 
 /**
@@ -308,23 +323,25 @@ void th_add_7() {
  * v1
  ***************************************************************
  */
-void th_and() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_and()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
+	uint32_t Rd, Rm;
 	Rm = Thumb_ReadReg(rm);
 	Rd = Thumb_ReadReg(rd);
 	Rd = Rd & Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
-  	dbgprintf("Thumb and not implemented\n");
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb and not implemented\n");
 }
 
 /**
@@ -334,38 +351,40 @@ void th_and() {
  * v1
  **************************************************************
  */
-void th_asr_1() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_asr_1()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
 	uint32_t immed_5 = (ICODE >> 6) & 0x1f;
-	int32_t Rd,Rm;
+	int32_t Rd, Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	Rm = Thumb_ReadReg(rm);
-	if(immed_5 == 0) {
-		if((Rm >> 31) & 1) {
+	if (immed_5 == 0) {
+		if ((Rm >> 31) & 1) {
 			cpsr |= FLAG_C;
 			Rd = 0xffffffff;
 		} else {
 			cpsr &= ~FLAG_C;
 			Rd = 0;
-		}	
+		}
 	} else {
-		if((Rm >> (immed_5 - 1)) & 1) {
+		if ((Rm >> (immed_5 - 1)) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
 		}
 		Rd = Rm >> immed_5;
 	}
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
-  	dbgprintf("Thumb asr_1 not implemented\n");
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb asr_1 not implemented\n");
 }
 
 /**
@@ -375,8 +394,10 @@ void th_asr_1() {
  * v1
  ****************************************************************
  */
-void th_asr_2() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_asr_2()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rs = (ICODE >> 3) & 7;
 	uint32_t Rs;
@@ -384,31 +405,31 @@ void th_asr_2() {
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	Rs = Thumb_ReadReg(rs) & 0xff;
 	Rd = Thumb_ReadReg(rd);
-	if(Rs == 0) {
+	if (Rs == 0) {
 		/* Do nothing */
-	} else if(Rs < 32) {
-		if((Rd >> (Rs - 1)) & 1) {
+	} else if (Rs < 32) {
+		if ((Rd >> (Rs - 1)) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
 		}
 		Rd = Rd >> Rs;
 	} else {
-		if((Rd >> 31) & 1) {
+		if ((Rd >> 31) & 1) {
 			Rd = 0xffffffff;
 			cpsr |= FLAG_C;
-		} else { 
+		} else {
 			Rd = 0;
 			cpsr &= ~FLAG_C;
 		}
-	}	
-	if(ISNEG(Rd)) {
+	}
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb asr_2 not tested\n");
 }
 
@@ -419,16 +440,18 @@ void th_asr_2() {
  * v1
  *********************************************************
  */
-void th_b_1() {
+void
+th_b_1()
+{
 	int32_t offset;
 	uint32_t pc;
 	int cond = (ICODE >> 8) & 0xf;
-	if(thumb_check_condition(cond)) {
-		offset = ((int32_t)(int8_t)(ICODE & 0xff)) << 1;
+	if (thumb_check_condition(cond)) {
+		offset = ((int32_t) (int8_t) (ICODE & 0xff)) << 1;
 		pc = THUMB_GET_NNIA + offset;
 		ARM_SET_NIA(pc);
-        }
-  	dbgprintf("Thumb b_1 not tested\n");
+	}
+	dbgprintf("Thumb b_1 not tested\n");
 }
 
 /**
@@ -438,10 +461,12 @@ void th_b_1() {
  * v1
  *************************************************************
  */
-void th_b_2() {
+void
+th_b_2()
+{
 	int32_t immed;
-	immed = ((int32_t)((ICODE & 0x7ff) << 21)) >> 20; 
-	ARM_SET_NIA( THUMB_GET_NNIA + immed );	
+	immed = ((int32_t) ((ICODE & 0x7ff) << 21)) >> 20;
+	ARM_SET_NIA(THUMB_GET_NNIA + immed);
 	dbgprintf("Thumb b_2 not tested\n");
 }
 
@@ -452,26 +477,30 @@ void th_b_2() {
  * v1
  *********************************************************
  */
-void th_bic() {
+void
+th_bic()
+{
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t Rd, Rm;
+	uint32_t cpsr = REG_CPSR;
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	Rd = Thumb_ReadReg(rd);
 	Rm = Thumb_ReadReg(rm);
 	Rd = Rd & ~Rm;
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
-  	dbgprintf("Thumb bic not implemented\n");
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb bic not implemented\n");
 }
 
-void th_bkpt() {
+void
+th_bkpt()
+{
 	ARM_Break();
 }
 
@@ -482,34 +511,36 @@ void th_bkpt() {
  * v1
  *************************************************************************
  */
-void th_bl_blx() {
+void
+th_bl_blx()
+{
 	uint32_t icode = ICODE;
 	int h = (icode >> 11) & 3;
 	int32_t offset;
 	uint32_t lr;
-	switch(h) {
-		case 2:
-			offset = ((int32_t)((icode & 0x7ff) << 21)) >> 9;
-  			REG_LR = THUMB_GET_NNIA + offset;
-			break;
+	switch (h) {
+	    case 2:
+		    offset = ((int32_t) ((icode & 0x7ff) << 21)) >> 9;
+		    REG_LR = THUMB_GET_NNIA + offset;
+		    break;
 
-		case 3:
-			lr = REG_LR;
-			offset = (icode & 0x7ff);
-			REG_LR = ARM_NIA  | 1;
-			ARM_SET_NIA(lr + (offset << 1)); 
-			break;
+	    case 3:
+		    lr = REG_LR;
+		    offset = (icode & 0x7ff);
+		    REG_LR = ARM_NIA | 1;
+		    ARM_SET_NIA(lr + (offset << 1));
+		    break;
 
-		case 1:
-			lr = REG_LR;
-			offset = (icode & 0x7ff);
-			REG_LR = ARM_NIA | 1;
-			ARM_SET_NIA((lr + (offset << 1)) & 0xfffffffc); 
-			REG_CPSR &= ~FLAG_T;
-			ARM_RestartIdecoder();
-			break;
+	    case 1:
+		    lr = REG_LR;
+		    offset = (icode & 0x7ff);
+		    REG_LR = ARM_NIA | 1;
+		    ARM_SET_NIA((lr + (offset << 1)) & 0xfffffffc);
+		    REG_CPSR &= ~FLAG_T;
+		    ARM_RestartIdecoder();
+		    break;
 	}
-  	dbgprintf("Thumb bl_blx\n");
+	dbgprintf("Thumb bl_blx\n");
 }
 
 /**
@@ -519,17 +550,19 @@ void th_bl_blx() {
  * v1
  ***********************************************************
  */
-void th_blx_2() {
+void
+th_blx_2()
+{
 	int rm;
 	uint32_t Rm;
 	uint32_t icode = ICODE;
 	rm = (icode >> 3) & 0xf;
 	/* Use of R15 is illegal */
 	Rm = Thumb_ReadReg(rm);
-	REG_LR = ARM_NIA | 1; 
+	REG_LR = ARM_NIA | 1;
 	ARM_SET_NIA(Rm & 0xfffffffe);
 	dbgprintf("Thumb blx_2\n");
-	if(!(Rm & 1)) {
+	if (!(Rm & 1)) {
 		/* Leave Thumb mode */
 		REG_CPSR &= ~FLAG_T;
 		ARM_RestartIdecoder();
@@ -544,20 +577,23 @@ void th_blx_2() {
  * v1
  **********************************************************
  */
-void th_bx() {
+void
+th_bx()
+{
 	int rm;
 	uint32_t Rm;
 	uint32_t icode = ICODE;
 	rm = (icode >> 3) & 0xf;
 	Rm = Thumb_ReadHighReg(rm);
 	ARM_SET_NIA(Rm & 0xfffffffe);
-	dbgprintf("BX to reg %d: %08x\n",rm,Rm);
-	if(!(Rm & 1)) {
+	dbgprintf("BX to reg %d: %08x\n", rm, Rm);
+	if (!(Rm & 1)) {
 		/* Leave Thumb mode */
 		REG_CPSR &= ~FLAG_T;
 		ARM_RestartIdecoder();
 	}
 }
+
 /**
  ********************************************************
  * \fn void th_cmn(); 
@@ -565,24 +601,26 @@ void th_bx() {
  * v1
  ********************************************************
  */
-void th_cmn() {
+void
+th_cmn()
+{
 	int rn = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rn = Thumb_ReadReg(rn);	
-	uint32_t Rm = Thumb_ReadReg(rm);	
+	uint32_t Rn = Thumb_ReadReg(rn);
+	uint32_t Rm = Thumb_ReadReg(rm);
 	uint32_t cpsr = REG_CPSR;
 	uint32_t result;
 	result = Rn + Rm;
 
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= add_carry(Rn,Rm,result);
-	cpsr |= add_overflow(Rn,Rm,result);
-	REG_CPSR=cpsr;
+	cpsr |= add_carry(Rn, Rm, result);
+	cpsr |= add_overflow(Rn, Rm, result);
+	REG_CPSR = cpsr;
 	dbgprintf("Thumb cmn not tested\n");
 }
 
@@ -593,22 +631,24 @@ void th_cmn() {
  * v1
  ********************************************************
  */
-void th_cmp_1() {
+void
+th_cmp_1()
+{
 	int rn = (ICODE >> 8) & 0x7;
 	uint32_t immed_8 = ICODE & 0xff;
-	uint32_t Rn,result;	
+	uint32_t Rn, result;
 	uint32_t cpsr = REG_CPSR;
 	Rn = Thumb_ReadReg(rn);
-	result = Rn - immed_8;	
+	result = Rn - immed_8;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rn,immed_8,result);
-	cpsr |= sub_overflow(Rn,immed_8,result);
-	REG_CPSR=cpsr;
+	cpsr |= sub_carry(Rn, immed_8, result);
+	cpsr |= sub_overflow(Rn, immed_8, result);
+	REG_CPSR = cpsr;
 	dbgprintf("Thumb cmp_1 not tested\n");
 }
 
@@ -619,25 +659,27 @@ void th_cmp_1() {
  * v1
  *********************************************************
  */
-void th_cmp_2() {
+void
+th_cmp_2()
+{
 	int rn = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	uint32_t result;
 	uint32_t cpsr = REG_CPSR;
 	Rm = Thumb_ReadReg(rm);
 	Rn = Thumb_ReadReg(rn);
 	result = Rn - Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rn,Rm,result);
-	cpsr |= sub_overflow(Rn,Rm,result);
+	cpsr |= sub_carry(Rn, Rm, result);
+	cpsr |= sub_overflow(Rn, Rm, result);
 	REG_CPSR = cpsr;
-  	dbgprintf("Thumb cmp_2 not tested\n");
+	dbgprintf("Thumb cmp_2 not tested\n");
 }
 
 /**
@@ -647,23 +689,25 @@ void th_cmp_2() {
  * v1
  *******************************************************
  */
-void th_cmp_3() {
+void
+th_cmp_3()
+{
 	int rn = (ICODE & 7) | ((ICODE >> 4) & 0x8);
 	int rm = (ICODE >> 3) & 0xf;
-	uint32_t Rm,Rn;
+	uint32_t Rm, Rn;
 	uint32_t result;
 	uint32_t cpsr = REG_CPSR;
 	Rm = Thumb_ReadHighReg(rm);
 	Rn = Thumb_ReadHighReg(rn);
 	result = Rn - Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rn,Rm,result);
-	cpsr |= sub_overflow(Rn,Rm,result);
+	cpsr |= sub_carry(Rn, Rm, result);
+	cpsr |= sub_overflow(Rn, Rm, result);
 	REG_CPSR = cpsr;
 	dbgprintf("Thumb cmp_3 not tested\n");
 }
@@ -675,22 +719,24 @@ void th_cmp_3() {
  * v1
  ******************************************************
  */
-void th_eor() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_eor()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
+	uint32_t Rd, Rm;
 	Rm = Thumb_ReadReg(rm);
 	Rd = Thumb_ReadReg(rd);
 	Rd = Rd ^ Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb eor not tested\n");
 }
 
@@ -703,49 +749,53 @@ void th_eor() {
  * v1
  *****************************************************************
  */
-void th_ldmia_base_restored() {
+void
+th_ldmia_base_restored()
+{
 	uint32_t register_list = (ICODE & 0xff);
 	int rn = (ICODE >> 8) & 0x7;
 	int i;
-	uint32_t Rn,value;
-	uint32_t Rn_new = 0; /* Make compiler happy */
+	uint32_t Rn, value;
+	uint32_t Rn_new = 0;	/* Make compiler happy */
 	Rn = Thumb_ReadReg(rn);
-	for(i = 0;i < 8; i++) {
-		if(register_list & (1 << i)) {
-			if(i == rn) {
-				Rn_new = MMU_Read32(Rn);	
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
+			if (i == rn) {
+				Rn_new = MMU_Read32(Rn);
 			} else {
-				value = MMU_Read32(Rn); 
-				Thumb_WriteReg(value,i);
+				value = MMU_Read32(Rn);
+				Thumb_WriteReg(value, i);
 			}
 			Rn += 4;
 		}
-	}	
-	if(register_list & (1 << rn)) {
-		Thumb_WriteReg(Rn_new,rn);		
+	}
+	if (register_list & (1 << rn)) {
+		Thumb_WriteReg(Rn_new, rn);
 	} else {
-		Thumb_WriteReg(Rn,rn);
+		Thumb_WriteReg(Rn, rn);
 	}
 	dbgprintf("Thumb ldmia base restored not tested\n");
 }
 
-void th_ldmia_base_updated() {
+void
+th_ldmia_base_updated()
+{
 	uint32_t register_list = (ICODE & 0xff);
 	int rn = (ICODE >> 8) & 0x7;
 	int i;
-	uint32_t Rn,value;
+	uint32_t Rn, value;
 	Rn = Thumb_ReadReg(rn);
-	for(i = 0;i < 8; i++) {
-		if(register_list & (1 << i)) {
-			value = MMU_Read32(Rn); 
-			Thumb_WriteReg(value,i);
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
+			value = MMU_Read32(Rn);
+			Thumb_WriteReg(value, i);
 			Rn += 4;
 			/* is this done every step or all at once ? */
-			if(!(register_list & ( 1 << rn))) {
-				Thumb_WriteReg(Rn,rn);
+			if (!(register_list & (1 << rn))) {
+				Thumb_WriteReg(Rn, rn);
 			}
 		}
-	}	
+	}
 	dbgprintf("Thumb ldmia base_updated not tested\n");
 }
 
@@ -756,17 +806,19 @@ void th_ldmia_base_updated() {
  * v1
  *************************************************************
  */
-void th_ldr_1() {
+void
+th_ldr_1()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
-	uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	uint32_t immed5 = (ICODE >> 6) & 0x1f;
 	uint32_t addr;
 	Rn = Thumb_ReadReg(rn);
 	addr = Rn + (immed5 << 2);
-	if(likely((addr & 3) == 0)) {
+	if (likely((addr & 3) == 0)) {
 		Rd = MMU_Read32(addr);
-		Thumb_WriteReg(Rd,rd);
+		Thumb_WriteReg(Rd, rd);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -781,22 +833,25 @@ void th_ldr_1() {
  * v1
  ***********************************************************
  */
-void th_ldr_2() {
+void
+th_ldr_2()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
-	if(likely((addr & 3) == 0)) {
+	if (likely((addr & 3) == 0)) {
 		Rd = MMU_Read32(addr);
-		Thumb_WriteReg(Rd,rd);
+		Thumb_WriteReg(Rd, rd);
 	} else {
 		MMU_AlignmentException(addr);
 	}
-        dbgprintf("Thumb ldr_2 not tested\n");
+	dbgprintf("Thumb ldr_2 not tested\n");
 }
+
 /**
  ***************************************************************
  * \fn void th_ldr_3(); 
@@ -804,13 +859,15 @@ void th_ldr_2() {
  * v1
  ***************************************************************
  */
-void th_ldr_3() {
+void
+th_ldr_3()
+{
 	int rd = (ICODE >> 8) & 7;
 	uint32_t immed_8 = (ICODE & 0xff);
-	uint32_t Rd,addr;
+	uint32_t Rd, addr;
 	addr = (THUMB_GET_NNIA & ~UINT32_C(3)) + (immed_8 << 2);
 	Rd = MMU_Read32(addr);
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb ldr_3 not tested\n");
 }
 
@@ -821,14 +878,16 @@ void th_ldr_3() {
  * v1
  **************************************************************
  */
-void th_ldr_4() {
+void
+th_ldr_4()
+{
 	int rd = (ICODE >> 8) & 7;
 	uint32_t immed_8 = (ICODE & 0xff);
-	uint32_t Rd,addr;
+	uint32_t Rd, addr;
 	addr = Thumb_ReadReg(13) + (immed_8 << 2);
-	if(likely((addr & 3) == 0)) {
+	if (likely((addr & 3) == 0)) {
 		Rd = MMU_Read32(addr);
-		Thumb_WriteReg(Rd,rd);
+		Thumb_WriteReg(Rd, rd);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -843,17 +902,19 @@ void th_ldr_4() {
  * v1
  *************************************************************
  */
-void th_ldrb_1() {
+void
+th_ldrb_1()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
-	uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	uint32_t immed5 = (ICODE >> 6) & 0x1f;
 	uint32_t addr;
 	Rn = Thumb_ReadReg(rn);
 	addr = Rn + immed5;
 	Rd = MMU_Read8(addr);
-	Thumb_WriteReg(Rd,rd);
-  	dbgprintf("Thumb ldrb_1 not tested\n");
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb ldrb_1 not tested\n");
 }
 
 /**
@@ -864,17 +925,19 @@ void th_ldrb_1() {
  * v1
  ************************************************************
  */
-void th_ldrb_2() {
+void
+th_ldrb_2()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
 	Rd = MMU_Read8(addr);
-	Thumb_WriteReg(Rd,rd);
-  	dbgprintf("Thumb ldrb_2 not tested\n");
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb ldrb_2 not tested\n");
 }
 
 /**
@@ -886,17 +949,19 @@ void th_ldrb_2() {
  * v1
  ************************************************************
  */
-void th_ldrh_1() {
+void
+th_ldrh_1()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
-	uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	uint32_t immed5 = (ICODE >> 6) & 0x1f;
 	uint32_t addr;
 	Rn = Thumb_ReadReg(rn);
 	addr = Rn + (immed5 << 1);
-	if(likely((addr & 1) == 0)) {
+	if (likely((addr & 1) == 0)) {
 		Rd = MMU_Read16(addr);
-		Thumb_WriteReg(Rd,rd);
+		Thumb_WriteReg(Rd, rd);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -910,17 +975,19 @@ void th_ldrh_1() {
  * of two register values. 
  ***********************************************************
  */
-void th_ldrh_2() {
+void
+th_ldrh_2()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
-	if(likely((addr & 1) == 0)) {
+	if (likely((addr & 1) == 0)) {
 		Rd = MMU_Read16(addr);
-		Thumb_WriteReg(Rd,rd);
+		Thumb_WriteReg(Rd, rd);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -936,16 +1003,18 @@ void th_ldrh_2() {
  * v1
  *****************************************************************
  */
-void th_ldrsb() {
+void
+th_ldrsb()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
-	Rd = (int32_t)(int8_t)MMU_Read8(addr);
-	Thumb_WriteReg(Rd,rd);
+	Rd = (int32_t) (int8_t) MMU_Read8(addr);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb ldrsb not tested\n");
 }
 
@@ -958,17 +1027,19 @@ void th_ldrsb() {
  * v1
  ****************************************************************
  */
-void th_ldrsh() {
+void
+th_ldrsh()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
-	if(likely((addr & 1) == 0)) {
-		Rd = (int32_t)(int16_t)MMU_Read16(addr);
-		Thumb_WriteReg(Rd,rd);
+	if (likely((addr & 1) == 0)) {
+		Rd = (int32_t) (int16_t) MMU_Read16(addr);
+		Thumb_WriteReg(Rd, rd);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -982,30 +1053,33 @@ void th_ldrsh() {
  * v1
  *******************************************************************
  */
-void th_lsl_1() {
+void
+th_lsl_1()
+{
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
 	uint32_t immed_5 = (ICODE >> 6) & 0x1f;
-	uint32_t Rd,Rm;
+	uint32_t Rd, Rm;
 	uint32_t cpsr = REG_CPSR;
 	Rm = Thumb_ReadReg(rm);
 	Rd = Rm << immed_5;
-	if(immed_5 != 0) {
-		if((Rm >> (32 - immed_5)) & 1) {
+	if (immed_5 != 0) {
+		if ((Rm >> (32 - immed_5)) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
 		}
 	}
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	cpsr &= ~(FLAG_N | FLAG_Z);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else  if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	dbgprintf("Thumb lsl_1: rd %d, rm %d, imm %d result %08x->%08x not tested\n",rd,rm,immed_5,Rm,Rd);
+	dbgprintf("Thumb lsl_1: rd %d, rm %d, imm %d result %08x->%08x not tested\n", rd, rm,
+		  immed_5, Rm, Rd);
 }
 
 /**
@@ -1016,8 +1090,10 @@ void th_lsl_1() {
  * v1
  ***********************************************************************
  */
-void th_lsl_2() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_lsl_2()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rs = (ICODE >> 3) & 7;
 	uint32_t Rslow;
@@ -1025,17 +1101,17 @@ void th_lsl_2() {
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	Rslow = Thumb_ReadReg(rs) & 0xff;
 	Rd = Thumb_ReadReg(rd);
-	if(Rslow == 0) {
+	if (Rslow == 0) {
 		/* Do nothing */
-	} else if(Rslow < 32) {
-		if((Rd >> (32 - Rslow)) & 1) {
+	} else if (Rslow < 32) {
+		if ((Rd >> (32 - Rslow)) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
 		}
 		Rd = Rd << Rslow;
-	} else if(Rslow == 32) {
-		if(Rd & 1) {
+	} else if (Rslow == 32) {
+		if (Rd & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
@@ -1044,14 +1120,14 @@ void th_lsl_2() {
 	} else {
 		cpsr &= ~FLAG_C;
 		Rd = 0;
-	}	
-	if(ISNEG(Rd)) {
+	}
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb lsl_2 not tested\n");
 }
 
@@ -1062,36 +1138,38 @@ void th_lsl_2() {
  * v1 
  ******************************************************************
  */
-void th_lsr_1() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_lsr_1()
+{
+	uint32_t cpsr = REG_CPSR;
 	uint32_t immed_5 = (ICODE >> 6) & 0x1f;
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
+	uint32_t Rd, Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	Rm = Thumb_ReadReg(rm);
-	if(immed_5 == 0) {
-		if((Rm >> 31) & 1) {
+	if (immed_5 == 0) {
+		if ((Rm >> 31) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
-		}	
+		}
 		Rd = 0;
 	} else {
-		if((Rm >> (immed_5 - 1)) & 1) {
+		if ((Rm >> (immed_5 - 1)) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
 		}
 		Rd = Rm >> immed_5;
 	}
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb lsr_1 not tested\n");
 }
 
@@ -1104,8 +1182,10 @@ void th_lsr_1() {
  * v1
  *************************************************************
  */
-void th_lsr_2() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_lsr_2()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rs = (ICODE >> 3) & 7;
 	uint32_t Rslow;
@@ -1113,17 +1193,17 @@ void th_lsr_2() {
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	Rslow = Thumb_ReadReg(rs) & 0xff;
 	Rd = Thumb_ReadReg(rd);
-	if(Rslow == 0) {
+	if (Rslow == 0) {
 		/* Do nothing */
-	} else if(Rslow < 32) {
-		if((Rd >> (Rslow - 1)) & 1) {
+	} else if (Rslow < 32) {
+		if ((Rd >> (Rslow - 1)) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
 		}
 		Rd = Rd >> Rslow;
 	} else if (Rslow == 32) {
-		if((Rd >> 31) & 1) {
+		if ((Rd >> 31) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
@@ -1132,14 +1212,14 @@ void th_lsr_2() {
 	} else {
 		cpsr &= ~FLAG_C;
 		Rd = 0;
-	}	
-	if(ISNEG(Rd)) {
+	}
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb lsr_2 not tested\n");
 }
 
@@ -1150,20 +1230,22 @@ void th_lsr_2() {
  * v1
  ************************************************************
  */
-void th_mov_1() {
+void
+th_mov_1()
+{
 	uint32_t immed_8 = ICODE & 0xff;
 	int rd = (ICODE >> 8) & 7;
-	uint32_t cpsr = REG_CPSR;	
+	uint32_t cpsr = REG_CPSR;
 	uint32_t Rd;
 	Rd = immed_8;
 	cpsr &= ~(FLAG_N | FLAG_Z);
 	/* Can not be negative */
-	if(Rd == 0) {
+	if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
-	dbgprintf("Thumb mov_1: written 0x%02x to R%d\n",Rd,rd);
+	Thumb_WriteReg(Rd, rd);
+	dbgprintf("Thumb mov_1: written 0x%02x to R%d\n", Rd, rd);
 }
 
 /*
@@ -1174,10 +1256,12 @@ void th_mov_1() {
  * v1
  *******************************************************************
  */
-void th_mov_3() {
+void
+th_mov_3()
+{
 	int rd = (ICODE & 7) | ((ICODE >> 4) & 8);
 	int rm = (ICODE >> 3) & 0xf;
-	Thumb_WriteReg(Thumb_ReadHighReg(rm),rd);
+	Thumb_WriteReg(Thumb_ReadHighReg(rm), rd);
 	dbgprintf("Thumb mov_3 not tested\n");
 }
 
@@ -1188,23 +1272,25 @@ void th_mov_3() {
  * v1
  ********************************************************************
  */
-void th_mul() {
-        int rd = ICODE & 7;
+void
+th_mul()
+{
+	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-        uint32_t Rm , Rd;
-        uint32_t cpsr = REG_CPSR;
-        Rm = Thumb_ReadReg(rm);
+	uint32_t Rm, Rd;
+	uint32_t cpsr = REG_CPSR;
+	Rm = Thumb_ReadReg(rm);
 	Rd = Thumb_ReadReg(rd);
-        Rd = Rd * Rm;
-        Thumb_WriteReg(Rd,rd);
-	cpsr&= ~(FLAG_N | FLAG_Z );
-	if(ISNEG(Rd)) {
+	Rd = Rd * Rm;
+	Thumb_WriteReg(Rd, rd);
+	cpsr &= ~(FLAG_N | FLAG_Z);
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-  	dbgprintf("Thumb mul not tested\n");
+	dbgprintf("Thumb mul not tested\n");
 }
 
 /**
@@ -1214,23 +1300,26 @@ void th_mul() {
  * v1
  ************************************************************
  */
-void th_mvn() {
+void
+th_mvn()
+{
 	int rd = (ICODE & 7);
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t Rd, Rm;
+	uint32_t cpsr = REG_CPSR;
 	Rm = Thumb_ReadReg(rm);
 	Rd = ~Rm;
-	Thumb_WriteReg(Rd,rd);
-	cpsr &= ~(FLAG_N | FLAG_Z );
-	if(ISNEG(Rd)) {
+	Thumb_WriteReg(Rd, rd);
+	cpsr &= ~(FLAG_N | FLAG_Z);
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
 	dbgprintf("Thumb mvn not tested\n");
 }
+
 /**
  *******************************************************************
  * \fn void th_neg();
@@ -1239,22 +1328,24 @@ void th_mvn() {
  * v1
  *******************************************************************
  */
-void th_neg() {
+void
+th_neg()
+{
 	int rd = (ICODE & 7);
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t Rd, Rm;
+	uint32_t cpsr = REG_CPSR;
 	Rm = Thumb_ReadReg(rm);
 	Rd = 0 - Rm;
-	Thumb_WriteReg(Rd,rd);
-	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V );
-	if(ISNEG(Rd)) {
+	Thumb_WriteReg(Rd, rd);
+	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(0,Rm,Rd);
-	cpsr |= sub_overflow(0,Rm,Rd);
+	cpsr |= sub_carry(0, Rm, Rd);
+	cpsr |= sub_overflow(0, Rm, Rd);
 	REG_CPSR = cpsr;
 	dbgprintf("Thumb neg not implemented\n");
 }
@@ -1266,22 +1357,24 @@ void th_neg() {
  * v1
  ********************************************************************
  */
-void th_orr() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_orr()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rd = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rd,Rm;
+	uint32_t Rd, Rm;
 	Rm = Thumb_ReadReg(rm);
 	Rd = Thumb_ReadReg(rd);
 	Rd = Rd | Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb orr not tested\n");
 }
 
@@ -1292,25 +1385,27 @@ void th_orr() {
  * v1
  *****************************************************************
  */
-void th_pop_archv5() {
+void
+th_pop_archv5()
+{
 	uint32_t register_list = (ICODE & 0xff);
 	int R = !!(ICODE & 0x100);
 	int i;
 	uint32_t value;
 	uint32_t addr = Thumb_ReadReg(13);
-	for(i = 0; i < 8; i++ ) {
-		if(register_list & (1 << i)) {
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
 			value = MMU_Read32(addr);
 			//dbgprintf("Popped R%d from %08x: %08x\n",i,addr,value);
-			Thumb_WriteReg(value,i);
+			Thumb_WriteReg(value, i);
 			addr += 4;
 		}
-	}	
-	if(R) {
+	}
+	if (R) {
 		value = MMU_Read32(addr);
-		addr+=4;
-		Thumb_WriteReg(addr,13);
-		if(value & 1) {
+		addr += 4;
+		Thumb_WriteReg(addr, 13);
+		if (value & 1) {
 			ARM_SET_NIA(value & 0xfffffffe);
 			/* Flag T is already set */
 		} else {
@@ -1320,9 +1415,9 @@ void th_pop_archv5() {
 			ARM_RestartIdecoder();
 		}
 	} else {
-		Thumb_WriteReg(addr,13);
+		Thumb_WriteReg(addr, 13);
 	}
-  	dbgprintf("Thumb pop not implemented\n");
+	dbgprintf("Thumb pop not implemented\n");
 }
 
 /*
@@ -1330,27 +1425,29 @@ void th_pop_archv5() {
  * No influence on T flag in arch < v4
  ************************************************
  */
-void th_pop_archv4() {
+void
+th_pop_archv4()
+{
 	uint32_t register_list = (ICODE & 0xff);
 	int R = !!(ICODE & 0x100);
 	int i;
 	uint32_t value;
 	uint32_t addr = Thumb_ReadReg(13);
-	for(i = 0; i < 8; i++ ) {
-		if(register_list & (1 << i)) {
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
 			value = MMU_Read32(addr);
 			addr += 4;
 		}
-	}	
-	if(R) {
+	}
+	if (R) {
 		value = MMU_Read32(addr);
-		addr+=4;
-		Thumb_WriteReg(addr,13);
+		addr += 4;
+		Thumb_WriteReg(addr, 13);
 		ARM_SET_NIA(value & 0xfffffffe);
 	} else {
-		Thumb_WriteReg(addr,13);
+		Thumb_WriteReg(addr, 13);
 	}
-  	dbgprintf("Thumb pop not implemented\n");
+	dbgprintf("Thumb pop not implemented\n");
 }
 
 /**
@@ -1359,7 +1456,9 @@ void th_pop_archv4() {
  * Push a set of registers onto the stack. 
  *************************************************************
  */
-void th_push() {
+void
+th_push()
+{
 	uint32_t register_list = (ICODE & 0xff);
 	uint32_t Sp;
 	uint32_t addr;
@@ -1369,27 +1468,27 @@ void th_push() {
 	/* Shity method for counting bits */
 	Sp -= SGLib_OnecountU8(register_list) << 2;
 #if 0
-	for(i = 0; i < 8; i++) {
-		if(register_list & (1 << i)) {
-			Sp -= 4;			
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
+			Sp -= 4;
 		}
 	}
 #endif
-	if(R) {
+	if (R) {
 		Sp -= 4;
 	}
 	addr = Sp;
-	for(i = 0; i < 8; i++) {
-		if(register_list & (1 << i)) {
-			MMU_Write32(Thumb_ReadReg(i),addr);		
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
+			MMU_Write32(Thumb_ReadReg(i), addr);
 			addr += 4;
 		}
 	}
-	if(R) {
-		MMU_Write32(Thumb_ReadReg(14),addr);		
+	if (R) {
+		MMU_Write32(Thumb_ReadReg(14), addr);
 		//dbgprintf("Pushed LR to addr %08x\n",addr);
 	}
-	Thumb_WriteReg(Sp,13);
+	Thumb_WriteReg(Sp, 13);
 	dbgprintf("Thumb push not tested\n");
 }
 
@@ -1400,37 +1499,39 @@ void th_push() {
  * v1
  ***************************************************************
  */
-void th_ror() {
+void
+th_ror()
+{
 	int rd = ICODE & 7;
 	int rs = (ICODE >> 3) & 7;
-	uint32_t Rd,Rs;
+	uint32_t Rd, Rs;
 	uint32_t cpsr = REG_CPSR;
 	Rd = Thumb_ReadReg(rd);
 	Rs = Thumb_ReadReg(rs);
-	if((Rs & 0xff) == 0) {
+	if ((Rs & 0xff) == 0) {
 		/* Do nothing */
-	} else if((Rs & 0x1f) == 0) {
-		if((Rd >> 31) & 1) {
-			cpsr |= FLAG_C;	
-		} else {
-			cpsr &= ~FLAG_C;	
-		}
-	} else {
-		if((Rd >> ((Rs & 0x1f) - 1)) & 1) {
+	} else if ((Rs & 0x1f) == 0) {
+		if ((Rd >> 31) & 1) {
 			cpsr |= FLAG_C;
 		} else {
 			cpsr &= ~FLAG_C;
-		}	
+		}
+	} else {
+		if ((Rd >> ((Rs & 0x1f) - 1)) & 1) {
+			cpsr |= FLAG_C;
+		} else {
+			cpsr &= ~FLAG_C;
+		}
 		Rd = (Rd >> (Rs & 0x1f)) | (Rd << (32 - (Rs & 0x1f)));
 	}
 	cpsr &= ~(FLAG_N | FLAG_Z);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
-	Thumb_WriteReg(Rd,rd);
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb ror not tested\n");
 }
 
@@ -1441,28 +1542,30 @@ void th_ror() {
  * v1
  ***********************************************************
  */
-void th_sbc() {
+void
+th_sbc()
+{
 	uint32_t icode = ICODE;
-	int rm,rd;
+	int rm, rd;
 	uint32_t carry;
 	uint32_t cpsr = REG_CPSR;
-	uint32_t Rm,Rd,result;
+	uint32_t Rm, Rd, result;
 	rm = (icode >> 3) & 0x7;
 	rd = icode & 0x7;
 	Rm = Thumb_ReadReg(rm);
 	Rd = Thumb_ReadReg(rd);
 	carry = cpsr & FLAG_C;
-	result = Rd - Rm - !carry; 
+	result = Rd - Rm - !carry;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rd,Rm,result);
-	cpsr |= sub_overflow(Rd,Rm,result);
-	REG_CPSR=cpsr;
-	Thumb_WriteReg(result,rd);
+	cpsr |= sub_carry(Rd, Rm, result);
+	cpsr |= sub_overflow(Rd, Rm, result);
+	REG_CPSR = cpsr;
+	Thumb_WriteReg(result, rd);
 	dbgprintf("Thumb sbc not tested\n");
 }
 
@@ -1475,19 +1578,21 @@ void th_sbc() {
  * v1
  ************************************************************
  */
-void th_stmia_base_restored() {
+void
+th_stmia_base_restored()
+{
 	int rn = (ICODE >> 8) & 7;
 	uint32_t register_list = ICODE & 0xff;
 	uint32_t Rn = Thumb_ReadReg(rn);
 	int i;
-	
-	for(i = 0; i < 8; i++) {
-		if(register_list & (1 << i)) {
-			MMU_Write32(Thumb_ReadReg(i),Rn);
-		}	
+
+	for (i = 0; i < 8; i++) {
+		if (register_list & (1 << i)) {
+			MMU_Write32(Thumb_ReadReg(i), Rn);
+		}
 		Rn += 4;
 	}
-	Thumb_WriteReg(Rn,rn);	
+	Thumb_WriteReg(Rn, rn);
 	dbgprintf("Thumb stmia base restored not tested\n");
 }
 
@@ -1499,17 +1604,19 @@ void th_stmia_base_restored() {
  * v1
  ************************************************************
  */
-void th_str_1() {
+void
+th_str_1()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
-	uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	uint32_t immed5 = (ICODE >> 6) & 0x1f;
 	uint32_t addr;
 	Rn = Thumb_ReadReg(rn);
 	addr = Rn + (immed5 << 2);
-	if(likely((addr & 3) == 0)) {
+	if (likely((addr & 3) == 0)) {
 		Rd = Thumb_ReadReg(rd);
-		MMU_Write32(Rd,addr);
+		MMU_Write32(Rd, addr);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -1523,17 +1630,19 @@ void th_str_1() {
  * v1
  **********************************************************
  */
-void th_str_2() {
+void
+th_str_2()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
-	if(likely((addr & 3) == 0)) {
+	if (likely((addr & 3) == 0)) {
 		Rd = Thumb_ReadReg(rd);
-		MMU_Write32(Rd,addr);
+		MMU_Write32(Rd, addr);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -1547,14 +1656,16 @@ void th_str_2() {
  * v1
  ************************************************************
  */
-void th_str_3() {
+void
+th_str_3()
+{
 	int rd = (ICODE >> 8) & 7;
 	uint32_t immed_8 = (ICODE & 0xff);
-	uint32_t Rd,addr;
+	uint32_t Rd, addr;
 	addr = Thumb_ReadReg(13) + (immed_8 << 2);
-	if(likely((addr & 3) == 0)) {
+	if (likely((addr & 3) == 0)) {
 		Rd = Thumb_ReadReg(rd);
-		MMU_Write32(Rd,addr);
+		MMU_Write32(Rd, addr);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -1568,17 +1679,19 @@ void th_str_3() {
  * v1
  *********************************************************************
  */
-void th_strb_1() {
+void
+th_strb_1()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
-	uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	uint32_t immed5 = (ICODE >> 6) & 0x1f;
 	uint32_t addr;
 	Rn = Thumb_ReadReg(rn);
 	addr = Rn + immed5;
 	Rd = Thumb_ReadReg(rd);
-	MMU_Write8(Rd,addr);
-  	dbgprintf("Thumb strb_1 not implemented\n");
+	MMU_Write8(Rd, addr);
+	dbgprintf("Thumb strb_1 not implemented\n");
 }
 
 /**
@@ -1589,16 +1702,18 @@ void th_strb_1() {
  * v1
  ***********************************************************************
  */
-void th_strb_2() {
+void
+th_strb_2()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
 	Rd = Thumb_ReadReg(rd);
-	MMU_Write8(Rd,addr);
+	MMU_Write8(Rd, addr);
 	dbgprintf("Thumb strb_2 not tested\n");
 }
 
@@ -1610,10 +1725,12 @@ void th_strb_2() {
  * v1
  *********************************************************************
  */
-void th_strh_1() {
+void
+th_strh_1()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
-	uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	uint32_t immed5 = (ICODE >> 6) & 0x1f;
 	uint32_t addr;
 	Rn = Thumb_ReadReg(rn);
@@ -1624,9 +1741,9 @@ void th_strh_1() {
 	 * This is probably wrong
 	 ********************************************
 	 */
-	if((addr & 1) == 0) {
+	if ((addr & 1) == 0) {
 		Rd = Thumb_ReadReg(rd);
-		MMU_Write16(Rd,addr);
+		MMU_Write16(Rd, addr);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -1641,11 +1758,13 @@ void th_strh_1() {
  * v1
  *******************************************************************
  */
-void th_strh_2() {
+void
+th_strh_2()
+{
 	int rd = ICODE & 7;
 	int rn = (ICODE >> 3) & 7;
 	int rm = (ICODE >> 6) & 7;
-	uint32_t Rd,Rm,Rn,addr;	
+	uint32_t Rd, Rm, Rn, addr;
 	Rn = Thumb_ReadReg(rn);
 	Rm = Thumb_ReadReg(rm);
 	addr = Rn + Rm;
@@ -1655,9 +1774,9 @@ void th_strh_2() {
 	 * This is probably wrong.
 	 ********************************************
 	 */
-	if(likely((addr & 1) == 0)) {
+	if (likely((addr & 1) == 0)) {
 		Rd = Thumb_ReadReg(rd);
-		MMU_Write16(Rd,addr);
+		MMU_Write16(Rd, addr);
 	} else {
 		MMU_AlignmentException(addr);
 	}
@@ -1672,27 +1791,29 @@ void th_strh_2() {
  * v1
  *******************************************************************
  */
-void th_sub_1() {
-        int rn,rd;
+void
+th_sub_1()
+{
+	int rn, rd;
 	uint32_t icode = ICODE;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t cpsr = REG_CPSR;
 	uint32_t immed3;
-        uint32_t Rn,Rd;
+	uint32_t Rn, Rd;
 	immed3 = (ICODE >> 6) & 7;
-        rn = (icode >> 3) & 0x7;
-        rd = icode & 0x7;
-	Rn=Thumb_ReadReg(rn);
+	rn = (icode >> 3) & 0x7;
+	rd = icode & 0x7;
+	Rn = Thumb_ReadReg(rn);
 	Rd = Rn - immed3;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rn,immed3,Rd);
-	cpsr |= sub_overflow(Rn,immed3,Rd);
-	REG_CPSR=cpsr;
-        Thumb_WriteReg(Rd,rd);
+	cpsr |= sub_carry(Rn, immed3, Rd);
+	cpsr |= sub_overflow(Rn, immed3, Rd);
+	REG_CPSR = cpsr;
+	Thumb_WriteReg(Rd, rd);
 	dbgprintf("Thumb sub_1 not implemented\n");
 }
 
@@ -1703,27 +1824,29 @@ void th_sub_1() {
  * v1
  *************************************************************
  */
-void th_sub_2() {
-        int rd;
+void
+th_sub_2()
+{
+	int rd;
 	uint32_t icode = ICODE;
-        uint32_t cpsr = REG_CPSR;
+	uint32_t cpsr = REG_CPSR;
 	uint32_t immed8;
-        uint32_t Rd;
+	uint32_t Rd;
 	uint32_t result;
-	immed8 = (icode  & 0xff);
-        rd = (icode >> 8) & 0x7;
+	immed8 = (icode & 0xff);
+	rd = (icode >> 8) & 0x7;
 	Rd = Thumb_ReadReg(rd);
 	result = Rd - immed8;
-	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C |FLAG_V);
-	if(ISNEG(result)) {
+	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rd,immed8,result);
-	cpsr |= sub_overflow(Rd,immed8,result);
+	cpsr |= sub_carry(Rd, immed8, result);
+	cpsr |= sub_overflow(Rd, immed8, result);
 	REG_CPSR = cpsr;
-        Thumb_WriteReg(result,rd);
+	Thumb_WriteReg(result, rd);
 	dbgprintf("Thumb sub_2 not tested\n");
 }
 
@@ -1734,12 +1857,14 @@ void th_sub_2() {
  * v1
  **********************************************************************
  */
-void th_sub_3() {
-        int rd,rn,rm;
+void
+th_sub_3()
+{
+	int rd, rn, rm;
 	uint32_t icode = ICODE;
-        uint32_t cpsr = REG_CPSR;
-        uint32_t Rd,Rm,Rn;
-        rd = icode & 0x7;
+	uint32_t cpsr = REG_CPSR;
+	uint32_t Rd, Rm, Rn;
+	rd = icode & 0x7;
 	rn = (icode >> 3) & 0x7;
 	rm = (icode >> 6) & 0x7;
 	Rd = Thumb_ReadReg(rd);
@@ -1747,15 +1872,15 @@ void th_sub_3() {
 	Rm = Thumb_ReadReg(rm);
 	Rd = Rn - Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z | FLAG_C | FLAG_V);
-	if(ISNEG(Rd)) {
+	if (ISNEG(Rd)) {
 		cpsr |= FLAG_N;
-	} else  if(Rd == 0) {
+	} else if (Rd == 0) {
 		cpsr |= FLAG_Z;
 	}
-	cpsr |= sub_carry(Rn,Rm,Rd);
-	cpsr |= sub_overflow(Rn,Rm,Rd);
+	cpsr |= sub_carry(Rn, Rm, Rd);
+	cpsr |= sub_overflow(Rn, Rm, Rd);
 	REG_CPSR = cpsr;
-        Thumb_WriteReg(Rn,rd);
+	Thumb_WriteReg(Rn, rd);
 	dbgprintf("Thumb sub_3 not tested\n");
 }
 
@@ -1766,11 +1891,13 @@ void th_sub_3() {
  * v1
  *************************************************************
  */
-void th_sub_4() {
+void
+th_sub_4()
+{
 	uint32_t immed_7 = ICODE & 0x7f;
 	uint32_t result;
-	result  = Thumb_ReadReg(13) - (immed_7 << 2);
-        Thumb_WriteReg(result,13);
+	result = Thumb_ReadReg(13) - (immed_7 << 2);
+	Thumb_WriteReg(result, 13);
 	dbgprintf("Thumb sub_4 not tested\n");
 }
 
@@ -1780,8 +1907,10 @@ void th_sub_4() {
  * v1
  ************************************************************
  */
-void th_swi() {
-	ARM_Exception(EX_SWI,0);
+void
+th_swi()
+{
+	ARM_Exception(EX_SWI, 0);
 	dbgprintf("Thumb swi not yet tested\n");
 }
 
@@ -1793,24 +1922,28 @@ void th_swi() {
  * v1
  ************************************************************
  */
-void th_tst() {
-        uint32_t cpsr = REG_CPSR;
+void
+th_tst()
+{
+	uint32_t cpsr = REG_CPSR;
 	int rn = ICODE & 7;
 	int rm = (ICODE >> 3) & 7;
-	uint32_t Rn,Rm,result;
+	uint32_t Rn, Rm, result;
 	Rm = Thumb_ReadReg(rm);
 	Rn = Thumb_ReadReg(rn);
 	result = Rn & Rm;
 	cpsr &= ~(FLAG_N | FLAG_Z);
-	if(ISNEG(result)) {
+	if (ISNEG(result)) {
 		cpsr |= FLAG_N;
-	} else if(result == 0) {
+	} else if (result == 0) {
 		cpsr |= FLAG_Z;
 	}
 	REG_CPSR = cpsr;
 	dbgprintf("Thumb tst not tested\n");
 }
 
-void th_undefined() {
-	fprintf(stderr,"Thumb undefined not implemented\n");
+void
+th_undefined()
+{
+	fprintf(stderr, "Thumb undefined not implemented\n");
 }

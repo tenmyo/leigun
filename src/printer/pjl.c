@@ -60,22 +60,22 @@ struct PJL_Interp {
  * eval pjl cmd
  * -----------------------------------------------------------------
  */
-static int 
-eval_pjl_cmd(PJL_Interp *interp,int *newlang) 
+static int
+eval_pjl_cmd(PJL_Interp * interp, int *newlang)
 {
 	char *cmd = interp->cmdbuf;
 	char lang[100];
-	if(sscanf(cmd," ENTER LANGUAGE=%99s",lang) == 1) {
-		if(!strcmp(lang,"PCL3GUI")) {
+	if (sscanf(cmd, " ENTER LANGUAGE=%99s", lang) == 1) {
+		if (!strcmp(lang, "PCL3GUI")) {
 			*newlang = Pl_Pcl3Gui;
-		} else if(!strcmp(lang,"PCL3")) {
+		} else if (!strcmp(lang, "PCL3")) {
 			*newlang = Pl_Pcl3;
 		} else {
-			fprintf(stderr,"Unknown Printer Language \"%s\"\n",lang);
+			fprintf(stderr, "Unknown Printer Language \"%s\"\n", lang);
 		}
 		return 0;
-	} else {	
-		fprintf(stderr,"PJL command \"%s\" is not implemented\n",cmd);
+	} else {
+		fprintf(stderr, "PJL command \"%s\" is not implemented\n", cmd);
 		return -1;
 	}
 }
@@ -88,78 +88,79 @@ eval_pjl_cmd(PJL_Interp *interp,int *newlang)
  * --------------------------------------------------------
  */
 int
-PJLInterp_Feed(PJL_Interp *interp,const uint8_t *buf,int len,int *newlang) 
+PJLInterp_Feed(PJL_Interp * interp, const uint8_t * buf, int len, int *newlang)
 {
 	int count;
-	for(count=0;count < len; count++) {
-		switch(interp->state) {		
-			case STATE_IDLE:
-				if(buf[count] == '@') {
-					interp->state = STATE_PREFIX;
-					interp->cmdbuf[0] = buf[count];
-					interp->cmd_wp = 1;
-				} else if(buf[count] == 0x1b) {
-					/* Command format 1 */
-				} else {
-					/* ignore non PJL */
-				}
-				break;
-			case STATE_FORMAT1: 
-				if(buf[count] == 'X') {
-					/* Should check for complete UEL here */
-					interp->state = STATE_IDLE;
-				}
-				break;
-			
-			case STATE_PREFIX:
-				interp->cmdbuf[interp->cmd_wp++] = buf[count];
-				interp->cmdbuf[interp->cmd_wp] = 0;
-				if(interp->cmd_wp == 4) {
-					interp->cmd_wp = 0;
-					if(strcmp("@PJL",interp->cmdbuf) == 0) {
-						interp->state = STATE_CMD;
-					} else {
-						fprintf(stdout,"Not a PJL command: \"%s\"\n",interp->cmdbuf);
-						interp->state = STATE_PREFIX;
-					}
-				}
-				break;
+	for (count = 0; count < len; count++) {
+		switch (interp->state) {
+		    case STATE_IDLE:
+			    if (buf[count] == '@') {
+				    interp->state = STATE_PREFIX;
+				    interp->cmdbuf[0] = buf[count];
+				    interp->cmd_wp = 1;
+			    } else if (buf[count] == 0x1b) {
+				    /* Command format 1 */
+			    } else {
+				    /* ignore non PJL */
+			    }
+			    break;
+		    case STATE_FORMAT1:
+			    if (buf[count] == 'X') {
+				    /* Should check for complete UEL here */
+				    interp->state = STATE_IDLE;
+			    }
+			    break;
 
-			case STATE_CMD:
-				if((interp->cmd_wp+1) >= sizeof(interp->cmdbuf)) {
-					fprintf(stderr,"PJL commandbuffer to small\n");	
-					interp->state = STATE_IDLE;
-					break;
-				}
-				if(buf[count] == '\r')  {
-					interp->cmdbuf[interp->cmd_wp] = 0;; 
-				} else if(buf[count] == '\n') {
-					interp->cmdbuf[interp->cmd_wp] = 0;
-					eval_pjl_cmd(interp,newlang);	
-					interp->cmd_wp = 0;
-					interp->state = STATE_IDLE;
-					if(*newlang != Pl_Pjl) {
-						return count;
-					}
-				} else {
-					interp->cmdbuf[interp->cmd_wp++] = buf[count];
-					interp->cmdbuf[interp->cmd_wp] = 0;; 
-				} 
-				break;
+		    case STATE_PREFIX:
+			    interp->cmdbuf[interp->cmd_wp++] = buf[count];
+			    interp->cmdbuf[interp->cmd_wp] = 0;
+			    if (interp->cmd_wp == 4) {
+				    interp->cmd_wp = 0;
+				    if (strcmp("@PJL", interp->cmdbuf) == 0) {
+					    interp->state = STATE_CMD;
+				    } else {
+					    fprintf(stdout, "Not a PJL command: \"%s\"\n",
+						    interp->cmdbuf);
+					    interp->state = STATE_PREFIX;
+				    }
+			    }
+			    break;
+
+		    case STATE_CMD:
+			    if ((interp->cmd_wp + 1) >= sizeof(interp->cmdbuf)) {
+				    fprintf(stderr, "PJL commandbuffer to small\n");
+				    interp->state = STATE_IDLE;
+				    break;
+			    }
+			    if (buf[count] == '\r') {
+				    interp->cmdbuf[interp->cmd_wp] = 0;;
+			    } else if (buf[count] == '\n') {
+				    interp->cmdbuf[interp->cmd_wp] = 0;
+				    eval_pjl_cmd(interp, newlang);
+				    interp->cmd_wp = 0;
+				    interp->state = STATE_IDLE;
+				    if (*newlang != Pl_Pjl) {
+					    return count;
+				    }
+			    } else {
+				    interp->cmdbuf[interp->cmd_wp++] = buf[count];
+				    interp->cmdbuf[interp->cmd_wp] = 0;;
+			    }
+			    break;
 		}
 	}
 	return count;
 }
 
 void
-PJLInterp_Reset(PJL_Interp *interp)
+PJLInterp_Reset(PJL_Interp * interp)
 {
 }
 
 PJL_Interp *
-PJLInterp_New() 
+PJLInterp_New()
 {
 	PJL_Interp *interp = sg_new(PJL_Interp);
-	interp->state = STATE_IDLE;	
+	interp->state = STATE_IDLE;
 	return interp;
 }

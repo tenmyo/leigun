@@ -1,1 +1,1 @@
-SoundDevice * AlsaSound_New(const char *name);
+SoundDevice *AlsaSound_New(const char *name);

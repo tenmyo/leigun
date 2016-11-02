@@ -40,30 +40,31 @@
 
 static Board *first_board = NULL;
 
-Board * 
-Board_Find(const char *name) 
+Board *
+Board_Find(const char *name)
 {
 	Board *cursor;
-	for(cursor=first_board;cursor;cursor=cursor->next) {
-		if(!strcmp(name,cursor->name)) {
+	for (cursor = first_board; cursor; cursor = cursor->next) {
+		if (!strcmp(name, cursor->name)) {
 			return cursor;
 		}
-	}	
-	fprintf(stderr,"Board \"%s\" does not exist.\nList of available boards:\n",name);
-	for(cursor=first_board;cursor;cursor=cursor->next) {
-		fprintf(stderr,"Board %-15s: %s\n",cursor->name,cursor->description);
-	}	
+	}
+	fprintf(stderr, "Board \"%s\" does not exist.\nList of available boards:\n", name);
+	for (cursor = first_board; cursor; cursor = cursor->next) {
+		fprintf(stderr, "Board %-15s: %s\n", cursor->name, cursor->description);
+	}
 	return NULL;
 }
 
 void
-Board_Register(Board *board) 
+Board_Register(Board * board)
 {
-	board->next=first_board;
-	first_board=board;
+	board->next = first_board;
+	first_board = board;
 }
 
 void
-Board_Create(Board *board)  {
+Board_Create(Board * board)
+{
 	board->createBoard();
 }

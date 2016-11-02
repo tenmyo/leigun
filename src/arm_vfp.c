@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include "coprocessor.h" 
+#include "coprocessor.h"
 #include "arm9cpu.h"
 
 #define FPSCR_IOC		(1<<0)
@@ -67,7 +67,6 @@
 #define FPSCR_Z			(1<<30)
 #define FPSCR_N			(1<<31)
 
-
 typedef struct ArmVfp {
 	uint32_t fpsid;
 	uint32_t fpcsr;
@@ -89,29 +88,28 @@ typedef struct ArmVfp {
  */
 static ArmVfp arm_vfp = {
 	.copro10 = {
-		.mrc = NULL,
-		.mcr = NULL,
-		.cdp = NULL,
-		.ldc = NULL,
-		.stc = NULL,
-	},
+		    .mrc = NULL,
+		    .mcr = NULL,
+		    .cdp = NULL,
+		    .ldc = NULL,
+		    .stc = NULL,
+		    },
 	.copro11 = {
-		.mrc = NULL,
-		.mcr = NULL,
-		.cdp = NULL,
-		.ldc = NULL,
-		.stc = NULL
-	}
-	
+		    .mrc = NULL,
+		    .mcr = NULL,
+		    .cdp = NULL,
+		    .ldc = NULL,
+		    .stc = NULL}
+
 };
 
-void 
-ArmVfp_Init(char *vfpname)  {
+void
+ArmVfp_Init(char *vfpname)
+{
 	ArmVfp *vfp = &arm_vfp;
-	ARM9_RegisterCoprocessor(&vfp->copro10,10);
-	ARM9_RegisterCoprocessor(&vfp->copro11,11);
-	vfp->fpsid = 0x410101A0; /* VFP 9 */
-	
-	fprintf(stderr,"Registered Vector Floating Point coprocessor 10 and 11\n");
-};
+	ARM9_RegisterCoprocessor(&vfp->copro10, 10);
+	ARM9_RegisterCoprocessor(&vfp->copro11, 11);
+	vfp->fpsid = 0x410101A0;	/* VFP 9 */
 
+	fprintf(stderr, "Registered Vector Floating Point coprocessor 10 and 11\n");
+};

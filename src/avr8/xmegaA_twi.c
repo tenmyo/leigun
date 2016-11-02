@@ -131,13 +131,13 @@ typedef struct XmegaA_Twi {
  ***********************************************************
  */
 static uint8_t
-ctrl_read(void *clientData,uint32_t address)
+ctrl_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-ctrl_write(void *clientData,uint8_t value,uint32_t address)
+ctrl_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
@@ -151,79 +151,79 @@ ctrl_write(void *clientData,uint8_t value,uint32_t address)
  ***********************************************************
  */
 static uint8_t
-mctrla_read(void *clientData,uint32_t address)
+mctrla_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-mctrla_write(void *clientData,uint8_t value,uint32_t address)
+mctrla_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-mctrlb_read(void *clientData,uint32_t address)
+mctrlb_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-mctrlb_write(void *clientData,uint8_t value,uint32_t address)
+mctrlb_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-mctrlc_read(void *clientData,uint32_t address)
+mctrlc_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-mctrlc_write(void *clientData,uint8_t value,uint32_t address)
+mctrlc_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-mstatus_read(void *clientData,uint32_t address)
+mstatus_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-mstatus_write(void *clientData,uint8_t value,uint32_t address)
+mstatus_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-mbaud_read(void *clientData,uint32_t address)
+mbaud_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-mbaud_write(void *clientData,uint8_t value,uint32_t address)
+mbaud_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-maddr_read(void *clientData,uint32_t address)
+maddr_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-maddr_write(void *clientData,uint8_t value,uint32_t address)
+maddr_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-mdata_read(void *clientData,uint32_t address)
+mdata_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-mdata_write(void *clientData,uint8_t value,uint32_t address)
+mdata_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
@@ -240,13 +240,13 @@ mdata_write(void *clientData,uint8_t value,uint32_t address)
  ***********************************************************
  */
 static uint8_t
-sctrla_read(void *clientData,uint32_t address)
+sctrla_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-sctrla_write(void *clientData,uint8_t value,uint32_t address)
+sctrla_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
@@ -256,15 +256,15 @@ sctrla_write(void *clientData,uint8_t value,uint32_t address)
  * Bit 2: ACKACT Acknowlegde action
  * Bit 0+1: CMD
  ***********************************************************
- */ 
+ */
 static uint8_t
-sctrlb_read(void *clientData,uint32_t address)
+sctrlb_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-sctrlb_write(void *clientData,uint8_t value,uint32_t address)
+sctrlb_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
@@ -282,68 +282,67 @@ sctrlb_write(void *clientData,uint8_t value,uint32_t address)
  *************************************************************
  */
 static uint8_t
-sstatus_read(void *clientData,uint32_t address)
+sstatus_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-sstatus_write(void *clientData,uint8_t value,uint32_t address)
+sstatus_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-saddr_read(void *clientData,uint32_t address)
+saddr_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-saddr_write(void *clientData,uint8_t value,uint32_t address)
+saddr_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-sdata_read(void *clientData,uint32_t address)
+sdata_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-sdata_write(void *clientData,uint8_t value,uint32_t address)
+sdata_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
 
 static uint8_t
-saddrmask_read(void *clientData,uint32_t address)
+saddrmask_read(void *clientData, uint32_t address)
 {
 	return 0;
 }
 
 static void
-saddrmask_write(void *clientData,uint8_t value,uint32_t address)
+saddrmask_write(void *clientData, uint8_t value, uint32_t address)
 {
 }
-
 
 void
-XMegaA_TWINew(const char *name,uint32_t base)
+XMegaA_TWINew(const char *name, uint32_t base)
 {
 
 	XmegaA_Twi *twi = sg_new(XmegaA_Twi);
-	AVR8_RegisterIOHandler(TWI_CTRL(base),ctrl_read,ctrl_write,twi);
-	AVR8_RegisterIOHandler(TWIM_CTRLA(base),mctrla_read,mctrla_write,twi);
-	AVR8_RegisterIOHandler(TWIM_CTRLB(base),mctrlb_read,mctrlb_write,twi);
-	AVR8_RegisterIOHandler(TWIM_CTRLC(base),mctrlc_read,mctrlc_write,twi);
-	AVR8_RegisterIOHandler(TWIM_STATUS(base),mstatus_read,mstatus_write,twi);
-	AVR8_RegisterIOHandler(TWIM_BAUD(base),mbaud_read,mbaud_write,twi);
-	AVR8_RegisterIOHandler(TWIM_ADDR(base),maddr_read,maddr_write,twi);
-	AVR8_RegisterIOHandler(TWIM_DATA(base),mdata_read,mdata_write,twi);
-	AVR8_RegisterIOHandler(TWIS_CTRLA(base),sctrla_read,sctrla_write,twi);
-	AVR8_RegisterIOHandler(TWIS_CTRLB(base),sctrlb_read,sctrlb_write,twi);
-	AVR8_RegisterIOHandler(TWIS_STATUS(base),sstatus_read,sstatus_write,twi);
-	AVR8_RegisterIOHandler(TWIS_ADDR(base),saddr_read,saddr_write,twi);
-	AVR8_RegisterIOHandler(TWIS_DATA(base),sdata_read,sdata_write,twi);
-	AVR8_RegisterIOHandler(TWIS_ADDRMASK(base),saddrmask_read,saddrmask_write,twi);
+	AVR8_RegisterIOHandler(TWI_CTRL(base), ctrl_read, ctrl_write, twi);
+	AVR8_RegisterIOHandler(TWIM_CTRLA(base), mctrla_read, mctrla_write, twi);
+	AVR8_RegisterIOHandler(TWIM_CTRLB(base), mctrlb_read, mctrlb_write, twi);
+	AVR8_RegisterIOHandler(TWIM_CTRLC(base), mctrlc_read, mctrlc_write, twi);
+	AVR8_RegisterIOHandler(TWIM_STATUS(base), mstatus_read, mstatus_write, twi);
+	AVR8_RegisterIOHandler(TWIM_BAUD(base), mbaud_read, mbaud_write, twi);
+	AVR8_RegisterIOHandler(TWIM_ADDR(base), maddr_read, maddr_write, twi);
+	AVR8_RegisterIOHandler(TWIM_DATA(base), mdata_read, mdata_write, twi);
+	AVR8_RegisterIOHandler(TWIS_CTRLA(base), sctrla_read, sctrla_write, twi);
+	AVR8_RegisterIOHandler(TWIS_CTRLB(base), sctrlb_read, sctrlb_write, twi);
+	AVR8_RegisterIOHandler(TWIS_STATUS(base), sstatus_read, sstatus_write, twi);
+	AVR8_RegisterIOHandler(TWIS_ADDR(base), saddr_read, saddr_write, twi);
+	AVR8_RegisterIOHandler(TWIS_DATA(base), sdata_read, sdata_write, twi);
+	AVR8_RegisterIOHandler(TWIS_ADDRMASK(base), saddrmask_read, saddrmask_write, twi);
 
 }

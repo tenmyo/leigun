@@ -5,4 +5,4 @@
  * 	wants to receive USB packets
  * -------------------------------------------------------------------------------
  */
-typedef void UsbHost_PktSink(void *dev,const UsbPacket *pkt);
+typedef void UsbHost_PktSink(void *dev, const UsbPacket * pkt);

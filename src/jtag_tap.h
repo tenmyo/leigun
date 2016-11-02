@@ -4,10 +4,10 @@
  *********************************************************************************
  */
 #include <stdint.h>
-typedef void JTAG_CaptureDR(void *owner,uint8_t **data,int *len); 
-typedef void JTAG_CaptureIR(void *owner,uint8_t **data,int *len); 
-typedef void JTAG_UpdateIR(void *owner); 
-typedef void JTAG_UpdateDR(void *owner); 
+typedef void JTAG_CaptureDR(void *owner, uint8_t ** data, int *len);
+typedef void JTAG_CaptureIR(void *owner, uint8_t ** data, int *len);
+typedef void JTAG_UpdateIR(void *owner);
+typedef void JTAG_UpdateDR(void *owner);
 
 /**
  ****************************************************************************************************
@@ -24,11 +24,11 @@ typedef void JTAG_UpdateDR(void *owner);
 #define JTAG_TAP_ORDER_MSBFIRST	(1)
 
 typedef struct JTAG_Operations {
-	JTAG_CaptureDR	 *captureDR;
-	JTAG_CaptureIR	 *captureIR;
-	JTAG_UpdateDR	 *updateDR;
-	JTAG_UpdateIR	 *updateIR;
+	JTAG_CaptureDR *captureDR;
+	JTAG_CaptureIR *captureIR;
+	JTAG_UpdateDR *updateDR;
+	JTAG_UpdateIR *updateIR;
 	uint8_t bitorder;
 } JTAG_Operations;
 
-void JTagTap_New(const char *name,JTAG_Operations *jtagOps,void *owner);
+void JTagTap_New(const char *name, JTAG_Operations * jtagOps, void *owner);

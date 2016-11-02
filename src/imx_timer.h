@@ -1,3 +1,3 @@
 #include <bus.h>
 
-BusDevice * IMXTimer_New(char *name);
+BusDevice *IMXTimer_New(char *name);

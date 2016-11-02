@@ -48,32 +48,33 @@
 #include "usb_ohci.h"
 #include "clock.h"
 
-
 static int
 board_samsung_create()
 {
-        ArmCoprocessor *copro;
+	ArmCoprocessor *copro;
 	BusDevice *dev;
 //      BusDevice *mc;
 	BusDevice *dram0, *dram1;
 	NandFlash *nand_dev;
 
-        Bus_Init(MMU_InvalidateTlb,4*1024);
-        ARM9_New();
-        copro = MMU9_Create("mmu",en_LITTLE_ENDIAN,MMU_ARM920T);
-        ARM9_RegisterCoprocessor(copro,15);
+	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
+	ARM9_New();
+	copro = MMU9_Create("mmu", en_LITTLE_ENDIAN, MMU_ARM920T);
+	ARM9_RegisterCoprocessor(copro, 15);
 	dram0 = dev = DRam_New("dram0");
-        if(dev) {
-                Mem_AreaAddMapping(dev,0x30000000,0x08000000,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-        } else {
-		fprintf(stderr,"DRAM bank 0 is missing\n");
+	if (dev) {
+		Mem_AreaAddMapping(dev, 0x30000000, 0x08000000,
+				   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	} else {
+		fprintf(stderr, "DRAM bank 0 is missing\n");
 		exit(1);
 	}
 	dram1 = dev = DRam_New("dram1");
-        if(dev) {
-                Mem_AreaAddMapping(dev,0x38000000,0x08000000,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+	if (dev) {
+		Mem_AreaAddMapping(dev, 0x38000000, 0x08000000,
+				   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 	}
-	dev = SRam_New("bootsram");	
+	dev = SRam_New("bootsram");
 	nand_dev = NandFlash_New("nand0");
 	// Connect the Boot sram to the memory controller
 
@@ -81,8 +82,9 @@ board_samsung_create()
 }
 
 static void
-board_samsung_run(Board *bd) {
-        ARM9_Run();
+board_samsung_run(Board * bd)
+{
+	ARM9_Run();
 }
 
 #define DEFAULTCONFIG \
@@ -101,15 +103,16 @@ board_samsung_run(Board *bd) {
 "\n"\
 
 static Board board_samsung = {
-        .name = "SAMSUNG",
-        .description =  "SAMSUNG S3C2410 based Board",
-        .createBoard =  board_samsung_create,
-        .runBoard =     board_samsung_run,
-        .defaultconfig = DEFAULTCONFIG
+	.name = "SAMSUNG",
+	.description = "SAMSUNG S3C2410 based Board",
+	.createBoard = board_samsung_create,
+	.runBoard = board_samsung_run,
+	.defaultconfig = DEFAULTCONFIG
 };
 
 __CONSTRUCTOR__ void
-board_samsung_register() {
-        fprintf(stderr,"Loading SAMSUNG Board module\n");
-        Board_Register(&board_samsung);
+board_samsung_register()
+{
+	fprintf(stderr, "Loading SAMSUNG Board module\n");
+	Board_Register(&board_samsung);
 }

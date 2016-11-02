@@ -33,7 +33,6 @@
  *************************************************************************************************
  */
 
-
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -69,98 +68,95 @@ typedef struct Pit {
 	Clock_t *clockIn;
 	CycleCounter_t last_counter_update;
 	CycleCounter_t remainder;
-	uint16_t pcsr;	
+	uint16_t pcsr;
 	uint16_t pmr;
 	uint16_t pcntr;
 } Pit;
 
-
 static void
-actualize_counter(Pit *pit)
+actualize_counter(Pit * pit)
 {
 	int pre;
 	uint32_t prediv;
-//	uint32_t cycles_per_period;
-//	Frequency_t freq = Clock_Freq(pit->clockIn); 
-	pit->remainder += CycleCounter_Get() - pit->last_counter_update;	
+//      uint32_t cycles_per_period;
+//      Frequency_t freq = Clock_Freq(pit->clockIn); 
+	pit->remainder += CycleCounter_Get() - pit->last_counter_update;
 	pre = (pit->pcsr >> 12) & 0xf;
 	prediv = (4 << pre);
-//	cycles_per_period = 
+//      cycles_per_period = 
 }
 
 static uint32_t
-pcsr_read(void *clientData,uint32_t address,int rqlen)
+pcsr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT pcsr not implented\n");
-        return 0;
+	fprintf(stderr, "PIT pcsr not implented\n");
+	return 0;
 }
 
 static void
-pcsr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pcsr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
 	Pit *pit = (Pit *) clientData;
 	pit->pcsr = value;
 	// update 
-        fprintf(stderr,"PIT pcsr not implented\n");
+	fprintf(stderr, "PIT pcsr not implented\n");
 }
 
 static uint32_t
-pmr_read(void *clientData,uint32_t address,int rqlen)
+pmr_read(void *clientData, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT pmr not implented\n");
-        return 0;
+	fprintf(stderr, "PIT pmr not implented\n");
+	return 0;
 }
 
 static void
-pmr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pmr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT pmr not implented\n");
+	fprintf(stderr, "PIT pmr not implented\n");
 }
 
 static uint32_t
-pcntr_read(void *clientData,uint32_t address,int rqlen)
+pcntr_read(void *clientData, uint32_t address, int rqlen)
 {
 	Pit *pit = (Pit *) clientData;
 	actualize_counter(pit);
-        return pit->pcntr;
+	return pit->pcntr;
 }
 
 static void
-pcntr_write(void *clientData,uint32_t value,uint32_t address,int rqlen)
+pcntr_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {
-        fprintf(stderr,"PIT pcntr not implented\n");
+	fprintf(stderr, "PIT pcntr not implented\n");
 }
 
 static void
-Pit_Unmap(void *owner,uint32_t base,uint32_t mask)
+Pit_Unmap(void *owner, uint32_t base, uint32_t mask)
 {
-        IOH_Delete16(PIT_PSCR(base));
-        IOH_Delete16(PIT_PMR(base));
-        IOH_Delete16(PIT_PCNTR(base));
+	IOH_Delete16(PIT_PSCR(base));
+	IOH_Delete16(PIT_PMR(base));
+	IOH_Delete16(PIT_PCNTR(base));
 }
 
 static void
-Pit_Map(void *owner,uint32_t base,uint32_t mask,uint32_t mapflags)
+Pit_Map(void *owner, uint32_t base, uint32_t mask, uint32_t mapflags)
 {
-        Pit *pit = (Pit *) owner;
-        IOH_New16(PIT_PSCR(base),pcsr_read,pcsr_write,pit);
-        IOH_New16(PIT_PMR(base),pmr_read,pmr_write,pit);
-        IOH_New16(PIT_PCNTR(base),pcntr_read,pcntr_write,pit);
+	Pit *pit = (Pit *) owner;
+	IOH_New16(PIT_PSCR(base), pcsr_read, pcsr_write, pit);
+	IOH_New16(PIT_PMR(base), pmr_read, pmr_write, pit);
+	IOH_New16(PIT_PCNTR(base), pcntr_read, pcntr_write, pit);
 }
-
 
 BusDevice *
 MCF5282_PitNew(const char *name)
 {
-        Pit *pit = sg_calloc(sizeof(Pit));
+	Pit *pit = sg_calloc(sizeof(Pit));
 	pit->pcsr = 0;
 	pit->pmr = 0xffff;
 	pit->pcntr = 0xffff;
-        pit->bdev.first_mapping=NULL;
-        pit->bdev.Map=Pit_Map;
-        pit->bdev.UnMap=Pit_Unmap;
-        pit->bdev.owner=pit;
-        pit->bdev.hw_flags=MEM_FLAG_WRITABLE|MEM_FLAG_READABLE;
-        return &pit->bdev;
+	pit->bdev.first_mapping = NULL;
+	pit->bdev.Map = Pit_Map;
+	pit->bdev.UnMap = Pit_Unmap;
+	pit->bdev.owner = pit;
+	pit->bdev.hw_flags = MEM_FLAG_WRITABLE | MEM_FLAG_READABLE;
+	return &pit->bdev;
 }
-

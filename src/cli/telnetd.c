@@ -63,25 +63,9 @@
 #define STATE_OPTION  	(3)
 #define STATE_CLOSED	(4)
 
-/*
- * Use only control sequences which are the same for ANSI and VT100
- * and most other terminals.
- */
-#define ANSI_up     	"\033[A"
-#define ANSI_down   	"\033[B" 
-#define ANSI_left   	"\033[D" 
-#define ANSI_right   	"\033[C" 
-#define ANSI_delchar	"\033[P"
-#define ANSI_dellineend	"\033[K"
-#define ANSI_insertchar "\033[@"
-#define ANSI_keydel	"\033[3~"
-#define ANSI_pgup	"\033[5~"
-#define ANSI_pgdown	"\033[6~"
-#define ANSI_newline	"\033E"
-
 typedef struct TelOpt {
 	uint8_t state;
- 	uint8_t nego_started; 	
+	uint8_t nego_started;
 } TelOpt;
 
 struct TelnetSession {
@@ -89,7 +73,7 @@ struct TelnetSession {
 	TelnetServer *tserv;
 	char *submit_buf;
 	unsigned int submit_buf_wp;
-	unsigned int  submit_buf_rp;
+	unsigned int submit_buf_rp;
 
 	ChannelHandler *datasink;
 	ChannelHandler *datasource;
@@ -108,7 +92,6 @@ struct TelnetSession {
 	Editor *editor;
 };
 
-
 struct TelnetServer {
 	Telnet_AcceptProc *accproc;
 	void *clientData;
@@ -121,19 +104,22 @@ struct TelnetServer {
  * buffering).
  *************************************************************************
  */
-static void 
-telnet_output(int fd,const void *buf,int count) {
+static void
+telnet_output(int fd, const void *buf, int count)
+{
 	int result;
-	fcntl(fd,F_SETFL,0);
-	while(count) {
-		result = write(fd,buf,count);
-		if(result<=0) {
-			/* Can not delete the session now */ 
+	fcntl(fd, F_SETFL, 0);
+	while (count) {
+		result = write(fd, buf, count);
+		if (result <= 0) {
+			/* Can not delete the session now */
+			fprintf(stderr,"Write to socket failed %d errno %d failed\n",result,errno);
 			return;
 		}
-		count-=result; buf+=result;
+		count -= result;
+		buf += result;
 	}
-	fcntl(fd,F_SETFL,O_NONBLOCK);
+	fcntl(fd, F_SETFL, O_NONBLOCK);
 }
 
 /*
@@ -142,27 +128,30 @@ telnet_output(int fd,const void *buf,int count) {
  *******************************************************************************
  */
 static void
-send_iac(TelnetSession *ts,uint8_t cmd,uint8_t opt) {
+send_iac(TelnetSession * ts, uint8_t cmd, uint8_t opt)
+{
 	char buf[3];
-	buf[0]=IAC; buf[1] = cmd; buf[2] = opt;
-	telnet_output(ts->fd,buf,3); 
+	buf[0] = IAC;
+	buf[1] = cmd;
+	buf[2] = opt;
+	telnet_output(ts->fd, buf, 3);
 }
 
-static void telnet_input(void *cd,int mask); 
+static void telnet_input(void *cd, int mask);
 
 static void
-TS_StartRx(TelnetSession *ts) 
+TS_StartRx(TelnetSession * ts)
 {
-	if(!ts->rfh_is_active) {
+	if (!ts->rfh_is_active) {
 		ts->rfh_is_active = 1;
-		FIO_AddFileHandler(&ts->rfh,ts->fd,FIO_READABLE,telnet_input,ts);
+		FIO_AddFileHandler(&ts->rfh, ts->fd, FIO_READABLE, telnet_input, ts);
 	}
 }
 
 static void
-TS_StopRx(TelnetSession *ts) 
+TS_StopRx(TelnetSession * ts)
 {
-	if(ts->rfh_is_active) {
+	if (ts->rfh_is_active) {
 		ts->rfh_is_active = 0;
 		dbgprintf("Remove the filehandler\n");
 		FIO_RemoveFileHandler(&ts->rfh);
@@ -170,32 +159,35 @@ TS_StopRx(TelnetSession *ts)
 }
 
 static void
-TS_Del(TelnetSession *ts) {
+TS_Del(TelnetSession * ts)
+{
 	free(ts);
 }
+
 /*
  ***********************************************************************
  * Disable a telnet session before deletion
  ***********************************************************************
  */
 static void
-TS_Disable(TelnetSession *ts) {
+TS_Disable(TelnetSession * ts)
+{
 	uint8_t c;
 	TS_StopRx(ts);
 	/* Don't close stdout stderr */
-	shutdown(ts->fd,SHUT_RDWR);
-	while(read(ts->fd,&c,1)>0) {
-		dbgprintf("READEMPTY %02x\n",c);
+	shutdown(ts->fd, SHUT_RDWR);
+	while (read(ts->fd, &c, 1) > 0) {
+		dbgprintf("READEMPTY %02x\n", c);
 	}
-	if(ts->fd>2) {
-		dbgprintf("close %d\n",ts->fd);
-		if(close(ts->fd)<0) {
+	if (ts->fd > 2) {
+		dbgprintf("close %d\n", ts->fd);
+		if (close(ts->fd) < 0) {
 			perror("close fd failed");
 		} else {
-			ts->fd=-1;
+			ts->fd = -1;
 		}
 	} else {
-		dbgprintf("Do not close %d\n",ts->fd);
+		dbgprintf("Do not close %d\n", ts->fd);
 	}
 	ts->state = STATE_CLOSED;
 }
@@ -209,61 +201,61 @@ TS_Disable(TelnetSession *ts) {
  **************************************************************************************
  */
 static void
-do_option(TelnetSession *ts,int option) 
+do_option(TelnetSession * ts, int option)
 {
-	dbgprintf("Do %d\n",option);
-	switch(option) {
-		case TELOPT_ECHO:
-			if(!ts->echo.nego_started) {
-				fprintf(stderr,"Telnet Client does want an echo\n");
-				send_iac(ts,WILL,option);
-			} else {
-				dbgprintf("Telnet Client accepts my echo\n");
-				ts->echo.nego_started = 0;
-			}
-			ts->echo.state=1;
-			break;
+	dbgprintf("Do %d\n", option);
+	switch (option) {
+	    case TELOPT_ECHO:
+		    if (!ts->echo.nego_started) {
+			    fprintf(stderr, "Telnet Client does want an echo\n");
+			    send_iac(ts, WILL, option);
+		    } else {
+			    dbgprintf("Telnet Client accepts my echo\n");
+			    ts->echo.nego_started = 0;
+		    }
+		    ts->echo.state = 1;
+		    break;
 
-		case TELOPT_SGA:
-			if(!ts->sga.nego_started) {
-				fprintf(stderr,"Telnet Client does want suppression of GA\n");
-				send_iac(ts,WILL,option);
-			} else {
-				dbgprintf("Telnet Client accepts suppression of GA\n");
-				ts->sga.nego_started = 0;
-			}
-			ts->sga.state=1;
-			break;
+	    case TELOPT_SGA:
+		    if (!ts->sga.nego_started) {
+			    fprintf(stderr, "Telnet Client does want suppression of GA\n");
+			    send_iac(ts, WILL, option);
+		    } else {
+			    dbgprintf("Telnet Client accepts suppression of GA\n");
+			    ts->sga.nego_started = 0;
+		    }
+		    ts->sga.state = 1;
+		    break;
 
-		case TELOPT_BINARY:
-			fprintf(stderr,"DO Binary\n");
-			break;
+	    case TELOPT_BINARY:
+		    fprintf(stderr, "DO Binary\n");
+		    break;
 
-		case TELOPT_LFLOW:
-			if(!ts->lflow.nego_started) {
-				fprintf(stderr,"Telnet Client does want Flow control\n");
-				send_iac(ts,WILL,option);
-			} else {
-				dbgprintf("Telnet Client accepts Flow control\n");
-				ts->lflow.nego_started = 0;
-			}
-			ts->lflow.state=1;
-			break;
+	    case TELOPT_LFLOW:
+		    if (!ts->lflow.nego_started) {
+			    fprintf(stderr, "Telnet Client does want Flow control\n");
+			    send_iac(ts, WILL, option);
+		    } else {
+			    dbgprintf("Telnet Client accepts Flow control\n");
+			    ts->lflow.nego_started = 0;
+		    }
+		    ts->lflow.state = 1;
+		    break;
 
-		case TELOPT_LINEMODE:
-			if(!ts->linemode.nego_started) {
-				fprintf(stderr,"Telnet Client does want linemode\n");
-				send_iac(ts,WILL,option);
-			} else {
-				dbgprintf("Telnet Client accepts linemode\n");
-				ts->linemode.nego_started = 0;
-			}
-			ts->linemode.state=1;
-			break;
-		default:
-			dbgprintf("refuse 0x%02x\n",option);
-			send_iac(ts,WONT,option);
-			break;
+	    case TELOPT_LINEMODE:
+		    if (!ts->linemode.nego_started) {
+			    fprintf(stderr, "Telnet Client does want linemode\n");
+			    send_iac(ts, WILL, option);
+		    } else {
+			    dbgprintf("Telnet Client accepts linemode\n");
+			    ts->linemode.nego_started = 0;
+		    }
+		    ts->linemode.state = 1;
+		    break;
+	    default:
+		    dbgprintf("refuse 0x%02x\n", option);
+		    send_iac(ts, WONT, option);
+		    break;
 	}
 }
 
@@ -274,56 +266,56 @@ do_option(TelnetSession *ts,int option)
  **************************************************************************************
  */
 static void
-dont_option(TelnetSession *ts,int option) 
+dont_option(TelnetSession * ts, int option)
 {
-	dbgprintf("Don't %d\n",option);
-	switch(option) {
-		case TELOPT_ECHO:
-			if(!ts->echo.nego_started) {
-				fprintf(stderr,"Telnet client does not like my echo\n");
-				send_iac(ts,WONT,option);
-			} else {
-				dbgprintf("Telnet client accepts that i don't echo\n");
-				ts->echo.nego_started = 0;
-			}
-			ts->echo.state=0;
-			break;
+	dbgprintf("Don't %d\n", option);
+	switch (option) {
+	    case TELOPT_ECHO:
+		    if (!ts->echo.nego_started) {
+			    fprintf(stderr, "Telnet client does not like my echo\n");
+			    send_iac(ts, WONT, option);
+		    } else {
+			    dbgprintf("Telnet client accepts that i don't echo\n");
+			    ts->echo.nego_started = 0;
+		    }
+		    ts->echo.state = 0;
+		    break;
 
-		case TELOPT_SGA:
-			if(!ts->sga.nego_started) {
-				fprintf(stderr,"Telnet client does not like suppress GA\n");
-				send_iac(ts,WONT,option);
-			} else {
-				dbgprintf("Telnet client accepts not to suppress GA\n");
-				ts->sga.nego_started = 0;
-			}
-			ts->sga.state=0;
-			break;
+	    case TELOPT_SGA:
+		    if (!ts->sga.nego_started) {
+			    fprintf(stderr, "Telnet client does not like suppress GA\n");
+			    send_iac(ts, WONT, option);
+		    } else {
+			    dbgprintf("Telnet client accepts not to suppress GA\n");
+			    ts->sga.nego_started = 0;
+		    }
+		    ts->sga.state = 0;
+		    break;
 
-		case TELOPT_LFLOW:
-			if(!ts->lflow.nego_started) {
-				fprintf(stderr,"Telnet client does not like flow control\n");
-				send_iac(ts,WONT,option);
-			} else {
-				dbgprintf("Telnet client accepts disabling flow control\n");
-				ts->lflow.nego_started = 0;
-			}
-			ts->lflow.state=0;
-			break;
+	    case TELOPT_LFLOW:
+		    if (!ts->lflow.nego_started) {
+			    fprintf(stderr, "Telnet client does not like flow control\n");
+			    send_iac(ts, WONT, option);
+		    } else {
+			    dbgprintf("Telnet client accepts disabling flow control\n");
+			    ts->lflow.nego_started = 0;
+		    }
+		    ts->lflow.state = 0;
+		    break;
 
-		case TELOPT_LINEMODE:
-			if(!ts->linemode.nego_started) {
-				fprintf(stderr,"Telnet client does not like linemode\n");
-				send_iac(ts,WONT,option);
-			} else {
-				dbgprintf("Telnet client accepts disabling linemode\n");
-				ts->linemode.nego_started = 0;
-			}
-			ts->linemode.state=0;
-			break;
+	    case TELOPT_LINEMODE:
+		    if (!ts->linemode.nego_started) {
+			    fprintf(stderr, "Telnet client does not like linemode\n");
+			    send_iac(ts, WONT, option);
+		    } else {
+			    dbgprintf("Telnet client accepts disabling linemode\n");
+			    ts->linemode.nego_started = 0;
+		    }
+		    ts->linemode.state = 0;
+		    break;
 
-		default:
-			send_iac(ts,WONT,option);
+	    default:
+		    send_iac(ts, WONT, option);
 	}
 }
 
@@ -334,53 +326,53 @@ dont_option(TelnetSession *ts,int option)
  **************************************************************************************
  */
 static void
-will_option(TelnetSession *ts,int option) 
+will_option(TelnetSession * ts, int option)
 {
-	dbgprintf("Will %d\n",option);
-	switch(option) {
-		case TELOPT_ECHO:
-			if(!ts->echo.nego_started) {
-				fprintf(stderr,"Telnet client wants to echo himself\n");
-				send_iac(ts,DO,option);
-			} else {
-				dbgprintf("Telnet client accepts to echo himself\n");
-				ts->echo.nego_started = 0;
-			}
-			ts->echo.state=0; /* Don't echo also */
-			break;
+	dbgprintf("Will %d\n", option);
+	switch (option) {
+	    case TELOPT_ECHO:
+		    if (!ts->echo.nego_started) {
+			    fprintf(stderr, "Telnet client wants to echo himself\n");
+			    send_iac(ts, DO, option);
+		    } else {
+			    dbgprintf("Telnet client accepts to echo himself\n");
+			    ts->echo.nego_started = 0;
+		    }
+		    ts->echo.state = 0;	/* Don't echo also */
+		    break;
 
-		case TELOPT_SGA:
-			if(!ts->sga.nego_started) {
-				fprintf(stderr,"Telnet client wants suppress GA\n");
-				send_iac(ts,DO,option);
-			} else {
-				dbgprintf("Telnet client accepts to suppress GA\n");
-				ts->sga.nego_started = 0;
-			}
-			ts->sga.state=1;
-			break;
+	    case TELOPT_SGA:
+		    if (!ts->sga.nego_started) {
+			    fprintf(stderr, "Telnet client wants suppress GA\n");
+			    send_iac(ts, DO, option);
+		    } else {
+			    dbgprintf("Telnet client accepts to suppress GA\n");
+			    ts->sga.nego_started = 0;
+		    }
+		    ts->sga.state = 1;
+		    break;
 
-		case TELOPT_LFLOW:
-			if(!ts->lflow.nego_started) {
-				fprintf(stderr,"Telnet client wants control flow\n");
-				send_iac(ts,DO,option);
-			} else {
-				dbgprintf("Telnet client accepts flow control\n");
-				ts->lflow.nego_started = 0;
-			}
-			ts->lflow.state=1;
-			break;
+	    case TELOPT_LFLOW:
+		    if (!ts->lflow.nego_started) {
+			    fprintf(stderr, "Telnet client wants control flow\n");
+			    send_iac(ts, DO, option);
+		    } else {
+			    dbgprintf("Telnet client accepts flow control\n");
+			    ts->lflow.nego_started = 0;
+		    }
+		    ts->lflow.state = 1;
+		    break;
 
-		case TELOPT_LINEMODE:
-			if(!ts->linemode.nego_started) {
-				fprintf(stderr,"Telnet client wants use linemode\n");
-				send_iac(ts,DO,option);
-			} else {
-				dbgprintf("Telnet client accepts linemode\n");
-				ts->linemode.nego_started = 0;
-			}
-			ts->linemode.state=1;
-			break;
+	    case TELOPT_LINEMODE:
+		    if (!ts->linemode.nego_started) {
+			    fprintf(stderr, "Telnet client wants use linemode\n");
+			    send_iac(ts, DO, option);
+		    } else {
+			    dbgprintf("Telnet client accepts linemode\n");
+			    ts->linemode.nego_started = 0;
+		    }
+		    ts->linemode.state = 1;
+		    break;
 	}
 }
 
@@ -391,63 +383,63 @@ will_option(TelnetSession *ts,int option)
  **************************************************************************************
  */
 static void
-wont_option(TelnetSession *ts,int option) 
+wont_option(TelnetSession * ts, int option)
 {
-	fprintf(stderr,"Wont %d\n",option);
-	switch(option) {
-		case TELOPT_ECHO:
-			if(!ts->echo.nego_started) {
-				fprintf(stderr,"Telnet client doesn't want to echo\n");
-				send_iac(ts,DONT,option);
-			} else {
-				fprintf(stderr,"Telnet client accepts not to echo\n");
-				ts->echo.nego_started = 0;
-			}
-			ts->echo.state=1; /* We do the echo */
-			break;
+	fprintf(stderr, "Wont %d\n", option);
+	switch (option) {
+	    case TELOPT_ECHO:
+		    if (!ts->echo.nego_started) {
+			    fprintf(stderr, "Telnet client doesn't want to echo\n");
+			    send_iac(ts, DONT, option);
+		    } else {
+			    fprintf(stderr, "Telnet client accepts not to echo\n");
+			    ts->echo.nego_started = 0;
+		    }
+		    ts->echo.state = 1;	/* We do the echo */
+		    break;
 
-		case TELOPT_SGA:
-			if(!ts->sga.nego_started) {
-				fprintf(stderr,"Telnet client doesn't want to suppress GA\n");
-				send_iac(ts,DONT,option);
-			} else {
-				fprintf(stderr,"Telnet accepts not to suppress GA\n");
-				ts->sga.nego_started = 0;
-			}
-			ts->sga.state=0;
-			break;
+	    case TELOPT_SGA:
+		    if (!ts->sga.nego_started) {
+			    fprintf(stderr, "Telnet client doesn't want to suppress GA\n");
+			    send_iac(ts, DONT, option);
+		    } else {
+			    fprintf(stderr, "Telnet accepts not to suppress GA\n");
+			    ts->sga.nego_started = 0;
+		    }
+		    ts->sga.state = 0;
+		    break;
 
-		case TELOPT_LFLOW:
-			if(!ts->lflow.nego_started) {
-				fprintf(stderr,"Telnet client doen't want control flow\n");
-				send_iac(ts,DONT,option);
-			} else {
-				dbgprintf("Telnet accepts No flowcontrol\n");
-				ts->lflow.nego_started = 0;
-			}
-			ts->lflow.state=0;
-			break;
+	    case TELOPT_LFLOW:
+		    if (!ts->lflow.nego_started) {
+			    fprintf(stderr, "Telnet client doen't want control flow\n");
+			    send_iac(ts, DONT, option);
+		    } else {
+			    dbgprintf("Telnet accepts No flowcontrol\n");
+			    ts->lflow.nego_started = 0;
+		    }
+		    ts->lflow.state = 0;
+		    break;
 
-		case TELOPT_LINEMODE:
-			if(!ts->linemode.nego_started) {
-				fprintf(stderr,"Telnet client doesn't want to use linemode\n");
-				send_iac(ts,DONT,option);
-			} else {
-				dbgprintf("Telnet client accepts Non-linemode\n");
-				ts->linemode.nego_started = 0;
-			}
-			ts->linemode.state=0;
-			break;
+	    case TELOPT_LINEMODE:
+		    if (!ts->linemode.nego_started) {
+			    fprintf(stderr, "Telnet client doesn't want to use linemode\n");
+			    send_iac(ts, DONT, option);
+		    } else {
+			    dbgprintf("Telnet client accepts Non-linemode\n");
+			    ts->linemode.nego_started = 0;
+		    }
+		    ts->linemode.state = 0;
+		    break;
 	}
 }
 
-static void 
-TSess_Submit(void *clientData,void *buf,int len) 
+static void
+TSess_Submit(void *clientData, void *buf, int len)
 {
 	TelnetSession *ts = (TelnetSession *) clientData;
-	ChannelHandler *ch;	
-	if(len) {
-		if(ts->submit_buf) {
+	ChannelHandler *ch;
+	if (len) {
+		if (ts->submit_buf) {
 			sg_free(ts->submit_buf);
 		}
 		ts->submit_buf = sg_strdup(buf);
@@ -457,8 +449,8 @@ TSess_Submit(void *clientData,void *buf,int len)
 	/* Stop the input until lines is used up */
 	TS_StopRx(ts);
 	ch = ts->datasink;
-	if(ch && ch->notifyProc) {
-		ch->notifyProc(ch->clientData,CHAN_READABLE);
+	if (ch && ch->notifyProc) {
+		ch->notifyProc(ch->clientData, CHAN_READABLE);
 	}
 }
 
@@ -468,131 +460,131 @@ TSess_Submit(void *clientData,void *buf,int len)
  ********************************************************
  */
 
-static int 
-feed_state_machine (TelnetSession *ts,uint8_t c) 
+static int
+feed_state_machine(TelnetSession * ts, uint8_t c)
 {
-	dbgprintf("feed 0x%02x\n",c);
-	switch(ts->state) {
-		case STATE_RCV:
-			if(c==IAC) {
-				ts->state=STATE_IAC;
-			} else {
-				switch(c) {
-					case SLC_IP:
-						dbgprintf("Interrupt\n");
-						break;
-					case 0:
-					case SLC_SYNCH:
-					case SLC_BRK:
-					case SLC_AO:
-					case SLC_AYT:
-					case SLC_EOR:
-					case SLC_ABORT:
-					case SLC_EOF:
-					case SLC_SUSP:
-					case SLC_EL:
-					case SLC_EW:
-					case SLC_LNEXT:
-					case SLC_XON:
-					case SLC_XOFF:
-					case SLC_FORW1:
-					case SLC_FORW2:	
-						break;
-					default:
-						if(Editor_Feed(ts->editor,c) < 0) {
-							if(ts->state == STATE_CLOSED) {
-								return -1;
-							}
-						}
-						break;
-					
-				}	
-			}
-			break;
-		case STATE_IAC: 
-			switch(c) {
-				case DONT: 
-				case DO:
-				case WONT:
-				case WILL:
-					ts->telnet_cmd = c;
-					ts->state=STATE_OPTION;	
+	dbgprintf("feed 0x%02x\n", c);
+	switch (ts->state) {
+	    case STATE_RCV:
+		    if (c == IAC) {
+			    ts->state = STATE_IAC;
+		    } else {
+			    switch (c) {
+				case SLC_IP:
+					dbgprintf("Interrupt\n");
 					break;
-
-				case SB:
-					ts->state=STATE_SUB;	
-					break;
-					
-				case GA:
-					ts->state=STATE_RCV;	
-					break;
-				case EL:
-					ts->state=STATE_RCV;	
-					break;
-				case EC:
-					ts->state=STATE_RCV;	
-					break;
-				case AYT:
-					ts->state=STATE_RCV;	
-					break;
-				case AO:
-					ts->state=STATE_RCV;	
-					break;
-				case IP:
-					dbgprintf("Received Interrupt\n");
-					ts->state=STATE_RCV;	
-					break;
-				case BREAK:
-					ts->state=STATE_RCV;	
-					break;
-				case DM:
-					ts->state=STATE_RCV;	
-					break;
-				case NOP:
-					ts->state=STATE_RCV;	
-					break;
-				case SE:
-					ts->state=STATE_RCV;	
-					break;
-			}
-			break;
-
-		case STATE_OPTION:
-			switch(ts->telnet_cmd) {
-				case DO:
-					do_option(ts,c);
-					ts->state = STATE_RCV;
-					break;
-					
-				case DONT:
-					dont_option(ts,c);
-					ts->state = STATE_RCV;
-					break;
-				case WONT:
-					wont_option(ts,c);
-					ts->state = STATE_RCV;
-					break;
-				case WILL:
-					will_option(ts,c);
-					ts->state = STATE_RCV;
+				case 0:
+				case SLC_SYNCH:
+				case SLC_BRK:
+				case SLC_AO:
+				case SLC_AYT:
+				case SLC_EOR:
+				case SLC_ABORT:
+				case SLC_EOF:
+				case SLC_SUSP:
+				case SLC_EL:
+				case SLC_EW:
+				case SLC_LNEXT:
+				case SLC_XON:
+				case SLC_XOFF:
+				case SLC_FORW1:
+				case SLC_FORW2:
 					break;
 				default:
-					fprintf(stderr,"Not understanding 0x%02x\n",c);
-					ts->state = STATE_RCV;
+					if (Editor_Feed(ts->editor, c) < 0) {
+						if (ts->state == STATE_CLOSED) {
+							return -1;
+						}
+					}
 					break;
-			}
-			break;
-			
-		case STATE_SUB: 
-			if(c == SE) {
-				ts->state=STATE_RCV;	
-			} else {
-				dbgprintf("sub %02x\n",c);
-			}
-			break;
-		default:
-			dbgprintf("unexpected state %d\n",ts->state);
-			break;	
+
+			    }
+		    }
+		    break;
+	    case STATE_IAC:
+		    switch (c) {
+			case DONT:
+			case DO:
+			case WONT:
+			case WILL:
+				ts->telnet_cmd = c;
+				ts->state = STATE_OPTION;
+				break;
+
+			case SB:
+				ts->state = STATE_SUB;
+				break;
+
+			case GA:
+				ts->state = STATE_RCV;
+				break;
+			case EL:
+				ts->state = STATE_RCV;
+				break;
+			case EC:
+				ts->state = STATE_RCV;
+				break;
+			case AYT:
+				ts->state = STATE_RCV;
+				break;
+			case AO:
+				ts->state = STATE_RCV;
+				break;
+			case IP:
+				dbgprintf("Received Interrupt\n");
+				ts->state = STATE_RCV;
+				break;
+			case BREAK:
+				ts->state = STATE_RCV;
+				break;
+			case DM:
+				ts->state = STATE_RCV;
+				break;
+			case NOP:
+				ts->state = STATE_RCV;
+				break;
+			case SE:
+				ts->state = STATE_RCV;
+				break;
+		    }
+		    break;
+
+	    case STATE_OPTION:
+		    switch (ts->telnet_cmd) {
+			case DO:
+				do_option(ts, c);
+				ts->state = STATE_RCV;
+				break;
+
+			case DONT:
+				dont_option(ts, c);
+				ts->state = STATE_RCV;
+				break;
+			case WONT:
+				wont_option(ts, c);
+				ts->state = STATE_RCV;
+				break;
+			case WILL:
+				will_option(ts, c);
+				ts->state = STATE_RCV;
+				break;
+			default:
+				fprintf(stderr, "Not understanding 0x%02x\n", c);
+				ts->state = STATE_RCV;
+				break;
+		    }
+		    break;
+
+	    case STATE_SUB:
+		    if (c == SE) {
+			    ts->state = STATE_RCV;
+		    } else {
+			    dbgprintf("sub %02x\n", c);
+		    }
+		    break;
+	    default:
+		    dbgprintf("unexpected state %d\n", ts->state);
+		    break;
 	}
 	return 0;
 }
@@ -603,18 +595,20 @@ feed_state_machine (TelnetSession *ts,uint8_t c)
  * It is called when the socket filedescriptor gets readable
  *************************************************************
  */
-static void 
-telnet_input(void *cd,int mask) {
+static void
+telnet_input(void *cd, int mask)
+{
 	int result;
 	int i;
-	TelnetSession *ts=cd;
+	TelnetSession *ts = cd;
 	uint8_t buf[16];
 	ts->usecount++;
-	while((result=read(ts->fd,buf,sizeof(buf))) > 0) {
-		for(i=0; i < result; i++) {
-			if(feed_state_machine (ts, buf[i])<0) {
+	errno = 0;
+	while ((result = read(ts->fd, buf, sizeof(buf))) > 0) {
+		for (i = 0; i < result; i++) {
+			if (feed_state_machine(ts, buf[i]) < 0) {
 				ts->usecount--;
-				if(ts->usecount == 0) {
+				if (ts->usecount == 0) {
 					TS_Del(ts);
 				}
 				return;
@@ -622,108 +616,107 @@ telnet_input(void *cd,int mask) {
 		}
 	}
 	ts->usecount--;
-	if((result<0) && (errno==EAGAIN))  {
+	if ((result < 0) && (errno == EAGAIN)) {
 		return;
 	} else {
-		dbgprintf("Connection lost\n");
+		dbgprintf("Connection lost, result %d errno %d\n",result,errno);
 		ts->state = STATE_CLOSED;
 		TS_Disable(ts);
-		if(ts->usecount == 0) {
+		if (ts->usecount == 0) {
 			TS_Del(ts);
 		}
 		return;
 	}
 }
 
-static void 
-tsess_echo(void *clientData,void *buf,int len) 
+static void
+tsess_echo(void *clientData, void *buf, int len)
 {
 	TelnetSession *ts = (TelnetSession *) clientData;
-	if(ts->echo.state) {
-		telnet_output(ts->fd,buf,len); 
+	if (ts->echo.state) {
+		telnet_output(ts->fd, buf, len);
 	}
 }
 
-
-
 static TelnetSession *
-TS_New(int fd) {
-	TelnetSession *ts=sg_new(TelnetSession);	 
-	ts->editor = Editor_New(tsess_echo,TSess_Submit,ts);
-	ts->fd=fd;
-	dbgprintf("New Telnet session fd %d\n",fd);
-	fcntl(ts->fd,F_SETFL,O_NONBLOCK);
-	ts->rfh_is_active=0;
-	ts->sga.state=1;
-	ts->echo.state=1;
+TS_New(int fd)
+{
+	TelnetSession *ts = sg_new(TelnetSession);
+	ts->editor = Editor_New(tsess_echo, TSess_Submit, ts);
+	ts->fd = fd;
+	dbgprintf("New Telnet session fd %d\n", fd);
+	fcntl(ts->fd, F_SETFL, O_NONBLOCK);
+	ts->rfh_is_active = 0;
+	ts->sga.state = 1;
+	ts->echo.state = 1;
 	ts->lflow.state = 1;
 	ts->linemode.state = 0;
 	ts->usecount = 0;
 
 	ts->sga.nego_started = 1;
 	TS_StartRx(ts);
-        send_iac(ts, WILL, TELOPT_SGA);
+	send_iac(ts, WILL, TELOPT_SGA);
 
 	ts->lflow.nego_started = 1;
-        send_iac(ts, DO, TELOPT_LFLOW); // remote flow control 
+	send_iac(ts, DO, TELOPT_LFLOW);	// remote flow control 
 
 	ts->echo.nego_started = 1;
-        send_iac(ts, WILL, TELOPT_ECHO);
+	send_iac(ts, WILL, TELOPT_ECHO);
 
 	ts->linemode.nego_started = 1;
-        send_iac(ts, DONT, TELOPT_LINEMODE);
+	send_iac(ts, DONT, TELOPT_LINEMODE);
 	return ts;
 }
 
-static void 
-tsess_close(Channel *ch,void *impl)
+static void
+tsess_close(Channel * ch, void *impl)
 {
-	TelnetSession *ts = (TelnetSession *)impl;
+	TelnetSession *ts = (TelnetSession *) impl;
 	TS_Disable(ts);
-	if(ts->usecount == 0) {
+	if (ts->usecount == 0) {
 		TS_Del(ts);
 	}
 }
 
-static int 
+static int
 tsess_eof(void *impl)
 {
-	TelnetSession *ts = (TelnetSession *)impl;
-	if(ts->state == STATE_CLOSED) {
+	TelnetSession *ts = (TelnetSession *) impl;
+	if (ts->state == STATE_CLOSED) {
 		return 1;
 	} else {
 		return 0;
 	}
 }
 
-static ssize_t 
-tsess_read(void *impl, void * _buf, size_t count)
+static ssize_t
+tsess_read(void *impl, void *_buf, size_t count)
 {
-	TelnetSession *ts = (TelnetSession *)impl;
-	char *buf = (char *) _buf;
+	TelnetSession *ts = (TelnetSession *) impl;
+	char *buf = (char *)_buf;
 	int i;
-	if(ts->state == STATE_CLOSED) {
+	if (ts->state == STATE_CLOSED) {
 		return -1;
 	}
 	//fprintf(stderr,"Read line %d: %s\n",ed->line_readpointer,line->data);
-	for(i = 0; i < count; i++) {
-		if(ts->submit_buf_rp < ts->submit_buf_wp) {
+	for (i = 0; i < count; i++) {
+		if (ts->submit_buf_rp < ts->submit_buf_wp) {
 			buf[i] = ts->submit_buf[ts->submit_buf_rp++];
 		} else {
 			break;
 		}
 	}
-	if(ts->submit_buf_rp == ts->submit_buf_wp) {
+	if (ts->submit_buf_rp == ts->submit_buf_wp) {
 		TS_StartRx(ts);
 	}
 	return i;
 }
 
-static ssize_t 
-tsess_write(void *impl, const void * buf, size_t count)
+static ssize_t
+tsess_write(void *impl, const void *buf, size_t count)
 {
-	TelnetSession *ts = (TelnetSession *)impl;
-	telnet_output(ts->fd,buf,count); 
+	TelnetSession *ts = (TelnetSession *) impl;
+	telnet_output(ts->fd, buf, count);
 	return count;
 }
 
@@ -735,16 +728,17 @@ tsess_write(void *impl, const void * buf, size_t count)
  *****************************************************************
  */
 static void
-tsess_addHandler(ChannelHandler *ch,Channel *chan,void *impl,int mask,Channel_Proc *proc,void *clientData)
+tsess_addHandler(ChannelHandler * ch, Channel * chan, void *impl, int mask, Channel_Proc * proc,
+		 void *clientData)
 {
-	TelnetSession *ts = (TelnetSession *)impl;
-	if(mask & CHAN_READABLE) {
+	TelnetSession *ts = (TelnetSession *) impl;
+	if (mask & CHAN_READABLE) {
 		ch->notifyProc = proc;
 		ch->clientData = clientData;
 		ch->chan = chan;
 		ts->datasink = ch;
-	} 
-	if(mask & CHAN_WRITABLE) {
+	}
+	if (mask & CHAN_WRITABLE) {
 		ch->notifyProc = proc;
 		ch->clientData = clientData;
 		ch->chan = chan;
@@ -752,11 +746,12 @@ tsess_addHandler(ChannelHandler *ch,Channel *chan,void *impl,int mask,Channel_Pr
 	}
 	return;
 }
+
 static void
-tsess_removeHandler(ChannelHandler *ch,void *impl)
+tsess_removeHandler(ChannelHandler * ch, void *impl)
 {
 	ch->notifyProc = NULL;
-	ch->clientData = NULL; 
+	ch->clientData = NULL;
 	ch->chan = NULL;
 	return;
 }
@@ -767,17 +762,17 @@ tsess_removeHandler(ChannelHandler *ch,void *impl)
  ***********************************************************
  */
 static void
-tserv_accept(int sockfd,char *host,unsigned short port,void *cd) 
+tserv_accept(int sockfd, char *host, unsigned short port, void *cd)
 {
 	TelnetServer *tserv = cd;
 	Channel *sessionChannel;
-        TelnetSession *ts;
-	dbgprintf("Connection from %s port %d\n",host,port);
-        ts = TS_New(sockfd);
+	TelnetSession *ts;
+	dbgprintf("Connection from %s port %d\n", host, port);
+	ts = TS_New(sockfd);
 	sessionChannel = &ts->channel;
-	memset(sessionChannel,0,sizeof(Channel));
+	memset(sessionChannel, 0, sizeof(Channel));
 	sessionChannel->implementor = ts;
-	sessionChannel->read = tsess_read;	
+	sessionChannel->read = tsess_read;
 	sessionChannel->write = tsess_write;
 	sessionChannel->addHandler = tsess_addHandler;
 	sessionChannel->removeHandler = tsess_removeHandler;
@@ -786,13 +781,12 @@ tserv_accept(int sockfd,char *host,unsigned short port,void *cd)
 	sessionChannel->busy = 0;
 	ts->tserv = tserv;
 	ts->usecount++;
-	if(tserv->accproc) {
-		tserv->accproc(tserv->clientData,sessionChannel,host,port);	
+	if (tserv->accproc) {
+		tserv->accproc(tserv->clientData, sessionChannel, host, port);
 	}
 	ts->usecount--;
 	return;
 }
-
 
 /*
  * -------------------------------------------------------------
@@ -800,17 +794,17 @@ tserv_accept(int sockfd,char *host,unsigned short port,void *cd)
  * -------------------------------------------------------------
  */
 TelnetServer *
-TelnetServer_New(char *host,int port,Telnet_AcceptProc *accproc,void *clientData)
+TelnetServer_New(char *host, int port, Telnet_AcceptProc * accproc, void *clientData)
 {
 	int fd;
-        TelnetServer *tserv=sg_new(TelnetServer);
-	
-        if((fd=FIO_InitTcpServer(&tserv->tcpserv,tserv_accept,tserv,host,port))<0) {
-                sg_free(tserv);
-                return NULL;
-        }
+	TelnetServer *tserv = sg_new(TelnetServer);
+
+	if ((fd = FIO_InitTcpServer(&tserv->tcpserv, tserv_accept, tserv, host, port)) < 0) {
+		sg_free(tserv);
+		return NULL;
+	}
 	tserv->accproc = accproc;
-	tserv->clientData=clientData;
-	dbgprintf("Debug Server fd %d Listening on host \"%s\" port %d\n",fd,host,port);
-        return tserv;
+	tserv->clientData = clientData;
+	dbgprintf("Debug Server fd %d Listening on host \"%s\" port %d\n", fd, host, port);
+	return tserv;
 }

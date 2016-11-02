@@ -21,33 +21,33 @@
 #define I2C_SPEED_HIGH	(2)
 
 typedef struct I2C_SlaveOps {
-	int (*start)(void *dev,int i2c_addr,int operation);
-	void (*stop)(void *dev);
-	void (*repstart)(void *dev); /* ???? */
+	int (*start) (void *dev, int i2c_addr, int operation);
+	void (*stop) (void *dev);
+	void (*repstart) (void *dev);	/* ???? */
 	/*
- 	 * -------------------------------------------------
- 	 * Read and write calls are allowed to return
-         * I2C_STRETCH_SCL if they are not ready to 
+	 * -------------------------------------------------
+	 * Read and write calls are allowed to return
+	 * I2C_STRETCH_SCL if they are not ready to 
 	 * eat or vomit data. In this case a later
 	 * call of unstretch_scl is required and read/write
 	 * will be called again. 
- 	 * -------------------------------------------------
+	 * -------------------------------------------------
 	 */
-	int  (*write)(void *dev,uint8_t data);
-	int  (*read)(void *dev,uint8_t *data);
+	int (*write) (void *dev, uint8_t data);
+	int (*read) (void *dev, uint8_t * data);
 	/* 
-         * -----------------------------------------------------
+	 * -----------------------------------------------------
 	 * Tell device if read was acked or not 
-         * The device can then decide to prepare next
+	 * The device can then decide to prepare next
 	 * or trigger some finishing action
-         * -----------------------------------------------------
+	 * -----------------------------------------------------
 	 */
-	void (*read_ack)(void *dev,int ack);
+	void (*read_ack) (void *dev, int ack);
 } I2C_SlaveOps;
 
 typedef struct I2C_Slave {
 	int speed;
-	int tolerated_speed; /* Speed when other device on same bus is accessed */
+	int tolerated_speed;	/* Speed when other device on same bus is accessed */
 	I2C_SlaveOps *devops;
 	void *dev;
 	struct I2C_Slave *next;
