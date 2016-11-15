@@ -42,7 +42,7 @@
 #include "clock.h"
 #include "strhash.h"
 #include "sgstring.h"
-#include "interpreter.h"
+//#include "interpreter.h"
 
 static Clock_t *systemMasterClock = NULL;
 static uint64_t systemMasterClock_Version = 1;
@@ -466,6 +466,7 @@ Clock_DumpTree(Clock_t * top)
 	_Clock_DumpTree(top, 0);
 }
 
+#if 0
 int
 cmd_clktree(Interp * interp, void *clientData, int argc, char *argv[])
 {
@@ -481,13 +482,16 @@ cmd_clktree(Interp * interp, void *clientData, int argc, char *argv[])
 	//exit(1);
 	return CMD_RESULT_OK;
 }
+#endif
 
 void
 ClocksInit(void)
 {
 	SHash_InitTable(&clock_hash);
+#if 0
 	if (Cmd_Register("clktree", cmd_clktree, NULL) < 0) {
 		fprintf(stderr, "Can not register clock command\n");
 		exit(1);
 	}
+#endif
 }

@@ -42,7 +42,7 @@
 #include "sgstring.h"
 #include "strhash.h"
 #include "debugvars.h"
-#include "interpreter.h"
+//#include "interpreter.h"
 
 typedef struct DebugVarTable {
 	SHashTable varHash;
@@ -279,6 +279,7 @@ DebugVar_SetFromStr(DebugVar * dvar, char *str)
 	}
 }
 
+#if 0
 /*
  ******************************************************************
  * Interpreter command to set a variable
@@ -322,11 +323,13 @@ cmd_get_var(Interp * interp, void *clientData, int argc, char *argv[])
 	Interp_AppendResult(interp, "%s\r\n", str);
 	return CMD_RESULT_OK;
 }
+#endif
 
 void
 DbgVars_Init(void)
 {
 	SHash_InitTable(&debugVarTable.varHash);
+#if 0
 	if (Cmd_Register("setvar", cmd_set_var, &debugVarTable) < 0) {
 		fprintf(stderr, "Can not register setvar command\n");
 		exit(1);
@@ -335,4 +338,5 @@ DbgVars_Init(void)
 		fprintf(stderr, "Can not register getvar command\n");
 		exit(1);
 	}
+#endif
 }

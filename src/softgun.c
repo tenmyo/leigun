@@ -52,9 +52,9 @@
 #include "boards/boards.h"
 #include "senseless.h"
 #include "version.h"
-#include "cliserver.h"
+//#include "cliserver.h"
 #include "debugvars.h"
-#include "interpreter.h"
+//#include "interpreter.h"
 #include "sgstring.h"
 #include "sglib.h"
 #include "crc16.h"
@@ -272,7 +272,7 @@ main(int argc, char *argv[])
 	CRC16_Init();
 	signal(SIGPIPE, SIG_IGN);
 	parse_commandline(argc - 1, argv + 1);
-	CmdRegistry_Init();
+//	CmdRegistry_Init();
 	DbgVars_Init();
 	read_configfile();
 	if (Config_ReadUInt64(&seedval, "global", "random_seed") >= 0) {
@@ -301,7 +301,7 @@ main(int argc, char *argv[])
 		Config_AddString(Board_DefaultConfig(board));
 	}
 	Board_Create(board);
-	CliServer_New("cli");
+//	CliServer_New("cli");
 	WebServ_New("webserv");
 	LoadChain_Resolve();
 	if (LoadChain_Load() < 0) {

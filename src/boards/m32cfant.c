@@ -3,6 +3,7 @@
  * Create a M32C fantasy board.
  *********************************************************************************
  */
+#if 0
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -202,3 +203,5 @@ m32cfant_init()
 	fprintf(stderr, "Loading M32C Fantasy module\n");
 	Board_Register(&board_m32cfant);
 }
+
+#endif

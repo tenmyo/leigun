@@ -46,7 +46,7 @@
 #include "signode.h"
 #include "xy_hash.h"
 #include "compiler_extensions.h"
-#include "interpreter.h"
+//#include "interpreter.h"
 
 static SHashTable signode_hash;
 static SigStamp g_stamp = 0;
@@ -738,6 +738,7 @@ Signodes_SetConflictProc(SigConflictProc * proc)
 	g_conflictProc = proc;
 }
 
+#if 0
 /**
  *****************************************************************
  * Queury or set Elektrical signals
@@ -765,6 +766,7 @@ cmd_sig(Interp * interp, void *clientData, int argc, char *argv[])
 	}
 	return CMD_RESULT_OK;
 }
+#endif
 
 /*
  * --------------------------------------------
@@ -791,9 +793,11 @@ SignodesInit()
 		exit(43275);
 	}
 	SigNode_Set(node, SIG_FORCE_HIGH);
+#if 0
 	if (Cmd_Register("sig", cmd_sig, NULL) < 0) {
 		fprintf(stderr, "Can not register sig command\n");
 		exit(1);
 	}
+#endif
 	return;
 }
