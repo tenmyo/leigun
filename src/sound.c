@@ -1,10 +1,14 @@
+#include "compiler_extensions.h"
+#include "sound.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "sound.h"
 #include "configfile.h"
 #include "sgstring.h"
+#ifndef NO_ALSA
 #include "alsasound.h"
+#endif
 #include "nullsound.h"
 
 typedef struct SndBackEnd {
@@ -41,11 +45,13 @@ SoundDevice_New(const char *name)
 		}
 	}
 	/* To lazy to write the code to register sound backends */
+#ifndef NO_ALSA
 	if (strcmp(bename, "alsa") == 0) {
 		sdev = AlsaSound_New(name);
 		if (sdev) {
 			return sdev;
 		}
 	}
+#endif
 	return NullSound_New(name);
 }

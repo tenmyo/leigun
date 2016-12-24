@@ -33,6 +33,9 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "avr8_adc.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include "clock.h"
@@ -41,7 +44,6 @@
 #include "sgstring.h"
 #include "signode.h"
 #include "cycletimer.h"
-#include "avr8_adc.h"
 
 #define REG_ADC(base) 		((base) + 0x00)
 #define REG_ADCL(base) 		((base) + 0x00)

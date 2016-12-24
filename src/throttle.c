@@ -81,7 +81,7 @@ throttle_proc(void *clientData)
 		tout.tv_nsec = 200 * 1000; /* 0.2 ms */
 		tout.tv_sec = 0;
 
-		clock_gettime(CLOCK_MONOTONIC, &tv_now);
+		timespec_get(&tv_now, TIME_UTC);
 		nsecs = (tv_now.tv_nsec - th->tv_last_throttle.tv_nsec) +
 		    (int64_t) 1000000000 * (tv_now.tv_sec - th->tv_last_throttle.tv_sec);
 		exp_cpu_cycles = NanosecondsToCycles(nsecs);
@@ -132,7 +132,7 @@ Throttle_New(const char *name)
 	}
 	SigNode_Set(th->sigSpeedUp, SIG_PULLDOWN);
 	SigNode_Set(th->sigSpeedDown, SIG_PULLDOWN);
-	clock_gettime(CLOCK_MONOTONIC, &th->tv_last_throttle);
+	timespec_get(&th->tv_last_throttle, TIME_UTC);
 	th->last_throttle_cycles = 0;
 	th->sleepsPerSecond = 100; /* Start Value, Sleep 100 times per second */
 	Config_ReadUInt32(&throttle_enable, name, "throttle");

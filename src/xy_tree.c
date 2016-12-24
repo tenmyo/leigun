@@ -7,7 +7,7 @@
  * -----------------------------------------------------------------
  */
 #include "sgstring.h"
-#include <xy_tree.h>
+#include "xy_tree.h"
 
 #ifdef TREE_DEBUG
 static void

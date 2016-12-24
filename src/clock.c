@@ -31,6 +31,8 @@
  *
  ************************************************************************************************ 
  */
+#include "compiler_extensions.h"
+#include "clock.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,8 +40,6 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdarg.h>
-#include <unistd.h>
-#include "clock.h"
 #include "strhash.h"
 #include "sgstring.h"
 //#include "interpreter.h"
@@ -418,7 +418,7 @@ Clock_Link(const char *child, const char *parent)
 	if (!sclock || !mclock) {
 		fprintf(stderr, "Trying to link nonexsitent clocks \"%s\" and \"%s\"\n", child,
 			parent);
-		sleep(2);
+		//sleep(2);
 		return;
 	}
 	Clock_MakeDerived(sclock, mclock, 1, 1);
@@ -429,7 +429,7 @@ Clock_Unlink(const char *child)
 {
 	Clock_t *sclock = Clock_Find(child);
 	if (!sclock) {
-		sleep(2);
+		//sleep(2);
 		fprintf(stderr, "Trying to unlink nonexsitent clock \"%s\"\n", child);
 		return;
 	}

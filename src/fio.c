@@ -42,26 +42,55 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "fio.h"
 
-#include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <pthread.h>
-#include <sys/socket.h>
 #include <sys/types.h>
+#ifdef __unix__
+#include <sys/time.h>
 #include <sys/select.h>
-#include <netdb.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
+#include <sys/mman.h>
+#include <netdb.h>
+#include <pthread.h>
+#else
+#define WIN32_LEAN_AND_MEAN
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#pragma comment(lib, "wsock32.lib")
+#define SHUT_RD SD_RECEIVE
+#define SHUT_WR SD_SEND
+#define SHUT_RDWR SD_BOTH
+#define read(a,b,c) recv(a,b,c,0)
+#define close(fd) closesocket(fd)
+#define write(a,b,c) send(a,b,c,0)
+#define clock_gettime(clk_id, tp) timespec_get(tp, TIME_UTC)
+#include <thr/threads.h>
+#define pthread_t thrd_t
+#define pthread_mutex_t mtx_t
+#define pthread_cond_t cnd_t
+#define pthread_create(tid, attr, func, arg) thrd_create(tid, func, arg)
+#define pthread_mutex_lock(mtx) mtx_lock(mtx)
+#define pthread_mutex_unlock(mtx) mtx_unlock(mtx)
+#define pthread_cond_wait(cond, mtx) cnd_wait(cond, mtx)
+#define pthread_cond_signal(cond) cnd_signal(cond)
+#define pselect(fds, rfds, wfds, efds, timeout, set) select(fds, rfds, wfds, efds, timeout)
+#endif
 
-#include "fio.h"
+
+#ifndef NO_ARM9
 #include "arm9cpu.h"
+#endif
 #include "mainloop_events.h"
 #include "xy_tree.h"
 
@@ -85,12 +114,18 @@ static int pipefd[2];
 #endif
 
 static pthread_t iothread;
+#ifdef __unix__
 static pthread_mutex_t io_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t io_done = PTHREAD_COND_INITIALIZER;
+#else
+static pthread_mutex_t io_mutex;
+static pthread_cond_t io_done;
+#endif
 static XY_Tree host_timer_tree;
 static xy_node *first_host_timer_node = NULL;
 static pthread_mutex_t timer_mutex;
 
+#ifdef __unix
 static void
 init_recursive_mutex(pthread_mutex_t * mutex)
 {
@@ -109,6 +144,7 @@ init_recursive_mutex(pthread_mutex_t * mutex)
 	pthread_mutex_init(mutex, &attr);
 	pthread_mutexattr_destroy(&attr);
 }
+#endif
 
 static inline void
 get_timer_lock(void)
@@ -231,6 +267,7 @@ run_iothread(void *cd)
 	fd_set rfds, wfds;
 	int result;
 	struct timespec timeout;
+#ifndef NO_SIGNAL
 	struct sigaction sa;
 #if USE_DUMMYPIPE == 1
 	if (pipe(pipefd) < 0) {
@@ -251,6 +288,7 @@ run_iothread(void *cd)
 	sigaddset(&blockset, SIGUSR1);
 	sigprocmask(SIG_BLOCK, &blockset, NULL);
 	sigaction(SIGUSR1, &sa, NULL);	// fd change notification
+#endif
 	while (1) {
 #if USE_DUMMYPIPE == 1
 		uint8_t c;
@@ -428,7 +466,9 @@ FIO_AddFileHandler(FIO_FileHandler * fh, int fd, int mask, FIO_FileProc * proc, 
 	 * The IO-Thread which needs to re-call select with new fds
 	 *  so interrupt the old select with a signal  
 	 */
+#ifndef NO_SIGNAL
 	pthread_kill(iothread, SIGUSR1);
+#endif
 }
 
 void
@@ -525,8 +565,10 @@ FIO_InitTcpServer(FIO_TcpServer * tserv, FIO_Accept * proc, void *clientData,
 	optval = 1;
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
 	tserv->sock = sock;
+#ifdef __unix__
 	fcntl(sock, F_SETFD, FD_CLOEXEC);
 	fcntl(sock, F_SETFL, O_NONBLOCK);
+#endif
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(port);
 	sa.sin_addr.s_addr = inet_addr(host);
@@ -556,11 +598,24 @@ void
 FIO_Init()
 {
 	int result;
+#ifndef NO_SIGNAL
 	sigset_t blockset;
+#endif
 	XY_InitTree(&host_timer_tree, _is_later, NULL, NULL, NULL);
+#ifdef __unix__
 	init_recursive_mutex(&timer_mutex);
+#else
+	mtx_init(&io_mutex, mtx_plain);
+	cnd_init(&io_done);
+	mtx_init(&timer_mutex, mtx_plain | mtx_recursive);
+#endif
 	FD_ZERO(&g_fdsets.rfds);
 	FD_ZERO(&g_fdsets.wfds);
+#ifdef __unix__
+#else
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 0), &wsaData);
+#endif
 	/* 
 	 * ------------------------------------------------------
 	 * The IO-Thread uses SIGUSR1. Old pthreads library  
@@ -568,9 +623,11 @@ FIO_Init()
 	 * better to block them in main thread
 	 * ------------------------------------------------------
 	 */
+#ifndef NO_SIGNAL
 	sigemptyset(&blockset);
 	sigaddset(&blockset, SIGUSR1);
 	sigprocmask(SIG_BLOCK, &blockset, NULL);
+#endif
 	result = pthread_create(&iothread, NULL, run_iothread, NULL);
 	if (result < 0) {
 		perror("IO-Thread creation failed\n");

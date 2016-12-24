@@ -39,16 +39,15 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "amdflash.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <sys/file.h>
 
-#include "amdflash.h"
 #include "configfile.h"
 #include "cycletimer.h"
 #include "bus.h"
@@ -258,7 +257,7 @@ static FlashType flash_types[] = {
 	 .name = "AM29LV800BT",
 	 .size = 1 * 1024 * 1024,
 	 .min_sectorsize = 64 * 1024,
-	 .querystr = {},	/* Not a CFI flash */
+	 .querystr = {0},	/* Not a CFI flash */
 	 .auto_sel = {
 		      {0x00, 0x4f, 0x0001},	/* Manufacturer ID */
 		      {0x01, 0x4f, 0x22da},	/* Device ID */

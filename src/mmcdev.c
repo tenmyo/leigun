@@ -1,7 +1,9 @@
+#include "compiler_extensions.h"
+#include "mmcdev.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "mmcdev.h"
 #include "sgstring.h"
 #include "cycletimer.h"
 

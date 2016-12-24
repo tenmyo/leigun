@@ -37,22 +37,46 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "diskimage.h"
 
-#include <sys/stat.h>
-#include <unistd.h>
+#define _FILE_OFFSET_BITS 64
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#ifdef __unix__
 #include <sys/file.h>
 #include <sys/mman.h>
+#else
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <io.h>
+#endif
+#include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
-#include "diskimage.h"
+
 #include "sgstring.h"
+
+#ifndef O_LARGEFILE
+ /* O_LARGEFILE is not defined or needed on FreeBSD,
+ * which is why it's defined here so that does nothing */
+#define O_LARGEFILE 0
+#endif
+
+struct DiskImage {
+	int fd;
+	int flags;
+	uint64_t size;
+	void *map;
+#ifdef __unix__
+#else
+	HANDLE hHandle;
+#endif
+};
 
 /*
  * ------------------------------------------------------------------------
@@ -183,16 +207,19 @@ DiskImage_Open(const char *name, uint64_t size, int flags)
 		free(di);
 		return NULL;
 	}
+#ifdef __unix__
 	if (flock(di->fd, LOCK_EX | LOCK_NB) < 0) {
 		fprintf(stderr, "Can't get lock for diskimage \"%s\"\n", name);
 		close(di->fd);
 		free(di);
 		return NULL;
 	}
+#endif
 	if (fstat(di->fd, &stat) < 0) {
 		fprintf(stderr, "Stat on diskimage failed\n");
 		exit(1);
 	}
+#ifdef __unix__
 	if ((stat.st_mode & S_IFMT) == S_IFBLK) {
 		fprintf(stderr, "Diskimage \"%s\" is a block device\n", name);
 		if (size) {
@@ -203,6 +230,9 @@ DiskImage_Open(const char *name, uint64_t size, int flags)
 		fprintf(stderr, "Block device access not implemented\n");
 		exit(1);
 	} else if ((stat.st_mode & S_IFMT) == S_IFREG) {
+#else
+	if (1) {
+#endif
 		fprintf(stderr, "Diskimage \"%s\" is a regular file\n", name);
 		if (check_fill(di, flags) < 0) {
 			close(di->fd);
@@ -263,6 +293,7 @@ DiskImage_Write(DiskImage * di, off_t ofs, const uint8_t * buf, int count)
 void *
 DiskImage_Mmap(DiskImage * di)
 {
+#ifdef __unix__
 	if (di->flags & DI_RDWR) {
 		di->map = mmap(0, di->size, PROT_READ | PROT_WRITE, MAP_SHARED, di->fd, 0);
 	} else {
@@ -274,17 +305,34 @@ DiskImage_Mmap(DiskImage * di)
 		free(di);
 		return NULL;
 	}
+#else
+	if (di->flags & DI_RDWR) {
+		di->hHandle = CreateFileMapping(_get_osfhandle(di->fd), NULL, PAGE_READWRITE, 0, 0, NULL);
+		di->map = MapViewOfFile(di->hHandle, FILE_MAP_WRITE, 0, 0, 0);
+	}
+	else {
+		di->hHandle = CreateFileMapping(_get_osfhandle(di->fd), NULL, PAGE_READONLY, 0, 0, NULL);
+		di->map = MapViewOfFile(di->hHandle, FILE_MAP_READ, 0, 0, 0);
+	}
+	
+#endif
 	return di->map;
 }
 
 void
 DiskImage_Close(DiskImage * di)
 {
+#ifdef __unix__
 	if (di->map) {
 		munmap(di->map, di->size);
 		di->map = NULL;
 	}
 	flock(di->fd, LOCK_UN);
+#else
+	if (di->map) {
+
+	}
+#endif
 	close(di->fd);
 	free(di);
 }

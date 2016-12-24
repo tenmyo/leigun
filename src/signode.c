@@ -34,18 +34,17 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "signode.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
 #include "sgstring.h"
-#include "signode.h"
-#include "xy_hash.h"
-#include "compiler_extensions.h"
+//#include "xy_hash.h"
 //#include "interpreter.h"
 
 static SHashTable signode_hash;
@@ -447,12 +446,12 @@ SigName_Link(const char *name1, const char *name2)
 	sig2 = SigNode_Find("%s", name2);
 	if (!sig1) {
 		fprintf(stderr, "Node not found: \"%s\"\n", name1);
-		sleep(2);
+		//sleep(2);
 		return -1;
 	}
 	if (!sig2) {
 		fprintf(stderr, "Node not found: \"%s\"\n", name2);
-		sleep(2);
+		//sleep(2);
 		return -2;
 	}
 	return SigNode_Link(sig1, sig2);
@@ -512,12 +511,12 @@ SigName_RemoveLink(const char *name1, const char *name2)
 	sig2 = SigNode_Find("%s", name2);
 	if (!sig1) {
 		fprintf(stderr, "Node not found: \"%s\"\n", name1);
-		sleep(2);
+		//sleep(2);
 		return -1;
 	}
 	if (!sig2) {
 		fprintf(stderr, "Node not found: \"%s\"\n", name2);
-		sleep(2);
+		//sleep(2);
 		return -2;
 	}
 	return SigNode_RemoveLink(sig1, sig2);

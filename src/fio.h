@@ -1,7 +1,9 @@
 #ifndef FIO_H
 #define FIO_H
 #include <time.h>
+#ifdef _POSIX_C_SOURCE
 #include <sys/time.h>
+#endif
 #include "xy_tree.h"
 
 void FIO_HandleInput(void);

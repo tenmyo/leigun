@@ -35,33 +35,52 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "rfbserver.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <fio.h>
-#include <rfbserver.h>
-#include <byteorder.h>
+#ifndef NO_ZLIB
+#include <zlib.h>
+#endif
+#ifdef __unix__
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <unistd.h>
 #include <sys/mman.h>
-#include <byteorder.h>
-#include <configfile.h>
-#include <fbdisplay.h>
-#include <keyboard.h>
-#include <zlib.h>
+#else
+#define WIN32_LEAN_AND_MEAN
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#pragma comment(lib, "wsock32.lib")
+#define SHUT_RD SD_RECEIVE
+#define SHUT_WR SD_SEND
+#define SHUT_RDWR SD_BOTH
+#define read(a,b,c) recv(a,b,c,0)
+#define write(a,b,c) send(a,b,c,0)
+#define close(fd) closesocket(fd)
+#endif
 #include <sys/types.h>
 #include <signal.h>
 #include <time.h>
+#include "fio.h"
+#include "byteorder.h"
+#include "configfile.h"
+#include "fbdisplay.h"
 #include "sgstring.h"
 #include "sglib.h"
+
+#ifndef NO_KEYBOARD
+#include "keyboard.h"
+#endif
+
+#ifndef NO_MOUSE
 #include "mouse.h"
+#endif
 
 #if 0
 #define dbgprintf(...) { fprintf(stdout,__VA_ARGS__); }
@@ -156,7 +175,9 @@ typedef struct RfbConnection {
 	int ibuf_wp;
 	int ibuf_expected;
 	RLEncoder rle;
+#ifndef NO_ZLIB
 	z_stream zs;
+#endif
 	RfbServer *rfbserv;
 	int update_outstanding;
 	UpdateRectangle udrect_fifo[UDRECT_FIFOSIZE];
@@ -169,11 +190,17 @@ typedef struct RfbConnection {
 
 struct RfbServer {
 	FbDisplay display;
+#ifndef NO_KEYBOARD
 	Keyboard keyboard;
-    Mouse mouse;
+#endif
+#ifndef NO_MOUSE
+	Mouse mouse;
+#endif
 	int32_t propose_bpp;
 	FIO_TcpServer tcpserv;
+#ifndef NO_STARTCMD
 	pid_t viewerpid;
+#endif
 	int sock_fd;
 	RfbConnection *con_head;
 	/* Servers native FBI (window info & Pixelformat */
@@ -256,7 +283,9 @@ rfbsrv_disconnect(RfbConnection * rcon)
 			}
 		}
 	}
+#ifndef NO_ZLIB
 	deflateEnd(&rcon->zs);
+#endif
 	if (rcon->obuf) {
 		free(rcon->obuf);
 	}
@@ -279,11 +308,13 @@ rfbsrv_disconnect(RfbConnection * rcon)
  * ----------------------------------------------------------
  */
 static int
-rfbcon_send(RfbConnection * rcon, void *buf, int count)
+rfbcon_send(RfbConnection * rcon, uint8_t *buf, int count)
 {
 	int result;
 	int counter = count;
+#ifdef __unix__
 	fcntl(rcon->sock_fd, F_SETFL, 0);
+#endif
 	while (counter) {
 		int wsize = counter;
 #if 0
@@ -300,7 +331,9 @@ rfbcon_send(RfbConnection * rcon, void *buf, int count)
 		counter -= result;
 		buf += result;
 	}
+#ifdef __unix__
 	fcntl(rcon->sock_fd, F_SETFL, O_NONBLOCK);
+#endif
 	return count;
 };
 
@@ -830,6 +863,7 @@ srv_fb_encode_update_raw(RfbConnection * rcon)
 	return;
 }
 
+#ifndef NO_ZLIB
 /*
  * ----------------------------------------------------------------------------
  * srv_fb_encode_update_zrle
@@ -919,6 +953,7 @@ srv_fb_encode_update_zrle(RfbConnection * rcon)
 	}
 	return;
 }
+#endif
 
 /*
  * ----------------------------------------------------------------
@@ -938,10 +973,12 @@ srv_fb_update(RfbConnection * rcon)
 	    case ENC_RAW:
 		    srv_fb_encode_update_raw(rcon);
 		    break;
-	    case ENC_ZRLE:
+#ifndef NO_ZLIB
+		case ENC_ZRLE:
 		    srv_fb_encode_update_zrle(rcon);
 		    break;
-	    case ENC_HEXTILE:
+#endif
+		case ENC_HEXTILE:
 	    default:
 		    fprintf(stderr, "encoding %d not implemented\n", rcon->current_encoding);
 	}
@@ -1054,7 +1091,6 @@ clnt_set_pixel_format(RfbConnection * rcon, uint8_t * data, int len)
 		srv_set_8bit_color_map_entries(rcon, pixf);
 	}
 	pixfmt_update_translation(rcon);
-#if 1
 	dbgprintf("got set pixelformat message\n");
 	dbgprintf("msgtype %02x\n", data[0]);
 	dbgprintf("bpp    %d\n", data[4]);
@@ -1067,7 +1103,6 @@ clnt_set_pixel_format(RfbConnection * rcon, uint8_t * data, int len)
 	dbgprintf("redshift  %d\n", data[14]);
 	dbgprintf("greenshift  %d\n", data[15]);
 	dbgprintf("blueshift  %d\n", data[16]);
-#endif
 }
 
 static void
@@ -1081,11 +1116,12 @@ clnt_set_encodings(RfbConnection * rcon, uint8_t * data, int len)
 		enc = ntohl(encodings[i]);
 		dbgprintf("enc %d\n", enc);
 		switch (enc) {
+#ifndef NO_ZLIB
 		    case ENC_ZRLE:
 			    rcon->current_encoding = ENC_ZRLE;
 			    dbgprintf("Switched to encoding %d\n", rcon->current_encoding);
 			    return;
-
+#endif
 		    case ENC_RAW:
 			    rcon->current_encoding = ENC_RAW;
 			    return;
@@ -1161,6 +1197,7 @@ clnt_fb_update_req(RfbConnection * rcon, uint8_t * data, int len)
 	}
 }
 
+#ifndef NO_KEYBOARD
 static void
 clnt_key_event(RfbConnection * rcon, uint8_t * data, int len)
 {
@@ -1171,7 +1208,9 @@ clnt_key_event(RfbConnection * rcon, uint8_t * data, int len)
 	Keyboard_SendEvent(&rfbserv->keyboard, &kev);
 	//fprintf(stderr,"Got key event %08x\n",kev.key);
 }
+#endif
 
+#ifndef NO_MOUSE
 static void
 clnt_pointer_event(RfbConnection * rcon, uint8_t * data, int len)
 {
@@ -1189,6 +1228,7 @@ clnt_pointer_event(RfbConnection * rcon, uint8_t * data, int len)
 	Mouse_SendEvent(&rfbserv->mouse, &mev);
     //printf("mask %02x, x %u, y %u\n", button_mask, x, y);
 }
+#endif
 
 static void
 clnt_client_cut_text(RfbConnection * rcon, uint8_t * data, int len)
@@ -1246,16 +1286,20 @@ decode_message(RfbConnection * rcon, uint8_t * data, int len)
 		    if (len < required_len) {
 			    return required_len;
 		    }
-		    clnt_key_event(rcon, rcon->ibuf, rcon->ibuf_wp);
-		    break;
+#ifndef NO_KEYBOARD
+			clnt_key_event(rcon, rcon->ibuf, rcon->ibuf_wp);
+#endif
+			break;
 
 	    case CLNT_POINTER_EVENT:
 		    required_len = 6;
 		    if (len < required_len) {
 			    return required_len;
 		    }
-		    clnt_pointer_event(rcon, rcon->ibuf, rcon->ibuf_wp);
-		    break;
+#ifndef NO_MOUSE
+			clnt_pointer_event(rcon, rcon->ibuf, rcon->ibuf_wp);
+#endif
+			break;
 
 	    case CLNT_CLIENT_CUT_TEXT:
 		    if (len >= 8) {
@@ -1389,19 +1433,23 @@ rfbsrv_accept(int fd, char *host, unsigned short port, void *clientData)
 	rcon->obuf_size = 65536;
 	rcon->obuf = sg_calloc(rcon->obuf_size);
 
+#ifndef NO_ZLIB
 	rcon->zs.zalloc = Z_NULL;
 	rcon->zs.zfree = Z_NULL;
 	rcon->zs.opaque = Z_NULL;
 	if (deflateInit(&rcon->zs, Z_DEFAULT_COMPRESSION) != Z_OK) {
 		fprintf(stderr, "Decompressor init failed\n");
 	}
+#endif
 
 	/* Default Pixel format is framebuffers pixelformat */
 	memcpy(&rcon->pixfmt, &rfbserv->fbi.pixfmt, sizeof(PixelFormat));
 	pixfmt_update_translation(rcon);
 	rfbserv->con_head = rcon;
 	rcon->current_encoding = ENC_RAW;
+#ifdef __unix__
 	fcntl(rcon->sock_fd, F_SETFL, O_NONBLOCK);
+#endif
 	if (setsockopt(rcon->sock_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on)) < 0) {
 		perror("Error setting sockopts");
 	}
@@ -1529,14 +1577,16 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
 {
 	int fd;
 	int result;
-	int softgunpid;
 	RfbServer *rfbserv;
 	FrameBufferInfo *fbi;
 	PixelFormat *pixf;
 	uint32_t width, height;
 	uint32_t port;
 	char *host = Config_ReadVar(name, "host");
+#ifndef NO_STARTCMD
+	int softgunpid;
 	char *startcmd = Config_ReadVar(name, "start");
+#endif
     if (displayPP) { 
 	    *displayPP = NULL;
     }
@@ -1608,15 +1658,20 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
 	rfbserv->display.name = sg_strdup(name);
 	rfbserv->display.width = width;
 	rfbserv->display.height = height;
+#ifndef NO_KEYBOARD
     if (keyboardPP) {
 	    *keyboardPP = &rfbserv->keyboard;
     }
+#endif
     if (displayPP) {
 	    *displayPP = &rfbserv->display;
     }
+#ifndef NO_MOUSE
     if (mousePP) {
         *mousePP = &rfbserv->mouse;
     }
+#endif
+#ifndef NO_STARTCMD
 	softgunpid = getpid();
 	if (startcmd && !(rfbserv->viewerpid = fork())) {
 		/* Shit this inherits the atexit commands currently */
@@ -1657,4 +1712,5 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
 		}
 		exit(0);
 	}
+#endif
 }

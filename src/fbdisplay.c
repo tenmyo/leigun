@@ -1,11 +1,14 @@
+#include "fbdisplay.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "rfbserver.h"
-#include "sdldisplay.h"
 #include "configfile.h"
-#include "mouse.h"
+#include "rfbserver.h"
+#if 0
+#include "sdldisplay.h"
+#endif
 
 void
 FbDisplay_New(const char *name, FbDisplay ** display, Keyboard ** keyboard, Mouse **mouse,

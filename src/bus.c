@@ -36,15 +36,15 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "bus.h"
 
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include "sgstring.h"
-#include "bus.h"
 #include "loader.h"
 
 Bus *MainBus;

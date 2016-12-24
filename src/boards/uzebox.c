@@ -1,43 +1,63 @@
+#include "compiler_extensions.h"
+#include "initializer.h"
+
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+#ifdef __unix__
 #include <termios.h>
 #include <unistd.h>
-#include <termios.h>
 #include <sys/ioctl.h>
-#include "avr8_cpu.h"
-#include "atm644_usart.h"
-#include "atm644_timer02.h"
-#include "atm644_timer1.h"
-#include "avr8_eeprom.h"
-#include "avr8_port.h"
+#endif
+
 #include "boards.h"
-#include "i2c_serdes.h"
-#include "avr8_adc.h"
+#include "clock.h"
+#include "avr8/avr8_cpu.h"
+#include "avr8/avr8_adc.h"
+#include "avr8/atm644_timer1.h"
+#include "avr8/atm644_timer02.h"
+#include "avr8/uze_timer2.h"
+#include "fbdisplay.h"
+#include "sgstring.h"
+
+#ifndef NO_EEPROM
+#include "avr8_eeprom.h"
+#endif
+
+#ifndef NO_MMC
+#include "mmcdev.h"
+#include "sd_spi.h"
+#endif
+
+#include "sound.h"
+
+#ifdef __unix__
+#include "atm644_usart.h"
+#include "avr8_port.h"
 #include "atm644_sysreset.h"
 #include "atm644_twi.h"
 #include "avr8_gpio.h"
 #include "uze_video.h"
-#include "fbdisplay.h"
 #include "keyboard.h"
 #include "rfbserver.h"
 #include "uze_snes.h"
-#include "sound.h"
-#include "uze_timer2.h"
 #include "atm644_spi.h"
-#include "mmcdev.h"
-#include "sd_spi.h"
 #include "atm644_extint.h"
-#include "sgstring.h"
-#include "compiler_extensions.h"
+#else
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#define sleep(sec) Sleep(sec*1000)
+#endif
 
 typedef struct Uzebox {
 	AVR8_Adc *adc;
 	FbDisplay *display;
 	Keyboard *keyboard;
 	SoundDevice *sounddevice;
+#ifndef NO_MMC
 	MMCDev *mmcard;
 	SD_Spi *sdspi;
+#endif
 } Uzebox;
 
 #define DEFAULTCONFIG \
@@ -64,6 +84,7 @@ link_signals(Uzebox * box)
 	SigName_Link("extint.pcint_out3", "avr.irq7");
 	SigName_Link("extint.pcintAck3", "avr.irqAck7");
 
+#ifndef NO_USART
 	SigName_Link("usart0.rxIrq", "avr.irq20");
 	SigName_Link("usart0.udreIrq", "avr.irq21");
 	SigName_Link("usart0.txIrq", "avr.irq22");
@@ -73,6 +94,7 @@ link_signals(Uzebox * box)
 	SigName_Link("usart1.udreIrq", "avr.irq29");
 	SigName_Link("usart1.txIrq", "avr.irq30");
 	SigName_Link("usart1.txIrqAck", "avr.irqAck30");
+#endif
 
 	SigName_Link("timer0.compaIrq", "avr.irq16");
 	SigName_Link("timer0.compaAckIrq", "avr.irqAck16");
@@ -147,6 +169,7 @@ link_signals(Uzebox * box)
 	SigName_Link("spi0.pvoe_miso", "portB.pvoe6");
 	SigName_Link("spi0.pvoe_sck", "portB.pvoe7");
 
+#ifndef NO_MMC
 	if (box->sdspi) {
 		/* Link the SPI interface to the SD-Card */
 		SigName_Link("portB.P5", "sdspi0.cmd");	/* MOSI */
@@ -154,6 +177,7 @@ link_signals(Uzebox * box)
 		SigName_Link("portD.P6", "sdspi0.dat3");	/* CS */
 		SigName_Link("portB.P6", "sdspi0.dat0");	/* MISO */
 	}
+#endif
 
 	/* Connecting the PCINTS to the Port module  */
 	SigName_Link("portA.pcint", "extint.pcint_in0");
@@ -170,8 +194,10 @@ link_signals(Uzebox * box)
 	SigName_Link("avr.throttle.speedUp", "sound0.speedUp");
 	SigName_Link("avr.throttle.speedDown", "sound0.speedDown");
 
+#ifndef NO_USART
 	Clock_Link("usart0.clk", "avr.clk");
 	Clock_Link("usart1.clk", "avr.clk");
+#endif
 	Clock_Link("timer0.clk", "avr.clk");
 	Clock_Link("timer1.clk", "avr.clk");
 	Clock_Link("timer2.clk", "avr.clk");
@@ -184,6 +210,7 @@ static int
 board_uzebox_create()
 {
 	Uzebox *box = sg_new(Uzebox);
+#ifndef NO_USART
 	ATMUsartRegisterMap usartRegMap = {
         .addrUCSRA = 0,
         .addrUCSRB = 1,
@@ -192,6 +219,7 @@ board_uzebox_create()
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
+#endif
 
 	FbDisplay_New("display0", &box->display, &box->keyboard, NULL, &box->sounddevice);
 	if (!box->keyboard) {
@@ -200,11 +228,15 @@ board_uzebox_create()
 	}
 
 	AVR8_Init("avr");
+#ifndef NO_USART
 	usartRegMap.addrBase = 0xc0;
 	ATM644_UsartNew("usart0", &usartRegMap);
 	usartRegMap.addrBase = 0xc8;
 	ATM644_UsartNew("usart1", &usartRegMap);
+#endif
+#ifndef NO_EEPROM
 	AVR8_EEPromNew("eeprom", "3f4041", 2048);
+#endif
 	ATM644_Timer02New("timer0", 0x44, 0);
 	ATM644_Timer1New("timer1");
 	if (box->sounddevice == NULL) {
@@ -227,6 +259,7 @@ board_uzebox_create()
 	AVR8_GpioNew("gpior1", 0x4a);
 	AVR8_GpioNew("gpior2", 0x4b);
 
+#ifndef NO_MMC
 	box->mmcard = MMCard_New("card0");
 	if (box->mmcard) {
 		box->sdspi = SDSpi_New("sdspi0", box->mmcard);
@@ -236,6 +269,7 @@ board_uzebox_create()
 	} else {
 		ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
 	}
+#endif
 	ATM644_ExtIntNew("extint");
 
 	Uze_SnesNew("snes0", box->keyboard);
@@ -259,8 +293,7 @@ static Board board_uzebox = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-uzebox_init()
+INITIALIZER(uzebox_init)
 {
 	fprintf(stderr, "Loading Uzebox emulator module\n");
 	Board_Register(&board_uzebox);

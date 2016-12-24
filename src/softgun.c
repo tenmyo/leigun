@@ -32,9 +32,10 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -42,23 +43,30 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-#include "fio.h"
+
 #include "signode.h"
 #include "clock.h"
-#include "debugger.h"
 #include "loader.h"
 #include "configfile.h"
-#include "shlib.h"
 #include "boards/boards.h"
-#include "senseless.h"
 #include "version.h"
-//#include "cliserver.h"
-#include "debugvars.h"
-//#include "interpreter.h"
 #include "sgstring.h"
 #include "sglib.h"
 #include "crc16.h"
-#include "webserv.h"
+#include "fio.h"
+#ifndef NO_DEBUGGER
+#include "debugvars.h"
+#include "debugger.h"
+#  include "cli/cliserver.h"
+//#  include "cli/interpreter.h"
+#  include "web/webserv.h"
+#endif
+#ifndef NO_SHLIB
+#  include "shlib.h"
+#endif
+#ifdef __unix__
+#  include "senseless.h"
+#endif
 
 typedef struct LoadChainEntry {
 	struct LoadChainEntry *next;
@@ -169,6 +177,7 @@ static int
 read_configfile()
 {
 	char *str;
+	const char *homepath;
 
 	if (configfpath) {
 		if (Config_ReadFile(configfpath) >= 0) {
@@ -178,8 +187,13 @@ read_configfile()
 			exit(3255);
 		}
 	}
-	str = (char *)alloca(100 + strlen(getenv("HOME")) + strlen(configname));
-	sprintf(str, "%s/.softgun/%s.sg", getenv("HOME"), configname);
+#ifdef __unix__
+	homepath = getenv("HOME");
+#else
+	homepath = getenv("HOMEPATH");
+#endif
+	str = (char *)alloca(100 + strlen(homepath) + strlen(configname));
+	sprintf(str, "%s/.softgun/%s.sg", homepath, configname);
 	if (Config_ReadFile(str) >= 0) {
 		return 0;
 	}
@@ -265,16 +279,23 @@ int
 main(int argc, char *argv[])
 {
 	char *boardname;
+#ifdef __unix
 	struct timeval tv;
 	uint64_t seedval;
+#endif
 	Board *board;
 	SGLib_Init();
 	CRC16_Init();
+#ifdef __unix
 	signal(SIGPIPE, SIG_IGN);
+#endif
 	parse_commandline(argc - 1, argv + 1);
+#ifndef NO_DEBUGGER
 //	CmdRegistry_Init();
 	DbgVars_Init();
+#endif
 	read_configfile();
+#ifdef __unix
 	if (Config_ReadUInt64(&seedval, "global", "random_seed") >= 0) {
 		fprintf(stderr, "Random Seed from Configuration file: %" PRIu64 "\n", seedval);
 	} else {
@@ -283,10 +304,13 @@ main(int argc, char *argv[])
 		fprintf(stderr, "Random Seed from time of day %" PRIu64 "\n", seedval);
 	}
 	srand48(seedval);
+#endif
 	FIO_Init();
 	SignodesInit();
 	ClocksInit();
+#ifndef NO_SHLIB
 	Shlibs_Init();
+#endif
 	boardname = Config_ReadVar("global", "board");
 	if (!boardname) {
 		fprintf(stderr, "No Board selected in Configfile global section\n");
@@ -297,18 +321,22 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 	if (Board_DefaultConfig(board)) {
-		//      fprintf(stderr,"defaultconfig %s\n",Board_DefaultConfig(board));
+		fprintf(stderr,"defaultconfig %s\n",Board_DefaultConfig(board));
 		Config_AddString(Board_DefaultConfig(board));
 	}
 	Board_Create(board);
+#ifndef NO_DEBUGGER
 //	CliServer_New("cli");
 	WebServ_New("webserv");
+#endif
 	LoadChain_Resolve();
 	if (LoadChain_Load() < 0) {
 		fprintf(stderr, "Loading failed\n");
 		exit(1);
 	}
+#ifdef __unix
 	Senseless_Init();
+#endif
 	Board_Run(board);
 	exit(0);
 }

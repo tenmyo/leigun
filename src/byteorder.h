@@ -37,6 +37,15 @@
 #define swap32(x)		bswap_32(x)
 #define swap16(x)		bswap_16(x)
 
+#elif defined(_MSC_VER)
+
+#define __LITTLE_ENDIAN 1234
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#include <stdlib.h>
+#define swap64(x)		_byteswap_uint64(x)
+#define swap32(x)		_byteswap_ulong(x)
+#define swap16(x)		_byteswap_ushort(x)
+
 #else
 
 #warning Unknown architecture

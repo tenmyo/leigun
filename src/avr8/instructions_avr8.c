@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <avr8_cpu.h>
+#include "avr8_cpu.h"
 #include "cycletimer.h"
 #include "compiler_extensions.h"
 #include "instructions_avr8.h"

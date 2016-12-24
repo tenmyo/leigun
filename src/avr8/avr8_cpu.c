@@ -33,18 +33,18 @@
  *
  *************************************************************************************************
  */
+#include "compiler_extensions.h"
+#include "avr8_cpu.h"
 
 #include <cycletimer.h>
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <setjmp.h>
 #include <sys/types.h>
 #include <errno.h>
 
-#include "avr8_cpu.h"
 #include "avr8_io.h"
 #include "sgstring.h"
 #include "instructions_avr8.h"
@@ -158,6 +158,7 @@ AVR8_Variant avr8_variants[] = {
 
 AVR8_Cpu gavr8;
 
+#ifndef NO_DEBUGGER
 /*
  * 32 Regs + SREG + SP + PC
  */
@@ -381,6 +382,7 @@ Do_Debug(void)
 		fprintf(stderr, "Unknown restart signal reason %d\n", gavr8.dbg_state);
 	}
 }
+#endif
 
 void
 AVR8_UpdateCpuSignals(void)
@@ -444,9 +446,11 @@ CheckSignals(void)
 			gavr8.cpu_signals_raw &= ~AVR8_SIG_IRQENABLE;
 			AVR8_UpdateCpuSignals();
 		}
+#ifndef NO_DEBUGGER
 		if (unlikely(gavr8.cpu_signals & AVR8_SIG_DBG)) {
 			Do_Debug();
 		}
+#endif
 		if (unlikely(gavr8.cpu_signals & AVR8_SIG_RESTART_IDEC)) {
 			AVR8_RestartIdecoder();
 		}
@@ -826,6 +830,7 @@ AVR8_Init(const char *instancename)
 	avr->avrReti = AVR8_Reti;
 	avr->avrIrqData = avr;
 	avr->dbg_state = AVRDBG_RUNNING;
+#ifndef NO_DEBUGGER
 	avr->dbgops.getreg = debugger_getreg;
 	avr->dbgops.setreg = debugger_setreg;
 	avr->dbgops.stop = debugger_stop;
@@ -836,4 +841,5 @@ AVR8_Init(const char *instancename)
 	avr->dbgops.step = debugger_step;
 	avr->dbgops.get_bkpt_ins = debugger_get_bkpt_ins;
 	avr->debugger = Debugger_New(&avr->dbgops, avr);
+#endif
 }

@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <strhash.h>
+#include "strhash.h"
 #include "sgstring.h"
 
 static inline int

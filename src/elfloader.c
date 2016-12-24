@@ -33,18 +33,15 @@
  *
  *************************************************************************************************
  */
-
-#define _FILE_OFFSET_BITS 64
+#include "compiler_extensions.h"
+#include "elfloader.h"
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
-#include "elfloader.h"
 #include "byteorder.h"
-#include "compiler_extensions.h"
 
 /* 32-bit ELF base types. */
 typedef uint32_t Elf32_Addr;

@@ -1,5 +1,6 @@
 #ifndef __FBDISPLAY
-#define	__FBDISPLAY
+#define __FBDISPLAY
+#include <stdio.h>
 #include "keyboard.h"
 #include "sound.h"
 #include "mouse.h"

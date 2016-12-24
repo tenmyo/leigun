@@ -43,12 +43,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <inttypes.h>
-#include "bus.h"
+#include "compiler_extensions.h"
+#include "configfile.h"
 #include "ihex.h"
 #include "srec.h"
-#include "configfile.h"
 #include "loader.h"
 #include "elfloader.h"
 
@@ -200,6 +199,7 @@ Load_Elf(char *filename, uint32_t startaddr, int flags, uint64_t region_size)
 int
 Load_Binary(char *filename, uint32_t addr, int flags, uint64_t maxlen)
 {
+#ifndef NO_LOAD_BIN
     int fd = open(filename, O_RDONLY);
     int count;
     int to_big = 0;
@@ -235,6 +235,9 @@ Load_Binary(char *filename, uint32_t addr, int flags, uint64_t maxlen)
     }
     close(fd);
     return total;
+#else
+	return -1;
+#endif
 }
 
 /*

@@ -14,7 +14,9 @@
 #include "cycletimer.h"
 #include "clock.h"
 #include "byteorder.h"
+#ifndef NO_DEBUGGER
 #include "debugger.h"
+#endif
 #include "throttle.h"
 
 #define FLG_C	(1<<0)
@@ -110,8 +112,10 @@ typedef struct AVR8_Cpu {
 	/* Throttle the CPU to its real speed */
 	Throttle *throttle;
 
+#ifndef NO_DEBUGGER
 	Debugger *debugger;
 	DebugBackendOps dbgops;
+#endif
 	jmp_buf restart_idec_jump;
 	AVR_DebugState dbg_state;
 	int dbg_steps;
