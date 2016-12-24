@@ -3,9 +3,9 @@
 #include "signode.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define PIC_IEN(base)           ((base) + 0x00)

@@ -191,9 +191,9 @@
 #define DCMD_BLANKCHECK		(0x71)
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 typedef struct RXFlash {

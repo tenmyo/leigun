@@ -8,9 +8,9 @@
 #include <stdint.h>
 
 #if 1
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define CAN_CTRL(base)           ((base) + 0x00)

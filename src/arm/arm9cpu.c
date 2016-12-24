@@ -60,9 +60,9 @@
 #include <mainloop_events.h>
 
 #ifdef DEBUG
-#define dbgprintf(x...) { if(unlikely(debugflags & DEBUG_INSTRUCTIONS)) { fprintf(stderr,x);fflush(stderr); } }
+#define dbgprintf(...) { if(unlikely(debugflags & DEBUG_INSTRUCTIONS)) { fprintf(stderr,__VA_ARGS__);fflush(stderr); } }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 ARM9 gcpu;

@@ -38,41 +38,41 @@ void DbgVars_Init(void);
 #define DBGT_DOUBLE_T	(9)
 #define DBGT_PROC64_T	(19)
 
-#define DbgExport_U8(dt,x...) \
+#define DbgExport_U8(dt,...) \
         CHECK_TYPE(uint8_t, dt); \
-        DbgExport(DBGT_UINT8_T,&dt,x);
+        DbgExport(DBGT_UINT8_T,&dt,__VA_ARGS__);
 
-#define DbgExport_U16(dt,x...) \
+#define DbgExport_U16(dt,...) \
         CHECK_TYPE(uint16_t, dt); \
-        DbgExport(DBGT_UINT16_T,&dt,x);
+        DbgExport(DBGT_UINT16_T,&dt,__VA_ARGS__);
 
-#define DbgExport_U32(dt,x...) \
+#define DbgExport_U32(dt,...) \
         CHECK_TYPE(uint32_t, dt); \
-        DbgExport(DBGT_UINT32_T,&dt,x);
+        DbgExport(DBGT_UINT32_T,&dt,__VA_ARGS__);
 
-#define DbgExport_U64(dt,x...) \
+#define DbgExport_U64(dt,...) \
         CHECK_TYPE(uint64_t, dt); \
-        DbgExport(DBGT_UINT64_T,&dt,x);
+        DbgExport(DBGT_UINT64_T,&dt,__VA_ARGS__);
 
-#define DbgExport_S8(dt,x...) \
+#define DbgExport_S8(dt,...) \
         CHECK_TYPE(int8_t, dt); \
-        DbgExport(DBGT_INT8_T,&dt,x);
+        DbgExport(DBGT_INT8_T,&dt,__VA_ARGS__);
 
-#define DbgExport_S16(dt,x...) \
+#define DbgExport_S16(dt,...) \
         CHECK_TYPE(int16_t, dt); \
-        DbgExport(DBGT_INT16_T,&dt,x);
+        DbgExport(DBGT_INT16_T,&dt,__VA_ARGS__);
 
-#define DbgExport_S32(dt,x...) \
+#define DbgExport_S32(dt,...) \
         CHECK_TYPE(int32_t, dt); \
-        DbgExport(DBGT_INT32_T,&dt,x);
+        DbgExport(DBGT_INT32_T,&dt,__VA_ARGS__);
 
-#define DbgExport_S64(dt,x...) \
+#define DbgExport_S64(dt,...) \
         CHECK_TYPE(int64_t, dt); \
-        DbgExport(DBGT_INT64_T,&dt,x);
+        DbgExport(DBGT_INT64_T,&dt,__VA_ARGS__);
 
-#define DbgExport_DBL(dt,x...) \
+#define DbgExport_DBL(dt,...) \
         CHECK_TYPE(double, dt); \
-        DbgExport(DBGT_DOUBLE_T,&dt,x);
+        DbgExport(DBGT_DOUBLE_T,&dt,__VA_ARGS__);
 
 typedef void DbgSetSymProc(void *clientData, uint32_t arg, uint64_t value);
 typedef uint64_t DbgGetSymProc(void *clientData, uint32_t arg);

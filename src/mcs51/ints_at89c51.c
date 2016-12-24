@@ -15,9 +15,9 @@
 #include <stdlib.h>
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define REG_IEN0	(0xa8)

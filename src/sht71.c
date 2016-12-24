@@ -48,9 +48,9 @@
 #include "sglib.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 typedef struct SHT71 {

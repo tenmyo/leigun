@@ -64,9 +64,9 @@
 #include "mouse.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stdout,x); }
+#define dbgprintf(...) { fprintf(stdout,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define IBUFSIZE 8192

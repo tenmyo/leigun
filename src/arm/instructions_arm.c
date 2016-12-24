@@ -54,10 +54,10 @@
 #endif
 
 #ifdef DEBUG
-#define dbgprintf(x...) { if(unlikely(debugflags&DEBUG_INSTRUCTIONS)) { fprintf(stderr,x); fflush(stderr); } }
+#define dbgprintf(...) { if(unlikely(debugflags&DEBUG_INSTRUCTIONS)) { fprintf(stderr,__VA_ARGS__); fflush(stderr); } }
 #else
-#define dbgprintf(x...)
-//define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...)
+//define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #endif
 #define ISNEG(x) ((x)&(1<<31))
 #define ISNOTNEG(x) (!((x)&(1<<31)))

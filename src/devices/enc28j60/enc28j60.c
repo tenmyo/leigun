@@ -335,9 +335,9 @@
 #define MOD_HI(x,hi) ((x) = (x & 0x00ff) | ((uint16_t)(hi) << 8))
 
 #if 0
-#define dbgprintf(x...) fprintf(stderr,x)
+#define dbgprintf(...) fprintf(stderr,__VA_ARGS__)
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define RXTXBUF_SIZE	(8192)

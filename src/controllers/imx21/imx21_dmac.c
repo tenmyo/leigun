@@ -48,9 +48,9 @@
 #include "sgstring.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define DMA_CH_BASE(base,x)  ((base) + 0x080 + 0x040 * (x))

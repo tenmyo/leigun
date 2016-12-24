@@ -52,9 +52,9 @@
 #include "sgstring.h"
 
 #if 0
-#define dbgprintf(x...) fprintf(stderr,x)
+#define dbgprintf(...) fprintf(stderr,__VA_ARGS__)
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 /* otg is at  0x10024000 and 0x10025000 */
 

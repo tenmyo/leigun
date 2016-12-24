@@ -47,9 +47,9 @@
 #include "configfile.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define CMD_LOWCOLADR(col)	(0x00 | ((col) & 0xf))

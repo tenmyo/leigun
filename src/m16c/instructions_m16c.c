@@ -53,7 +53,7 @@
 #define ISPOSB(x) (-(x) & (1<<7))
 #define GAM_ALL 0xffffffff
 
-#define dbgprintf(x...)
+#define dbgprintf(...)
 
 typedef void GAM_SetProc(uint32_t value, int datalen);
 typedef void GAM_GetProc(uint32_t * value, int datalen);

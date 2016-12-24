@@ -12,10 +12,10 @@
 #include "cli_i2c.h"
 
 #if 0
-//#define dbgprintf(x...) { fprintf(stderr,x); }
-#define dbgprintf(x...) { fprintf(stdout,x); }
+//#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
+#define dbgprintf(...) { fprintf(stdout,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define CODE_MEM_SIZE (1024)

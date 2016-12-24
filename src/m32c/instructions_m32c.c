@@ -42,9 +42,9 @@
 #include "cycletimer.h"
 
 #if 0
-#define dbgprintf(x...) { dbgprintf(x); }
+#define dbgprintf(...) { dbgprintf(__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define ISNEG(x) ((x)&(1<<31))

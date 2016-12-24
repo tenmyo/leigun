@@ -43,9 +43,9 @@
 #include "compiler_extensions.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 M32C_Instruction **m32c_iTab;

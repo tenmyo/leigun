@@ -59,9 +59,9 @@
 int verbosity = 1;
 
 #if 0
-#define dbgprintf(verb,x...) { if((verb)>=verbosity) fprintf(stderr,x); }
+#define dbgprintf(verb,...) { if((verb)>=verbosity) fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 /*

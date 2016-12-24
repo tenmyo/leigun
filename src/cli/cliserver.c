@@ -46,9 +46,9 @@
 #include "sgstring.h"
 
 #if 1
-#define dbgprintf(x...) { fprintf(stderr,x); }
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define MAX_LINELEN (1000)

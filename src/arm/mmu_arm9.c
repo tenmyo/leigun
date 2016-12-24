@@ -87,9 +87,9 @@ static uint32_t domain_access_reg;
 static SystemCopro *gmmu;
 
 #ifdef DEBUG
-#define dbgprintf(x...) { if(unlikely(debugflags & DEBUG_MMU)) { fprintf(stderr,x); } }
+#define dbgprintf(...) { if(unlikely(debugflags & DEBUG_MMU)) { fprintf(stderr,__VA_ARGS__); } }
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define MMU_FAR  (gmmu->far)

@@ -13,9 +13,9 @@
 #include "configfile.h"
 
 #if 0
-#define dbgprintf(x...) { fprintf(stderr,x);fflush(stderr);}
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__);fflush(stderr);}
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define STATE_IDLE	(0)

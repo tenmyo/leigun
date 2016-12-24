@@ -43,9 +43,9 @@
 #define M25CMD_RES              (0xab)	/* Release from Power down / Read signature */
 
 #if 0
-#define dbgprintf(x...) fprintf(stderr,x)
+#define dbgprintf(...) fprintf(stderr,__VA_ARGS__)
 #else
-#define dbgprintf(x...)
+#define dbgprintf(...)
 #endif
 
 #define ISTATE_CMD		(0)
