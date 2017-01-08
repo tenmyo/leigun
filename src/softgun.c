@@ -53,7 +53,6 @@
 #include "sgstring.h"
 #include "sglib.h"
 #include "crc16.h"
-#include "fio.h"
 #ifndef NO_DEBUGGER
 #include "debugvars.h"
 #include "debugger.h"
@@ -305,7 +304,6 @@ main(int argc, char *argv[])
 	}
 	srand48(seedval);
 #endif
-	FIO_Init();
 	SignodesInit();
 	ClocksInit();
 #ifndef NO_SHLIB

@@ -38,7 +38,6 @@
 #include <stdint.h>
 #include "cycletimer.h"
 #include "signode.h"
-#include "fio.h"
 #include "sglib.h"
 #include "sgstring.h"
 #include "throttle.h"
@@ -91,7 +90,7 @@ throttle_proc(void *clientData)
 			exp_cpu_cycles -= exp_cpu_cycles >> 4;
 		}
 		if (th->cycles_ahead > exp_cpu_cycles) {
-			FIO_WaitEventTimeout(&tout);
+			//FIXME: FIO_WaitEventTimeout(&tout);
 			sleepCnt++;
 		}
 	} while (th->cycles_ahead > exp_cpu_cycles);
