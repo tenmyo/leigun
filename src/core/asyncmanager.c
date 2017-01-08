@@ -172,7 +172,6 @@ static void init_once(void) {
 static void server_thread(void *arg) {
   uv_loop_t *loop = arg;
   fprintf(stderr, "AsyncManager start.\n");
-  uv_print_all_handles(loop, stderr);
   uv_barrier_wait((uv_barrier_t *)loop->data);
   uv_run(loop, UV_RUN_DEFAULT);
   fprintf(stderr, "AsyncManager stop.\n");
@@ -186,8 +185,6 @@ static int send_req(req_type type, void *data) {
 
 static void on_wakeup(uv_async_t *handle) {
   req_data *req = handle->data;
-  fprintf(stderr, "req: %d\n", req->type);
-  uv_print_all_handles(handle->loop, stderr);
   switch (req->type) {
   case REQ_QUIT:
     uv_walk(handle->loop, &close_all, NULL);
@@ -333,7 +330,6 @@ static int write_stream(struct write_req_t *wr) {
 
 int AsyncServer_Write(TcpHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata) {
   int ret;
-  fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create write request
   struct write_req_t *wr = malloc(sizeof(*wr));
   ret = (wr) ? 0 : UV_EAI_MEMORY;
