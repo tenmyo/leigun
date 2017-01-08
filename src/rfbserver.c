@@ -35,44 +35,32 @@
  *
  *************************************************************************************************
  */
+// include self header
 #include "compiler_extensions.h"
 #include "rfbserver.h"
 
+// include system header
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+
+// include library header
+#include <uv.h>
 #ifndef NO_ZLIB
 #include <zlib.h>
 #endif
-#ifdef __unix__
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/mman.h>
-#else
-#define WIN32_LEAN_AND_MEAN
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#pragma comment(lib, "wsock32.lib")
-#define SHUT_RD SD_RECEIVE
-#define SHUT_WR SD_SEND
-#define SHUT_RDWR SD_BOTH
-#define read(a,b,c) recv(a,b,c,0)
-#define write(a,b,c) send(a,b,c,0)
-#define close(fd) closesocket(fd)
-#endif
-#include <sys/types.h>
-#include <signal.h>
-#include <time.h>
-#include "fio.h"
+
+// include user header
 #include "byteorder.h"
 #include "configfile.h"
 #include "fbdisplay.h"
 #include "sgstring.h"
 #include "sglib.h"
+
+#include "core/asyncmanager.h"
 
 #ifndef NO_KEYBOARD
 #include "keyboard.h"
@@ -159,10 +147,9 @@ typedef struct RLEncoder {
  */
 typedef struct RfbConnection {
   int protoversion;	/* major in high 16 bit minor in lower 16 Bit */
-  int sock_fd;
   int state;
   int current_encoding;
-  FIO_FileHandler ifh;
+  TcpHandle_t *handle;
 
   PixelFormat pixfmt;
   /* translation table belongs to the pixel format */
@@ -171,7 +158,6 @@ typedef struct RfbConnection {
   uint32_t trans_blue[256];
 
   FrameBufferInfo *fbi;	/* points to fbi of RfbServer */
-  int ifh_is_active;
   struct RfbConnection *next;
   uint8_t ibuf[IBUFSIZE];
   int ibuf_wp;
@@ -199,11 +185,9 @@ struct RfbServer {
   Mouse mouse;
 #endif
   int32_t propose_bpp;
-  FIO_TcpServer tcpserv;
 #ifndef NO_STARTCMD
   pid_t viewerpid;
 #endif
-  int sock_fd;
   RfbConnection *con_head;
   /* Servers native FBI (window info & Pixelformat */
   FrameBufferInfo fbi;
@@ -249,30 +233,9 @@ pixfmt_update_translation(RfbConnection * rcon) {
   }
 }
 
-/*
- * --------------------------------------------------------------------------
- * rfbsrv_disconnect
- * 	Close connection to client
- * --------------------------------------------------------------------------
- */
-static void
-rfbsrv_disconnect(RfbConnection * rcon) {
-  char c;
+static void free_rcon(TcpHandle_t *handle, RfbConnection *rcon) {
   RfbConnection *cursor, *prev;
   RfbServer *rfbserv = rcon->rfbserv;
-  if (rcon->ifh_is_active) {
-    FIO_RemoveFileHandler(&rcon->ifh);
-    rcon->ifh_is_active = 0;
-  }
-  shutdown(rcon->sock_fd, SHUT_RDWR);
-  while (read(rcon->sock_fd, &c, 1) > 0) {
-    // nothing
-  }
-  if (close(rcon->sock_fd) < 0) {
-    perror("close fd failed");
-  } else {
-    rcon->sock_fd = -1;
-  }
   for (prev = NULL, cursor = rfbserv->con_head; cursor; prev = cursor, cursor = cursor->next) {
     if (cursor == rcon) {
       if (prev) {
@@ -296,49 +259,21 @@ rfbsrv_disconnect(RfbConnection * rcon) {
 }
 
 /*
- * ----------------------------------------------------------
- * rfbcon_send
- *	send data to a client
- *
- *	Warning: If called more than once per fileevent
- *		 check return value, because on error
- *		 connection might be closed and may not
- *		 exist any more on next call.
- * ----------------------------------------------------------
+ * --------------------------------------------------------------------------
+ * rfbsrv_disconnect
+ * 	Close connection to client
+ * --------------------------------------------------------------------------
  */
-static int
-rfbcon_send(RfbConnection * rcon, uint8_t *buf, int count) {
-  int result;
-  int counter = count;
-#ifdef __unix__
-  fcntl(rcon->sock_fd, F_SETFL, 0);
-#endif
-  while (counter) {
-    int wsize = counter;
-#if 0
-    if (wsize > 10)
-      wsize = 10;
-#endif
-    result = write(rcon->sock_fd, (uint8_t *)buf, wsize);
-    if (result <= 0) {
-      fprintf(stderr, "Connection to vncviewer broken, closing\n");
-      /* dangerous, maybe delayed is better */
-      rfbsrv_disconnect(rcon);
-      return result;
-    }
-    counter -= result;
-    buf += result;
-  }
-#ifdef __unix__
-  fcntl(rcon->sock_fd, F_SETFL, O_NONBLOCK);
-#endif
-  return count;
-};
+static void
+rfbsrv_disconnect(RfbConnection * rcon) {
+  AsyncServer_ReadStop(rcon->handle);
+  AsyncServer_Close(rcon->handle, &free_rcon, rcon);
+}
 
 static int
-Msg_ProtocolVersion(RfbConnection * rcon) {
+Msg_ProtocolVersion(RfbConnection *rcon) {
   char *msg = "RFB 003.003\n";
-  return rfbcon_send(rcon, msg, strlen(msg));
+  return AsyncServer_Write(rcon->handle, msg, strlen(msg), NULL, NULL);
 }
 
 /*
@@ -370,9 +305,9 @@ CheckProtocolVersion(RfbConnection * rcon) {
  * ----------------------------------------------------------
  */
 static int
-Msg_Auth(RfbConnection * rcon) {
+Msg_Auth(RfbConnection *rcon) {
   char msg[] = { 0, 0, 0, 1 };	/* no authentication required */
-  return rfbcon_send(rcon, msg, 4);
+  return AsyncServer_Write(rcon->handle, msg, 4, NULL, NULL);
 }
 
 /**
@@ -451,7 +386,7 @@ static PixelFormat pixfmt_proposals[4] = {
 static int
 Msg_ServerInitialisation(RfbConnection * rcon) {
   RfbServer *rfbserv = rcon->rfbserv;
-  char *msg = sg_calloc(sizeof(FrameBufferInfo));
+  char *msg = sg_calloc(sizeof(FrameBufferInfo)); // FIXME: leak?
   char *p = msg;
   int i;
   FrameBufferInfo *fbi = &rfbserv->fbi;
@@ -501,7 +436,7 @@ Msg_ServerInitialisation(RfbConnection * rcon) {
   p += 4;
   memcpy(p, fbi->name_string, fbi->name_length);
   p += fbi->name_length;
-  return rfbcon_send(rcon, msg, p - msg);
+  return AsyncServer_Write(rcon->handle, msg, p - msg, NULL, NULL);
 }
 
 /*
@@ -836,7 +771,7 @@ srv_fb_encode_update_raw(RfbConnection * rcon) {
         ofs += fb_bypp;
       }
     }
-    rfbcon_send(rcon, reply, data - reply);
+    AsyncServer_Write(rcon->handle, reply, data - reply, NULL, NULL);
     data = reply;
   }
   return;
@@ -926,7 +861,7 @@ srv_fb_encode_update_zrle(RfbConnection * rcon) {
     //fprintf(stderr,"total out %lu av out %lu bpp %d bytes %d\n",zs->total_out,zs->avail_out,fbpixf->bits_per_pixel,con_bypp);
     write32be(rcon->obuf + lengthP, zs->total_out);
     rcon->obuf_wp += zs->total_out;
-    rfbcon_send(rcon, rcon->obuf, rcon->obuf_wp);
+    AsyncServer_Write(rcon->handle, rcon->obuf, rcon->obuf_wp, NULL, NULL);
     rcon->obuf_wp = 0;
   }
   return;
@@ -1041,7 +976,7 @@ srv_set_8bit_color_map_entries(RfbConnection * rcon, PixelFormat * pixf) {
     write16be(wp, blue);
     wp += 2;
   }
-  rfbcon_send(rcon, reply, wp - reply);
+  AsyncServer_Write(rcon->handle, reply, wp - reply, NULL, NULL);
 }
 
 static void
@@ -1338,40 +1273,32 @@ rfbcon_handle_message(RfbConnection * rcon) {
  * -----------------------------------------------------------------
  */
 static void
-rfbcon_input(void *clientData, int mask) {
-  RfbConnection *rcon = (RfbConnection *)clientData;
-  int count = IBUFSIZE - rcon->ibuf_wp;
-  if (count == 0) {
-    fprintf(stderr, "rfbserver: input buffer overflow. \n");
-    /* Maybe it would be better to close connection here */
-    rcon->ibuf_wp = 0;
-    count = IBUFSIZE;
+rfbcon_input(TcpHandle_t *handle, const void *buf, signed int len, void *clientdata) {
+  RfbConnection *rcon = (RfbConnection *)clientdata;
+  if (len < 0) {
+    perror("error reading from socket");
+    rfbsrv_disconnect(rcon);
+    return;
   }
-  if (count > (rcon->ibuf_expected - rcon->ibuf_wp)) {
-    count = (rcon->ibuf_expected - rcon->ibuf_wp);
-  }
-  count = read(rcon->sock_fd, rcon->ibuf + rcon->ibuf_wp, count);
-  if (count < 0) {
-    if ((errno == -EAGAIN) || (errno == -EWOULDBLOCK)) {
-      return;
-    } else {
-      perror("error reading from socket");
-      rfbsrv_disconnect(rcon);
-      return;
-    }
-  } else if (count == 0) {
+  if (len == 0) {
     dbgprintf("socket: end of file\n");
     rfbsrv_disconnect(rcon);
     return;
-  } else {
-    rcon->ibuf_wp += count;
-    /* check if buffer is a complete message */
-    if (rcon->ibuf_wp >= rcon->ibuf_expected) {
-      int result;
-      result = rfbcon_handle_message(rcon);
-      if (result == 0) {
-        rcon->ibuf_wp = 0;
-      }
+  }
+  if (sizeof(rcon->ibuf) == rcon->ibuf_wp) {
+    fprintf(stderr, "rfbserver: input buffer overflow. \n");
+    /* Maybe it would be better to close connection here */
+    rcon->ibuf_wp = 0;
+  }
+  memcpy(&rcon->ibuf[rcon->ibuf_wp], buf, len);
+  rcon->ibuf_wp += len;
+  /* check if buffer is a complete message */
+  while (len >= rcon->ibuf_expected) {
+    int result;
+    len -= rcon->ibuf_expected;
+    result = rfbcon_handle_message(rcon);
+    if (result == 0) {
+      rcon->ibuf_wp = 0;
     }
   }
   return;
@@ -1383,13 +1310,13 @@ rfbcon_input(void *clientData, int mask) {
  * --------------------------------------------------------------------------
  */
 static void
-rfbsrv_accept(int fd, char *host, unsigned short port, void *clientData) {
-  RfbServer *rfbserv = (RfbServer *)clientData;
+rfbsrv_accept(int status, TcpHandle_t *handle, const char *host, int port, void *clientdata) {
+  RfbServer *rfbserv = (RfbServer *)clientdata;
   int on;
   RfbConnection *rcon;
   rcon = sg_new(RfbConnection);
   rcon->current_encoding = -1;	/* Hope this doesnt exist */
-  rcon->sock_fd = fd;
+  rcon->handle = handle;
   rcon->rfbserv = rfbserv;
   rcon->next = rfbserv->con_head;
   rcon->fbi = &rfbserv->fbi;
@@ -1410,14 +1337,7 @@ rfbsrv_accept(int fd, char *host, unsigned short port, void *clientData) {
   pixfmt_update_translation(rcon);
   rfbserv->con_head = rcon;
   rcon->current_encoding = ENC_RAW;
-#ifdef __unix__
-  fcntl(rcon->sock_fd, F_SETFL, O_NONBLOCK);
-#endif
-  if (setsockopt(rcon->sock_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on)) < 0) {
-    perror("Error setting sockopts");
-  }
-  FIO_AddFileHandler(&rcon->ifh, rcon->sock_fd, FIO_READABLE, rfbcon_input, rcon);
-  rcon->ifh_is_active = 1;
+  AsyncServer_ReadStart(handle, &rfbcon_input, rcon);
   Msg_ProtocolVersion(rcon);
   rcon->ibuf_expected = 12;	/* Expecting Protocol version reply */
   rcon->state = CONSTAT_PROTO_WAIT;
@@ -1532,10 +1452,8 @@ rfbserv_update_display(struct FbDisplay *fbdisp, FbUpdateRequest * fbudreq) {
  * 	Create a new rfbserver. The rfbserver implements a display, a keyboard and a mouse.
  *****************************************************************************
  */
-
 void
 RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, Mouse **mousePP) {
-  int fd;
   int result;
   RfbServer *rfbserv;
   FrameBufferInfo *fbi;
@@ -1606,7 +1524,8 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
   pixf->blue_shift = 0;
   pixfmt_update_bits(pixf);
 
-  if ((fd = FIO_InitTcpServer(&rfbserv->tcpserv, rfbsrv_accept, rfbserv, host, port)) < 0) {
+  result = AsyncServer_InitTcpServer(host, port, 5, &rfbsrv_accept, rfbserv);
+  if (result < 0) {
     free(rfbserv);
     fprintf(stderr, "Can not create RFB server\n");
     return;
