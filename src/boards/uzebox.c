@@ -12,12 +12,20 @@
 
 #include "boards.h"
 #include "clock.h"
-#include "avr8/avr8_cpu.h"
-#include "avr8/avr8_adc.h"
+#include "avr8/atm644_extint.h"
+#include "avr8/atm644_sysreset.h"
 #include "avr8/atm644_timer1.h"
 #include "avr8/atm644_timer02.h"
+#include "avr8/atm644_twi.h"
+#include "avr8/avr8_adc.h"
+#include "avr8/avr8_cpu.h"
+#include "avr8/avr8_gpio.h"
+#include "avr8/avr8_port.h"
+#include "avr8/uze_snes.h"
 #include "avr8/uze_timer2.h"
+#include "avr8/uze_video.h"
 #include "fbdisplay.h"
+#include "keyboard.h"
 #include "sgstring.h"
 
 #ifndef NO_EEPROM
@@ -33,20 +41,8 @@
 
 #ifdef __unix__
 #include "atm644_usart.h"
-#include "avr8_port.h"
-#include "atm644_sysreset.h"
-#include "atm644_twi.h"
-#include "avr8_gpio.h"
-#include "uze_video.h"
-#include "keyboard.h"
 #include "rfbserver.h"
-#include "uze_snes.h"
 #include "atm644_spi.h"
-#include "atm644_extint.h"
-#else
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#define sleep(sec) Sleep(sec*1000)
 #endif
 
 typedef struct Uzebox {
@@ -224,7 +220,6 @@ board_uzebox_create()
 	FbDisplay_New("display0", &box->display, &box->keyboard, NULL, &box->sounddevice);
 	if (!box->keyboard) {
 		fprintf(stderr, "Keyboard creation failed\n");
-		sleep(3);
 	}
 
 	AVR8_Init("avr");
