@@ -43,8 +43,6 @@
 #include <cycletimer.h>
 #include <configfile.h>
 #include <mem_cf.h>
-#include <mainloop_events.h>
-#include <fio.h>
 
 CFCpu g_CFCpu;
 
@@ -223,19 +221,13 @@ CF_CpuInit(void)
 static inline void
 CheckSignals()
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
-		}
 #if 0
-		if (g_CFCpu.signals) {
-			if (likely(g_CFCpu.signals & CF_SIG_IRQ)) {
-				CF_Exception();
-			}
+	if (g_CFCpu.signals) {
+		if (likely(g_CFCpu.signals & CF_SIG_IRQ)) {
+			CF_Exception();
 		}
-#endif
 	}
+#endif
 }
 
 static void

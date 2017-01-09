@@ -38,8 +38,6 @@
 #include <string.h>
 #include "cycletimer.h"
 #include "configfile.h"
-#include "mainloop_events.h"
-#include "fio.h"
 #include "setjmp.h"
 #include "cpu_m32c.h"
 
@@ -568,8 +566,6 @@ Do_Debug(void)
 			M32C_RestartIdecoder();
 		} else {
 			gm32c.dbg_steps--;
-			/* Requeue event */
-			mainloop_event_pending = 1;
 		}
 	} else if (gm32c.dbg_state == M32CDBG_STOP) {
 		gm32c.dbg_state = M32CDBG_STOPPED;
@@ -595,55 +591,48 @@ Do_Debug(void)
 static inline void
 CheckSignals()
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
+	if (gm32c.signals) {
+		//fprintf(stderr,"Signals %08x\n",gm32c.signals);
+		if (gm32c.signals & M32C_SIG_DBG) {
+			fprintf(stderr, "at %08x %" PRIu64 "\n", M32C_REG_PC,
+				CycleCounter_Get());
 		}
-		if (gm32c.signals) {
-			//fprintf(stderr,"Signals %08x\n",gm32c.signals);
-			if (gm32c.signals & M32C_SIG_DBG) {
-				fprintf(stderr, "at %08x %" PRIu64 "\n", M32C_REG_PC,
-					CycleCounter_Get());
-			}
-			if ((gm32c.signals & M32C_SIG_DELETE_INDEX) &&
-			    (!(gm32c.signals & M32C_SIG_INHIBIT_IRQ))) {
-				gm32c.signals_raw &= ~M32C_SIG_DELETE_INDEX;;
-				gm32c.signals &= ~M32C_SIG_DELETE_INDEX;;
-				gm32c.index_src = gm32c.index_dst = 0;
-				gm32c.bitindex = -1;
+		if ((gm32c.signals & M32C_SIG_DELETE_INDEX) &&
+			  (!(gm32c.signals & M32C_SIG_INHIBIT_IRQ))) {
+			gm32c.signals_raw &= ~M32C_SIG_DELETE_INDEX;;
+			gm32c.signals &= ~M32C_SIG_DELETE_INDEX;;
+			gm32c.index_src = gm32c.index_dst = 0;
+			gm32c.bitindex = -1;
 #if 0
-				if (gm32c.index_src_used == 0) {
-					M32C_Instruction *instr;
-					instr = M32C_InstructionFind(ICODE);
-					fprintf(stderr, "Deleting unused index %s\n", instr->name);
+			if (gm32c.index_src_used == 0) {
+				M32C_Instruction *instr;
+				instr = M32C_InstructionFind(ICODE);
+				fprintf(stderr, "Deleting unused index %s\n", instr->name);
 
-				}
-				if (gm32c.index_dst_used == 0) {
-					M32C_Instruction *instr;
-					instr = M32C_InstructionFind(ICODE);
-					fprintf(stderr, "Deleting unused index %s\n", instr->name);
+			}
+			if (gm32c.index_dst_used == 0) {
+				M32C_Instruction *instr;
+				instr = M32C_InstructionFind(ICODE);
+				fprintf(stderr, "Deleting unused index %s\n", instr->name);
 
-				}
-#endif
 			}
-			if (gm32c.signals & M32C_SIG_INHIBIT_IRQ) {
-				gm32c.signals_raw &= ~M32C_SIG_INHIBIT_IRQ;
-				gm32c.signals &= ~M32C_SIG_INHIBIT_IRQ;
-				mainloop_event_pending = 1;
-			} else if (gm32c.signals & M32C_SIG_IRQ) {
-				M32C_Interrupt();
-			}
-		}
-		if (unlikely(gm32c.signals & M32C_SIG_DBG)) {
-			Do_Debug();
-		}
-#if 0
-		if (unlikely(gm32c.cpu_signals & M32C_SIG_RESTART_IDEC)) {
-			M32C_RestartIdecoder();
-		}
 #endif
+		}
+		if (gm32c.signals & M32C_SIG_INHIBIT_IRQ) {
+			gm32c.signals_raw &= ~M32C_SIG_INHIBIT_IRQ;
+			gm32c.signals &= ~M32C_SIG_INHIBIT_IRQ;
+		} else if (gm32c.signals & M32C_SIG_IRQ) {
+			M32C_Interrupt();
+		}
 	}
+	if (unlikely(gm32c.signals & M32C_SIG_DBG)) {
+		Do_Debug();
+	}
+#if 0
+	if (unlikely(gm32c.cpu_signals & M32C_SIG_RESTART_IDEC)) {
+		M32C_RestartIdecoder();
+	}
+#endif
 }
 
 static struct timeval tv_start;

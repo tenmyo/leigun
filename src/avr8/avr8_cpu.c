@@ -357,8 +357,6 @@ Do_Debug(void)
 			AVR8_RestartIdecoder();
 		} else {
 			gavr8.dbg_steps--;
-			/* Requeue event */
-			mainloop_event_pending = 1;
 		}
 	} else if (gavr8.dbg_state == AVRDBG_STOP) {
 		gavr8.dbg_state = AVRDBG_STOPPED;
@@ -506,7 +504,8 @@ AVR8_Run()
 		struct timespec tout;
 		tout.tv_nsec = 0;
 		tout.tv_sec = 10000;
-		FIO_WaitEventTimeout(&tout);
+		// FIXME: FIO_WaitEventTimeout(&tout);
+		sleep(1);
 	}
 #endif
   while (1) {

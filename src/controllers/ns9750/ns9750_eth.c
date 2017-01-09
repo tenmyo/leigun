@@ -43,7 +43,6 @@
 #include <linux-tap.h>
 #include <ns9750_eth.h>
 #include <ns9750_timer.h>
-#include <fio.h>
 #include <bus.h>
 #include <phy.h>
 #include "byteorder.h"

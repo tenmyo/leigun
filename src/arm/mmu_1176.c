@@ -11,8 +11,6 @@
 //#include "mmu.h"
 #include "bus.h"
 #include "compiler_extensions.h"
-#include "fio.h"
-#include "mainloop_events.h"
 #include "sgstring.h"
 
 #define CR(crn,op1,crm,op2)	(((crn) << 12) | ((op1) << 8) | ((crm) << 4) | (op2))

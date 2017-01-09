@@ -54,7 +54,6 @@
 #include "signode.h"
 #include "m93c46.h"
 #include "ste10_100.h"
-#include "fio.h"
 #include "linux-tap.h"
 #include "cycletimer.h"
 #include "sgstring.h"

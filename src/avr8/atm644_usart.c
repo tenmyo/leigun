@@ -43,7 +43,6 @@
 #include "clock.h"
 #include "cycletimer.h"
 #include "atm644_usart.h"
-#include "fio.h"
 
 #define UCSRA(base)	((base) + 0)
 #define 	UCSRA_RXC    (1 << 7)

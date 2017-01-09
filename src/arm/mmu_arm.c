@@ -45,8 +45,6 @@
 #include "mmu_arm.h"
 #include "bus.h"
 #include "compiler_extensions.h"
-#include "fio.h"
-#include "mainloop_events.h"
 #include "sgstring.h"
 
 #ifdef DEBUG

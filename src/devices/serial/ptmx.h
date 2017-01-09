@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include "fio.h"
 typedef struct PtmxIface PtmxIface;
 typedef void PtmxDataSinkProc(void *evData, uint8_t * buf, int cnt);
 PtmxIface *PtmxIface_New(const char *linkname);

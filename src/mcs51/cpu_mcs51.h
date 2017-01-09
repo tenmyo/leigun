@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "diskimage.h"
-#include "mainloop_events.h"
 #include "throttle.h"
 #include "signode.h"
 #include "clock.h"
@@ -340,9 +339,6 @@ MCS51_UpdateSignals(void)
 {
 	//g_mcs51.signals = g_mcs51.signals_raw & g_mcs51.signals_mask;
 	g_mcs51.signals = g_mcs51.signals_raw;
-	if (g_mcs51.signals) {
-		mainloop_event_pending = 1;
-	}
 }
 
 static inline void

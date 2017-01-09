@@ -40,7 +40,6 @@
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include "bus.h"
-#include "fio.h"
 #include "imx21_pwm.h"
 #include "signode.h"
 #include "configfile.h"

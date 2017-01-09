@@ -39,8 +39,6 @@
 #include "cpu_rx.h"
 #include "idecode_rx.h"
 #include "cycletimer.h"
-#include "mainloop_events.h"
-#include "fio.h"
 #include "softfloat.h"
 #include "compiler_extensions.h"
 #include "instructions_rx.h"
@@ -491,8 +489,6 @@ Do_Debug(void)
 			RX_RestartIdecoder();
 		} else {
 			rx->dbg_steps--;
-			/* Requeue event */
-			mainloop_event_pending = 1;
 		}
 	} else if (rx->dbg_state == RXDBG_STOP) {
 		rx->dbg_state = RXDBG_STOPPED;
@@ -523,24 +519,18 @@ Do_Debug(void)
 static inline void
 CheckSignals()
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
+	if (g_RXCpu.signals) {
+		if (likely(g_RXCpu.signals & RX_SIG_IRQ)) {
+              //fprintf(stderr, "SigIrq\n");
+			RX_Interrupt(g_RXCpu.pendingIrqNo, g_RXCpu.pendingIpl);
 		}
-		if (g_RXCpu.signals) {
-			if (likely(g_RXCpu.signals & RX_SIG_IRQ)) {
-                //fprintf(stderr, "SigIrq\n");
-				RX_Interrupt(g_RXCpu.pendingIrqNo, g_RXCpu.pendingIpl);
-			}
 #if 0
-			if (g_RXCpu.signals & RX_SIG_FIRQ) {
-				RX_FastInterrupt(g_RXCpu.pendingFirqNo);
-			}
+		if (g_RXCpu.signals & RX_SIG_FIRQ) {
+			RX_FastInterrupt(g_RXCpu.pendingFirqNo);
+		}
 #endif
-			if (unlikely(g_RXCpu.signals & RX_SIG_DBG)) {
-				Do_Debug();
-			}
+		if (unlikely(g_RXCpu.signals & RX_SIG_DBG)) {
+			Do_Debug();
 		}
 	}
 }

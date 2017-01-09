@@ -5,9 +5,7 @@
 #include <idecode_ppc.h>
 #include <setjmp.h>
 #include <cycletimer.h>
-#include "fio.h"
 #include "configfile.h"
-#include "mainloop_events.h"
 #include "mmu_ppc.h"
 
 void
@@ -130,16 +128,6 @@ PpcCpu_New(int cpu_type, uint32_t initial_msr)
 static inline void
 CheckSignals()
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
-		}
-		if (gppc.signals) {
-
-		}
-	}
-
 }
 
 /*

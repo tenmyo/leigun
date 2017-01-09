@@ -39,7 +39,6 @@
 #include <string.h>
 #include <unistd.h>
 #include "bus.h"
-#include "fio.h"
 #include "signode.h"
 #include "configfile.h"
 #include "at91_pio.h"

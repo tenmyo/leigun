@@ -35,28 +35,23 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "gdebug.h"
 
+// include system header
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/time.h>
-#include <fio.h>
+
+// include library header
+
+// include user header
 #include "configfile.h"
-#include "gdebug.h"
 #include "sgstring.h"
+#include "core/asyncmanager.h"
 
 #if 1
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }

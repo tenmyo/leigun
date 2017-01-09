@@ -39,7 +39,6 @@
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include "bus.h"
-#include "fio.h"
 #include "signode.h"
 #include "imx21_rtc.h"
 #include "configfile.h"

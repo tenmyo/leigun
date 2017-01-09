@@ -44,7 +44,6 @@
 #include "cycletimer.h"
 #include "signode.h"
 #include "xmegaA_usart.h"
-#include "fio.h"
 
 #define REG_DATA(base)		((base) + 0)
 #define REG_STATUS(base)	((base) + 1)

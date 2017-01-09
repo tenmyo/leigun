@@ -12,7 +12,6 @@
 #include "cycletimer.h"
 #include "signode.h"
 #include "xmegaA_timer.h"
-#include "fio.h"
 
 #define TMR_CTRLA(base)		((base) + 0x00)
 #define TMR_CTRLB(base)		((base) + 0x01)

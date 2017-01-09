@@ -41,7 +41,6 @@
 #include <errno.h>
 #include <string.h>
 #include <netinet/in.h>
-#include "fio.h"
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sgstring.h"

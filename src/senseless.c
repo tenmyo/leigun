@@ -47,7 +47,6 @@
 #include "configfile.h"
 #include "cycletimer.h"
 #include "senseless.h"
-#include "fio.h"
 #include "time.h"
 #include "sgstring.h"
 

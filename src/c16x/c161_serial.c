@@ -33,22 +33,25 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "c161_serial.h"
 
+// include system header
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/fcntl.h>
-#include <unistd.h>
 
-#include "c161_serial.h"
+// include library header
+
+// include user header
 #include "bus.h"
 #include "c16x/c16x_cpu.h"
-#include "fio.h"
 #include "signode.h"
 #include "configfile.h"
 #include "sgstring.h"
+
+#include "core/asyncmanager.h"
 
 #if 1
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }

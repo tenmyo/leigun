@@ -41,7 +41,6 @@
 #include <alsa/asoundlib.h>
 #include <poll.h>
 #include <pthread.h>
-#include "fio.h"
 #include "sound.h"
 #include "sgstring.h"
 #include "signode.h"

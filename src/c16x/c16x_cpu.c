@@ -44,8 +44,6 @@
 #include "idecode_c16x.h"
 #include "c16x/c16x_cpu.h"
 #include "configfile.h"
-#include "mainloop_events.h"
-#include "fio.h"
 
 C16x gc16x;
 
@@ -381,12 +379,6 @@ c16x_update_interrupts()
 static inline void
 CheckSignals()
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
-		}
-	}
 }
 
 /*

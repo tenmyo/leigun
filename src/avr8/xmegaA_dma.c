@@ -41,7 +41,6 @@
 #include "clock.h"
 #include "cycletimer.h"
 #include "signode.h"
-#include "fio.h"
 #include "avr8_io.h"
 #include "avr8_cpu.h"
 #include "xmegaA_dma.h"

@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <alloca.h>
 #include <termios.h>
-#include "fio.h"
 #include "ptmx.h"
 #include "sgstring.h"
 

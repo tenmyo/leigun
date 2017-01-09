@@ -49,7 +49,6 @@
 
 #include "sgstring.h"
 #include "serial.h"
-#include "fio.h"
 #include "configfile.h"
 #include "cycletimer.h"
 #include "compiler_extensions.h"

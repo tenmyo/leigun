@@ -40,7 +40,6 @@
 
 #include "signode.h"
 #include "mmu_arm9.h"
-#include "fio.h"
 #include "bus.h"
 #include "configfile.h"
 #include "loader.h"

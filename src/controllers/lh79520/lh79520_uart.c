@@ -40,7 +40,6 @@
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include "bus.h"
-#include "fio.h"
 #include "signode.h"
 #include "clock.h"
 #include "lh79520_uart.h"

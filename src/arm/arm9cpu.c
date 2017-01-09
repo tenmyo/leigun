@@ -51,13 +51,11 @@
 #include <thumb_decode.h>
 #include <bus.h>
 #include <mmu_arm9.h>
-#include <fio.h>
 #include <xy_tree.h>
 #include <time.h>
 #include <sys/time.h>
 #include <cycletimer.h>
 #include <configfile.h>
-#include <mainloop_events.h>
 
 #ifdef DEBUG
 #define dbgprintf(...) { if(unlikely(debugflags & DEBUG_INSTRUCTIONS)) { fprintf(stderr,__VA_ARGS__);fflush(stderr); } }
@@ -333,8 +331,6 @@ ARM_set_reg_cpsr(uint32_t new_cpsr)
 		ARM_PostRestartIdecoder();
 	}
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if (gcpu.signals)
-		mainloop_event_pending = 1;
 }
 
 /* 
@@ -618,7 +614,7 @@ arm_throttle(void *clientData)
 		    (int64_t) 1000000000 *(tv_now.tv_sec - arm->tv_last_throttle.tv_sec);
 		exp_cpu_cycles = NanosecondsToCycles(nsecs);
 		if (arm->cycles_ahead > exp_cpu_cycles) {
-			FIO_WaitEventTimeout(&tout);
+			// FIXME: FIO_WaitEventTimeout(&tout);
 		}
 	} while (arm->cycles_ahead > exp_cpu_cycles);
 	arm->cycles_ahead -= exp_cpu_cycles;
@@ -782,7 +778,6 @@ Do_Debug(void)
 		} else {
 			fprintf(stderr, "step at CIA %08x\n", ARM_GET_CIA);
 			gcpu.dbg_steps--;
-			mainloop_event_pending = 1;
 		}
 	} else if (gcpu.dbg_state == DBG_STATE_STOP) {
 		fprintf(stderr, "stopped at CIA %08x\n", ARM_GET_CIA);
@@ -817,24 +812,18 @@ Do_Debug(void)
 static inline void
 CheckSignals(void)
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
+	if (gcpu.signals) {
+		if (likely(gcpu.signals & ARM_SIG_IRQ)) {
+			ARM_Exception(EX_IRQ, 4);
 		}
-		if (gcpu.signals) {
-			if (likely(gcpu.signals & ARM_SIG_IRQ)) {
-				ARM_Exception(EX_IRQ, 4);
-			}
-			if (unlikely(gcpu.signals & ARM_SIG_FIQ)) {
-				ARM_Exception(EX_FIQ, 4);
-			}
-			if (unlikely(gcpu.signals & ARM_SIG_DEBUGMODE)) {
-				Do_Debug();
-			}
-			if (unlikely(gcpu.signals & ARM_SIG_RESTART_IDEC)) {
-				ARM_RestartIdecoder();
-			}
+		if (unlikely(gcpu.signals & ARM_SIG_FIQ)) {
+			ARM_Exception(EX_FIQ, 4);
+		}
+		if (unlikely(gcpu.signals & ARM_SIG_DEBUGMODE)) {
+			Do_Debug();
+		}
+		if (unlikely(gcpu.signals & ARM_SIG_RESTART_IDEC)) {
+			ARM_RestartIdecoder();
 		}
 	}
 }

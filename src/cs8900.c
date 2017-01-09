@@ -43,7 +43,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "fio.h"
 #include "bus.h"
 #include "signode.h"
 #include "linux-tap.h"

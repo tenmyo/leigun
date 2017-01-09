@@ -48,7 +48,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include "pci.h"
-#include "fio.h"
 #include "linux-tap.h"
 #include "cycletimer.h"
 #include "signode.h"

@@ -48,7 +48,6 @@
 
 #include "sgstring.h"
 #include "serial.h"
-#include "fio.h"
 #include "configfile.h"
 
 #if 0

@@ -45,7 +45,6 @@
 #include "signode.h"
 #include "sgstring.h"
 #include "enc28j60.h"
-#include "fio.h"
 #include "linux-tap.h"
 #include "cycletimer.h"
 #include "crc32.h"

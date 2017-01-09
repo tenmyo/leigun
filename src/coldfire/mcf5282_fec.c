@@ -41,7 +41,6 @@
 #include <stdint.h>
 #include <errno.h>
 #include <linux-tap.h>
-#include <fio.h>
 #include <bus.h>
 #include <phy.h>
 #include <signode.h>
