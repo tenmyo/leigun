@@ -1,1 +1,0 @@
-SRCFILES += web/webserv.c 
