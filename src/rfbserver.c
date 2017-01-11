@@ -1526,7 +1526,8 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
 
   result = AsyncServer_InitTcpServer(host, port, 5, &rfbsrv_accept, rfbserv);
   if (result < 0) {
-    free(rfbserv);
+    sg_free(fbi->framebuffer);
+    sg_free(rfbserv);
     fprintf(stderr, "Can not create RFB server\n");
     return;
   }
