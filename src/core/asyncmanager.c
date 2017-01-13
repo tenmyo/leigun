@@ -1,23 +1,23 @@
-/*
-  Copyright 2017 TENMYO Masakazu. All rights reserved.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+/*-
+ * Copyright 2017 TENMYO Masakazu. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
- // include self header
+
+// include self header
 #include "asyncmanager.h"
 
 // include system header
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,13 +25,123 @@
 #include <uv.h>
 
 // include user header
-#include "initializer.h"
 
+
+// -----------------------------------------------------
+// Handle Types
+//   uv_handle_t <- Handle_t
+//      |-- uv_stream_t <- StreamHandle_t
+//      |     `-- uv_tcp_t <- TcpStreamHandle_t
+//      |                       `-- TcpServerStreamHandle_t
+//      |                       `-- TcpClientStreamHandle_t
+//      `-- uv_poll_t <- PollHandle_t
+struct PollHandle_t {
+  union {
+    uv_handle_t handle;
+    uv_poll_t   poll;
+  } uv; // button(inheritance)
+  AsyncManager_poll_cb poll_cb;
+  void *poll_clientdata;
+  int events;
+};
+
+struct TcpServerStreamHandle_t {
+  struct {
+    union {
+      uv_handle_t handle;
+      uv_stream_t stream;
+      uv_tcp_t tcp;
+    } uv; // button(inheritance)
+    AsyncManager_read_cb read_cb;
+    void *read_clientdata;
+  };
+  AsyncManager_connection_cb connection_cb;
+  void *connection_clientdata;
+  struct sockaddr_in addr;
+  int backlog;
+};
+typedef struct TcpServerStreamHandle_t TcpServerStreamHandle_t;
+
+struct TcpClientStreamHandle_t {
+  struct {
+    union {
+      uv_handle_t handle;
+      uv_stream_t stream;
+      uv_tcp_t tcp;
+    } uv; // button(inheritance)
+    AsyncManager_read_cb read_cb;
+    void *read_clientdata;
+  };
+  TcpServerStreamHandle_t *server; // server handle
+};
+
+struct TcpStreamHandle_t {
+  union {
+    struct {
+      union {
+        uv_handle_t handle;
+        uv_stream_t stream;
+        uv_tcp_t tcp;
+      } uv; // button(inheritance)
+      AsyncManager_read_cb read_cb;
+      void *read_clientdata;
+    };
+    TcpServerStreamHandle_t server;
+    TcpClientStreamHandle_t client;
+  };
+};
+typedef struct TcpStreamHandle_t TcpStreamHandle_t;
+
+struct StreamHandle_t {
+  union {
+    struct {
+      union {
+        uv_handle_t handle;
+        uv_stream_t stream;
+      } uv; // button(inheritance)
+      AsyncManager_read_cb read_cb;
+      void *read_clientdata;
+    };
+    TcpStreamHandle_t tcp;
+  };
+};
+
+struct Handle_t {
+  union {
+    union {
+      uv_handle_t handle;
+    } uv; // button(inheritance)
+    StreamHandle_t stream;
+    PollHandle_t poll;
+  };
+};
+
+// -----------------------------------------------------
+// Request Types
+struct write_req_t {
+  uv_write_t super; // button(inheritance)
+  StreamHandle_t *stream;
+  uv_buf_t buf;
+  AsyncManager_write_cb write_cb;
+  void *write_clientdata;
+};
+
+struct close_req_t {
+  Handle_t *handle;
+  AsyncManager_close_cb close_cb;
+  void *close_clientdata;
+};
+
+
+
+// -----------------------------------------------------
 #define UV_ERRCHECK(err, failed) \
   if (err < 0) { \
     fprintf(stderr, "ERROR: %s: %s: %s[%d] %s\n", uv_err_name(err), uv_strerror(err), __FILE__, __LINE__, __func__); \
     failed; \
   }
+
+// -----------------------------------------------------
 
 enum req_type {
   REQ_QUIT,
@@ -40,72 +150,64 @@ enum req_type {
   REQ_WRITE,
   REQ_READ_START,
   REQ_READ_STOP,
+  REQ_POLL_START,
+  REQ_POLL_STOP,
   REQ_NUM,
 };
-typedef enum req_type req_type;
+
+enum sreq_type {
+  SREQ_POLL_INIT,
+  SREQ_NUM,
+};
 
 struct req_data {
   uv_async_t async; // button(inheritance)
-  req_type type;
+  enum req_type type;
   uv_sem_t bsem;
   void *data;
 };
-typedef struct req_data req_data;
+
+struct sreq_data {
+  uv_async_t async; // button(inheritance)
+  enum sreq_type type;
+  uv_sem_t bsem;
+  uv_sem_t respsem;
+  void *reqdata;
+  int status;
+  void *respdata;
+};
 
 struct AsyncManager {
   uv_loop_t *loop;
   uv_thread_t tid;
-  req_data *req[REQ_NUM];
+  struct req_data *req[REQ_NUM];
+  struct sreq_data *sreq[SREQ_NUM];
 };
 typedef struct AsyncManager AsyncManager;
 
 static AsyncManager *g_singleton;
 static uv_once_t init_guard = UV_ONCE_INIT;
 
+
+// -----------------------------------------------------
+static struct req_data *new_req_data(enum req_type reqno);
+static struct sreq_data *new_sreq_data(enum sreq_type reqno);
 static void init(void);
 static void init_once(void);
 
 static void server_thread(void *arg);
-static int send_req(req_type type, void *data);
-static void on_wakeup(uv_async_t *handle);
+static int send_req(enum req_type type, void *data);
+static int send_sreq(enum sreq_type type, void *data, void **result);
+static void on_wakeup_req(uv_async_t *handle);
+static void on_wakeup_sreq(uv_async_t *handle);
 
 static void free_data(uv_handle_t *handle);
 static void close_all(uv_handle_t *handle, void *arg);
 static void on_exit(void);
 
 // -----------------------------------------------------
-
-struct TcpServer {
-  uv_tcp_t super; // button(inheritance)
-  AsyncManager_accept_cb on_connect;
-  void *clientdata;
-  struct sockaddr_in addr;
-  int backlog;
-};
-typedef struct TcpServer TcpServer;
-
-struct TcpHandle_t {
-  uv_tcp_t super; // button(inheritance)
-  TcpServer *server; // listening server handle, if super is that handle connected to client
-  AsyncManager_read_cb read_cb;
-  void *clientdata;
-};
-
-struct write_req_t {
-  uv_write_t super; // button(inheritance)
-  uv_buf_t buf;
-  AsyncManager_write_cb write_cb;
-  void *clientdata;
-};
-
-struct close_req_t {
-  struct TcpHandle_t *handle;
-  AsyncManager_close_cb close_cb;
-  void *clientdata;
-};
-
-static void on_connect(uv_stream_t *server, int status);
-static int listen_tcp(TcpServer *svr);
+static void on_connection(uv_stream_t *server, int status);
+static int listen_tcp(TcpServerStreamHandle_t *svr);
 
 static void on_writed(uv_write_t *req, int status);
 static int write_stream(struct write_req_t *wr);
@@ -115,9 +217,61 @@ static int close_handle(struct close_req_t *cr);
 
 static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
-static int read_start_stream(struct TcpHandle_t *handle);
-static int read_stop_stream(struct TcpHandle_t *handle);
+static int read_start(StreamHandle_t *handle);
+static int read_stop(StreamHandle_t *handle);
+
 // -----------------------------------------------------
+static int poll_init(int *fd, PollHandle_t **handle);
+
+static void on_poll(uv_poll_t *handle, int status, int events);
+static int poll_start(PollHandle_t *handle);
+static int poll_stop(PollHandle_t *handle);
+
+// -----------------------------------------------------
+static struct req_data *new_req_data(enum req_type reqno) {
+  int ret;
+  struct req_data *req = malloc(sizeof(*req));
+  ret = (req) ? 0 : UV_EAI_MEMORY;
+  UV_ERRCHECK(ret, return NULL);
+  req->type = reqno;
+  ret = uv_sem_init(&req->bsem, 1);
+  UV_ERRCHECK(ret, goto REQ_ALLOCED);
+  ret = uv_async_init(g_singleton->loop, &req->async, &on_wakeup_req);
+  UV_ERRCHECK(ret, goto REQ_SEM_INITED);
+  req->async.data = req;
+  return req;
+
+REQ_SEM_INITED:
+  uv_sem_destroy(&req->bsem);
+REQ_ALLOCED:
+  free(req);
+  return NULL;
+}
+
+static struct sreq_data *new_sreq_data(enum sreq_type reqno) {
+  int ret;
+  struct sreq_data *req = malloc(sizeof(*req));
+  ret = (req) ? 0 : UV_EAI_MEMORY;
+  UV_ERRCHECK(ret, return NULL);
+  req->type = reqno;
+  ret = uv_sem_init(&req->bsem, 1);
+  UV_ERRCHECK(ret, goto REQ_ALLOCED);
+  ret = uv_sem_init(&req->respsem, 0);
+  UV_ERRCHECK(ret, goto REQ_BSEM_INITED);
+  ret = uv_async_init(g_singleton->loop, &req->async, &on_wakeup_sreq);
+  UV_ERRCHECK(ret, goto REQ_RESPSEM_INITED);
+  req->async.data = req;
+  return req;
+
+REQ_RESPSEM_INITED:
+  uv_sem_destroy(&req->respsem);
+REQ_BSEM_INITED:
+  uv_sem_destroy(&req->bsem);
+REQ_ALLOCED:
+  free(req);
+  return NULL;
+}
+
 
 static void init(void) {
   int err = 0;
@@ -125,27 +279,30 @@ static void init(void) {
   uv_barrier_t blocker;
   setbuf(stderr, NULL);
   fprintf(stderr, "AsyncManager init.\n");
-  g_singleton = malloc(sizeof(*g_singleton));
+  g_singleton = calloc(1, sizeof(*g_singleton));
   err = (g_singleton) ? 0 : UV_EAI_MEMORY;
   UV_ERRCHECK(err, return);
   // prepare server loop
   g_singleton->loop = uv_default_loop();
   // prepare async event notifier
   for (reqno = 0; reqno < REQ_NUM; ++reqno) {
-    g_singleton->req[reqno] = malloc(sizeof(*g_singleton->req[reqno]));
-    g_singleton->req[reqno]->type = reqno;
-    err = uv_sem_init(&g_singleton->req[reqno]->bsem, 1);
-    UV_ERRCHECK(err, free(g_singleton->req[reqno]);  goto ERR_ASYNC_INITED);
-    err = uv_async_init(g_singleton->loop, &g_singleton->req[reqno]->async, &on_wakeup);
-    UV_ERRCHECK(err, uv_sem_destroy(&g_singleton->req[reqno]->bsem); free(g_singleton->req[reqno]); goto ERR_ASYNC_INITED);
-    g_singleton->req[reqno]->async.data = g_singleton->req[reqno];
+    g_singleton->req[reqno] = new_req_data(reqno);
+    if (!g_singleton->req[reqno]) {
+      goto ERR_REQ_INIT;
+    }
+  }
+  for (reqno = 0; reqno < SREQ_NUM; ++reqno) {
+    g_singleton->sreq[reqno] = new_sreq_data(reqno);
+    if (!g_singleton->sreq[reqno]) {
+      goto ERR_SREQ_INIT;
+    }
   }
   // start server loop in the new thread
   err = uv_barrier_init(&blocker, 2);
-  UV_ERRCHECK(err, goto ERR_ASYNC_INITED);
+  UV_ERRCHECK(err, goto ERR_SREQ_INITED);
   g_singleton->loop->data = &blocker;
   err = uv_thread_create(&g_singleton->tid, &server_thread, g_singleton->loop);
-  UV_ERRCHECK(err, goto ERR_ASYNC_INITED);
+  UV_ERRCHECK(err, goto ERR_SREQ_INITED);
   uv_barrier_wait(&blocker);
   uv_barrier_destroy(&blocker);
   // register resource release
@@ -153,13 +310,22 @@ static void init(void) {
   return;
 
   // error handlers
-ERR_ASYNC_INITED:
-  for (; reqno > 0; --reqno) {
-    uv_close((uv_handle_t *)&g_singleton->req[reqno - 1]->async, NULL);
-    uv_sem_destroy(&g_singleton->req[reqno - 1]->bsem);
-    free(g_singleton->req[reqno - 1]);
+ERR_SREQ_INITED:
+ERR_SREQ_INIT:
+  for (reqno = 0; (reqno < SREQ_NUM) && g_singleton->sreq[reqno]; ++reqno) {
+    uv_close((uv_handle_t *)&g_singleton->sreq[reqno]->async, NULL);
+    uv_sem_destroy(&g_singleton->sreq[reqno]->bsem);
+    uv_sem_destroy(&g_singleton->sreq[reqno]->respsem);
+    free(g_singleton->sreq[reqno]);
+  }
+ERR_REQ_INIT:
+  for (reqno = 0; (reqno < REQ_NUM) && g_singleton->req[reqno]; ++reqno) {
+    uv_close((uv_handle_t *)&g_singleton->req[reqno]->async, NULL);
+    uv_sem_destroy(&g_singleton->req[reqno]->bsem);
+    free(g_singleton->req[reqno]);
   }
   while (uv_loop_close(g_singleton->loop));
+
   free(g_singleton);
   g_singleton = NULL;
   abort();
@@ -177,14 +343,27 @@ static void server_thread(void *arg) {
   fprintf(stderr, "AsyncManager stop.\n");
 }
 
-static int send_req(req_type type, void *data) {
+static int send_req(enum req_type type, void *data) {
   uv_sem_wait(&g_singleton->req[type]->bsem);
   g_singleton->req[type]->data = data;
   return uv_async_send(&g_singleton->req[type]->async);
 }
 
-static void on_wakeup(uv_async_t *handle) {
-  req_data *req = handle->data;
+static int send_sreq(enum sreq_type type, void *data, void **result) {
+  int ret;
+  uv_sem_wait(&g_singleton->sreq[type]->bsem);
+  g_singleton->sreq[type]->reqdata = data;
+  ret = uv_async_send(&g_singleton->sreq[type]->async);
+  UV_ERRCHECK(ret < 0, return ret);
+  uv_sem_wait(&g_singleton->sreq[type]->respsem);
+  ret = g_singleton->sreq[type]->status;
+  *result = g_singleton->sreq[type]->respdata;
+  uv_sem_post(&g_singleton->sreq[type]->bsem);
+  return ret;
+}
+
+static void on_wakeup_req(uv_async_t *handle) {
+  struct req_data *req = handle->data;
   switch (req->type) {
   case REQ_QUIT:
     uv_walk(handle->loop, &close_all, NULL);
@@ -199,10 +378,16 @@ static void on_wakeup(uv_async_t *handle) {
     write_stream(req->data);
     break;
   case REQ_READ_START:
-    read_start_stream(req->data);
+    read_start(req->data);
     break;
   case REQ_READ_STOP:
-    read_stop_stream(req->data);
+    read_stop(req->data);
+    break;
+  case REQ_POLL_START:
+    poll_start(req->data);
+    break;
+  case REQ_POLL_STOP:
+    poll_stop(req->data);
     break;
   default:
     break;
@@ -210,9 +395,22 @@ static void on_wakeup(uv_async_t *handle) {
   uv_sem_post(&req->bsem);
 }
 
+static void on_wakeup_sreq(uv_async_t *handle) {
+  struct sreq_data *req = handle->data;
+  switch (req->type) {
+  case SREQ_POLL_INIT:
+    req->status = poll_init(req->reqdata, req->respdata);
+    break;
+  default:
+    break;
+  }
+  uv_sem_post(&req->respsem);
+}
+
 static void free_data(uv_handle_t *handle) {
-  free(handle->data);
+  void *buf = handle->data;
   handle->data = NULL;
+  free(buf);
 }
 
 static void close_all(uv_handle_t *handle, void *arg) {
@@ -240,10 +438,10 @@ static void on_exit(void) {
 
 // -------------------------------------------------------------------------------------------------------------
 
-static void on_connect(uv_stream_t *server, int status) {
+static void on_connection(uv_stream_t *server, int status) {
   int err = status;
-  TcpHandle_t *client;
-  TcpServer *svr = server->data;
+  TcpClientStreamHandle_t *client;
+  TcpServerStreamHandle_t *svr = server->data;
   const char *host = NULL;
   int port = 0;
   char client_address[INET_ADDRSTRLEN +1] = { 0 };
@@ -255,14 +453,14 @@ static void on_connect(uv_stream_t *server, int status) {
   client = malloc(sizeof(*client));
   err = (client) ? 0 : UV_EAI_MEMORY;
   UV_ERRCHECK(err, goto EMIT);
-  err = uv_tcp_init(server->loop, &client->super);
+  err = uv_tcp_init(server->loop, &client->uv.tcp);
   UV_ERRCHECK(err, goto FREE_EMIT);
-  client->super.data = client;
+  client->uv.stream.data = client;
   client->server = svr;
-  err = uv_accept(server, (uv_stream_t *)client);
+  err = uv_accept(server, &client->uv.stream);
   UV_ERRCHECK(err, goto CLOSE_EMIT);
 
-  err = uv_tcp_getpeername(&client->super, (struct sockaddr *)&addr, &addrlen);
+  err = uv_tcp_getpeername(&client->uv.tcp, (struct sockaddr *)&addr, &addrlen);
   UV_ERRCHECK(err, goto CLOSE_EMIT);
   port = addr.sin_port;
   err = uv_ip4_name(&addr, client_address, sizeof(client_address) - 1);
@@ -271,42 +469,42 @@ static void on_connect(uv_stream_t *server, int status) {
   goto EMIT;
   
 CLOSE_EMIT:
-  uv_close((uv_handle_t *)client, &free_data);
+  uv_close(&client->uv.handle, &free_data);
   client = NULL;
 FREE_EMIT:
   free(client);
   client = NULL;
 EMIT:
-  if (svr->on_connect) {
-    svr->on_connect(err, client, host, port, svr->clientdata);
+  if (svr->connection_cb) {
+    svr->connection_cb(err, (StreamHandle_t *)client, host, port, svr->connection_clientdata);
   }
 }
 
-static int listen_tcp(TcpServer *svr) {
+static int listen_tcp(TcpServerStreamHandle_t *svr) {
   int err;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
-  err = uv_tcp_init(g_singleton->loop, &svr->super);
+  err = uv_tcp_init(g_singleton->loop, &svr->uv.tcp);
   UV_ERRCHECK(err, free(svr); return err);
-  svr->super.data = svr;
-  err = uv_tcp_bind(&svr->super, (const struct sockaddr *)&svr->addr, 0);
-  UV_ERRCHECK(err, free_data((uv_handle_t *)&svr->super); return err);
-  err = uv_listen((uv_stream_t*)&svr->super, svr->backlog, on_connect);
-  UV_ERRCHECK(err, uv_close((uv_handle_t *)&svr->super, &free_data); return err);
+  svr->uv.tcp.data = svr;
+  err = uv_tcp_bind(&svr->uv.tcp, (const struct sockaddr *)&svr->addr, 0);
+  UV_ERRCHECK(err, free_data(&svr->uv.handle); return err);
+  err = uv_listen(&svr->uv.stream, svr->backlog, &on_connection);
+  UV_ERRCHECK(err, uv_close(&svr->uv.handle, &free_data); return err);
   return 0;
 }
 
-int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, AsyncManager_accept_cb cb, void *clientdata) {
+int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, AsyncManager_connection_cb cb, void *clientdata) {
   int err;
   init_once();
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
-  TcpServer *svr = malloc(sizeof(*svr));
+  TcpServerStreamHandle_t *svr = malloc(sizeof(*svr));
   err = (svr) ? 0 : UV_EAI_MEMORY;
   UV_ERRCHECK(err, return err);
   err = uv_ip4_addr(ip, port, &svr->addr);
   UV_ERRCHECK(err, free(svr); return err);
   svr->backlog = backlog;
-  svr->on_connect = cb;
-  svr->clientdata = clientdata;
+  svr->connection_cb = cb;
+  svr->connection_clientdata = clientdata;
   uv_thread_t tid = uv_thread_self();
   if (uv_thread_equal(&g_singleton->tid, &tid)) {
     err = listen_tcp(svr);
@@ -317,28 +515,28 @@ int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, AsyncManage
 }
 
 static void on_writed(uv_write_t *req, int status) {
-  struct write_req_t *wr = (struct write_req_t *)req;
+  struct write_req_t *wr = req->data;
   if (wr->write_cb) {
-    wr->write_cb(status, (TcpHandle_t *)req->handle, wr->clientdata);
+    wr->write_cb(status, wr->stream, wr->write_clientdata);
   }
   free(wr);
 }
 
 static int write_stream(struct write_req_t *wr) {
-  return uv_write((uv_write_t *)wr, wr->super.handle, &wr->buf, 1, on_writed);
+  wr->super.data = wr;
+  return uv_write(&wr->super, &wr->stream->uv.stream, &wr->buf, 1, &on_writed);
 }
 
-int AsyncServer_Write(TcpHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata) {
+int AsyncServer_Write(StreamHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata) {
   int ret;
   // create write request
   struct write_req_t *wr = malloc(sizeof(*wr));
   ret = (wr) ? 0 : UV_EAI_MEMORY;
   UV_ERRCHECK(ret, return ret);
-  wr->super.handle = (uv_stream_t *)handle;
-  wr->super.data = wr;
-  wr->buf = uv_buf_init(base, len);
+  wr->stream = handle;
+  wr->buf = uv_buf_init((char *)base, len);
   wr->write_cb = write_cb;
-  wr->clientdata = clientdata;
+  wr->write_clientdata = clientdata;
   // check context == libuv
   uv_thread_t tid = uv_thread_self();
   if (uv_thread_equal(&g_singleton->tid, &tid)) {
@@ -351,10 +549,9 @@ int AsyncServer_Write(TcpHandle_t *handle, const void *base, size_t len, AsyncMa
 
 static void on_closed(uv_handle_t *handle) {
   if (handle->data) {
-    struct close_req_t *cr = (struct close_req_t *)handle->data;
-    assert(handle == (uv_handle_t *)&cr->handle->super);
+    struct close_req_t *cr = handle->data;
     if (cr->close_cb) {
-      cr->close_cb(cr->handle, cr->clientdata);
+      cr->close_cb(cr->handle, cr->close_clientdata);
     }
     free(cr);
   }
@@ -362,12 +559,16 @@ static void on_closed(uv_handle_t *handle) {
 }
 
 static int close_handle(struct close_req_t *cr) {
-  cr->handle->super.data = cr;
-  uv_close((uv_handle_t *)&cr->handle->super, &on_closed);
+  if (uv_is_closing(&cr->handle->uv.handle)) {
+    free(cr);
+  } else {
+    cr->handle->uv.handle.data = cr;
+    uv_close(&cr->handle->uv.handle, &on_closed);
+  }
   return 0;
 }
 
-int AsyncServer_Close(TcpHandle_t *handle, AsyncManager_close_cb close_cb, void *clientdata) {
+int AsyncServer_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *clientdata) {
   int ret;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create close request
@@ -376,7 +577,7 @@ int AsyncServer_Close(TcpHandle_t *handle, AsyncManager_close_cb close_cb, void 
   UV_ERRCHECK(ret, return ret);
   cr->handle = handle;
   cr->close_cb = close_cb;
-  cr->clientdata = clientdata;
+  cr->close_clientdata = clientdata;
   // check context == libuv
   uv_thread_t tid = uv_thread_self();
   if (uv_thread_equal(&g_singleton->tid, &tid)) {
@@ -388,66 +589,148 @@ int AsyncServer_Close(TcpHandle_t *handle, AsyncManager_close_cb close_cb, void 
 }
 
 static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-  buf->base = (char*)malloc(suggested_size);
+  buf->base = malloc(suggested_size);
   buf->len = suggested_size;
 }
 
 static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-  struct TcpHandle_t *handle = (struct TcpHandle_t *)stream;
+  StreamHandle_t *handle = (StreamHandle_t *)stream;
   if (nread == 0) {
     // EAGAIN or EWOULDBLOCK
     return;
   }
   if (handle->read_cb) {
-    handle->read_cb(handle, buf->base, ((nread == UV_EOF) ? 0 : nread), handle->clientdata);
+    handle->read_cb(handle, buf->base, ((nread == UV_EOF) ? 0 : nread), handle->read_clientdata);
   }
   free(buf->base);
   if (nread < 0) {
     // ERROR
-    if (!uv_is_closing((uv_handle_t *)stream)) {
-      stream->data = NULL;
-      uv_close((uv_handle_t *)stream, &on_closed);
+    if (!uv_is_closing(&handle->uv.handle)) {
+      stream->data = stream;
+      uv_close(&handle->uv.handle, &free_data);
     }
   }
 }
 
-static int read_start_stream(struct TcpHandle_t *handle) {
-  int ret;
-  ret = uv_read_start((uv_stream_t *)&handle->super, &alloc_buffer, &on_read);
-  return ret;
+static int read_start(StreamHandle_t *handle) {
+  return uv_read_start(&handle->uv.stream, &alloc_buffer, &on_read);
 }
 
-int AsyncServer_ReadStart(TcpHandle_t *handle, AsyncManager_read_cb read_cb, void *clientdata) {
+int AsyncServer_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb, void *clientdata) {
   int ret;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create read start request -> in TcpHandle
   handle->read_cb = read_cb;
-  handle->clientdata = clientdata;
+  handle->read_clientdata = clientdata;
   // check context == libuv
   uv_thread_t tid = uv_thread_self();
   if (uv_thread_equal(&g_singleton->tid, &tid)) {
-    ret = read_start_stream(handle);
+    ret = read_start(handle);
   } else {
     ret = send_req(REQ_READ_START, handle);
   }
   return ret;
 }
 
-static int read_stop_stream(struct TcpHandle_t *handle) {
-  return uv_read_stop((uv_stream_t *)&handle->super);
+static int read_stop(StreamHandle_t *handle) {
+  return uv_read_stop(&handle->uv.stream);
 }
 
-int AsyncServer_ReadStop(TcpHandle_t *handle) {
+int AsyncServer_ReadStop(StreamHandle_t *handle) {
   int ret;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create read stop request -> NONE
   // check context == libuv
   uv_thread_t tid = uv_thread_self();
   if (uv_thread_equal(&g_singleton->tid, &tid)) {
-    ret = read_stop_stream(handle);
+    ret = read_stop(handle);
   } else {
     ret = send_req(REQ_READ_STOP, handle);
   }
   return ret;
 }
+
+
+// -------------------------------------------------------------------------------------------------------------
+static int poll_init(int *fd, PollHandle_t **handle) {
+  int ret;
+  PollHandle_t *p = malloc(sizeof(*p));
+  *handle = NULL;
+  ret = (p) ? 0 : UV_EAI_MEMORY;
+  UV_ERRCHECK(ret, return ret);
+  ret = uv_poll_init(g_singleton->loop, &p->uv.poll, *fd);
+  UV_ERRCHECK(ret, free(p); return ret);
+  p->uv.poll.data = p;
+  *handle = p;
+  return ret;
+}
+
+PollHandle_t * AsyncManager_PollInit(int fd) {
+  int ret;
+  PollHandle_t *handle = NULL;
+  init_once();
+  fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+  // check context == libuv
+  uv_thread_t tid = uv_thread_self();
+  if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    ret = poll_init(&fd, &handle);
+  } else {
+    ret = send_sreq(SREQ_POLL_INIT, &fd, &handle);
+  }
+  UV_ERRCHECK(ret, return NULL);
+  return handle;
+}
+
+static void on_poll(uv_poll_t *handle, int status, int events) {
+  PollHandle_t *handle_ = handle->data;
+  int events_ = 0;
+  if (handle_->poll_cb) {
+    events_ |= (events & UV_READABLE) ? ASYNCMANAGER_EVENT_READABLE : 0;
+    events_ |= (events & UV_WRITABLE) ? ASYNCMANAGER_EVENT_WRITABLE : 0;
+    handle_->poll_cb(handle_, status, events_, handle_->poll_clientdata);
+  }
+}
+
+static int poll_start(PollHandle_t *handle) {
+  return uv_poll_start(&handle->uv.poll, handle->events, &on_poll);
+}
+
+int AsyncManager_PollStart(PollHandle_t *handle, int events, AsyncManager_poll_cb cb, void *clientdata) {
+  int ret;
+  fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+  // create read start request -> in PollHandle
+  handle->poll_cb = cb;
+  handle->poll_clientdata = clientdata;
+  handle->events = 0;
+  handle->events |= (events & ASYNCMANAGER_EVENT_READABLE) ? UV_READABLE : 0;
+  handle->events |= (events & ASYNCMANAGER_EVENT_WRITABLE) ? UV_WRITABLE : 0;
+  // check context == libuv
+  uv_thread_t tid = uv_thread_self();
+  if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    ret = poll_start(handle);
+  } else {
+    ret = send_req(REQ_POLL_START, handle);
+  }
+  return ret;
+}
+
+static int poll_stop(PollHandle_t *handle) {
+  return uv_poll_stop (&handle->uv.poll);
+}
+
+int AsyncManager_PollStop(PollHandle_t *handle) {
+  int ret;
+  fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+  // create read start request -> already PollHandle
+  // check context == libuv
+  uv_thread_t tid = uv_thread_self();
+  if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    ret = poll_stop(handle);
+  } else {
+    ret = send_req(REQ_POLL_STOP, handle);
+  }
+  return ret;
+}
+
+// -------------------------------------------------------------------------------------------------------------
 

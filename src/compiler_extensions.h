@@ -54,16 +54,10 @@
 // rfbserver
 #define NO_ZLIB
 #define NO_STARTCMD
-//#define NO_KEYBOARD
-//#define NO_MOUSE
 
 // uzebox
 #define NO_MMC
 #define NO_USART
 #define NO_EEPROM
-
-// fio
-#define NO_ARM9
-#define NO_SIGNAL
-#endif
-#endif
+#endif // if defined(_MSC_VER)
+#endif // ifdef COMPILER_EXTENSIONS_H

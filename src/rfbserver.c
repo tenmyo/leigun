@@ -149,7 +149,7 @@ typedef struct RfbConnection {
   int protoversion;	/* major in high 16 bit minor in lower 16 Bit */
   int state;
   int current_encoding;
-  TcpHandle_t *handle;
+  StreamHandle_t *handle;
 
   PixelFormat pixfmt;
   /* translation table belongs to the pixel format */
@@ -233,7 +233,7 @@ pixfmt_update_translation(RfbConnection * rcon) {
   }
 }
 
-static void free_rcon(TcpHandle_t *handle, RfbConnection *rcon) {
+static void free_rcon(Handle_t *handle, RfbConnection *rcon) {
   RfbConnection *cursor, *prev;
   RfbServer *rfbserv = rcon->rfbserv;
   for (prev = NULL, cursor = rfbserv->con_head; cursor; prev = cursor, cursor = cursor->next) {
@@ -267,7 +267,7 @@ static void free_rcon(TcpHandle_t *handle, RfbConnection *rcon) {
 static void
 rfbsrv_disconnect(RfbConnection * rcon) {
   AsyncServer_ReadStop(rcon->handle);
-  AsyncServer_Close(rcon->handle, &free_rcon, rcon);
+  AsyncServer_Close((Handle_t *)rcon->handle, &free_rcon, rcon);
 }
 
 static int
@@ -1273,8 +1273,8 @@ rfbcon_handle_message(RfbConnection * rcon) {
  * -----------------------------------------------------------------
  */
 static void
-rfbcon_input(TcpHandle_t *handle, const void *buf, signed int len, void *clientdata) {
-  RfbConnection *rcon = (RfbConnection *)clientdata;
+rfbcon_input(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata) {
+  RfbConnection *rcon = clientdata;
   if (len < 0) {
     perror("error reading from socket");
     rfbsrv_disconnect(rcon);
@@ -1310,9 +1310,8 @@ rfbcon_input(TcpHandle_t *handle, const void *buf, signed int len, void *clientd
  * --------------------------------------------------------------------------
  */
 static void
-rfbsrv_accept(int status, TcpHandle_t *handle, const char *host, int port, void *clientdata) {
+rfbsrv_accept(int status, StreamHandle_t *handle, const char *host, int port, void *clientdata) {
   RfbServer *rfbserv = (RfbServer *)clientdata;
-  int on;
   RfbConnection *rcon;
   rcon = sg_new(RfbConnection);
   rcon->current_encoding = -1;	/* Hope this doesnt exist */
