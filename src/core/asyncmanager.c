@@ -394,20 +394,21 @@ static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *b
 
 static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   struct TcpHandle_t *handle = (struct TcpHandle_t *)stream;
+  if (nread == 0) {
+    // EAGAIN or EWOULDBLOCK
+    return;
+  }
+  if (handle->read_cb) {
+    handle->read_cb(handle, buf->base, ((nread == UV_EOF) ? 0 : nread), handle->clientdata);
+  }
+  free(buf->base);
   if (nread < 0) {
-    if (nread == UV_EOF) {
-      nread = 0;
-    }
-    handle->read_cb(handle, NULL, nread, handle->clientdata);
+    // ERROR
     if (!uv_is_closing((uv_handle_t *)stream)) {
       stream->data = NULL;
       uv_close((uv_handle_t *)stream, &on_closed);
     }
   }
-  if (nread > 0) {
-    handle->read_cb(handle, buf->base, nread, handle->clientdata);
-  }
-  free(buf->base);
 }
 
 static int read_start_stream(struct TcpHandle_t *handle) {
