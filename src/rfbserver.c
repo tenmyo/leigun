@@ -266,14 +266,14 @@ static void free_rcon(Handle_t *handle, RfbConnection *rcon) {
  */
 static void
 rfbsrv_disconnect(RfbConnection * rcon) {
-  AsyncServer_ReadStop(rcon->handle);
-  AsyncServer_Close((Handle_t *)rcon->handle, &free_rcon, rcon);
+  AsyncManager_ReadStop(rcon->handle);
+  AsyncManager_Close((Handle_t *)rcon->handle, &free_rcon, rcon);
 }
 
 static int
 Msg_ProtocolVersion(RfbConnection *rcon) {
   char *msg = "RFB 003.003\n";
-  return AsyncServer_Write(rcon->handle, msg, strlen(msg), NULL, NULL);
+  return AsyncManager_Write(rcon->handle, msg, strlen(msg), NULL, NULL);
 }
 
 /*
@@ -307,7 +307,7 @@ CheckProtocolVersion(RfbConnection * rcon) {
 static int
 Msg_Auth(RfbConnection *rcon) {
   char msg[] = { 0, 0, 0, 1 };	/* no authentication required */
-  return AsyncServer_Write(rcon->handle, msg, 4, NULL, NULL);
+  return AsyncManager_Write(rcon->handle, msg, 4, NULL, NULL);
 }
 
 /**
@@ -436,7 +436,7 @@ Msg_ServerInitialisation(RfbConnection * rcon) {
   p += 4;
   memcpy(p, fbi->name_string, fbi->name_length);
   p += fbi->name_length;
-  return AsyncServer_Write(rcon->handle, msg, p - msg, NULL, NULL);
+  return AsyncManager_Write(rcon->handle, msg, p - msg, NULL, NULL);
 }
 
 /*
@@ -771,7 +771,7 @@ srv_fb_encode_update_raw(RfbConnection * rcon) {
         ofs += fb_bypp;
       }
     }
-    AsyncServer_Write(rcon->handle, reply, data - reply, NULL, NULL);
+    AsyncManager_Write(rcon->handle, reply, data - reply, NULL, NULL);
     data = reply;
   }
   return;
@@ -861,7 +861,7 @@ srv_fb_encode_update_zrle(RfbConnection * rcon) {
     //fprintf(stderr,"total out %lu av out %lu bpp %d bytes %d\n",zs->total_out,zs->avail_out,fbpixf->bits_per_pixel,con_bypp);
     write32be(rcon->obuf + lengthP, zs->total_out);
     rcon->obuf_wp += zs->total_out;
-    AsyncServer_Write(rcon->handle, rcon->obuf, rcon->obuf_wp, NULL, NULL);
+    AsyncManager_Write(rcon->handle, rcon->obuf, rcon->obuf_wp, NULL, NULL);
     rcon->obuf_wp = 0;
   }
   return;
@@ -976,7 +976,7 @@ srv_set_8bit_color_map_entries(RfbConnection * rcon, PixelFormat * pixf) {
     write16be(wp, blue);
     wp += 2;
   }
-  AsyncServer_Write(rcon->handle, reply, wp - reply, NULL, NULL);
+  AsyncManager_Write(rcon->handle, reply, wp - reply, NULL, NULL);
 }
 
 static void
@@ -1336,7 +1336,7 @@ rfbsrv_accept(int status, StreamHandle_t *handle, const char *host, int port, vo
   pixfmt_update_translation(rcon);
   rfbserv->con_head = rcon;
   rcon->current_encoding = ENC_RAW;
-  AsyncServer_ReadStart(handle, &rfbcon_input, rcon);
+  AsyncManager_ReadStart(handle, &rfbcon_input, rcon);
   Msg_ProtocolVersion(rcon);
   rcon->ibuf_expected = 12;	/* Expecting Protocol version reply */
   rcon->state = CONSTAT_PROTO_WAIT;
@@ -1523,7 +1523,7 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
   pixf->blue_shift = 0;
   pixfmt_update_bits(pixf);
 
-  result = AsyncServer_InitTcpServer(host, port, 5, 1, &rfbsrv_accept, rfbserv);
+  result = AsyncManager_InitTcpServer(host, port, 5, 1, &rfbsrv_accept, rfbserv);
   if (result < 0) {
     sg_free(fbi->framebuffer);
     sg_free(rfbserv);

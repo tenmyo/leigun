@@ -28,7 +28,7 @@ void close_cb(Handle_t *handle, void *clientdata) {
 
 void write_cb(int status, StreamHandle_t *handle, void *clientdata) {
   fprintf(stderr, "%s[%d] %s %d\n", __FILE__, __LINE__, __func__, status);
-  AsyncServer_Close((Handle_t *)handle, &close_cb, NULL);
+  AsyncManager_Close((Handle_t *)handle, &close_cb, NULL);
 }
 
 void read_cb(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata) {
@@ -36,20 +36,20 @@ void read_cb(StreamHandle_t *handle, const void *buf, signed long len, void *cli
     fprintf(stderr, "%s[%d] %s\n%.*s\n", __FILE__, __LINE__, __func__, len, buf);
   } else {
     fprintf(stderr, "%s[%d] %s %d\n", __FILE__, __LINE__, __func__, len);
-    AsyncServer_ReadStop(handle);
-    AsyncServer_Close((Handle_t *)handle, &close_cb, NULL);
+    AsyncManager_ReadStop(handle);
+    AsyncManager_Close((Handle_t *)handle, &close_cb, NULL);
   }
-  AsyncServer_Write(handle, msg, sizeof(msg) - 1, &write_cb, NULL);
+  AsyncManager_Write(handle, msg, sizeof(msg) - 1, &write_cb, NULL);
 }
 void accept_cb(int status, StreamHandle_t *handle, const char *host, int port, void *arg) {
   fprintf(stderr, "%s[%d] %s %d\n", __FILE__, __LINE__, __func__, status);
   fprintf(stderr, "connected from %s:%d\n", host, port);
-  AsyncServer_ReadStart(handle, &read_cb, NULL);
+  AsyncManager_ReadStart(handle, &read_cb, NULL);
 }
 
 int main(int argc, const char *argv[]) {
   printf("%s\n", uv_version_string());
-  AsyncServer_InitTcpServer("127.0.0.1", 8080, 5, &accept_cb, NULL);
+  AsyncManager_InitTcpServer("127.0.0.1", 8080, 5, &accept_cb, NULL);
   Sleep(60 * 1000);
   return 0;
 }

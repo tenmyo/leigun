@@ -496,7 +496,7 @@ static int listen_tcp(TcpServerStreamHandle_t *svr) {
   return 0;
 }
 
-int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, int nodelay, AsyncManager_connection_cb cb, void *clientdata) {
+int AsyncManager_InitTcpServer(const char *ip, int port, int backlog, int nodelay, AsyncManager_connection_cb cb, void *clientdata) {
   int err;
   init_once();
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
@@ -531,7 +531,7 @@ static int write_stream(struct write_req_t *wr) {
   return uv_write(&wr->super, &wr->stream->uv.stream, &wr->buf, 1, &on_writed);
 }
 
-int AsyncServer_Write(StreamHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata) {
+int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata) {
   int ret;
   // create write request
   struct write_req_t *wr = malloc(sizeof(*wr));
@@ -572,7 +572,7 @@ static int close_handle(struct close_req_t *cr) {
   return 0;
 }
 
-int AsyncServer_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *clientdata) {
+int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *clientdata) {
   int ret;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create close request
@@ -620,7 +620,7 @@ static int read_start(StreamHandle_t *handle) {
   return uv_read_start(&handle->uv.stream, &alloc_buffer, &on_read);
 }
 
-int AsyncServer_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb, void *clientdata) {
+int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb, void *clientdata) {
   int ret;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create read start request -> in TcpHandle
@@ -640,7 +640,7 @@ static int read_stop(StreamHandle_t *handle) {
   return uv_read_stop(&handle->uv.stream);
 }
 
-int AsyncServer_ReadStop(StreamHandle_t *handle) {
+int AsyncManager_ReadStop(StreamHandle_t *handle) {
   int ret;
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
   // create read stop request -> NONE

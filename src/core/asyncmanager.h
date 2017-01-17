@@ -34,18 +34,18 @@ typedef struct PollHandle_t PollHandle_t;
 
 // Handle
 typedef void (*AsyncManager_close_cb)(Handle_t *handle, void *clientdata);
-int AsyncServer_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *clientdata);
+int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *clientdata);
 
 // Stream
 typedef void (*AsyncManager_write_cb)(int status, StreamHandle_t *handle, void *clientdata);
 typedef void (*AsyncManager_read_cb)(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata);
-int AsyncServer_Write(StreamHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata);
-int AsyncServer_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb, void *clientdata);
-int AsyncServer_ReadStop(StreamHandle_t *handle);
+int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata);
+int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb, void *clientdata);
+int AsyncManager_ReadStop(StreamHandle_t *handle);
 
 // TCP
 typedef void (*AsyncManager_connection_cb)(int status, StreamHandle_t *handle, const char *host, int port, void *clientdata);
-int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, int nodelay, AsyncManager_connection_cb connection_cb, void *clientdata);
+int AsyncManager_InitTcpServer(const char *ip, int port, int backlog, int nodelay, AsyncManager_connection_cb connection_cb, void *clientdata);
 
 // Poll
 enum {
