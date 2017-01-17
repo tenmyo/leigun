@@ -35,6 +35,8 @@ typedef struct PollHandle_t PollHandle_t;
 // Handle
 typedef void (*AsyncManager_close_cb)(Handle_t *handle, void *clientdata);
 int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *clientdata);
+int AsyncManager_BufferSizeSend(Handle_t *handle, int *value);
+int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value);
 
 // Stream
 typedef void (*AsyncManager_write_cb)(int status, StreamHandle_t *handle, void *clientdata);

@@ -592,6 +592,14 @@ int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb, void *c
   return ret;
 }
 
+int AsyncManager_BufferSizeSend(Handle_t *handle, int *value) {
+  return uv_send_buffer_size(&handle->uv.handle, value);
+}
+
+int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value) {
+  return uv_recv_buffer_size(&handle->uv.handle, value);
+}
+
 static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
   buf->base = malloc(suggested_size);
   buf->len = suggested_size;
