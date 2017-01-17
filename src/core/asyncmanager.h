@@ -45,7 +45,7 @@ int AsyncServer_ReadStop(StreamHandle_t *handle);
 
 // TCP
 typedef void (*AsyncManager_connection_cb)(int status, StreamHandle_t *handle, const char *host, int port, void *clientdata);
-int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, AsyncManager_connection_cb connection_cb, void *clientdata);
+int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, int nodelay, AsyncManager_connection_cb connection_cb, void *clientdata);
 
 // Poll
 enum {

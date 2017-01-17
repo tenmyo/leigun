@@ -1523,7 +1523,7 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
   pixf->blue_shift = 0;
   pixfmt_update_bits(pixf);
 
-  result = AsyncServer_InitTcpServer(host, port, 5, &rfbsrv_accept, rfbserv);
+  result = AsyncServer_InitTcpServer(host, port, 5, 1, &rfbsrv_accept, rfbserv);
   if (result < 0) {
     sg_free(fbi->framebuffer);
     sg_free(rfbserv);

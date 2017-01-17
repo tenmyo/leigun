@@ -59,6 +59,7 @@ struct TcpServerStreamHandle_t {
   void *connection_clientdata;
   struct sockaddr_in addr;
   int backlog;
+  int nodelay;
 };
 typedef struct TcpServerStreamHandle_t TcpServerStreamHandle_t;
 
@@ -457,6 +458,8 @@ static void on_connection(uv_stream_t *server, int status) {
   UV_ERRCHECK(err, goto FREE_EMIT);
   client->uv.stream.data = client;
   client->server = svr;
+  err = uv_tcp_nodelay(&client->uv.tcp, svr->nodelay);
+  UV_ERRCHECK(err, goto FREE_EMIT);
   err = uv_accept(server, &client->uv.stream);
   UV_ERRCHECK(err, goto CLOSE_EMIT);
 
@@ -493,7 +496,7 @@ static int listen_tcp(TcpServerStreamHandle_t *svr) {
   return 0;
 }
 
-int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, AsyncManager_connection_cb cb, void *clientdata) {
+int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, int nodelay, AsyncManager_connection_cb cb, void *clientdata) {
   int err;
   init_once();
   fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
@@ -503,6 +506,7 @@ int AsyncServer_InitTcpServer(const char *ip, int port, int backlog, AsyncManage
   err = uv_ip4_addr(ip, port, &svr->addr);
   UV_ERRCHECK(err, free(svr); return err);
   svr->backlog = backlog;
+  svr->nodelay = nodelay;
   svr->connection_cb = cb;
   svr->connection_clientdata = clientdata;
   uv_thread_t tid = uv_thread_self();
