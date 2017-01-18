@@ -4,9 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "cycletimer.h"
-#include "mainloop_events.h"
 #include "idecode_m16c.h"
-#include "fio.h"
 #include "m16c_cpu.h"
 #include "bus.h"
 #include "configfile.h"
@@ -184,23 +182,17 @@ M16C_PostILevel(int ilvl, int int_no)
 static inline void
 CheckSignals()
 {
-	if (unlikely(mainloop_event_pending)) {
 #if 0
-		fprintf(stderr, "Signals raw %08x, %08x, mask %08x\n",
-			gm16c.signals_raw, gm16c.signals, gm16c.signals_mask);
-		exit(1);
+	fprintf(stderr, "Signals raw %08x, %08x, mask %08x\n",
+		gm16c.signals_raw, gm16c.signals, gm16c.signals_mask);
+	exit(1);
 #endif
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
+	if (gm16c.signals) {
+		if (gm16c.signals & M16C_SIG_IRQ) {
+			M16C_Interrupt();
 		}
-		if (gm16c.signals) {
-			if (gm16c.signals & M16C_SIG_IRQ) {
-				M16C_Interrupt();
-			}
-			if (unlikely(gm16c.signals & M16C_SIG_DBG)) {
-				//Do_Debug();
-			}
+		if (unlikely(gm16c.signals & M16C_SIG_DBG)) {
+			//Do_Debug();
 		}
 	}
 }

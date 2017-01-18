@@ -42,7 +42,6 @@
 
 #include "bus.h"
 #include "sgstring.h"
-#include "fio.h"
 #include "signode.h"
 #include "clock.h"
 #include "cycletimer.h"

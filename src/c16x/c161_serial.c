@@ -33,22 +33,29 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "c161_serial.h"
 
+// include system header
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/fcntl.h>
-#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-#include "c161_serial.h"
+// include library header
+
+// include user header
 #include "bus.h"
 #include "c16x/c16x_cpu.h"
-#include "fio.h"
 #include "signode.h"
 #include "configfile.h"
 #include "sgstring.h"
+
+#include "core/asyncmanager.h"
 
 #if 1
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -92,8 +99,8 @@ typedef struct C161_Serial {
 	int rbuf_busy;
 
 	int fd;
-	FIO_FileHandler input_fh;
-	FIO_FileHandler output_fh;
+	PollHandle_t *input_fh;
+	PollHandle_t *output_fh;
 	int ifh_is_active;
 	int ofh_is_active;
 } C161_Serial;
@@ -154,9 +161,9 @@ serial_close(C161_Serial * ser)
  * ------------------------------------------------------------------------
  */
 static void
-serial_output(void *cd, int mask)
+serial_output(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	C161_Serial *ser = (C161_Serial *) cd;
+	C161_Serial *ser = clientdata;
 	while (ser->tx_shift_reg_busy) {
 		int count;
 		uint8_t val = ser->tx_shift_reg;
@@ -188,9 +195,9 @@ serial_output(void *cd, int mask)
 }
 
 static void
-serial_input(void *cd, int mask)
+serial_input(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	C161_Serial *ser = (C161_Serial *) cd;
+	C161_Serial *ser = clientdata;
 	char c;
 	int count = read(ser->fd, &c, 1);
 	if (ser->fd < 0) {
@@ -225,7 +232,7 @@ static void
 enable_rx(C161_Serial * ser)
 {
 	if ((ser->fd >= 0) && !(ser->ifh_is_active)) {
-		FIO_AddFileHandler(&ser->input_fh, ser->fd, FIO_READABLE, serial_input, ser);
+		AsyncManager_PollStart(ser->input_fh, ASYNCMANAGER_EVENT_READABLE, &serial_input, ser);
 		ser->ifh_is_active = 1;
 	}
 }
@@ -234,7 +241,7 @@ static inline void
 disable_rx(C161_Serial * ser)
 {
 	if (ser->ifh_is_active) {
-		FIO_RemoveFileHandler(&ser->input_fh);
+		AsyncManager_PollStop(ser->input_fh);
 	}
 	ser->ifh_is_active = 0;
 }
@@ -250,7 +257,7 @@ static inline void
 enable_tx(C161_Serial * ser)
 {
 	if ((ser->fd >= 0) && !(ser->ofh_is_active)) {
-		FIO_AddFileHandler(&ser->output_fh, ser->fd, FIO_WRITABLE, serial_output, ser);
+		AsyncManager_PollStart(ser->output_fh, ASYNCMANAGER_EVENT_WRITABLE, &serial_output, ser);
 		ser->ofh_is_active = 1;
 	}
 }
@@ -259,7 +266,7 @@ static inline void
 disable_tx(C161_Serial * ser)
 {
 	if (ser->ofh_is_active) {
-		FIO_RemoveFileHandler(&ser->output_fh);
+		AsyncManager_PollStop(ser->output_fh);
 	}
 	ser->ofh_is_active = 0;
 }
@@ -543,7 +550,8 @@ C161_SerialNew(char *devname)
 			fprintf(stderr, "%s: Cannot open %s\n", devname, filename);
 			sleep(1);
 		} else {
-			fcntl(ser->fd, F_SETFL, O_NONBLOCK);
+			ser->input_fh = AsyncManager_PollInit(ser->fd);
+			ser->output_fh = AsyncManager_PollInit(ser->fd);
 			enable_rx(ser);	// should be updaterx
 			fprintf(stderr, "C161 Serial %s Connected to %s\n", devname, filename);
 		}

@@ -45,8 +45,6 @@
 #include "mmu_arm9.h"
 #include "bus.h"
 #include "compiler_extensions.h"
-#include "fio.h"
-#include "mainloop_events.h"
 #include "sgstring.h"
 
 typedef void McrProc(void *clientData, uint32_t icode, uint32_t value);
@@ -909,8 +907,7 @@ mcctrl_write(void *clientData, uint32_t icode, uint32_t value)
 		       && (firstCycleTimerTimeout != ~(uint64_t) 0)) {
 
 			/* leave halt even if an IRQ arrives when irqs are disabled in CPSR */
-			if (mainloop_event_pending
-			    || (gcpu.signals_raw & (ARM_SIG_IRQ | ARM_SIG_FIQ))) {
+			if (gcpu.signals_raw & (ARM_SIG_IRQ | ARM_SIG_FIQ)) {
 				mmu->last_halt_cycles = CycleCounter_Get();
 				return;
 			}
@@ -924,11 +921,10 @@ mcctrl_write(void *clientData, uint32_t icode, uint32_t value)
 			struct timespec tout;
 			tout.tv_nsec = 10000000;	/* 10 ms */
 			tout.tv_sec = 0;
-			if (mainloop_event_pending
-			    || (gcpu.signals_raw & (ARM_SIG_IRQ | ARM_SIG_FIQ))) {
+			if (gcpu.signals_raw & (ARM_SIG_IRQ | ARM_SIG_FIQ)) {
 				return;
 			}
-			FIO_WaitEventTimeout(&tout);
+			// FIXME: FIO_WaitEventTimeout(&tout);
 			clock_gettime(CLOCK_MONOTONIC, &tv_now);
 			nsecs =
 			    tv_now.tv_nsec - last_halt->tv_nsec +

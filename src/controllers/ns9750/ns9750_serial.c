@@ -52,7 +52,6 @@
 #include "ns9750_timer.h"
 #include "ns9750_bbus.h"
 #include "ns9750_bbdma.h"
-#include "fio.h"
 #include "configfile.h"
 #include "signode.h"
 #include "sgstring.h"

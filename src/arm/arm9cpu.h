@@ -8,7 +8,6 @@
 #include <xy_tree.h>
 #include <sys/time.h>
 #include <debugger.h>
-#include "mainloop_events.h"
 #include "signode.h"
 #include "cycletimer.h"
 /*
@@ -332,8 +331,6 @@ ARM_PostIrq()
 {
 	gcpu.signals_raw |= ARM_SIG_IRQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if (gcpu.signals)
-		mainloop_event_pending = 1;
 }
 
 static inline void
@@ -348,8 +345,6 @@ ARM_PostFiq()
 {
 	gcpu.signals_raw |= ARM_SIG_FIQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if (gcpu.signals)
-		mainloop_event_pending = 1;
 }
 
 static inline void
@@ -364,8 +359,6 @@ ARM_PostRestartIdecoder()
 {
 	gcpu.signals_raw |= ARM_SIG_RESTART_IDEC;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if (gcpu.signals)
-		mainloop_event_pending = 1;
 }
 
 static inline void
@@ -377,8 +370,6 @@ ARM_SigDebugMode(bool value)
 		gcpu.signals_raw &= ~ARM_SIG_DEBUGMODE;
 	}
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
-	if (gcpu.signals)
-		mainloop_event_pending = 1;
 }
 
 static inline void

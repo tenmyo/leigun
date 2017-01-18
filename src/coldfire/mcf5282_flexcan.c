@@ -40,7 +40,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
-#include <fio.h>
 #include <bus.h>
 #include <signode.h>
 #include <cycletimer.h>

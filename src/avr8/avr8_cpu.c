@@ -50,11 +50,9 @@
 #include "instructions_avr8.h"
 #include "idecode_avr8.h"
 #include "signode.h"
-#include "fio.h"
 #include "diskimage.h"
 #include "cycletimer.h"
 #include "configfile.h"
-#include "mainloop_events.h"
 #include "loader.h"
 
 typedef struct AVR8_Variant {
@@ -359,8 +357,6 @@ Do_Debug(void)
 			AVR8_RestartIdecoder();
 		} else {
 			gavr8.dbg_steps--;
-			/* Requeue event */
-			mainloop_event_pending = 1;
 		}
 	} else if (gavr8.dbg_state == AVRDBG_STOP) {
 		gavr8.dbg_state = AVRDBG_STOPPED;
@@ -393,9 +389,6 @@ AVR8_UpdateCpuSignals(void)
 		gavr8.cpu_signal_mask &= ~AVR8_SIG_IRQ;
 	}
 	gavr8.cpu_signals = gavr8.cpu_signals_raw & gavr8.cpu_signal_mask;
-	if (gavr8.cpu_signals) {
-		mainloop_event_pending = 1;
-	}
 }
 
 static void
@@ -435,25 +428,22 @@ AVR8_Interrupt(void *irqData)
 static inline void
 CheckSignals(void)
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
-		}
-		if (likely(gavr8.cpu_signals & AVR8_SIG_IRQ)) {
-			gavr8.avrAckIrq(gavr8.avrIrqData);
-		} else if (gavr8.cpu_signals & AVR8_SIG_IRQENABLE) {
-			gavr8.cpu_signals_raw &= ~AVR8_SIG_IRQENABLE;
-			AVR8_UpdateCpuSignals();
-		}
+  if (likely(!gavr8.cpu_signals)) {
+    return;
+  }
+	if (likely(gavr8.cpu_signals & AVR8_SIG_IRQ)) {
+		gavr8.avrAckIrq(gavr8.avrIrqData);
+	} else if (gavr8.cpu_signals & AVR8_SIG_IRQENABLE) {
+		gavr8.cpu_signals_raw &= ~AVR8_SIG_IRQENABLE;
+		AVR8_UpdateCpuSignals();
+	}
 #ifndef NO_DEBUGGER
-		if (unlikely(gavr8.cpu_signals & AVR8_SIG_DBG)) {
-			Do_Debug();
-		}
+	if (unlikely(gavr8.cpu_signals & AVR8_SIG_DBG)) {
+		Do_Debug();
+	}
 #endif
-		if (unlikely(gavr8.cpu_signals & AVR8_SIG_RESTART_IDEC)) {
-			AVR8_RestartIdecoder();
-		}
+	if (unlikely(gavr8.cpu_signals & AVR8_SIG_RESTART_IDEC)) {
+		AVR8_RestartIdecoder();
 	}
 }
 
@@ -509,13 +499,16 @@ AVR8_Run()
 	}
 	SET_REG_PC(addr);
 	setjmp(avr->restart_idec_jump);
+#ifndef NO_DEBUGGER
 	while (avr->dbg_state == AVRDBG_STOPPED) {
 		struct timespec tout;
 		tout.tv_nsec = 0;
 		tout.tv_sec = 10000;
-		FIO_WaitEventTimeout(&tout);
+		// FIXME: FIO_WaitEventTimeout(&tout);
+		sleep(1);
 	}
-	while (1) {
+#endif
+  while (1) {
 		CheckSignals();
 		CycleTimers_Check();
 		ICODE = AVR8_ReadAppMem(GET_REG_PC);

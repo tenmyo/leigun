@@ -46,7 +46,6 @@
 #include "cycletimer.h"
 #include "signode.h"
 #include "xmegaA_twi.h"
-#include "fio.h"
 
 typedef struct XmegaA_Twi {
 	uint8_t regCtrl;

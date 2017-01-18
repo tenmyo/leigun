@@ -2,7 +2,6 @@
 #define CAN_SOCKET_H
 
 #include <stdint.h>
-#include <fio.h>
 
 /*****************************************************************/
 /*   CAN message types                                           */

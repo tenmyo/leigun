@@ -45,7 +45,6 @@
 #include "dram.h"
 #include "signode.h"
 #include "mmu_arm9.h"
-#include "fio.h"
 #include "bus.h"
 #include "amdflash.h"
 #include "configfile.h"

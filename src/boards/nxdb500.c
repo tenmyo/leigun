@@ -41,7 +41,6 @@
 #include "signode.h"
 #include "mmu_arm9.h"
 #include "ste10_100.h"
-#include "fio.h"
 #include "bus.h"
 #include "amdflash.h"
 #include "configfile.h"

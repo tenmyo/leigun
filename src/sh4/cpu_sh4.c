@@ -36,10 +36,8 @@
 #include "compiler_extensions.h"
 #include "cycletimer.h"
 #include "idecode_sh4.h"
-#include "mainloop_events.h"
 #include "mmu_sh4.h"
 #include "configfile.h"
-#include "fio.h"
 #include "signode.h"
 #include "debugger.h"
 #include "cpu_sh4.h"
@@ -857,8 +855,6 @@ Do_Debug(void)
 			SH4_RestartIdecoder();
 		} else {
 			gcpu_sh4.dbg_steps--;
-			/* Requeue event */
-			mainloop_event_pending = 1;
 		}
 	} else if (gcpu_sh4.dbg_state == SH4DBG_STOP) {
 		gcpu_sh4.dbg_state = SH4DBG_STOPPED;
@@ -917,20 +913,14 @@ SH4_Exception(uint32_t ex_index)
 static inline void
 CheckSignals(void)
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
-		}
-		if (gcpu_sh4.signals & SH4_SIG_IRQ) {
+	if (gcpu_sh4.signals & SH4_SIG_IRQ) {
 
-		}
-		if (gcpu_sh4.signals & SH4_SIG_DBG) {
-			Do_Debug();
-		}
-		if (gcpu_sh4.signals & SH4_SIG_RESTART_IDEC) {
-			SH4_RestartIdecoder();
-		}
+	}
+	if (gcpu_sh4.signals & SH4_SIG_DBG) {
+		Do_Debug();
+	}
+	if (gcpu_sh4.signals & SH4_SIG_RESTART_IDEC) {
+		SH4_RestartIdecoder();
 	}
 }
 

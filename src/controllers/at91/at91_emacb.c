@@ -33,20 +33,28 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "at91_emacb.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
+// include system header
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <errno.h>
-#include "linux-tap.h"
-#include "fio.h"
+#include <string.h>
+
+// include library header
+
+// include user header
 #include "bus.h"
-#include "phy.h"
+#include "devices/phy/phy.h"
 #include "signode.h"
 #include "cycletimer.h"
 #include "sgstring.h"
 #include "crc32.h"
+#include "linux-tap.h"
+
+#include "core/asyncmanager.h"
+
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -240,7 +248,7 @@
 typedef struct AT91Emacb {
 	BusDevice bdev;
 	int ether_fd;
-	FIO_FileHandler input_fh;
+	PollHandle_t *input_fh;
 	int receiver_is_enabled;
 	PHY_Device *phy[MAX_PHYS];
 	CycleTimer rcvDelayTimer;
@@ -589,9 +597,9 @@ dma_write_packet(AT91Emacb * emac, uint8_t * pkt, unsigned int count, uint32_t m
  **************************************************************
  */
 static void
-input_event(void *eventData, int mask)
+input_event(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	AT91Emacb *emac = (AT91Emacb *) eventData;
+	AT91Emacb *emac = clientdata;
 	int result;
 	int dmasize;
 	uint8_t buf[1536];
@@ -646,8 +654,7 @@ enable_receiver(AT91Emacb * emac)
 {
 	if (!emac->receiver_is_enabled && (emac->ether_fd >= 0)) {
 		dbgprintf("AT91Emacb: enable receiver\n");
-		FIO_AddFileHandler(&emac->input_fh, emac->ether_fd, FIO_READABLE, input_event,
-				   emac);
+		AsyncManager_PollStart(emac->input_fh, ASYNCMANAGER_EVENT_READABLE, &input_event, emac);
 		emac->receiver_is_enabled = 1;
 	}
 }
@@ -657,7 +664,7 @@ disable_receiver(AT91Emacb * emac)
 {
 	if (emac->receiver_is_enabled) {
 		dbgprintf("AT91Emacb: disable receiver\n");
-		FIO_RemoveFileHandler(&emac->input_fh);
+		AsyncManager_PollStop(emac->input_fh);
 		emac->receiver_is_enabled = 0;
 	}
 }
@@ -1631,7 +1638,7 @@ AT91Emacb_New(const char *name)
 {
 	AT91Emacb *emac = sg_new(AT91Emacb);
 	emac->ether_fd = Net_CreateInterface(name);
-	fcntl(emac->ether_fd, F_SETFL, O_NONBLOCK);
+	emac->input_fh = AsyncManager_PollInit(emac->ether_fd);
 	emac->irqNode = SigNode_New("%s.irq", name);
 	if (!emac->irqNode) {
 		fprintf(stderr, "AT91Emacb: Can't create interrupt request line\n");

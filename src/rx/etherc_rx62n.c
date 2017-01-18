@@ -44,7 +44,6 @@
 #include "linux-tap.h"
 #include "byteorder.h"
 #include "cycletimer.h"
-#include "fio.h"
 #include "signode.h"
 #include "configfile.h"
 

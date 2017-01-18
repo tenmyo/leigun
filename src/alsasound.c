@@ -41,7 +41,6 @@
 #include <alsa/asoundlib.h>
 #include <poll.h>
 #include <pthread.h>
-#include "fio.h"
 #include "sound.h"
 #include "sgstring.h"
 #include "signode.h"
@@ -71,9 +70,6 @@ typedef struct AlsaSound {
 	uint64_t outBuffer_wp;
 	uint64_t outBuffer_rp;
 	unsigned int outBufferSize;
-	int poll_fd;
-	int outFh_active;
-	FIO_FileHandler outFh;
 	pthread_t write_thread;
 	pthread_mutex_t write_mutex;
 	int speed_up;
@@ -286,7 +282,6 @@ AlsaSound_New(const char *name)
 	sdev->playSamples = AlsaSound_PlaySamples;
 	sdev->owner = asdev;
 	asdev->outBufferSize = sizeof(asdev->outBuffer);
-	asdev->outFh_active = 0;
 	/* Open PCM device for playback. */
 	rc = snd_pcm_open(&asdev->outHandle, "default", SND_PCM_STREAM_PLAYBACK, 0);
 	if (rc < 0) {

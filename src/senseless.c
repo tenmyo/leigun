@@ -47,7 +47,6 @@
 #include "configfile.h"
 #include "cycletimer.h"
 #include "senseless.h"
-#include "fio.h"
 #include "time.h"
 #include "sgstring.h"
 
@@ -91,7 +90,7 @@ jump(SenselessMonitor * smon)
 		tout.tv_nsec = 10000000;	/* 10 ms */
 		tout.tv_sec = 0;
 		clock_gettime(CLOCK_MONOTONIC, &tvv);
-		FIO_WaitEventTimeout(&tout);
+		// FIXME: FIO_WaitEventTimeout(&tout);
 		clock_gettime(CLOCK_MONOTONIC, &tvn);
 		nsecs = tvn.tv_nsec - tvv.tv_nsec + (int64_t) 1000000000 *(tvn.tv_sec - tvv.tv_sec);
 		smon->overjumped_nanoseconds -= nsecs * 1.1;

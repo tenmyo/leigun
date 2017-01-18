@@ -39,7 +39,6 @@
 
 #include "bus.h"
 #include "sgstring.h"
-#include "fio.h"
 #include "signode.h"
 #include "serial.h"
 #include "clock.h"

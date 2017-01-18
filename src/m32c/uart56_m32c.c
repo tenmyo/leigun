@@ -44,7 +44,6 @@
 #include "cycletimer.h"
 #include "signode.h"
 #include "uart56_m32c.h"
-#include "fio.h"
 #include "unistd.h"
 
 #define UiMR_SMD_MSK	(7)

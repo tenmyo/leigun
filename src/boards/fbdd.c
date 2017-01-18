@@ -47,7 +47,6 @@
 #include "ns9750_eth.h"
 #include "ste10_100.h"
 #include "i82559.h"
-#include "fio.h"
 #include "bus.h"
 #include "sja1000.h"
 #include "lacc_can.h"

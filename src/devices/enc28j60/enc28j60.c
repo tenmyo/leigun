@@ -35,21 +35,28 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "enc28j60.h"
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
+// include system header
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
+
+// include library header
+
+// include user header
+#include "cycletimer.h"
+#include "configfile.h"
+#include "linux-tap.h"
+#include "crc32.h"
 #include "signode.h"
 #include "sgstring.h"
-#include "enc28j60.h"
-#include "fio.h"
-#include "linux-tap.h"
-#include "cycletimer.h"
-#include "crc32.h"
-#include "configfile.h"
+#include "core/asyncmanager.h"
+
 
 #define DROP 0
 /* High nibble is Bank Nr */
@@ -346,7 +353,7 @@ struct Enc28j60 {
 	int state;
 	uint32_t chksum;
 	int ether_fd;
-	FIO_FileHandler input_fh;
+	PollHandle_t *input_fh;
 	int rx_is_enabled;
 	CycleTimer miCmdTimer;
 	CycleTimer transmitTimer;
@@ -948,10 +955,10 @@ receive_pkt(Enc28j60 *enc, uint8_t *pktbuf, unsigned int pktlen)
  *******************************************************************************************
  */
 static void
-rx_event(void *cd, int mask)
+rx_event(PollHandle_t *handle, int status, int events, void *clientdata)
 {
 	uint8_t buf[2048];
-	Enc28j60 *enc = cd;
+	Enc28j60 *enc = clientdata;
 	int result;
 	do {
 		result = read(enc->ether_fd, buf, 2048);
@@ -980,7 +987,7 @@ enable_rx(Enc28j60 * enc)
 		return;
 	}
 	dbgprintf("ENC28J60: enable receiver\n");
-	FIO_AddFileHandler(&enc->input_fh, enc->ether_fd, FIO_READABLE, rx_event, enc);
+	AsyncManager_PollStart(enc->input_fh, ASYNCMANAGER_EVENT_READABLE, &rx_event, enc);
 	enc->rx_is_enabled = 1;
 }
 
@@ -995,7 +1002,7 @@ disable_rx(Enc28j60 * enc)
 {
 	if (enc->rx_is_enabled) {
 		dbgprintf("ENC28J60: disable receiver\n");
-		FIO_RemoveFileHandler(&enc->input_fh);
+		AsyncManager_PollStop(enc->input_fh);
 		enc->rx_is_enabled = 0;
 	}
 }
@@ -2685,9 +2692,7 @@ Enc28j60_New(const char *name)
 	SigNode_Set(enc->sigIrq, SIG_PULLUP);
 	enc->CsNTrace = SigNode_Trace(enc->sigCsN, spi_cs_change, enc);
 	enc->ether_fd = Net_CreateInterface(name);
-	if (enc->ether_fd >= 0) {
-		fcntl(enc->ether_fd, F_SETFL, O_NONBLOCK);
-	}
+	enc->input_fh = AsyncManager_PollInit(enc->ether_fd);
 	enc_system_reset(enc);
 	test_hash_calculator();
 	return enc;

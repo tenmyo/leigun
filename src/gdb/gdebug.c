@@ -35,28 +35,23 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "gdebug.h"
 
+// include system header
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/time.h>
-#include <fio.h>
+
+// include library header
+
+// include user header
 #include "configfile.h"
-#include "gdebug.h"
 #include "sgstring.h"
+#include "core/asyncmanager.h"
 
 #if 1
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -76,11 +71,10 @@ typedef struct BreakPoint {
 
 typedef struct GdbServer GdbServer;
 typedef struct GdbSession {
-	int fd;
 	int rfh_is_active;
-	FIO_FileHandler rfh;
 	DebugBackendOps *dbgops;
 	GdbServer *gserv;
+	StreamHandle_t *handle;
 
 	char cmdbuf[CMDBUF_SIZE];
 	int cmdstate;
@@ -94,8 +88,6 @@ typedef struct GdbSession {
 
 struct GdbServer {
 	Debugger debugger;
-	int sockfd;
-	FIO_TcpServer gserv;
 	DebugBackendOps *dbgops;
 	void *backend;
 	GdbSession *first_gsess;
@@ -118,31 +110,11 @@ print_timestamp(char *str)
 }
 
 static int gsess_reply(GdbSession *, const char *format, ...);	//  __attribute__ ((format (printf, 2, 3)));;
-/*
- ****************************************************************
- * gsess_output
- * 	Write to socket is currently done in blocking
- * 	mode
- ****************************************************************
- */
 
 static void
-gsess_output(GdbSession * gsess, char *buf, int count)
+writed(int status, StreamHandle_t *handle, void *clientdata)
 {
-	int result;
-	fcntl(gsess->fd, F_SETFL, 0);
-	while (count) {
-		result = write(gsess->fd, buf, count);
-		result = 1;
-		print_timestamp("Output done");
-		if (result <= 0) {
-			/* Can not delete the session now */
-			return;
-		}
-		count -= result;
-		buf += result;
-	}
-	fcntl(gsess->fd, F_SETFL, O_NONBLOCK);
+	free(clientdata);
 }
 
 /*
@@ -155,7 +127,7 @@ static int
 gsess_reply(GdbSession * gsess, const char *format, ...)
 {
 	va_list ap;
-	char reply[1024];
+	char *reply = malloc(1024);
 	uint8_t chksum = 0;
 	int count;
 	int i;
@@ -168,7 +140,7 @@ gsess_reply(GdbSession * gsess, const char *format, ...)
 		chksum += reply[i];
 	}
 	count += sprintf(reply + count, "#%02x", chksum);
-	gsess_output(gsess, reply, count);
+	AsyncManager_Write(gsess->handle, reply, count, &writed, reply);
 	return 0;
 }
 
@@ -234,6 +206,16 @@ delete_breakpoints(GdbSession * gsess)
 	}
 }
 
+static void free_gsess(Handle_t *handle, void *gsess)
+{
+	GdbServer *gserv = ((GdbSession *)gsess)->gserv;
+	if (gserv->first_gsess == gsess) {
+		gserv->first_gsess = NULL;
+	}
+	delete_breakpoints(gsess);
+	free(gsess);
+}
+
 /*
  * --------------------------------------------
  * gsess_terminate
@@ -243,32 +225,13 @@ delete_breakpoints(GdbSession * gsess)
 static void
 gsess_terminate(GdbSession * gsess)
 {
-	uint8_t c;
-	GdbServer *gserv = gsess->gserv;
 	if (gsess->rfh_is_active) {
 		gsess->rfh_is_active = 0;
 		dbgprintf("remove the filehandler\n");
-		FIO_RemoveFileHandler(&gsess->rfh);
+		AsyncManager_ReadStop(gsess->handle);
 	}
-	shutdown(gsess->fd, SHUT_RDWR);
-	while (read(gsess->fd, &c, 1) > 0) {
-		dbgprintf("READEMPTY %02x\n", c);
-	}
-	if (gsess->fd > 2) {
-		dbgprintf("close %d\n", gsess->fd);
-		if (close(gsess->fd) < 0) {
-			perror("close fd failed");
-		} else {
-			gsess->fd = -1;
-		}
-	} else {
-		dbgprintf("Do not close %d\n", gsess->fd);
-	}
-	if (gserv->first_gsess == gsess) {
-		gserv->first_gsess = NULL;
-	}
-	delete_breakpoints(gsess);
-	free(gsess);
+	AsyncManager_Close((Handle_t *)gsess->handle, &free_gsess, gsess);
+	dbgprintf("close %p\n", gsess->handle);
 }
 
 #define MAXREGS (40)
@@ -752,10 +715,10 @@ gsess_long_cmd(GdbSession * gsess)
 	} else if (strncmp(cmd, "qTStatus", 8) == 0) {
 		gsess_reply(gsess,"T0");
 	} else if (strncmp(cmd, "qXfer:features:read:target.xml", 30) == 0) {
-		gsess_output(gsess, "$#00", 4);
+		AsyncManager_Write(gsess->handle, "$#00", 4, NULL, NULL);
 	} else {
 		dbgprintf("unknown cmd \'%s\'\n", cmd);
-		gsess_output(gsess, "$#00", 4);
+		AsyncManager_Write(gsess->handle, "$#00", 4, NULL, NULL);
 	}
 }
 
@@ -873,7 +836,7 @@ feed_state_machine(GdbSession * gsess, uint8_t c)
 		    } else if (c == '-') {
 			    dbgprintf("Got NACK\n");
 		    } else if (c == 0x03) {
-			    gsess_stop(gsess,SIGINT);
+			    gsess_stop(gsess,2); // FIXME: SIGINT(2)
 			    fprintf(stderr, "received abort\n");
 			    dbgprintf("received abort\n");
 		    } else {
@@ -927,11 +890,11 @@ feed_state_machine(GdbSession * gsess, uint8_t c)
 		    dbgprintf("\nreceived complete command, csum %02x\n", gsess->csum);
 		    if (gsess->csum == 0) {
 			    print_timestamp("Input");
-			    gsess_output(gsess, "+", 1);
+			    AsyncManager_Write(gsess->handle, "+", 1, NULL, NULL);
 			    result = gsess_execute_cmd(gsess);
 		    } else {
 			    fprintf(stderr, "Checksum error in gdb packet\n");
-			    gsess_output(gsess, "-", 1);
+          AsyncManager_Write(gsess->handle, "-", 1, NULL, NULL);
 		    }
 		    break;
 		    break;
@@ -948,23 +911,21 @@ feed_state_machine(GdbSession * gsess, uint8_t c)
  */
 
 static void
-gsess_input(void *cd, int mask)
+gsess_input(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata)
 {
-	int result;
-	GdbSession *gsess = cd;
-	uint8_t c;
-	while ((result = read(gsess->fd, &c, 1)) == 1) {
-		if (feed_state_machine(gsess, c) < 0) {
-			gsess_terminate(gsess);
-			return;
-		}
-	}
-	if ((result < 0) && (errno == EAGAIN)) {
-		return;
-	} else {
+	signed long i;
+	const uint8_t *p = buf;
+	GdbSession *gsess = clientdata;
+	if (len <= 0) {
 		dbgprintf("Connection lost\n");
 		gsess_terminate(gsess);
 		return;
+	}
+	for (i = 0; i < len; i++) {
+		if (feed_state_machine(gsess, p[i]) < 0) {
+			gsess_terminate(gsess);
+			return;
+		}
 	}
 }
 
@@ -976,30 +937,25 @@ gsess_input(void *cd, int mask)
  */
 
 static void
-gserv_accept(int fd, char *host, unsigned short port, void *clientData)
+gserv_accept(int status, StreamHandle_t *handle, const char *host, int port, void *clientdata)
 {
 	GdbSession *gsess;
-	int on = 1;
-	GdbServer *gserv = (GdbServer *) clientData;
+	GdbServer *gserv = (GdbServer *)clientdata;
 	if (gserv->first_gsess) {
 		fprintf(stderr, "Only one gdb session allowed\n");
-		close(fd);
+		AsyncManager_Close((Handle_t *)handle, NULL, NULL);
 		return;
 	}
 	gsess = sg_new(GdbSession);
 	gserv->first_gsess = gsess;
-	gsess->fd = fd;
 	gsess->gserv = gserv;
+	gsess->handle = handle;
 	gsess->cmdstate = CMDSTATE_WAIT_START;
 	gsess->dbgops = gserv->dbgops;
 	gsess->backend = gserv->backend;
 	gsess->last_sig = -1;
-	fcntl(gsess->fd, F_SETFL, O_NONBLOCK);
-	if (setsockopt(gsess->fd, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on)) < 0) {
-		perror("Error setting sockopts");
-	}
-	FIO_AddFileHandler(&gsess->rfh, gsess->fd, FIO_READABLE, gsess_input, gsess);
 	gsess->rfh_is_active = 1;
+	AsyncManager_ReadStart(handle, &gsess_input, gsess);
 	dbgprintf("Accepted connection for %s port %d\n", host, port);
 }
 
@@ -1011,7 +967,7 @@ gserv_accept(int fd, char *host, unsigned short port, void *clientData)
 Debugger *
 GdbServer_New(DebugBackendOps * dbgops, void *backend)
 {
-	int fd;
+	int result;
 	int port;
 	GdbServer *gserv;
 	Debugger *debugger;
@@ -1026,7 +982,8 @@ GdbServer_New(DebugBackendOps * dbgops, void *backend)
 	debugger->notifyStatus = GdbServer_Notify;
 	gserv->dbgops = dbgops;
 	gserv->backend = backend;
-	if ((fd = FIO_InitTcpServer(&gserv->gserv, gserv_accept, gserv, host, port)) < 0) {
+	result = AsyncManager_InitTcpServer(host, port, 5, 1, &gserv_accept, gserv);
+	if (result < 0) {
 		sg_free(gserv);
 		return NULL;
 	}

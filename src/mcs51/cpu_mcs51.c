@@ -8,11 +8,9 @@
 #include "instructions_mcs51.h"
 #include "idecode_mcs51.h"
 #include "signode.h"
-#include "fio.h"
 #include "diskimage.h"
 #include "cycletimer.h"
 #include "configfile.h"
-#include "mainloop_events.h"
 #include "loader.h"
 
 #if 0
@@ -132,14 +130,8 @@ MCS51_Interrupt(void)
 static inline void
 CheckSignals(void)
 {
-	if (unlikely(mainloop_event_pending)) {
-		mainloop_event_pending = 0;
-		if (mainloop_event_io) {
-			FIO_HandleInput();
-		}
-		if (g_mcs51.signals & MCS51_SIG_IRQ) {
-			MCS51_Interrupt();
-		}
+	if (g_mcs51.signals & MCS51_SIG_IRQ) {
+		MCS51_Interrupt();
 	}
 }
 

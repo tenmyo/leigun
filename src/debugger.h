@@ -1,6 +1,6 @@
 #ifndef _DEBUGGER_H
 #define _DEBUGGER_H
-#include <unistd.h>
+#include <stdint.h>
 
 typedef enum Dbg_TargetStat {
 	/* Start with definitions stolen from GDB */

@@ -33,13 +33,16 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "serial.h"
 
+// include system header
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -47,13 +50,15 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
+// include library header
+
+// include user header
+#include "initializer.h"
 #include "sgstring.h"
-#include "serial.h"
-#include "fio.h"
-#include "configfile.h"
 #include "cycletimer.h"
-#include "compiler_extensions.h"
+#include "configfile.h"
 #include "sglib.h"
+#include "core/asyncmanager.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -74,10 +79,8 @@ typedef struct FileUart {
 	int infd;
 	int outfd;
 	FILE *logfile;
-	FIO_FileHandler input_fh;
-	FIO_FileHandler output_fh;
+  PollHandle_t *input_fh;
 	int ifh_is_active;
-	int ofh_is_active;
 	uint32_t baudrate;
 	struct termios termios;
 	int tx_enabled;
@@ -104,7 +107,7 @@ file_disable_rx(SerialDevice * serial_device)
 {
 	FileUart *fuart = serial_device->owner;
 	if (fuart->ifh_is_active) {
-		FIO_RemoveFileHandler(&fuart->input_fh);
+		AsyncManager_PollStop(fuart->input_fh);
 		fuart->ifh_is_active = 0;
 	}
 	fuart->rxEnabled = false;
@@ -115,6 +118,7 @@ file_close(SerialDevice * serial_device)
 {
 	FileUart *fuart = serial_device->owner;
 	file_disable_rx(serial_device);
+	AsyncManager_Close(AsyncManager_Poll2Handle(fuart->input_fh), NULL, NULL);
 	close(fuart->infd);
 	fuart->infd = -1;
 }
@@ -126,16 +130,16 @@ file_close(SerialDevice * serial_device)
  */
 
 static void
-file_input(void *cd, int mask)
+file_input(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	SerialDevice *serdev = (SerialDevice *) cd;
+	SerialDevice *serdev = clientdata;
 	FileUart *fuart = serdev->owner;
     int fifo_room = RXBUF_ROOM(fuart);
 	int result;
 	if (fifo_room == 0) {
 		/* Stop input event handler if fifo is full */
 		if (fuart->ifh_is_active) {
-			FIO_RemoveFileHandler(&fuart->input_fh);
+			AsyncManager_PollStop(fuart->input_fh);
 			fuart->ifh_is_active = 0;
 		} else {
 			fprintf(stderr, "Nothing removed\n");
@@ -180,8 +184,7 @@ file_enable_rx(SerialDevice * serial_device)
 #endif
 	fuart->rxEnabled = true;
 	if ((fuart->infd >= 0) && !(fuart->ifh_is_active)) {
-		FIO_AddFileHandler(&fuart->input_fh, fuart->infd, FIO_READABLE, file_input,
-				   serial_device);
+		AsyncManager_PollStart(fuart->input_fh, ASYNCMANAGER_EVENT_READABLE, &file_input, serial_device);
 		fuart->ifh_is_active = 1;
     }
 }
@@ -224,8 +227,7 @@ Fuart_TriggerRxEvent(void *eventData)
 	}
 	if ((!fuart->ifh_is_active) && fuart->rxEnabled) {
 		dbgprintf("Reactivate inputfh\n");
-		FIO_AddFileHandler(&fuart->input_fh, fuart->infd, FIO_READABLE, file_input,
-				   &fuart->serdev);
+		AsyncManager_PollStart(fuart->input_fh, ASYNCMANAGER_EVENT_READABLE, &file_input, &fuart->serdev);
 		fuart->ifh_is_active = true;
 	}
 }
@@ -629,7 +631,7 @@ FileUart_New(const char *uart_name)
 		sleep(3);
 		return &fiua->serdev;
 	} else {
-		fcntl(fiua->infd, F_SETFL, O_NONBLOCK);
+		fiua->input_fh = AsyncManager_PollInit(fiua->infd);
 		fprintf(stderr, "Uart \"%s\" Connected to %s\n", uart_name, filename);
 	}
 	fiua->baudrate = 115200;
@@ -646,9 +648,7 @@ FileUart_New(const char *uart_name)
  *      It registers a SerialDevice emulator module of type "file"
  *******************************************************************************
  */
-
-__CONSTRUCTOR__ static void
-FileUart_Init(void)
+INITIALIZER(FileUart_Init)
 {
 	SerialModule_Register("file", FileUart_New);
 	fprintf(stderr, "Registered File UART Emulator module\n");

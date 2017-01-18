@@ -5,7 +5,6 @@
 #include <setjmp.h>
 #include <sys/types.h>
 #include <errno.h>
-#include "mainloop_events.h"
 #include "diskimage.h"
 #include "compiler_extensions.h"
 #include "signode.h"
@@ -295,9 +294,6 @@ AVR8_PostSignal(uint32_t sig)
 {
 	gavr8.cpu_signals_raw |= sig;
 	gavr8.cpu_signals = gavr8.cpu_signals_raw & gavr8.cpu_signal_mask;
-	if (gavr8.cpu_signals) {
-		mainloop_event_pending = 1;
-	}
 }
 
 static inline void

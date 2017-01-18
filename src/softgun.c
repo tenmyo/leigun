@@ -53,13 +53,11 @@
 #include "sgstring.h"
 #include "sglib.h"
 #include "crc16.h"
-#include "fio.h"
 #ifndef NO_DEBUGGER
 #include "debugvars.h"
 #include "debugger.h"
 #  include "cli/cliserver.h"
 //#  include "cli/interpreter.h"
-#  include "web/webserv.h"
 #endif
 #ifndef NO_SHLIB
 #  include "shlib.h"
@@ -305,7 +303,6 @@ main(int argc, char *argv[])
 	}
 	srand48(seedval);
 #endif
-	FIO_Init();
 	SignodesInit();
 	ClocksInit();
 #ifndef NO_SHLIB
@@ -325,10 +322,7 @@ main(int argc, char *argv[])
 		Config_AddString(Board_DefaultConfig(board));
 	}
 	Board_Create(board);
-#ifndef NO_DEBUGGER
 //	CliServer_New("cli");
-	WebServ_New("webserv");
-#endif
 	LoadChain_Resolve();
 	if (LoadChain_Load() < 0) {
 		fprintf(stderr, "Loading failed\n");

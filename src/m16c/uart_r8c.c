@@ -47,7 +47,6 @@
 #include "uart_r8c.h"
 #include "spidevice.h"
 #include "m16c_cpu.h"
-#include "fio.h"
 
 #define UiMR_SMD_MSK	(7)
 #define 	UiMR_SMD_DISA	(0)

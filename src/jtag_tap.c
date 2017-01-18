@@ -37,7 +37,6 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
-#include "fio.h"
 #include "signode.h"
 #include "configfile.h"
 #include "cycletimer.h"
