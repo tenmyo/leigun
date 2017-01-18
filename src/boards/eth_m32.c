@@ -64,6 +64,7 @@
 #include "enc28j60.h"
 #include "lcd_hd44780.h"
 #include "ds1337.h"
+#include "initializer.h"
 
 typedef struct EthM32 {
 	AVR8_Adc *adc;
@@ -336,8 +337,7 @@ static Board board_ethm32 = {
         .defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-ethm32_init() {
+INITIALIZER(ethm32_init) {
         fprintf(stderr,"Loading ETH-M32 emulator module\n");
         Board_Register(&board_ethm32);
 }

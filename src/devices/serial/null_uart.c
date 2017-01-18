@@ -51,6 +51,7 @@
 #include "serial.h"
 #include "configfile.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -99,8 +100,7 @@ NullUart_New(const char *uart_name)
  *******************************************************************************
  */
 
-__CONSTRUCTOR__ static void
-NullUart_Init(void)
+INITIALIZER(NullUart_Init)
 {
 	SerialModule_Register("null", NullUart_New);
 	fprintf(stderr, "Registered Null UART Emulator module\n");

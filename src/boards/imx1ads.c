@@ -56,6 +56,7 @@
 #include "imx21_uart.h"
 #include "imx_timer.h"
 #include "aitc.h"
+#include "initializer.h"
 
 static void
 create_signal_links()
@@ -206,8 +207,7 @@ static Board board_imx1ads = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-imx1ads_board_init()
+INITIALIZER(imx1ads_board_init)
 {
 	fprintf(stderr, "Loading iMX1ADS Board module\n");
 	Board_Register(&board_imx1ads);

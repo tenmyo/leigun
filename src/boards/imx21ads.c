@@ -78,6 +78,7 @@
 #include "clock.h"
 #include "djet460.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 static void
 create_clock_links()
@@ -350,8 +351,7 @@ static Board board_imx21ads = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-imx21ads_init()
+INITIALIZER(imx21ads_init)
 {
 	fprintf(stderr, "Loading iMX21ADS Board module\n");
 	Board_Register(&board_imx21ads);

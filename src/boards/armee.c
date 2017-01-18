@@ -57,6 +57,7 @@
 #include "lcd_hd44780.h"
 #include "armee.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 /*
  * ---------------------------------------------------------------
@@ -187,8 +188,7 @@ static Board board_armee = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-armee_init()
+INITIALIZER(armee_init)
 {
 	fprintf(stderr, "Loading Elektor ARMee Board module\n");
 	Board_Register(&board_armee);

@@ -19,7 +19,6 @@
 #ifdef __GNUC__
 #  define __UNUSED__ __attribute__((unused))
 #  define __NORETURN__ __attribute__((noreturn))
-#  define __CONSTRUCTOR__ __attribute((constructor))
 #else
 #  define __UNUSED__
 #  define __NORETURN__

@@ -8,6 +8,7 @@
 #include <avr8_cpu.h>
 #include <boards.h>
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 #define DEFAULTCONFIG \
 "[global]\n" \
@@ -35,8 +36,7 @@ static Board board_stk500 = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-stk500_init()
+INITIALIZER(stk500_init)
 {
 	fprintf(stderr, "Loading STK500 Board module\n");
 	Board_Register(&board_stk500);

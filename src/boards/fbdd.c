@@ -69,6 +69,7 @@
 #include "ns9xxx_i2c.h"
 #include "fbdd_02_02.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 /*
  * ---------------------------------------------------------------
@@ -367,8 +368,7 @@ static Board board_fbdd = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-fbdd_init()
+INITIALIZER(fbdd_init)
 {
 	fprintf(stderr, "Loading FBDD NS9750 ARM Board module\n");
 	Board_Register(&board_fbdd);

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "initializer.h"
 
 #define POLY_7 7
 static uint8_t tab_07[256];
@@ -59,8 +60,7 @@ CRC8_Test(void)
  * Initialize the tables for fast bytewise calculation of CRC
  *******************************************************************
  */
-__CONSTRUCTOR__ static void
-CRC8Tab_Init(void)
+INITIALIZER(CRC8Tab_Init)
 {
 	uint8_t *crctab = tab_07;
 	uint8_t *crctab_poly7_rev = tab_07_rev;

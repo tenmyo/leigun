@@ -40,6 +40,7 @@
 #include <string.h>
 #include "compiler_extensions.h"
 #include "sglib.h"
+#include "initializer.h"
 
 /*
  * --------------------------------------------------
@@ -235,8 +236,7 @@ CRC32Tabs_Test(void)
  * Initialize all crc tabs 
  * ------------------------------------------------------------------
  */
-__CONSTRUCTOR__ static void
-CRC32Tabs_Init(void)
+INITIALIZER(CRC32Tabs_Init)
 {
 	CRC32Tab_Init(tab_04C11DB7, 0x04C11DB7, 0);
 	CRC32Tab_Init(tab_04C11DB7_rev, 0x04C11DB7, 1);

@@ -58,6 +58,7 @@
 #include "sgstring.h"
 #include "signode.h"
 #include "core/asyncmanager.h"
+#include "initializer.h"
 
 
 #if 0
@@ -2096,10 +2097,7 @@ DM9000_New(const char *devname, int register_spacing)
 	return &dm->bdev;
 }
 
-#if 0
-__CONSTRUCTOR__ static void
-dm9000_init()
+INITIALIZER(dm9000_init)
 {
 	fprintf(stderr, "Davicom DM9000 module loaded, built %s %s\n", __DATE__, __TIME__);
 }
-#endif

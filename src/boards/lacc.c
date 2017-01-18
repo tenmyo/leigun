@@ -69,6 +69,7 @@
 #include "ads7828.h"
 #include "boards.h"
 #include "ns9xxx_i2c.h"
+#include "initializer.h"
 
 /*
  * ---------------------------------------------------------------
@@ -334,8 +335,7 @@ static Board board_lacc = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-lacc_init()
+INITIALIZER(lacc_init)
 {
 	fprintf(stderr, "Loading Lightmaze ARM controller board module\n");
 	Board_Register(&board_lacc);

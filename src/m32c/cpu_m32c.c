@@ -40,6 +40,7 @@
 #include "configfile.h"
 #include "setjmp.h"
 #include "cpu_m32c.h"
+#include "initializer.h"
 
 #define REG_NULLPTR	(0x0)
 #define REG_RLVL	(0x9f)
@@ -870,8 +871,7 @@ M32C_Break(void)
 	M32C_RestartIdecoder();
 }
 
-__CONSTRUCTOR__ static void
-cpu_init()
+INITIALIZER(cpu_init)
 {
 	CycleTimer_Init(&noSchedTimer, NoSched_Timeout, NULL);
 }

@@ -70,6 +70,7 @@
 #include "boards.h"
 #include "ns9xxx_i2c.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 /*
  * ---------------------------------------------------------------
@@ -336,8 +337,7 @@ static Board board_nbdd = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-nbdd_init()
+INITIALIZER(nbdd_init)
 {
 	fprintf(stderr, "Loading NBDD Board module\n");
 	Board_Register(&board_nbdd);

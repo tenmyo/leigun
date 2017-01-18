@@ -66,6 +66,7 @@
 #include "clock.h"
 #include "at91_ebi.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 static void
 create_clock_links()
@@ -293,8 +294,7 @@ static Board board_unc90 = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-unc90_init()
+INITIALIZER(unc90_init)
 {
 	fprintf(stderr, "Loading UNC90 Board module\n");
 	Board_Register(&board_unc90);

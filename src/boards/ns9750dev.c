@@ -58,6 +58,7 @@
 #include "lxt971a.h"
 #include "loader.h"
 #include "boards.h"
+#include "initializer.h"
 
 /*
  * -------------------------------------------------------------------------------
@@ -197,8 +198,7 @@ static Board board_ns9750dev = {
  defaultconfig:DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-ns9750dev_init()
+INITIALIZER(ns9750dev_init)
 {
 	fprintf(stderr, "Loading NS9750 development board module\n");
 	Board_Register(&board_ns9750dev);

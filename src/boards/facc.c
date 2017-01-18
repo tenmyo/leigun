@@ -68,6 +68,7 @@
 #include "devices/dm9000/dm9000.h"
 #include "boards.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 /*
  * ---------------------------------------------------------------
@@ -244,8 +245,7 @@ static Board board_facc = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-facc_init()
+INITIALIZER(facc_init)
 {
 	fprintf(stderr, "Loading Fantasy ARM controller board module\n");
 	Board_Register(&board_facc);

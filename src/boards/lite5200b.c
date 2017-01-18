@@ -31,6 +31,7 @@
 #include <ppc/cpu_ppc.h>
 //#include <mpc5200_psc.h>
 #include <amdflash.h>
+#include "initializer.h"
 
 static void
 board_lite5200b_run(Board * bd)
@@ -83,8 +84,7 @@ static Board board_lite5200b = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-lite5200b_init()
+INITIALIZER(lite5200b_init)
 {
 	fprintf(stderr, "Loading Freescale LITE5200B development Board module\n");
 	Board_Register(&board_lite5200b);

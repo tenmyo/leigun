@@ -57,6 +57,7 @@
 #include "sram.h"
 #include "pl190_irq.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 static void
 create_signal_links(void)
@@ -224,8 +225,7 @@ static Board board_nxdb500 = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-nxbd500_init()
+INITIALIZER(nxbd500_init)
 {
 	fprintf(stderr, "Loading NXDB500 Board module\n");
 	Board_Register(&board_nxdb500);

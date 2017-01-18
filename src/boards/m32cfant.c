@@ -31,6 +31,7 @@
 #include "m25p16.h"
 #include "m32c_crc.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 static void
 create_i2c_devices()
@@ -197,8 +198,7 @@ static Board board_m32cfant = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-m32cfant_init()
+INITIALIZER(m32cfant_init)
 {
 	fprintf(stderr, "Loading M32C Fantasy module\n");
 	Board_Register(&board_m32cfant);

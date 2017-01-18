@@ -9,6 +9,7 @@
 #include "alt9.h"
 #include "cpu_mcs51.h"
 #include "compiler_extensions.h"
+#include "initializer.h"
 
 #define DEFAULTCONFIG \
 "[global]\n" \
@@ -36,8 +37,7 @@ Board board_alt9 = {
 	.defaultconfig = DEFAULTCONFIG
 };
 
-__CONSTRUCTOR__ static void
-alt9_init()
+INITIALIZER(alt9_init)
 {
 	fprintf(stderr, "Loading ALT-9 Board module\n");
 	Board_Register(&board_alt9);
