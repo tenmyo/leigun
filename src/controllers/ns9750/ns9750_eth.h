@@ -1,5 +1,5 @@
-#include <bus.h>
-#include <phy.h>
+#include "bus.h"
+#include "devices/phy/phy.h"
 
 #define NS9750_ETH_BASE		(0xa0600000)
 #define NS9750_ETH_MAPSIZE	(0x2000)

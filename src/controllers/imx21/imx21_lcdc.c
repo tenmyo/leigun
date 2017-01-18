@@ -32,24 +32,27 @@
  *
  *************************************************************************************************
  */
-
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <sys/fcntl.h>
-#include "bus.h"
-#include "signode.h"
+// include self header
+#include "compiler_extensions.h"
 #include "imx21_lcdc.h"
-#include "rfbserver.h"
+
+// include system header
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+
+// include library header
+
+// include user header
+#include "signode.h"
 #include "configfile.h"
 #include "cycletimer.h"
-#include "fbdisplay.h"
 #include "clock.h"
 #include "sgstring.h"
+
+#include "core/asyncmanager.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -236,7 +239,6 @@ typedef struct ScreenInfo {
 
 typedef struct IMXLcdc {
 	BusDevice bdev;
-	RfbServer *rfbserv;
 	int interrupt_posted;
 	Clock_t *clk;
 	Clock_t *clk_pixel;

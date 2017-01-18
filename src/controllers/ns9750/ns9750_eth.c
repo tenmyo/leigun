@@ -35,19 +35,32 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "ns9750_eth.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
+// include system header
 #include <errno.h>
-#include <linux-tap.h>
-#include <ns9750_eth.h>
-#include <ns9750_timer.h>
-#include <bus.h>
-#include <phy.h>
-#include "byteorder.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+
+// include library header
+
+// include user header
 #include "signode.h"
+#include "configfile.h"
+#include "cycletimer.h"
+#include "clock.h"
 #include "sgstring.h"
+#include "linux-tap.h"
+#include "ns9750_timer.h"
+#include "byteorder.h"
+
+#include "core/asyncmanager.h"
+
 
 #if 0
 #define simulate_errors 1
@@ -81,7 +94,7 @@ typedef struct NS9750eth {
 	BusDevice bdev;
 	PHY_Device *phy[MAX_PHYS];
 	int ether_fd;
-	FIO_FileHandler input_fh;
+	PollHandle_t *input_fh;
 	int receiver_is_enabled;
 	int rxint_posted;
 	int txint_posted;
@@ -770,9 +783,9 @@ match_address(NS9750eth * eth)
  * --------------------------------------------------
  */
 static void
-input_event(void *cd, int mask)
+input_event(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	NS9750eth *eth = cd;
+	NS9750eth *eth = clientdata;
 	int result;
 	do {
 		result = fill_rxfifo(eth);
@@ -825,13 +838,12 @@ update_receiver_state(NS9750eth * eth)
 	if (enable) {
 		if (!eth->receiver_is_enabled && (eth->ether_fd >= 0)) {
 			dbgprintf("ns9750 eth: enable receiver\n");
-			FIO_AddFileHandler(&eth->input_fh, eth->ether_fd, FIO_READABLE, input_event,
-					   eth);
+			AsyncManager_PollStart(eth->input_fh, ASYNCMANAGER_EVENT_READABLE, &input_event, eth);
 			eth->receiver_is_enabled = 1;
 		}
 	} else {
 		if (eth->receiver_is_enabled) {
-			FIO_RemoveFileHandler(&eth->input_fh);
+			AsyncManager_PollStop(eth->input_fh);
 			eth->receiver_is_enabled = 0;
 		}
 	}
@@ -2640,7 +2652,7 @@ NS9750_EthInit(const char *devname)
 {
 	NS9750eth *eth = sg_new(NS9750eth);
 	eth->ether_fd = Net_CreateInterface(devname);
-	fcntl(eth->ether_fd, F_SETFL, O_NONBLOCK);
+	eth->input_fh = AsyncManager_PollInit(eth->ether_fd);
 
 	eth->bdev.first_mapping = NULL;
 	eth->bdev.Map = NS9750Eth_Map;

@@ -946,7 +946,8 @@ ARM9_Run()
 			struct timespec tout;
 			tout.tv_nsec = 0;
 			tout.tv_sec = 10000;
-			FIO_WaitEventTimeout(&tout);
+			// FIXME: FIO_WaitEventTimeout(&tout);
+			sleep(1);
 		} else {
 			if (REG_CPSR & FLAG_T) {
 				Thumb_Loop();

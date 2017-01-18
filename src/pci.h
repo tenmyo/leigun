@@ -12,8 +12,8 @@
 #ifndef PCI_H
 #define PCI_H
 #include <stdint.h>
-#include <bus.h>
-#include <ns9750_timer.h>
+#include "bus.h"
+#include "controllers/ns9750/ns9750_timer.h"
 
 #define PCI_CONFIG_ENABLED(confreg)     (((confreg)>>31)&1)
 #define PCI_CONFIG_BUS(confreg)         (((confreg)>>16)&0xff)

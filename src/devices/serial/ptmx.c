@@ -3,22 +3,27 @@
  * PTMX 
  ******************************************************
  */
-
 #define _XOPEN_SOURCE
 #define _BSD_SOURCE
+// include self header
+#include "compiler_extensions.h"
+#include "ptmx.h"
+
+// include system header
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <alloca.h>
 #include <termios.h>
-#include "ptmx.h"
+
+// include library header
+
+// include user header
 #include "sgstring.h"
 
 #define OBUF_SIZE 2048
@@ -27,15 +32,15 @@
 #define OBUF_LVL(pi) ((pi)->obuf_wp - (pi)->obuf_rp)
 
 struct PtmxIface {
-    FIO_FileHandler rfh;
+    PollHandle_t *rfh;
     int rfh_active;
-    FIO_FileProc *dataSinkProc;
+    AsyncManager_poll_cb dataSinkProc;
     void *dataSinkEventData;
 
-    FIO_FileProc *dataSourceProc;
+    AsyncManager_poll_cb dataSourceProc;
     void *dataSourceEventData;
 
-    FIO_FileHandler wfh;
+    PollHandle_t *wfh;
     int wfh_active;
     uint32_t obuf_rp;
     uint32_t obuf_wp;
@@ -53,24 +58,22 @@ static void Ptmx_Reopen(PtmxIface * pi);
  ************************************************************************************
  */
 void
-Ptmx_SetDataSink(PtmxIface * pi, FIO_FileProc * proc, void *eventData)
+Ptmx_SetDataSink(PtmxIface * pi, AsyncManager_poll_cb proc, void *eventData)
 {
     pi->dataSinkProc = proc;
     pi->dataSinkEventData = eventData;
     if (pi->rfh_active) {
-        FIO_RemoveFileHandler(&pi->rfh);
-        FIO_AddFileHandler(&pi->rfh, pi->ptmx_fd, FIO_READABLE, proc, eventData);
+        AsyncManager_PollStart(pi->rfh, ASYNCMANAGER_EVENT_READABLE, proc, eventData);
     }
 }
 
 void
-Ptmx_SetDataSource(PtmxIface * pi, FIO_FileProc * proc, void *eventData)
+Ptmx_SetDataSource(PtmxIface * pi, AsyncManager_poll_cb proc, void *eventData)
 {
     pi->dataSourceProc = proc;
     pi->dataSourceEventData = eventData;
     if (pi->wfh_active) {
-        FIO_RemoveFileHandler(&pi->wfh);
-        FIO_AddFileHandler(&pi->wfh, pi->ptmx_fd, FIO_WRITABLE, proc, eventData);
+        AsyncManager_PollStart(pi->wfh, ASYNCMANAGER_EVENT_WRITABLE, proc, eventData);
     }
 }
 
@@ -87,16 +90,18 @@ Ptmx_Reopen(PtmxIface * pi)
     int wfh_was_active = 0;
     struct termios termios;
     if (pi->rfh_active) {
-        FIO_RemoveFileHandler(&pi->rfh);
+        AsyncManager_PollStop(pi->rfh);
         pi->rfh_active = 0;
         rfh_was_active = 1;
     }
     if (pi->wfh_active) {
-        FIO_RemoveFileHandler(&pi->wfh);
+        AsyncManager_PollStop(pi->wfh);
         pi->wfh_active = 0;
         wfh_was_active = 1;
     }
     if (pi->ptmx_fd >= 0) {
+        AsyncManager_Close(AsyncManager_Poll2Handle(pi->rfh), NULL, NULL);
+        AsyncManager_Close(AsyncManager_Poll2Handle(pi->wfh), NULL, NULL);
         close(pi->ptmx_fd);
     }
     pi->ptmx_fd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
@@ -111,16 +116,16 @@ Ptmx_Reopen(PtmxIface * pi)
         perror("can not link live events");
         exit(4);
     }
-    fcntl(pi->ptmx_fd, F_SETFL, O_NONBLOCK);
+    pi->rfh = AsyncManager_PollInit(pi->ptmx_fd);
+    pi->wfh = AsyncManager_PollInit(pi->ptmx_fd);
     if (rfh_was_active && pi->dataSinkProc) {
-        //FIO_RemoveFileHandler(&pi->rfh);
-        FIO_AddFileHandler(&pi->rfh, pi->ptmx_fd, FIO_READABLE, pi->dataSinkProc,
-                           pi->dataSinkEventData);
+        AsyncManager_PollStart(pi->rfh, ASYNCMANAGER_EVENT_READABLE, pi->dataSinkProc,
+          pi->dataSinkEventData);
         pi->rfh_active = 1;
     }
     if (wfh_was_active && pi->dataSourceProc) {
-        FIO_AddFileHandler(&pi->wfh, pi->ptmx_fd, FIO_WRITABLE, pi->dataSourceProc,
-                           pi->dataSourceEventData);
+        AsyncManager_PollStart(pi->wfh, ASYNCMANAGER_EVENT_WRITABLE, pi->dataSourceProc,
+          pi->dataSourceEventData);
         pi->wfh_active = 1;
     }
     if (tcgetattr(pi->ptmx_fd, &termios) < 0) {
@@ -145,13 +150,13 @@ Ptmx_SetInputEnable(PtmxIface * pi, bool on)
 {
     if (on) {
         if (!pi->rfh_active && pi->dataSinkProc) {
-            FIO_AddFileHandler(&pi->rfh, pi->ptmx_fd, FIO_READABLE, pi->dataSinkProc,
-                               pi->dataSinkEventData);
+            AsyncManager_PollStart(pi->rfh, ASYNCMANAGER_EVENT_READABLE, pi->dataSinkProc,
+              pi->dataSinkEventData);
             pi->rfh_active = 1;
         }
     } else {
         if (pi->rfh_active) {
-            FIO_RemoveFileHandler(&pi->rfh);
+            AsyncManager_PollStop(pi->rfh);
             pi->rfh_active = 0;
         }
     }
@@ -162,13 +167,13 @@ Ptmx_SetOutputEnable(PtmxIface * pi, bool on)
 {
     if (on) {
         if (!pi->wfh_active && pi->dataSourceProc) {
-            FIO_AddFileHandler(&pi->wfh, pi->ptmx_fd, FIO_WRITABLE, pi->dataSourceProc,
-                               pi->dataSourceEventData);
+            AsyncManager_PollStart(pi->wfh, ASYNCMANAGER_EVENT_WRITABLE, pi->dataSourceProc,
+              pi->dataSourceEventData);
             pi->wfh_active = 1;
         }
     } else {
         if (pi->wfh_active) {
-            FIO_RemoveFileHandler(&pi->wfh);
+            AsyncManager_PollStop(pi->wfh);
             pi->wfh_active = 0;
         }
     }

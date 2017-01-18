@@ -31,18 +31,31 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "serial.h"
 
+// include system header
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <termios.h>
-#include "serial.h"
+
+// include library header
+
+// include user header
+#include "initializer.h"
+#include "cleanup.h"
 #include "sgstring.h"
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sglib.h"
-#include "compiler_extensions.h"
-#include "cleanup.h"
+#include "core/asyncmanager.h"
+
 
 #define RXBUF_SIZE 128
 
@@ -68,9 +81,9 @@ typedef struct PtmxUart {
     int tx_enabled;
     int rx_enabled;
 
-    FIO_FileHandler rfh;
+    PollHandle_t *rfh;
     int rfh_active;
-    FIO_FileHandler wfh;
+    PollHandle_t *wfh;
     int wfh_active;
 
     UartChar rxChar;
@@ -98,7 +111,7 @@ typedef struct PtmxUart {
 
 static void Ptmx_Reopen(PtmxUart * pua);
 static void Ptmx_RefillRxChar(PtmxUart * pua);
-static void Ptmx_Writehandler(void *eventData, int flags);
+static void Ptmx_Writehandler(PollHandle_t *handle, int status, int events, void *clientdata);
 
 /**
  **********************************************************************
@@ -138,7 +151,7 @@ PCCmd(PtmxUart * pua, uint16_t cmd)
                 pua->txbuf_wp++;
             }
             if (!pua->wfh_active) {
-                FIO_AddFileHandler(&pua->wfh, pua->fd, FIO_WRITABLE, Ptmx_Writehandler, pua);
+                AsyncManager_PollStart(pua->wfh, ASYNCMANAGER_EVENT_WRITABLE, &Ptmx_Writehandler, pua);
                 pua->wfh_active = 1;
             }
             break;
@@ -149,7 +162,7 @@ PCCmd(PtmxUart * pua, uint16_t cmd)
             pua->txbuf[TXBUF_WP(pua)] = 0x40;
             pua->txbuf_wp++;
             if (!pua->wfh_active) {
-                FIO_AddFileHandler(&pua->wfh, pua->fd, FIO_WRITABLE, Ptmx_Writehandler, pua);
+                AsyncManager_PollStart(pua->wfh, ASYNCMANAGER_EVENT_WRITABLE, &Ptmx_Writehandler, pua);
                 pua->wfh_active = 1;
             }
             break;
@@ -232,9 +245,9 @@ pc2x8_to_mdb9(PtmxUart * pua, uint32_t * mdbWord, uint8_t pcbyte)
  *******************************************************************************
  */
 static void
-Ptmx_Input(void *eventData, int mask)
+Ptmx_Input(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-    PtmxUart *pua = eventData;
+    PtmxUart *pua = clientdata;
     int max_bytes = RXBUF_SIZE - RXBUF_WP(pua);
     int read_size;
     int result;
@@ -245,7 +258,7 @@ Ptmx_Input(void *eventData, int mask)
     read_size = RXBUF_ROOM(pua);
     if (read_size == 0) {
         if (pua->rfh_active) {
-            FIO_RemoveFileHandler(&pua->rfh);
+            AsyncManager_PollStop(pua->rfh);
             pua->rfh_active = 0;
         }
         return;
@@ -306,7 +319,7 @@ Ptmx_RefillRxChar(PtmxUart * pua)
         }
     }
     if (pua->rfh_active == 0) {
-        FIO_AddFileHandler(&pua->rfh, pua->fd, FIO_READABLE, Ptmx_Input, pua);
+        AsyncManager_PollStart(pua->rfh, ASYNCMANAGER_EVENT_READABLE, &Ptmx_Input, pua);
         pua->rfh_active = 1;
     }
     //fprintf(stderr,"Refilled with %02x at %llu\n", pua->rxChar,CycleCounter_Get());
@@ -385,10 +398,10 @@ Ptmx_SerialCmd(SerialDevice * sd, UartCmd * cmd)
  *****************************************************************
  */
 static void
-Ptmx_Writehandler(void *eventData, int flags)
+Ptmx_Writehandler(PollHandle_t *handle, int status, int events, void *clientdata)
 {
     int count;
-    PtmxUart *pua = eventData;
+    PtmxUart *pua = clientdata;
     while (pua->txbuf_rp != pua->txbuf_wp) {
         unsigned int cnt = TXBUF_LVL(pua);
         if ((TXBUF_RP(pua) + cnt) > TXBUF_SIZE) {
@@ -410,7 +423,7 @@ Ptmx_Writehandler(void *eventData, int flags)
             pua->txbuf_rp += cnt;
         }
     }
-    FIO_RemoveFileHandler(&pua->wfh);
+    AsyncManager_PollStop(pua->wfh);
     pua->wfh_active = 0;
     return;
 }
@@ -445,7 +458,7 @@ Ptmx_Write(SerialDevice * sd, const UartChar * buf, int count)
         pua->txbuf_wp++;
     }
     if (!pua->wfh_active) {
-        FIO_AddFileHandler(&pua->wfh, pua->fd, FIO_WRITABLE, Ptmx_Writehandler, pua);
+        AsyncManager_PollStart(pua->wfh, ASYNCMANAGER_EVENT_WRITABLE, &Ptmx_Writehandler, pua);
         pua->wfh_active = 1;
     }
     return 1;
@@ -486,14 +499,16 @@ Ptmx_Reopen(PtmxUart * pua)
 {
     struct termios termios;
     if (pua->rfh_active) {
-        FIO_RemoveFileHandler(&pua->rfh);
+      AsyncManager_PollStop(pua->rfh);
         pua->rfh_active = 0;
     }
     if (pua->wfh_active) {
-        FIO_RemoveFileHandler(&pua->wfh);
+      AsyncManager_PollStop(pua->wfh);
         pua->wfh_active = 0;
     }
     if (pua->fd >= 0) {
+        AsyncManager_Close(AsyncManager_Poll2Handle(pua->rfh), NULL, NULL);
+        AsyncManager_Close(AsyncManager_Poll2Handle(pua->wfh), NULL, NULL);
         close(pua->fd);
     }
     pua->fd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
@@ -548,8 +563,9 @@ Ptmx_Reopen(PtmxUart * pua)
         perror("can't set terminal settings");
         return;
     }
-    fcntl(pua->fd, F_SETFL, O_NONBLOCK);
-    FIO_AddFileHandler(&pua->rfh, pua->fd, FIO_READABLE, Ptmx_Input, pua);
+    pua->rfh = AsyncManager_PollInit(pua->fd);
+    pua->wfh = AsyncManager_PollInit(pua->fd);
+    AsyncManager_PollStart(pua->rfh, ASYNCMANAGER_EVENT_READABLE, &Ptmx_Input, pua);
     pua->rfh_active = 1;
 }
 
@@ -602,8 +618,7 @@ PtmxUart_New(const char *name)
  *      It registers a SerialDevice emulator module of type "ptmx"
  *******************************************************************************
  */
-__CONSTRUCTOR__ static void
-Ptmx_Init(void)
+INITIALIZER(Ptmx_Init)
 {
     SerialModule_Register("ptmx", PtmxUart_New);
     fprintf(stderr, "Registered /dev/ptmx UART Emulator module\n");

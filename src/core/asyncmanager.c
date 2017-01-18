@@ -28,15 +28,16 @@
 
 
 // -----------------------------------------------------
-// Handle Types
-//   uv_handle_t <- Handle_t
-//      |-- uv_stream_t <- StreamHandle_t
-//      |     `-- uv_tcp_t <- TcpStreamHandle_t
-//      |                       `-- TcpServerStreamHandle_t
-//      |                       `-- TcpClientStreamHandle_t
-//      `-- uv_poll_t <- PollHandle_t
+// Handle Types(libuv)    AsyncManager
+//   uv_handle_t          <- Handle_t
+//      |-- uv_stream_t     <- StreamHandle_t
+//      |     `-- uv_tcp_t    <- TcpStreamHandle_t
+//      |                         `-- TcpServerStreamHandle_t
+//      |                         `-- TcpClientStreamHandle_t
+//      `-- uv_poll_t       <- PollHandle_t
 struct PollHandle_t {
   union {
+    union uv_any_handle any;
     uv_handle_t handle;
     uv_poll_t   poll;
   } uv; // button(inheritance)
@@ -48,6 +49,7 @@ struct PollHandle_t {
 struct TcpServerStreamHandle_t {
   struct {
     union {
+      union uv_any_handle any;
       uv_handle_t handle;
       uv_stream_t stream;
       uv_tcp_t tcp;
@@ -66,6 +68,7 @@ typedef struct TcpServerStreamHandle_t TcpServerStreamHandle_t;
 struct TcpClientStreamHandle_t {
   struct {
     union {
+      union uv_any_handle any;
       uv_handle_t handle;
       uv_stream_t stream;
       uv_tcp_t tcp;
@@ -75,11 +78,13 @@ struct TcpClientStreamHandle_t {
   };
   TcpServerStreamHandle_t *server; // server handle
 };
+typedef struct TcpClientStreamHandle_t TcpClientStreamHandle_t;
 
 struct TcpStreamHandle_t {
   union {
     struct {
       union {
+        union uv_any_handle any;
         uv_handle_t handle;
         uv_stream_t stream;
         uv_tcp_t tcp;
@@ -97,6 +102,7 @@ struct StreamHandle_t {
   union {
     struct {
       union {
+        union uv_any_handle any;
         uv_handle_t handle;
         uv_stream_t stream;
       } uv; // button(inheritance)
@@ -110,6 +116,7 @@ struct StreamHandle_t {
 struct Handle_t {
   union {
     union {
+      union uv_any_handle any;
       uv_handle_t handle;
     } uv; // button(inheritance)
     StreamHandle_t stream;
@@ -204,7 +211,7 @@ static void on_wakeup_sreq(uv_async_t *handle);
 
 static void free_data(uv_handle_t *handle);
 static void close_all(uv_handle_t *handle, void *arg);
-static void on_exit(void);
+static void on_quit(void);
 
 // -----------------------------------------------------
 static void on_connection(uv_stream_t *server, int status);
@@ -307,7 +314,7 @@ static void init(void) {
   uv_barrier_wait(&blocker);
   uv_barrier_destroy(&blocker);
   // register resource release
-  atexit(&on_exit);
+  atexit(&on_quit);
   return;
 
   // error handlers
@@ -355,7 +362,7 @@ static int send_sreq(enum sreq_type type, void *data, void **result) {
   uv_sem_wait(&g_singleton->sreq[type]->bsem);
   g_singleton->sreq[type]->reqdata = data;
   ret = uv_async_send(&g_singleton->sreq[type]->async);
-  UV_ERRCHECK(ret < 0, return ret);
+  UV_ERRCHECK(ret, return ret);
   uv_sem_wait(&g_singleton->sreq[type]->respsem);
   ret = g_singleton->sreq[type]->status;
   *result = g_singleton->sreq[type]->respdata;
@@ -365,34 +372,36 @@ static int send_sreq(enum sreq_type type, void *data, void **result) {
 
 static void on_wakeup_req(uv_async_t *handle) {
   struct req_data *req = handle->data;
+  int err = 0;
   switch (req->type) {
   case REQ_QUIT:
     uv_walk(handle->loop, &close_all, NULL);
     break;
   case REQ_LISTEN:
-    listen_tcp(req->data);
+    err = listen_tcp(req->data);
     break;
   case REQ_CLOSE:
-    close_handle(req->data);
+    err = close_handle(req->data);
     break;
   case REQ_WRITE:
-    write_stream(req->data);
+    err = write_stream(req->data);
     break;
   case REQ_READ_START:
-    read_start(req->data);
+    err = read_start(req->data);
     break;
   case REQ_READ_STOP:
-    read_stop(req->data);
+    err = read_stop(req->data);
     break;
   case REQ_POLL_START:
-    poll_start(req->data);
+    err = poll_start(req->data);
     break;
   case REQ_POLL_STOP:
-    poll_stop(req->data);
+    err = poll_stop(req->data);
     break;
   default:
     break;
   }
+  UV_ERRCHECK(err, );
   uv_sem_post(&req->bsem);
 }
 
@@ -421,7 +430,7 @@ static void close_all(uv_handle_t *handle, void *arg) {
   }
 }
 
-static void on_exit(void) {
+static void on_quit(void) {
   if (!g_singleton) {
     return;
   }
@@ -441,7 +450,7 @@ static void on_exit(void) {
 
 static void on_connection(uv_stream_t *server, int status) {
   int err = status;
-  TcpClientStreamHandle_t *client;
+  TcpClientStreamHandle_t *client = NULL;
   TcpServerStreamHandle_t *svr = server->data;
   const char *host = NULL;
   int port = 0;
@@ -520,6 +529,7 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog, int nodela
 
 static void on_writed(uv_write_t *req, int status) {
   struct write_req_t *wr = req->data;
+  UV_ERRCHECK(status, );
   if (wr->write_cb) {
     wr->write_cb(status, wr->stream, wr->write_clientdata);
   }
@@ -607,6 +617,7 @@ static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *b
 
 static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   StreamHandle_t *handle = (StreamHandle_t *)stream;
+  UV_ERRCHECK(nread, );
   if (nread == 0) {
     // EAGAIN or EWOULDBLOCK
     return;

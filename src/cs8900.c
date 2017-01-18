@@ -36,19 +36,27 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "cs8900.h"
 
+// include system header
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
+
+// include library header
+
+// include user header
 #include "bus.h"
 #include "signode.h"
 #include "linux-tap.h"
 #include "m93c46.h"
-#include "cs8900.h"
 #include "sgstring.h"
+
+#include "core/asyncmanager.h"
 
 #define IO_RXTXDATA0(base)	((base) + 0x00)
 #define IO_RXTXDATA1(base)	((base) + 0x02)
@@ -229,7 +237,7 @@
 typedef struct CS8900 {
 	BusDevice bdev;
 	int ether_fd;
-	FIO_FileHandler input_fh;
+	PollHandle_t *handle;
 	int pktsrc_is_enabled;
 	int interrupt_posted;
 	M93C46 *eeprom;
@@ -367,7 +375,7 @@ update_receiver(CS8900 * cs)
  * ------------------------------------------------------------------
  */
 static void
-input_event(void *cd, int mask)
+input_event(PollHandle_t *handle, int status, int events, void *cd)
 {
 	CS8900 *cs = (CS8900 *) cd;
 	uint8_t *rxbuf = cs->memwin + 4;
@@ -441,8 +449,7 @@ static void
 enable_pktsrc(CS8900 * cs)
 {
 	if ((cs->pktsrc_is_enabled == 0) && (cs->ether_fd >= 0)) {
-//                fprintf(stderr,"CS8900A: enable receiver\n");
-		FIO_AddFileHandler(&cs->input_fh, cs->ether_fd, FIO_READABLE, input_event, cs);
+		AsyncManager_PollStart(cs->handle, ASYNCMANAGER_EVENT_READABLE, &input_event, cs);
 		cs->pktsrc_is_enabled = 1;
 	}
 }
@@ -450,9 +457,8 @@ enable_pktsrc(CS8900 * cs)
 static void
 disable_pktsrc(CS8900 * cs)
 {
-	//       fprintf(stderr,"CS8900A: disable receiver\n");
 	if (cs->pktsrc_is_enabled) {
-		FIO_RemoveFileHandler(&cs->input_fh);
+		AsyncManager_PollStop(cs->handle);
 		cs->pktsrc_is_enabled = 0;
 	}
 }
@@ -2017,6 +2023,7 @@ CS8900_New(const char *devname)
 	cs->txbuf = cs->memwin + 0x600;
 	cs->ether_fd = Net_CreateInterface(devname);
 	fcntl(cs->ether_fd, F_SETFL, O_NONBLOCK);
+	cs->handle = AsyncManager_PollInit(cs->ether_fd);
 	sprintf(eepromname, "%s.eeprom", devname);
 	cs->eeprom = m93c46_New(eepromname);
 	cs8900_reset(cs);

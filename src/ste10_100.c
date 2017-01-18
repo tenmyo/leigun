@@ -43,20 +43,28 @@
  *
  *************************************************************************************************
  */
+// include self header
+#include "compiler_extensions.h"
+#include "ste10_100.h"
 
-#include <pci.h>
+// include system header
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
+
+// include library header
+
+// include user header
 #include "signode.h"
 #include "m93c46.h"
-#include "ste10_100.h"
 #include "linux-tap.h"
 #include "cycletimer.h"
 #include "sgstring.h"
+#include "core/asyncmanager.h"
+
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -205,7 +213,7 @@ typedef struct STE10_100 {
 	int dev_nr;
 
 	int ether_fd;		// file descriptor for the data
-	FIO_FileHandler input_fh;
+	PollHandle_t *input_fh;
 	int receiver_is_enabled;
 	SigNode *irqNode[4];
 	int interrupt_posted;
@@ -428,7 +436,7 @@ disable_receiver(STE10_100 * ste)
 {
 	dbgprintf("ste10/100: disable receiver\n");
 	if (ste->receiver_is_enabled) {
-		FIO_RemoveFileHandler(&ste->input_fh);
+		AsyncManager_PollStop(ste->input_fh);
 		ste->receiver_is_enabled = 0;
 	}
 	SR(ste) = (SR(ste) & ~SR_RS_MASK) | SR_RS_STOP;
@@ -600,9 +608,9 @@ receive(STE10_100 * ste)
 }
 
 static void
-input_event(void *cd, int mask)
+input_event(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	STE10_100 *ste = cd;
+	STE10_100 *ste = clientdata;
 	int result;
 	do {
 		result = fill_rxfifo(ste);
@@ -618,7 +626,7 @@ enable_receiver(STE10_100 * ste)
 {
 	if (!ste->receiver_is_enabled && (ste->ether_fd >= 0)) {
 		dbgprintf("ste10/100: enable receiver\n");
-		FIO_AddFileHandler(&ste->input_fh, ste->ether_fd, FIO_READABLE, input_event, ste);
+		AsyncManager_PollStart(ste->input_fh, ASYNCMANAGER_EVENT_READABLE, &input_event, ste);
 		ste->receiver_is_enabled = 1;
 	}
 }
@@ -2002,7 +2010,7 @@ STE_New(const char *devname, PCI_Function * bridge, int dev_nr, int bus_irq)
 	SigNode_Set(ste->edi, SIG_LOW);
 	SigNode_Set(ste->eck, SIG_LOW);
 	ste->ether_fd = Net_CreateInterface(devname);
-	fcntl(ste->ether_fd, F_SETFL, O_NONBLOCK);
+	ste->input_fh = AsyncManager_PollInit(ste->ether_fd);
 	STE_Reset(ste);
 	XCR(ste) = 0x1000;
 	XSR(ste) = 0x780d;

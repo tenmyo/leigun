@@ -70,7 +70,7 @@
 #include "mouse.h"
 #endif
 
-#if 0
+#if 1
 #define dbgprintf(...) { fprintf(stdout,__VA_ARGS__); }
 #else
 #define dbgprintf(...)
@@ -233,8 +233,9 @@ pixfmt_update_translation(RfbConnection * rcon) {
   }
 }
 
-static void free_rcon(Handle_t *handle, RfbConnection *rcon) {
+static void free_rcon(Handle_t *handle, void *clientdata) {
   RfbConnection *cursor, *prev;
+  RfbConnection *rcon = clientdata;
   RfbServer *rfbserv = rcon->rfbserv;
   for (prev = NULL, cursor = rfbserv->con_head; cursor; prev = cursor, cursor = cursor->next) {
     if (cursor == rcon) {
@@ -1275,6 +1276,8 @@ rfbcon_handle_message(RfbConnection * rcon) {
 static void
 rfbcon_input(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata) {
   RfbConnection *rcon = clientdata;
+  const char *p = buf;
+  int count;
   if (len < 0) {
     perror("error reading from socket");
     rfbsrv_disconnect(rcon);

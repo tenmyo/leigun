@@ -32,22 +32,22 @@
  *
  *************************************************************************************************
  */
-#include <socket_can.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
+// include self header
+#include "compiler_extensions.h"
+#include "socket_can.h"
+
+// include system header
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
-#include <netinet/in.h>
+
+// include library header
+
+// include user header
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sgstring.h"
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <netinet/tcp.h>
+#include "core/asyncmanager.h"
 
 #define RX_FIFO_SIZE		(16)
 #define RX_FIFO_WP(contr)	((contr)->rx_fifo_wp % RX_FIFO_SIZE)
@@ -60,8 +60,6 @@ struct CanController {
     CycleTimer rxTimer;
     //CycleTimer txTimer;
     uint32_t bitrate;
-	int listen_fd;
-	FIO_TcpServer tserv;
 	CAN_MSG rx_fifo[RX_FIFO_SIZE];
 	uint32_t rx_fifo_wp;
 	uint32_t rx_fifo_rp;
@@ -71,31 +69,18 @@ struct CanController {
 };
 
 typedef struct Connection {
-	int sockfd;
-	FIO_FileHandler rfh;	// read event file Handler
+	StreamHandle_t *handle;
 	int rfh_is_active;
-	FIO_FileHandler wfh;	// write event file Handler
-	int wfh_is_active;
 	struct CanController *canController;
 	struct Connection *next;
 	CAN_MSG imsg;
 	int ibuf_wp;
 } Connection;
 
-static void
-close_connection(Connection * con)
-{
+
+static void free_con(Handle_t *handle, void *con) {
 	Connection *cursor, *prev;
-	CanController *contr = con->canController;
-	close(con->sockfd);
-	if (con->rfh_is_active) {
-		FIO_RemoveFileHandler(&con->rfh);
-		con->rfh_is_active = 0;
-	}
-	if (con->wfh_is_active) {
-		FIO_RemoveFileHandler(&con->wfh);
-		con->wfh_is_active = 0;
-	}
+	CanController *contr = ((Connection *)con)->canController;
 	for (prev = NULL, cursor = contr->con_list; cursor; prev = cursor, cursor = cursor->next) {
 		if (cursor == con) {
 			if (prev) {
@@ -107,11 +92,20 @@ close_connection(Connection * con)
 		}
 	}
 	free(con);
-	//fprintf(stderr,"CAN-Bus socket connection closed\n");
+}
+
+static void
+close_connection(Connection * con)
+{
+	if (con->rfh_is_active) {
+		con->rfh_is_active = 0;
+		AsyncManager_ReadStop(con->handle);
+	}
+	AsyncManager_Close(AsyncManager_Stream2Handle(con->handle), &free_con, con);
 	return;
 }
 
-static void read_from_sock(void *cd, int mask);
+static void read_from_sock(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata);
 static void
 enable_rx_handlers(CanController * contr)
 {
@@ -123,8 +117,7 @@ enable_rx_handlers(CanController * contr)
 	for (cursor = contr->con_list; cursor; cursor = cursor->next) {
 		if (!cursor->rfh_is_active) {
 			cursor->rfh_is_active = 1;
-			FIO_AddFileHandler(&cursor->rfh, cursor->sockfd, FIO_READABLE,
-					   read_from_sock, cursor);
+			AsyncManager_ReadStart(cursor->handle, &read_from_sock, cursor);
 		}
 	}
 }
@@ -139,7 +132,7 @@ disable_rx_handlers(CanController * contr)
 	for (cursor = contr->con_list; cursor; cursor = cursor->next) {
 		if (cursor->rfh_is_active) {
 			cursor->rfh_is_active = 0;
-			FIO_RemoveFileHandler(&cursor->rfh);
+			AsyncManager_ReadStop(cursor->handle);
 		}
 	}
 }
@@ -162,18 +155,10 @@ CanSend(CanController * contr, CAN_MSG * msg)
 	}
 	for (con = contr->con_list; con; con = next) {
 		next = con->next;
-		fcntl(con->sockfd, F_SETFL, 0);
-		result = write(con->sockfd, msg, sizeof(*msg));
-		if (result < 0) {
-			if (errno == EAGAIN) {
-				fprintf(stderr, "Tcp Buffer overrun, skiping CAN-Message\n");
-			} else {
-				close_connection(con);
-			}
-		} else if (result == 0) {
+		result = AsyncManager_Write(con->handle, msg, sizeof(*msg), NULL, NULL);
+		if (result <= 0) {
 			close_connection(con);
 		}
-		fcntl(con->sockfd, F_SETFL, O_NONBLOCK);
 	}
 	return;
 }
@@ -203,66 +188,61 @@ timed_reenable_rx(void *eventData)
 }
 
 static void
-read_from_sock(void *cd, int mask)
+read_from_sock(StreamHandle_t *handle, const void *buf, signed long len, void *clientdata)
 {
-	Connection *con = cd;
+	Connection *con = clientdata;
 	CanController *contr = con->canController;
-	int result, count = 0;
-	char *cbuf = (char *)&con->imsg;
-    result = read(con->sockfd, cbuf + con->ibuf_wp, sizeof(CAN_MSG) - con->ibuf_wp);
-    if (result > 0) {
-        count = result;
-    } else if (result == 0) {
-        close_connection(con);
-        return;
-    } else {
-        if (errno == EAGAIN) {
-            return;
-        } else {
-            close_connection(con);
-            return;
-        }
+  const char *p = buf;
+	int count;
+  if (len <= 0) {
+    close_connection(con);
+    return;
+  }
+  while (len > 0) {
+    count = sizeof(CAN_MSG) - con->ibuf_wp;
+    if (count > len) {
+      count = len;
     }
+    memcpy(((char *)&con->imsg) + con->ibuf_wp, p, count);
     con->ibuf_wp += count;
     if (con->ibuf_wp >= sizeof(CAN_MSG)) {
-        con->ibuf_wp = 0;
         add_to_rx_fifo(contr, &con->imsg);
         do_receive(contr);
+        con->ibuf_wp -= sizeof(CAN_MSG);
     }
-    if (contr->bitrate) {
-        uint32_t usecs = 100*1000000 / contr->bitrate;
-        disable_rx_handlers(contr);
-        CycleTimer_Mod(&contr->rxTimer, MicrosecondsToCycles(usecs));
-    }
+    len -= count;
+    p += count;
+  }
+  if (contr->bitrate) {
+    uint32_t usecs = 100 * 1000000 / contr->bitrate;
+    disable_rx_handlers(contr);
+    CycleTimer_Mod(&contr->rxTimer, MicrosecondsToCycles(usecs));
+  }
 	return;
 
 }
 
 static void
-tcp_connect(int sockfd, char *host, unsigned short port, void *cd)
+tcp_connect(int status, StreamHandle_t *handle, const char *host, int port, void *clientdata)
 {
 	Connection *con = sg_new(Connection);
-	CanController *contr = cd;
+	CanController *contr = clientdata;
 	int bufsize = 2048;
-	int flag = 1;
 
+	con->handle = handle;
 	con->canController = contr;
-	con->sockfd = sockfd;
-	fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	if (contr->con_list) {
 		con->next = contr->con_list;
 	} else {
 		con->next = NULL;
 	}
 	contr->con_list = con;
+	AsyncManager_BufferSizeSend(AsyncManager_Stream2Handle(handle), &bufsize);
+	AsyncManager_BufferSizeRecv(AsyncManager_Stream2Handle(handle), &bufsize);
 	if (contr->rx_enabled) {
-		FIO_AddFileHandler(&con->rfh, sockfd, FIO_READABLE, read_from_sock, con);
 		con->rfh_is_active = 1;
+		AsyncManager_ReadStart(con->handle, &read_from_sock, con);
 	}
-	setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize));
-	setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &bufsize, sizeof(bufsize));
-	setsockopt(sockfd, SOL_TCP, TCP_NODELAY, &flag, sizeof(flag));
-	//fprintf(stderr,"New socket connection to emulated CAN-Controller\n");
 }
 
 /*
@@ -275,6 +255,7 @@ CanSocketInterface_New(CanChipOperations * cops, const char *name, void *clientD
 {
 	CanController *contr = sg_new(CanController);
 	int32_t port;
+	int ret;
 	char *host = Config_ReadVar(name, "host");
 	if (!host) {
 		host = "127.0.0.1";
@@ -287,11 +268,11 @@ CanSocketInterface_New(CanChipOperations * cops, const char *name, void *clientD
 	contr->cops = cops;
 	contr->clientData = clientData;
 	contr->rx_enabled = 1;
-	contr->listen_fd = FIO_InitTcpServer(&contr->tserv, tcp_connect, contr, host, port);
+	ret = AsyncManager_InitTcpServer(host, port, 5, 1, &tcp_connect, contr);
     CycleTimer_Init(&contr->rxTimer, timed_reenable_rx, contr);
 
 	fprintf(stderr, "%s: listening on %s:%d\n", name, host, port);
-	if (contr->listen_fd < 0) {
+	if (ret < 0) {
 		fprintf(stderr, "Can not open TCP Listening Port %d for CAN-Emulator: ", port);
 		perror("");
 		free(contr);

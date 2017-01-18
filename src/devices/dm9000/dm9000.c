@@ -37,21 +37,28 @@
  *
  *************************************************************************************************
  */
-
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdint.h>
-#include <errno.h>
-#include "linux-tap.h"
-#include "bus.h"
-#include "phy.h"
-#include "signode.h"
-#include "m93c46.h"
-#include "cycletimer.h"
-#include "devices/dm9000/dm9000.h"
-#include "sgstring.h"
+// include self header
 #include "compiler_extensions.h"
+#include "dm9000.h"
+
+// include system header
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+// include library header
+
+// include user header
+#include "cycletimer.h"
+#include "configfile.h"
+#include "devices/phy/phy.h"
+#include "linux-tap.h"
+#include "m93c46.h"
+#include "sgstring.h"
+#include "signode.h"
+#include "core/asyncmanager.h"
+
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -256,7 +263,7 @@ struct DM9000 {
 	int interrupt_posted;
 	BusDevice bdev;
 	int ether_fd;
-	FIO_FileHandler input_fh;
+	PollHandle_t *input_fh;
 	int receiver_is_enabled;
 
 	DMReadProc *read_reg[256];
@@ -531,9 +538,9 @@ match_address(DM9000 * dm, uint8_t * packet)
  * --------------------------------------------------------------
  */
 static void
-input_event(void *cd, int mask)
+input_event(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	DM9000 *dm = (DM9000 *) cd;
+	DM9000 *dm = clientdata;
 	int result;
 	uint8_t buf[2048];
 	do {
@@ -594,7 +601,7 @@ enable_receiver(DM9000 * dm)
 {
 	if (!dm->receiver_is_enabled && (dm->ether_fd >= 0)) {
 		dbgprintf("DM9000: enable receiver\n");
-		FIO_AddFileHandler(&dm->input_fh, dm->ether_fd, FIO_READABLE, input_event, dm);
+		AsyncManager_PollStart(dm->input_fh, ASYNCMANAGER_EVENT_READABLE, &input_event, dm);
 		dm->receiver_is_enabled = 1;
 	}
 }
@@ -604,7 +611,7 @@ disable_receiver(DM9000 * dm)
 {
 	dbgprintf("DM9000: disable receiver\n");
 	if (dm->receiver_is_enabled) {
-		FIO_RemoveFileHandler(&dm->input_fh);
+		AsyncManager_PollStop(dm->input_fh);
 		dm->receiver_is_enabled = 0;
 	}
 }
@@ -2041,7 +2048,7 @@ DM9000_New(const char *devname, int register_spacing)
 	DM9000 *dm = sg_new(DM9000);
 	char *epromname = (char *)alloca(strlen(devname) + 20);
 	dm->ether_fd = Net_CreateInterface(devname);
-	fcntl(dm->ether_fd, F_SETFL, O_NONBLOCK);
+	dm->input_fh = AsyncManager_PollInit(dm->ether_fd);
 
 	dm->bdev.first_mapping = NULL;
 	dm->bdev.Map = DM9000_Map;

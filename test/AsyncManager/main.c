@@ -49,7 +49,7 @@ void accept_cb(int status, StreamHandle_t *handle, const char *host, int port, v
 
 int main(int argc, const char *argv[]) {
   printf("%s\n", uv_version_string());
-  AsyncManager_InitTcpServer("127.0.0.1", 8080, 5, &accept_cb, NULL);
+  AsyncManager_InitTcpServer("127.0.0.1", 8080, 5, 1, &accept_cb, NULL);
   Sleep(60 * 1000);
   return 0;
 }

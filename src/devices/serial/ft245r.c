@@ -37,9 +37,9 @@ typedef struct FT245R {
 } FT245R;
 
 static void
-FT245R_Input(void *evData, int mask)
+FT245R_Input(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	FT245R *ft = evData;
+	FT245R *ft = clientdata;
 	uint32_t room;
 	int result;
 	int cnt = 0;
@@ -60,9 +60,9 @@ FT245R_Input(void *evData, int mask)
 }
 
 static void
-FT245R_Output(void *evData, int mask)
+FT245R_Output(PollHandle_t *handle, int status, int events, void *clientdata)
 {
-	FT245R *ft = evData;
+	FT245R *ft = clientdata;
 	unsigned int cnt = TXBUF_CNT(ft);
 	unsigned int max;
 	unsigned int written;
