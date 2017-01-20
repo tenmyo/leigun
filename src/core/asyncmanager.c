@@ -164,6 +164,7 @@ enum req_type {
 };
 
 enum sreq_type {
+  SREQ_WRITE,
   SREQ_POLL_INIT,
   SREQ_NUM,
 };
@@ -205,7 +206,7 @@ static void init_once(void);
 
 static void server_thread(void *arg);
 static int send_req(enum req_type type, void *data);
-static int send_sreq(enum sreq_type type, void *data, void **result);
+static int send_sreq(enum sreq_type type, void *data, void *result);
 static void on_wakeup_req(uv_async_t *handle);
 static void on_wakeup_sreq(uv_async_t *handle);
 
@@ -219,6 +220,7 @@ static int listen_tcp(TcpServerStreamHandle_t *svr);
 
 static void on_writed(uv_write_t *req, int status);
 static int write_stream(struct write_req_t *wr);
+static int writesync_stream(struct write_req_t *wr, int *err);
 
 static void on_closed(uv_handle_t *handle);
 static int close_handle(struct close_req_t *cr);
@@ -357,7 +359,7 @@ static int send_req(enum req_type type, void *data) {
   return uv_async_send(&g_singleton->req[type]->async);
 }
 
-static int send_sreq(enum sreq_type type, void *data, void **result) {
+static int send_sreq(enum sreq_type type, void *data, void *result) {
   int ret;
   uv_sem_wait(&g_singleton->sreq[type]->bsem);
   g_singleton->sreq[type]->reqdata = data;
@@ -365,7 +367,7 @@ static int send_sreq(enum sreq_type type, void *data, void **result) {
   UV_ERRCHECK(ret, return ret);
   uv_sem_wait(&g_singleton->sreq[type]->respsem);
   ret = g_singleton->sreq[type]->status;
-  *result = g_singleton->sreq[type]->respdata;
+  (*(void **)result) = g_singleton->sreq[type]->respdata;
   uv_sem_post(&g_singleton->sreq[type]->bsem);
   return ret;
 }
@@ -408,8 +410,11 @@ static void on_wakeup_req(uv_async_t *handle) {
 static void on_wakeup_sreq(uv_async_t *handle) {
   struct sreq_data *req = handle->data;
   switch (req->type) {
+  case SREQ_WRITE:
+    req->status = writesync_stream(req->reqdata, &req->respdata);
+    break;
   case SREQ_POLL_INIT:
-    req->status = poll_init(req->reqdata, req->respdata);
+    req->status = poll_init(req->reqdata, &req->respdata);
     break;
   default:
     break;
@@ -559,6 +564,41 @@ int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len, Asy
     ret = send_req(REQ_WRITE, wr);
   }
   return ret;
+}
+
+static int writesync_stream(struct write_req_t *wr, int *err) {
+  int ret;
+  ret = uv_stream_set_blocking(&wr->stream->uv.stream, 1);
+  UV_ERRCHECK(ret, );
+  wr->super.data = wr;
+  ret = uv_write(&wr->super, &wr->stream->uv.stream, &wr->buf, 1, &on_writed);
+  UV_ERRCHECK(ret, );
+  ret = uv_stream_set_blocking(&wr->stream->uv.stream, 0);
+  UV_ERRCHECK(ret, );
+  *err = ret;
+  return ret;
+}
+
+int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base, size_t len, AsyncManager_write_cb write_cb, void *clientdata) {
+  int ret;
+  int err;
+  // create write request
+  struct write_req_t *wr = malloc(sizeof(*wr));
+  ret = (wr) ? 0 : UV_EAI_MEMORY;
+  UV_ERRCHECK(ret, return ret);
+  wr->stream = handle;
+  wr->buf = uv_buf_init((char *)base, len);
+  wr->write_cb = write_cb;
+  wr->write_clientdata = clientdata;
+  // check context == libuv
+  uv_thread_t tid = uv_thread_self();
+  if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    ret = writesync_stream(wr, &err);
+  } else {
+    ret = send_sreq(SREQ_WRITE, wr, &err);
+  }
+  UV_ERRCHECK(ret, return ret);
+  return err;
 }
 
 static void on_closed(uv_handle_t *handle) {

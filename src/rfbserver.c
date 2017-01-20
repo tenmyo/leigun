@@ -70,7 +70,7 @@
 #include "mouse.h"
 #endif
 
-#if 1
+#if 0
 #define dbgprintf(...) { fprintf(stdout,__VA_ARGS__); }
 #else
 #define dbgprintf(...)
@@ -274,7 +274,7 @@ rfbsrv_disconnect(RfbConnection * rcon) {
 static int
 Msg_ProtocolVersion(RfbConnection *rcon) {
   char *msg = "RFB 003.003\n";
-  return AsyncManager_Write(rcon->handle, msg, strlen(msg), NULL, NULL);
+  return AsyncManager_WriteSync(rcon->handle, msg, strlen(msg), NULL, NULL);
 }
 
 /*
@@ -308,7 +308,7 @@ CheckProtocolVersion(RfbConnection * rcon) {
 static int
 Msg_Auth(RfbConnection *rcon) {
   char msg[] = { 0, 0, 0, 1 };	/* no authentication required */
-  return AsyncManager_Write(rcon->handle, msg, 4, NULL, NULL);
+  return AsyncManager_WriteSync(rcon->handle, msg, 4, NULL, NULL);
 }
 
 /**
@@ -437,7 +437,7 @@ Msg_ServerInitialisation(RfbConnection * rcon) {
   p += 4;
   memcpy(p, fbi->name_string, fbi->name_length);
   p += fbi->name_length;
-  return AsyncManager_Write(rcon->handle, msg, p - msg, NULL, NULL);
+  return AsyncManager_WriteSync(rcon->handle, msg, p - msg, NULL, NULL);
 }
 
 /*
@@ -772,7 +772,7 @@ srv_fb_encode_update_raw(RfbConnection * rcon) {
         ofs += fb_bypp;
       }
     }
-    AsyncManager_Write(rcon->handle, reply, data - reply, NULL, NULL);
+    AsyncManager_WriteSync(rcon->handle, reply, data - reply, NULL, NULL);
     data = reply;
   }
   return;
@@ -862,7 +862,7 @@ srv_fb_encode_update_zrle(RfbConnection * rcon) {
     //fprintf(stderr,"total out %lu av out %lu bpp %d bytes %d\n",zs->total_out,zs->avail_out,fbpixf->bits_per_pixel,con_bypp);
     write32be(rcon->obuf + lengthP, zs->total_out);
     rcon->obuf_wp += zs->total_out;
-    AsyncManager_Write(rcon->handle, rcon->obuf, rcon->obuf_wp, NULL, NULL);
+    AsyncManager_WriteSync(rcon->handle, rcon->obuf, rcon->obuf_wp, NULL, NULL);
     rcon->obuf_wp = 0;
   }
   return;
@@ -881,7 +881,7 @@ srv_fb_update(RfbConnection * rcon) {
   if ((rcon->state != CONSTAT_IDLE)) {
     return;
   }
-  //fprintf(stderr,"SRV update display enc %d\n",rcon->current_encoding); // jk
+  dbgprintf("SRV update display enc %d\n",rcon->current_encoding); // jk
   switch (rcon->current_encoding) {
   case ENC_RAW:
     srv_fb_encode_update_raw(rcon);
@@ -977,7 +977,7 @@ srv_set_8bit_color_map_entries(RfbConnection * rcon, PixelFormat * pixf) {
     write16be(wp, blue);
     wp += 2;
   }
-  AsyncManager_Write(rcon->handle, reply, wp - reply, NULL, NULL);
+  AsyncManager_WriteSync(rcon->handle, reply, wp - reply, NULL, NULL);
 }
 
 static void
@@ -1091,13 +1091,13 @@ clnt_fb_update_req(RfbConnection * rcon, uint8_t * data, int len) {
   udrect.y = read16be(data + 4);
   udrect.width = read16be(data + 6);
   udrect.height = read16be(data + 8);
-  /* fprintf(stderr,"Got updaterequest from Client\n"); */
+  dbgprintf("Got updaterequest from Client\n");
   if (!incremental) {
     write_udrect_to_fifo(rcon, &udrect);
     rcon->update_outstanding = 1;
     trigger_fb_update(rcon);
   } else {
-    //fprintf(stderr,"INCREMENTAL UDRQ x %d y %d w %d h %d\n",udrect.x,udrect.y,udrect.width,udrect.height);
+    dbgprintf("INCREMENTAL UDRQ x %d y %d w %d h %d\n",udrect.x,udrect.y,udrect.width,udrect.height);
     rcon->update_outstanding = 1;
     trigger_fb_update(rcon);
   }
@@ -1288,20 +1288,27 @@ rfbcon_input(StreamHandle_t *handle, const void *buf, signed long len, void *cli
     rfbsrv_disconnect(rcon);
     return;
   }
-  if (sizeof(rcon->ibuf) == rcon->ibuf_wp) {
-    fprintf(stderr, "rfbserver: input buffer overflow. \n");
-    /* Maybe it would be better to close connection here */
-    rcon->ibuf_wp = 0;
-  }
-  memcpy(&rcon->ibuf[rcon->ibuf_wp], buf, len);
-  rcon->ibuf_wp += len;
-  /* check if buffer is a complete message */
-  while (len >= rcon->ibuf_expected) {
-    int result;
-    len -= rcon->ibuf_expected;
-    result = rfbcon_handle_message(rcon);
-    if (result == 0) {
+  while (len > 0) {
+    count = rcon->ibuf_expected - rcon->ibuf_wp;
+    if (count > len) {
+      count = len;
+    }
+    if (sizeof(rcon->ibuf) < (rcon->ibuf_wp + count)) {
+      fprintf(stderr, "rfbserver: input buffer overflow. \n");
+      /* Maybe it would be better to close connection here */
       rcon->ibuf_wp = 0;
+    }
+    memcpy(&rcon->ibuf[rcon->ibuf_wp], p, count);
+    rcon->ibuf_wp += count;
+    len -= count;
+    p += count;
+    /* check if buffer is a complete message */
+    if (rcon->ibuf_wp >= rcon->ibuf_expected) {
+      int result;
+      result = rfbcon_handle_message(rcon);
+      if (result == 0) {
+        rcon->ibuf_wp = 0;
+      }
     }
   }
   return;
