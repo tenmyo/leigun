@@ -1,117 +1,100 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
-PROJECT(softgun VERSION 0.22.1 LANGUAGES C)
-#SET(CMAKE_VERBOSE_MAKEFILE 1)
+PROJECT(softgun
+  VERSION 0.22.1
+  LANGUAGES C
+  )
 #SET(CMAKE_C_COMPILER /usr/bin/gcc)
 
-ADD_COMPILE_OPTIONS(-Wall -O9 -g -fomit-frame-pointer -fno-strict-overflow -Wstrict-overflow=3 -Wno-unused-but-set-variable)
-ADD_COMPILE_OPTIONS(-fdiagnostics-color=always)
+# ENABLE WARNINGS
+ADD_COMPILE_OPTIONS(
+  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
+  "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef;-Wno-unused>"
+  "$<$<C_COMPILER_ID:MSVC>:/W4>"
+  )
 
+# set message to color
+ADD_COMPILE_OPTIONS(
+  "$<$<C_COMPILER_ID:Clang>:-fdiagnostics-color=always>"
+  "$<$<C_COMPILER_ID:GNU>:-fdiagnostics-color=always>"
+  )
+
+ADD_COMPILE_OPTIONS(-O9 -g -fomit-frame-pointer)
 ADD_DEFINITIONS(-D_GNU_SOURCE -DTARGET_BIG_ENDIAN=0)
 CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/version.h.in" "${CMAKE_BINARY_DIR}/version.h")
 
-#ADD_SUBDIRECTORY(core)
-#ADD_SUBDIRECTORY(busdevices)
-
-ADD_SUBDIRECTORY(boards)
-#ADD_SUBDIRECTORY(cli)
-ADD_SUBDIRECTORY(gdb)
-
-ADD_SUBDIRECTORY(arm)
-ADD_SUBDIRECTORY(avr8)
-ADD_SUBDIRECTORY(c16x)
-ADD_SUBDIRECTORY(coldfire)
-#ADD_SUBDIRECTORY(m16c)
-#ADD_SUBDIRECTORY(m32c)
-ADD_SUBDIRECTORY(mcs51)
-ADD_SUBDIRECTORY(mips64)
-ADD_SUBDIRECTORY(mos6510)
-ADD_SUBDIRECTORY(ppc)
-#ADD_SUBDIRECTORY(rx)
-#ADD_SUBDIRECTORY(sh4)
-
-ADD_SUBDIRECTORY(controllers)
-ADD_SUBDIRECTORY(devices)
-#ADD_SUBDIRECTORY(float)
-ADD_SUBDIRECTORY(printer)
+ADD_SUBDIRECTORY(../modules modules)
 
 ADD_EXECUTABLE(${PROJECT_NAME}
     softgun.c
-    pl190_irq.c
-    xy_tree.c
-    xy_hash.c
-    bus.c
-    signode.c
-    ste10_100.c
-    m93c46.c
-    linux-tap.c
-    dram.c
-    sram.c
-    amdflash.c
-    usb_ohci.c
-    cycletimer.c
-    configfile.c
-    ml6652.c
-    elfloader.c
-    loader.c
-    i2c_serdes.c
-    i82559.c
-    pc16550.c
-    rom.c
-    ihex.c
-    srec.c
-    shlib.c
-    diskimage.c
     aitc.c
-    imx_timer.c
-    serial.c
-    cs8900.c
+    alsasound.c
+    amdflash.c
+    bus.c
+    cleanup.c
     clock.c
-    rfbserver.c
-    sht71.c
+    configfile.c
+    crc16.c
+    crc32.c
+    crc8.c
+    cs8900.c
+    cycletimer.c
+    debugvars.c
+    diskimage.c
+    dram.c
+    elfloader.c
+    fbdisplay.c
+    filesystem.c
+    hello_world.c
+    i2c_serdes.c
+    ihex.c
+    imx_timer.c
+    isp1105.c
+    jtag_tap.c
     keyboard.c
+    linux-tap.c
+    loader.c
+    logical.c
+    m93c46.c
     matrix_keyboard.c
+    mmcdev.c
+    mouse.c
+    nand.c
+    nullsound.c
+    parport_pc.c
+    pc16550.c
+    pl190_irq.c
+    relais.c
+    rfbserver.c
+    rom.c
+    rtc.c
+    senseless.c
+    serial.c
+    sglib.c
+    sgstring.c
+    shlib.c
+    sht71.c
+    signode.c
+    sound.c
+    spidevice.c
+    sram.c
+    srec.c
+    strhash.c
+    throttle.c
+    usb_ohci.c
     usbdevice.c
     usbstdrq.c
-    djet460.c
-    relais.c
-    senseless.c
-    hello_world.c
-    logical.c
-    sgstring.c
-    parport_pc.c
-    crc32.c
-    tx49xx_sio.c
-    isp1105.c
-    filesystem.c
-    nullsound.c
-    alsasound.c
-    sound.c
-    fbdisplay.c
-    strhash.c
-    debugvars.c
-    debugger.c
-    sglib.c
-    crc8.c
-    spidevice.c
-    jtag_tap.c
-    crc16.c
-    mmcdev.c
-    nand.c
-    throttle.c
-    cleanup.c
-    rtc.c
-    mouse.c
+    xy_hash.c
+    xy_tree.c
     
     version.c
     core/asyncmanager.c
+    boards/boards.c
     )
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}/")
 
 FIND_PACKAGE(PkgConfig)
-FIND_PACKAGE(Threads REQUIRED)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC Threads::Threads)
 
 # zlib
 FIND_PACKAGE(ZLIB REQUIRED)
@@ -151,15 +134,6 @@ ENDIF (NOT LIBUV_FOUND)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${LIBUV_LIBRARIES})
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/core")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/busdevices")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/arm")
-#TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/cli")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/gdb")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/printer")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/controllers/ns9750")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/controllers/imx21")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/devices/phy")
 
 SET_PROPERTY(TARGET softgun PROPERTY C_STANDARD 99)
 SET_PROPERTY(TARGET softgun PROPERTY C_STANDARD_REQUIRED ON)
@@ -168,41 +142,6 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${CMAKE_DL_LIBS} rt m)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE
     -Wl,-whole-archive
-    softgun_boards
-    softgun_device
+    modules
     -Wl,-no-whole-archive
-#    softgun_cli
-    softgun_gdb
-    softgun_controller
-    softgun_printer
-    softgun_arm
-    softgun_avr8
-    softgun_c16x
-    softgun_coldfire
-#    softgun_m16c
-#    softgun_m32c
-    softgun_mcs51
-    softgun_mips64
-    softgun_mos6510
-    softgun_ppc
-#    softgun_rx
-#    softgun_sh4
-#    softgun_float
-    #softgun_busdevices
-    #softgun_core
     )
-
-
-PROJECT(pcl3gui2png C)
-ADD_EXECUTABLE(${PROJECT_NAME}
-    sgstring.c
-    printer/decompress.c
-    printer/dj460interp.c
-    printer/pcl3.c
-    printer/pcl3gui.c
-    printer/pcl3gui2png.c
-    printer/pjl.c
-    printer/printengine.c
-)
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/printer")

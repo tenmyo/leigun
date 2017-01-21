@@ -55,9 +55,6 @@
 #include "crc16.h"
 #ifndef NO_DEBUGGER
 #include "debugvars.h"
-#include "debugger.h"
-#  include "cli/cliserver.h"
-//#  include "cli/interpreter.h"
 #endif
 #ifndef NO_SHLIB
 #  include "shlib.h"
@@ -322,7 +319,6 @@ main(int argc, char *argv[])
 		Config_AddString(Board_DefaultConfig(board));
 	}
 	Board_Create(board);
-//	CliServer_New("cli");
 	LoadChain_Resolve();
 	if (LoadChain_Load() < 0) {
 		fprintf(stderr, "Loading failed\n");
