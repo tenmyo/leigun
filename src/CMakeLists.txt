@@ -28,9 +28,7 @@ ADD_SUBDIRECTORY(../modules modules)
 ADD_EXECUTABLE(${PROJECT_NAME}
     softgun.c
     
-    aitc.c
     alsasound.c
-    amdflash.c
     bus.c
 #    bus64.c
     cleanup.c
@@ -39,11 +37,9 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     crc16.c
     crc32.c
     crc8.c
-    cs8900.c
     cycletimer.c
     debugvars.c
     diskimage.c
-#    docmillplus.c
     dram.c
     elfloader.c
     fbdisplay.c
@@ -51,23 +47,12 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     hello_world.c
     i2c_serdes.c
     ihex.c
-    imx_timer.c
-    isp1105.c
-    jtag_tap.c
     keyboard.c
-    linux-tap.c
     loader.c
     logical.c
-    m93c46.c
-    matrix_keyboard.c
-    mmcdev.c
     mouse.c
     nand.c
-#    nand_micron.c
     nullsound.c
-    parport_pc.c
-    pc16550.c
-    pl190_irq.c
     relais.c
     rfbserver.c
     rom.c
@@ -78,7 +63,6 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     sglib.c
     sgstring.c
     shlib.c
-    sht71.c
     signode.c
     sound.c
     spidevice.c
@@ -86,9 +70,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     srec.c
     strhash.c
     throttle.c
-    usb_ohci.c
     usbdevice.c
-#    usbhub.c
     usbstdrq.c
     xy_hash.c
     xy_tree.c
