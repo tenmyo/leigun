@@ -95,6 +95,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     
     version.c
     core/asyncmanager.c
+    core/logging.c
     boards/boards.c
     )
 
