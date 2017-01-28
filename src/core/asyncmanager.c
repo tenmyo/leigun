@@ -29,12 +29,12 @@
 #include "core/asyncmanager.h"
 
 // Local/Private Headers
+#include "core/logging.h"
 
 // External headers
 #include <uv.h>
 
 // System headers
-#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -209,8 +209,8 @@ typedef struct AsyncManager AsyncManager;
 //==============================================================================
 #define UV_ERRCHECK(err, failed)                                               \
     if ((err) < 0) {                                                           \
-        fprintf(stderr, "ERROR: %s: %s: %s[%d] %s\n", uv_err_name(err),        \
-                uv_strerror(err), __FILE__, __LINE__, __func__);               \
+        LOG_Error("AM", "ERROR: %s: %s: %s[%d] %s\n", uv_err_name(err),        \
+                  uv_strerror(err), __FILE__, __LINE__, __func__);             \
         failed;                                                                \
     }
 
@@ -318,8 +318,7 @@ static void init(void) {
     int err = 0;
     int reqno;
     uv_barrier_t blocker;
-    setbuf(stderr, NULL);
-    fprintf(stderr, "AsyncManager init.\n");
+    LOG_Info("AM", "AsyncManager %s.", "init");
     g_singleton = calloc(1, sizeof(*g_singleton));
     err = (g_singleton) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(err, return );
@@ -383,14 +382,15 @@ static void init_once(void) {
 
 static void server_thread(void *arg) {
     uv_loop_t *loop = arg;
-    fprintf(stderr, "AsyncManager start.\n");
+    LOG_Debug("AM", "AsyncManager %s.", "start");
     uv_barrier_wait((uv_barrier_t *)loop->data);
     uv_run(loop, UV_RUN_DEFAULT);
-    fprintf(stderr, "AsyncManager stop.\n");
+    LOG_Debug("AM", "AsyncManager %s.", "start");
 }
 
 static int send_req(enum req_type type, void *data) {
     uv_sem_wait(&g_singleton->req[type]->bsem);
+    LOG_Verbose("AM", "%s(%d)", __func__, type);
     g_singleton->req[type]->data = data;
     return uv_async_send(&g_singleton->req[type]->async);
 }
@@ -398,6 +398,7 @@ static int send_req(enum req_type type, void *data) {
 static int send_sreq(enum sreq_type type, void *data, void *result) {
     int ret;
     uv_sem_wait(&g_singleton->sreq[type]->bsem);
+    LOG_Verbose("AM", "%s(%d)", __func__, type);
     g_singleton->sreq[type]->reqdata = data;
     ret = uv_async_send(&g_singleton->sreq[type]->async);
     UV_ERRCHECK(ret, return ret);
@@ -475,7 +476,7 @@ static void on_quit(void) {
     if (!g_singleton) {
         return;
     }
-    fprintf(stderr, "AsyncManager stopping...\n");
+    LOG_Debug("AM", "AsyncManager %s...", "stopping");
     if (uv_loop_alive(g_singleton->loop)) {
         send_req(REQ_QUIT, NULL);
     }
@@ -483,7 +484,7 @@ static void on_quit(void) {
     uv_loop_close(g_singleton->loop);
     free(g_singleton);
     g_singleton = NULL;
-    fprintf(stderr, "AsyncManager fin.\n");
+    LOG_Debug("AM", "AsyncManager %s.", "fin");
 }
 
 
@@ -497,7 +498,7 @@ static void on_connection(uv_stream_t *server, int status) {
     struct sockaddr_in addr;
     int addrlen = sizeof(addr);
 
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s", __func__);
     UV_ERRCHECK(err, goto EMIT);
     client = malloc(sizeof(*client));
     err = (client) ? 0 : UV_EAI_MEMORY;
@@ -514,10 +515,12 @@ static void on_connection(uv_stream_t *server, int status) {
     err =
         uv_tcp_getpeername(&client->uv.tcp, (struct sockaddr *)&addr, &addrlen);
     UV_ERRCHECK(err, goto CLOSE_EMIT);
-    port = addr.sin_port;
+    port = ntohs(addr.sin_port);
     err = uv_ip4_name(&addr, client_address, sizeof(client_address) - 1);
     UV_ERRCHECK(err, goto CLOSE_EMIT);
     host = client_address;
+    LOG_Info("AM", "connected port:%d, peer:%s, peerport:%d",
+             ntohs(svr->addr.sin_port), host, port);
     goto EMIT;
 
 CLOSE_EMIT:
@@ -535,7 +538,6 @@ EMIT:
 
 static int listen_tcp(TcpServerStreamHandle_t *svr) {
     int err;
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
     err = uv_tcp_init(g_singleton->loop, &svr->uv.tcp);
     UV_ERRCHECK(err, free(svr); return err);
     svr->uv.tcp.data = svr;
@@ -548,6 +550,7 @@ static int listen_tcp(TcpServerStreamHandle_t *svr) {
 
 static void on_writed(uv_write_t *req, int status) {
     struct write_req_t *wr = req->data;
+    LOG_Verbose("AM", "%s(%p)", __func__, req->handle);
     UV_ERRCHECK(status, );
     if (wr->write_cb) {
         wr->write_cb(status, wr->stream, wr->write_clientdata);
@@ -669,7 +672,7 @@ static int poll_stop(PollHandle_t *handle) {
 int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb,
                        void *clientdata) {
     int ret;
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s(%p)", __func__, handle);
     // create close request
     struct close_req_t *cr = malloc(sizeof(*cr));
     ret = (cr) ? 0 : UV_EAI_MEMORY;
@@ -689,11 +692,13 @@ int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb,
 
 
 int AsyncManager_BufferSizeSend(Handle_t *handle, int *value) {
+    LOG_Info("AM", "%s(%d)", __func__, *value);
     return uv_send_buffer_size(&handle->uv.handle, value);
 }
 
 
 int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value) {
+    LOG_Info("AM", "%s(%d)", __func__, *value);
     return uv_recv_buffer_size(&handle->uv.handle, value);
 }
 
@@ -701,6 +706,8 @@ int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value) {
 int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
                        AsyncManager_write_cb write_cb, void *clientdata) {
     int ret;
+    LOG_Debug("AM", "%s(handle:%p, base:%p, len:%zd)", __func__, handle, base,
+              len);
     // create write request
     struct write_req_t *wr = malloc(sizeof(*wr));
     ret = (wr) ? 0 : UV_EAI_MEMORY;
@@ -724,6 +731,8 @@ int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base, size_t len,
                            AsyncManager_write_cb write_cb, void *clientdata) {
     int ret;
     int err;
+    LOG_Debug("AM", "%s(handle:%p, base:%p, len:%zd)", __func__, handle, base,
+              len);
     // create write request
     struct write_req_t *wr = malloc(sizeof(*wr));
     ret = (wr) ? 0 : UV_EAI_MEMORY;
@@ -747,7 +756,7 @@ int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base, size_t len,
 int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb,
                            void *clientdata) {
     int ret;
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s(%p)", __func__, handle);
     // create read start request -> in TcpHandle
     handle->read_cb = read_cb;
     handle->read_clientdata = clientdata;
@@ -764,7 +773,7 @@ int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb,
 
 int AsyncManager_ReadStop(StreamHandle_t *handle) {
     int ret;
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s(%p)", __func__, handle);
     // create read stop request -> NONE
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
@@ -782,7 +791,7 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
                                void *clientdata) {
     int err;
     init_once();
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s(ip:%s, port:%d)", __func__, ip, port);
     TcpServerStreamHandle_t *svr = malloc(sizeof(*svr));
     err = (svr) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(err, return err);
@@ -806,7 +815,7 @@ PollHandle_t *AsyncManager_PollInit(int fd) {
     int ret;
     PollHandle_t *handle = NULL;
     init_once();
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s[%d] %s", __FILE__, __LINE__, __func__);
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
     if (uv_thread_equal(&g_singleton->tid, &tid)) {
@@ -821,7 +830,7 @@ PollHandle_t *AsyncManager_PollInit(int fd) {
 int AsyncManager_PollStart(PollHandle_t *handle, int events,
                            AsyncManager_poll_cb cb, void *clientdata) {
     int ret;
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s[%d] %s", __FILE__, __LINE__, __func__);
     // create read start request -> in PollHandle
     handle->poll_cb = cb;
     handle->poll_clientdata = clientdata;
@@ -840,7 +849,7 @@ int AsyncManager_PollStart(PollHandle_t *handle, int events,
 
 int AsyncManager_PollStop(PollHandle_t *handle) {
     int ret;
-    fprintf(stderr, "%s[%d] %s\n", __FILE__, __LINE__, __func__);
+    LOG_Info("AM", "%s[%d] %s", __FILE__, __LINE__, __func__);
     // create read start request -> already PollHandle
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
