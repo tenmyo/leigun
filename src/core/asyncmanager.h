@@ -92,8 +92,8 @@ int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value);
 /// @{
 int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
                        AsyncManager_write_cb write_cb, void *clientdata);
-int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base, size_t len,
-                           AsyncManager_write_cb write_cb, void *clientdata);
+int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base,
+                           size_t len);
 int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb,
                            void *clientdata);
 int AsyncManager_ReadStop(StreamHandle_t *handle);

@@ -401,10 +401,12 @@ static int send_sreq(enum sreq_type type, void *data, void *result) {
     LOG_Verbose("AM", "%s(%d)", __func__, type);
     g_singleton->sreq[type]->reqdata = data;
     ret = uv_async_send(&g_singleton->sreq[type]->async);
-    UV_ERRCHECK(ret, return ret);
+    UV_ERRCHECK(ret, goto END);
     uv_sem_wait(&g_singleton->sreq[type]->respsem);
     ret = g_singleton->sreq[type]->status;
     (*(void **)result) = g_singleton->sreq[type]->respdata;
+    UV_ERRCHECK(ret, );
+END:
     uv_sem_post(&g_singleton->sreq[type]->bsem);
     return ret;
 }
@@ -550,7 +552,7 @@ static int listen_tcp(TcpServerStreamHandle_t *svr) {
 
 static void on_writed(uv_write_t *req, int status) {
     struct write_req_t *wr = req->data;
-    LOG_Verbose("AM", "%s(%p)", __func__, req->handle);
+    LOG_Verbose("AM", "%s(req:%p, handle:%p)", __func__, req, req->handle);
     UV_ERRCHECK(status, );
     if (wr->write_cb) {
         wr->write_cb(status, wr->stream, wr->write_clientdata);
@@ -560,16 +562,22 @@ static void on_writed(uv_write_t *req, int status) {
 
 static int write_stream(struct write_req_t *wr) {
     wr->super.data = wr;
+    LOG_Verbose("AM", "%s(req:%p, handle:%p)", __func__, wr,
+                &wr->stream->uv.stream);
     return uv_write(&wr->super, &wr->stream->uv.stream, &wr->buf, 1,
                     &on_writed);
 }
 
 static int writesync_stream(struct write_req_t *wr, int *err) {
     int ret;
+    LOG_Verbose("AM", "%s", __func__);
     ret = uv_stream_set_blocking(&wr->stream->uv.stream, 1);
     UV_ERRCHECK(ret, );
     wr->super.data = wr;
-    ret = uv_write(&wr->super, &wr->stream->uv.stream, &wr->buf, 1, &on_writed);
+    do {
+        ret = uv_try_write(&wr->stream->uv.stream, &wr->buf, 1);
+    } while (ret == UV_EAGAIN);
+    free(wr);
     UV_ERRCHECK(ret, );
     ret = uv_stream_set_blocking(&wr->stream->uv.stream, 0);
     UV_ERRCHECK(ret, );
@@ -727,8 +735,8 @@ int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
 }
 
 
-int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base, size_t len,
-                           AsyncManager_write_cb write_cb, void *clientdata) {
+int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base,
+                           size_t len) {
     int ret;
     int err;
     LOG_Debug("AM", "%s(handle:%p, base:%p, len:%zd)", __func__, handle, base,
@@ -739,8 +747,6 @@ int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base, size_t len,
     UV_ERRCHECK(ret, return ret);
     wr->stream = handle;
     wr->buf = uv_buf_init((char *)base, len);
-    wr->write_cb = write_cb;
-    wr->write_clientdata = clientdata;
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
     if (uv_thread_equal(&g_singleton->tid, &tid)) {
