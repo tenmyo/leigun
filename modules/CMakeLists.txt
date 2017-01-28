@@ -7,7 +7,7 @@ PROJECT(modules
 # ENABLE WARNINGS
 ADD_COMPILE_OPTIONS(
   "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
-#  "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef;-Wno-unused>"
+  "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef;-Wno-unused>"
   "$<$<C_COMPILER_ID:MSVC>:/W4>"
   )
 
@@ -19,11 +19,10 @@ if("Ninja" STREQUAL ${CMAKE_GENERATOR})
     )
 endif()
 
-ADD_COMPILE_OPTIONS(-O9 -g -fomit-frame-pointer)
 ADD_DEFINITIONS(-D_GNU_SOURCE -DTARGET_BIG_ENDIAN=0)
 
 FILE(GLOB_RECURSE files ${PROJECT_SOURCE_DIR} *.c)
-ADD_LIBRARY(${PROJECT_NAME} ${files})
+ADD_LIBRARY(${PROJECT_NAME} SHARED ${files})
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/boards")

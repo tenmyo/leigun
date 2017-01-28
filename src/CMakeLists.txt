@@ -4,7 +4,6 @@ PROJECT(softgun
   VERSION 0.22.1
   LANGUAGES C
   )
-#SET(CMAKE_C_COMPILER /usr/bin/gcc)
 
 # ENABLE WARNINGS
 ADD_COMPILE_OPTIONS(
@@ -21,7 +20,6 @@ if("Ninja" STREQUAL ${CMAKE_GENERATOR})
     )
 endif()
 
-ADD_COMPILE_OPTIONS(-O9 -g -fomit-frame-pointer)
 ADD_DEFINITIONS(-D_GNU_SOURCE -DTARGET_BIG_ENDIAN=0)
 CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/version.h.in" "${CMAKE_BINARY_DIR}/version.h")
 
@@ -29,10 +27,12 @@ ADD_SUBDIRECTORY(../modules modules)
 
 ADD_EXECUTABLE(${PROJECT_NAME}
     softgun.c
+    
     aitc.c
     alsasound.c
     amdflash.c
     bus.c
+#    bus64.c
     cleanup.c
     clock.c
     configfile.c
@@ -43,6 +43,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     cycletimer.c
     debugvars.c
     diskimage.c
+#    docmillplus.c
     dram.c
     elfloader.c
     fbdisplay.c
@@ -62,6 +63,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     mmcdev.c
     mouse.c
     nand.c
+#    nand_micron.c
     nullsound.c
     parport_pc.c
     pc16550.c
@@ -70,6 +72,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     rfbserver.c
     rom.c
     rtc.c
+#    sdldisplay.c
     senseless.c
     serial.c
     sglib.c
@@ -85,6 +88,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     throttle.c
     usb_ohci.c
     usbdevice.c
+#    usbhub.c
     usbstdrq.c
     xy_hash.c
     xy_tree.c
@@ -93,6 +97,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     core/asyncmanager.c
     boards/boards.c
     )
+
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}/")
 
