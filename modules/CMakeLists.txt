@@ -12,10 +12,12 @@ ADD_COMPILE_OPTIONS(
   )
 
 # set message to color
-ADD_COMPILE_OPTIONS(
-  "$<$<C_COMPILER_ID:Clang>:-fdiagnostics-color=always>"
-  "$<$<C_COMPILER_ID:GNU>:-fdiagnostics-color=always>"
-  )
+if("Ninja" STREQUAL ${CMAKE_GENERATOR})
+  ADD_COMPILE_OPTIONS(
+    "$<$<C_COMPILER_ID:Clang>:-fdiagnostics-color=always>"
+    "$<$<C_COMPILER_ID:GNU>:-fdiagnostics-color=always>"
+    )
+endif()
 
 ADD_COMPILE_OPTIONS(-O9 -g -fomit-frame-pointer)
 ADD_DEFINITIONS(-D_GNU_SOURCE -DTARGET_BIG_ENDIAN=0)
