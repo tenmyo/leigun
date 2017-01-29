@@ -16,7 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the declaration of AsynchronousIO management functions,
 /// which is the light wrapper of the libuv.
 ///
@@ -70,7 +70,7 @@ typedef void (*AsyncManager_poll_cb)(PollHandle_t *handle, int status,
 //==============================================================================
 //= Functions
 //==============================================================================
-/// \name Conversions to Handle_t
+/// @name Conversions to Handle_t
 /// @{
 static inline Handle_t *AsyncManager_Stream2Handle(StreamHandle_t *stream) {
     return (Handle_t *)stream;
@@ -80,7 +80,7 @@ static inline Handle_t *AsyncManager_Poll2Handle(PollHandle_t *poll) {
 }
 /// @}
 
-/// \name Handle
+/// @name Handle
 /// @{
 int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb,
                        void *clientdata);
@@ -88,7 +88,7 @@ int AsyncManager_BufferSizeSend(Handle_t *handle, int *value);
 int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value);
 /// @}
 
-/// \name Stream
+/// @name Stream
 /// @{
 int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
                        AsyncManager_write_cb write_cb, void *clientdata);
@@ -99,7 +99,7 @@ int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb,
 int AsyncManager_ReadStop(StreamHandle_t *handle);
 /// @}
 
-/// \name TCP
+/// @name TCP
 /// @{
 int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
                                int nodelay,
@@ -107,7 +107,7 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
                                void *clientdata);
 /// @}
 
-/// \name Poll
+/// @name Poll
 /// @{
 PollHandle_t *AsyncManager_PollInit(int fd);
 int AsyncManager_PollStart(PollHandle_t *handle, int events,

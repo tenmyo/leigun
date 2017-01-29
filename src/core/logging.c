@@ -16,7 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the definition of the Logging facility functions, which
 /// provides a flexible event logging system for simulators.
 ///

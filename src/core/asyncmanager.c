@@ -16,7 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the definition of the AsynchronousIO management
 /// functions, which is light wrapper of the libuv.
 ///

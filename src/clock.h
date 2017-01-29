@@ -50,7 +50,7 @@ typedef struct Clock {
 void Clock_SetFreq(Clock_t * clock, uint64_t hz);
 ClockTrace_t *Clock_Trace(Clock_t * clock, ClockTraceProc * proc, void *traceData);
 void Clock_Untrace(Clock_t *, ClockTrace_t *);
-Clock_t *Clock_New(const char *format, ...) __attribute__ ((format(printf, 1, 2)));;
+Clock_t *Clock_New(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 
 /*
  ********************************************************************

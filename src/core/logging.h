@@ -16,7 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the declaration of the Logging facility functions, which
 /// provides a flexible event logging system for simulators.
 ///
@@ -58,26 +58,21 @@ extern int LOG_level;
 //==============================================================================
 //= Functions
 //==============================================================================
-#define LOG_Put(pri, tag, format, ...)                                         \
-    fprintf(stderr, "[%-5s]\t%s\t" format "\n", pri, tag, __VA_ARGS__);
-
-#define LOG_Log(level, pri, tag, format, ...)                                  \
+#define LOG_Log(level, pri, tag, ...)                                          \
     do {                                                                       \
         if (LOG_level <= level) {                                              \
-            LOG_Put(pri, tag, format, __VA_ARGS__);                            \
+            fprintf(stderr, "[%-5s]\t%s\t", pri, tag);                         \
+            fprintf(stderr, __VA_ARGS__);                                      \
+            fprintf(stderr, "\n");                                             \
         }                                                                      \
     } while (0)
 
-#define LOG_Verbose(tag, format, ...)                                          \
-    LOG_Log(LOG_LEVEL_VERBOSE, "VERB", tag, format, __VA_ARGS__);
-#define LOG_Debug(tag, format, ...)                                            \
-    LOG_Log(LOG_LEVEL_DEBUG, "DEBUG", tag, format, __VA_ARGS__);
-#define LOG_Info(tag, format, ...)                                             \
-    LOG_Log(LOG_LEVEL_INFO, "INFO", tag, format, __VA_ARGS__);
-#define LOG_Warn(tag, format, ...)                                             \
-    LOG_Log(LOG_LEVEL_WARN, "WARN", tag, format, __VA_ARGS__);
-#define LOG_Error(tag, format, ...)                                            \
-    LOG_Log(LOG_LEVEL_ERROR, "ERROR", tag, format, __VA_ARGS__);
+#define LOG_Verbose(tag, ...)                                                  \
+    LOG_Log(LOG_LEVEL_VERBOSE, "VERB", tag, __VA_ARGS__)
+#define LOG_Debug(tag, ...) LOG_Log(LOG_LEVEL_DEBUG, "DEBUG", tag, __VA_ARGS__)
+#define LOG_Info(tag, ...) LOG_Log(LOG_LEVEL_INFO, "INFO", tag, __VA_ARGS__)
+#define LOG_Warn(tag, ...) LOG_Log(LOG_LEVEL_WARN, "WARN", tag, __VA_ARGS__)
+#define LOG_Error(tag, ...) LOG_Log(LOG_LEVEL_ERROR, "ERROR", tag, __VA_ARGS__)
 
 
 #ifdef __cplusplus

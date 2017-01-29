@@ -69,7 +69,7 @@ typedef struct SigTrace {
 } SigTrace;
 
 void SignodesInit();
-SigNode *SigNode_New(const char *format, ...) __attribute__ ((format(printf, 1, 2)));;
+SigNode *SigNode_New(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 void SigNode_Delete(SigNode * signode);
 int SigNode_Set(SigNode * signode, int sigval);
 SigTrace *SigNode_Trace(SigNode * node, SigTraceProc * proc, void *clientData);
@@ -90,11 +90,11 @@ static inline int
 SigNode_State(SigNode * signode)
 {
 	return signode->selfval;
-};
+}
 
 SigNode *SigNode_FindDominant(SigNode * sig);
 void SigNode_Dump(SigNode * sig);
-SigNode *SigNode_Find(const char *format, ...) __attribute__ ((format(printf, 1, 2)));;
+SigNode *SigNode_Find(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 int SigEdge(SigNode * node);
 /*
  **************************************************************************
