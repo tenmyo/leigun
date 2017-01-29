@@ -4,28 +4,11 @@ PROJECT(modules
   LANGUAGES C
   )
 
-# ENABLE WARNINGS
-ADD_COMPILE_OPTIONS(
-  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
-  "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef;-Wno-unused>"
-  "$<$<C_COMPILER_ID:MSVC>:/W4>"
-  )
-
-# set message to color
-if("Ninja" STREQUAL ${CMAKE_GENERATOR})
-  ADD_COMPILE_OPTIONS(
-    "$<$<C_COMPILER_ID:Clang>:-fdiagnostics-color=always>"
-    "$<$<C_COMPILER_ID:GNU>:-fdiagnostics-color=always>"
-    )
-endif()
-
-ADD_DEFINITIONS(-D_GNU_SOURCE -DTARGET_BIG_ENDIAN=0)
-
 FILE(GLOB_RECURSE files ${PROJECT_SOURCE_DIR} *.c)
-ADD_LIBRARY(${PROJECT_NAME} SHARED ${files})
+ADD_LIBRARY(${PROJECT_NAME} MODULE ${files})
 
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/boards")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/../src")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/../src/boards")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/arm")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/avr8")
@@ -47,3 +30,34 @@ TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/device
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/c16x")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/printer")
+
+SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 99)
+SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD_REQUIRED ON)
+
+
+# ENABLE WARNINGS
+TARGET_COMPILE_OPTIONS(
+  ${PROJECT_NAME} PRIVATE
+  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
+  "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef>"
+  "$<$<C_COMPILER_ID:MSVC>:/W4>"
+  )
+
+# DISABLE FUSSY WARNINGS
+TARGET_COMPILE_OPTIONS(
+  ${PROJECT_NAME} PRIVATE
+  "$<$<C_COMPILER_ID:Clang>:-Wno-format-pedantic;-Wno-padded;-Wno-reserved-id-macro;-Wno-unused-parameter;-Wno-unused-macros>"
+  "$<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>"
+  "$<$<C_COMPILER_ID:MSVC>:>"
+  )
+
+# set message to color
+IF("Ninja" STREQUAL ${CMAKE_GENERATOR})
+  TARGET_COMPILE_OPTIONS(
+    ${PROJECT_NAME} PRIVATE
+    "$<$<C_COMPILER_ID:Clang>:-fdiagnostics-color=always>"
+    "$<$<C_COMPILER_ID:GNU>:-fdiagnostics-color=always>"
+    )
+ENDIF()
+
+TARGET_COMPILE_DEFINITIONS(${PROJECT_NAME} PRIVATE -D_GNU_SOURCE -DTARGET_BIG_ENDIAN=0)

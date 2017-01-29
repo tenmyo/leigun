@@ -62,6 +62,7 @@
 #  include "senseless.h"
 #endif
 
+#include "core/lib.h"
 #include "core/logging.h"
 
 typedef struct LoadChainEntry {
@@ -280,6 +281,11 @@ main(int argc, char *argv[])
 	uint64_t seedval;
 #endif
 	Board *board;
+	LOG_Info("MAIN", "%s", softgun_version);
+	if (LIB_Init() < 0) {
+		LOG_Error("MAIN", "LIB_Init %s.", "failed");
+		exit(1);
+	}
 	SGLib_Init();
 	CRC16_Init();
 #ifdef __unix
