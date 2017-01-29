@@ -40,7 +40,6 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 
@@ -63,6 +62,8 @@
 #  include "senseless.h"
 #endif
 
+#include "core/logging.h"
+
 typedef struct LoadChainEntry {
 	struct LoadChainEntry *next;
 	char *filename;
@@ -83,9 +84,9 @@ LoadChain_Append(const char *addr_string, const char *filename)
 	if (!addr_string) {
 		addr_string = "flash";
 	}
-	fprintf(stderr, "LCA \"%s\" \"%s\"\n", addr_string, filename);
+	LOG_Info("MAIN", "LCA \"%s\" \"%s\"", addr_string, filename);
 	if (stat(filename, &stat_buf) < 0) {
-		fprintf(stderr, "stat on file \"%s\" failed ", filename);
+		LOG_Error("MAIN", "stat on file \"%s\" failed ", filename);
 		perror("");
 		exit(1);
 	}
@@ -124,15 +125,15 @@ LoadChain_Resolve(void)
 			char *dest = Config_ReadVar("regions", lce->addr_string);
 			int n;
 			if (!dest) {
-				fprintf(stderr, "Load destination \"%s\" not understood\n",
+				LOG_Error("MAIN", "Load destination \"%s\" not understood",
 					lce->addr_string);
 				exit(1);
 			}
 			n = sscanf(dest, "0x%x 0x%x", &lce->addr, &lce->region_size);
 			if (n == 0) {
-				fprintf(stderr, "Bad address \"%s\" for \"%s\" in configfile\n",
+				LOG_Error("MAIN", "Bad address \"%s\" for \"%s\" in configfile",
 					dest, lce->addr_string);
-				fprintf(stderr, "Should be %s: <hexaddr> ?hex-maxsize?\n",
+				LOG_Error("MAIN", "Should be %s: <hexaddr> ?hex-maxsize?",
 					lce->addr_string);
 				exit(1);
 			}
@@ -178,7 +179,7 @@ read_configfile()
 		if (Config_ReadFile(configfpath) >= 0) {
 			return 0;
 		} else {
-			fprintf(stderr, "Can not read configfile %s\n", configfpath);
+			LOG_Error("MAIN", "Can not read configfile %s", configfpath);
 			exit(3255);
 		}
 	}
@@ -192,7 +193,7 @@ read_configfile()
 	if (Config_ReadFile(str) >= 0) {
 		return 0;
 	}
-	fprintf(stderr, "Error: Can Not read configuration file %s\n", str);
+	LOG_Error("MAIN", "Error: Can Not read configuration file %s", str);
 	exit(1843);
 }
 
@@ -209,7 +210,7 @@ parse_commandline(int argc, char *argv[])
 					    argc--;
 					    argv++;
 				    } else {
-					    fprintf(stderr, "Missing name of configuration file\n");
+					    LOG_Error("MAIN", "Missing name of configuration file");
 					    exit(74530);
 				    }
 				    break;
@@ -226,7 +227,7 @@ parse_commandline(int argc, char *argv[])
 					    argv += 1;
 #endif
 				    } else {
-					    fprintf(stderr, "Missing argument\n");
+					    LOG_Error("MAIN", "Missing argument");
 					    help();
 					    exit(245);
 				    }
@@ -244,14 +245,14 @@ parse_commandline(int argc, char *argv[])
 					    argc--;
 					    argv++;
 				    } else {
-					    fprintf(stderr, "Missing argument\n");
+					    LOG_Error("MAIN", "Missing argument");
 					    help();
 					    exit(245);
 				    }
 				    break;
 
 			    default:
-				    fprintf(stderr, "unknown argument \"%s\"\n", argv[0]);
+				    LOG_Error("MAIN", "unknown argument \"%s\"", argv[0]);
 				    help();
 				    exit(3245);
 			}
@@ -292,11 +293,11 @@ main(int argc, char *argv[])
 	read_configfile();
 #ifdef __unix
 	if (Config_ReadUInt64(&seedval, "global", "random_seed") >= 0) {
-		fprintf(stderr, "Random Seed from Configuration file: %" PRIu64 "\n", seedval);
+		LOG_Info("MAIN", "Random Seed from Configuration file: %" PRIu64, seedval);
 	} else {
 		gettimeofday(&tv, NULL);
 		seedval = tv.tv_usec + ((uint64_t) tv.tv_sec << 20);
-		fprintf(stderr, "Random Seed from time of day %" PRIu64 "\n", seedval);
+		LOG_Info("MAIN", "Random Seed from time of day %" PRIu64, seedval);
 	}
 	srand48(seedval);
 #endif
@@ -307,21 +308,22 @@ main(int argc, char *argv[])
 #endif
 	boardname = Config_ReadVar("global", "board");
 	if (!boardname) {
-		fprintf(stderr, "No Board selected in Configfile global section\n");
+		LOG_Error("MAIN", "No Board selected in Configfile global section");
 		exit(1);
 	}
 	board = Board_Find(boardname);
 	if (!board) {
+		LOG_Error("MAIN", "Board(%s) Not Found", boardname);
 		exit(1);
 	}
 	if (Board_DefaultConfig(board)) {
-		fprintf(stderr,"defaultconfig %s\n",Board_DefaultConfig(board));
+		LOG_Warn("MAIN", "defaultconfig %s",Board_DefaultConfig(board));
 		Config_AddString(Board_DefaultConfig(board));
 	}
 	Board_Create(board);
 	LoadChain_Resolve();
 	if (LoadChain_Load() < 0) {
-		fprintf(stderr, "Loading failed\n");
+		LOG_Error("MAIN", "Loading failed");
 		exit(1);
 	}
 #ifdef __unix

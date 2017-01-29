@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "boards.h"
+#include "core/logging.h"
 
 static Board *first_board = NULL;
 
@@ -49,9 +50,10 @@ Board_Find(const char *name)
 			return cursor;
 		}
 	}
-	fprintf(stderr, "Board \"%s\" does not exist.\nList of available boards:\n", name);
+	LOG_Error("BOARD", "Board \"%s\" does not exist.", name);
+	LOG_Info("BOARD", "List of available boards:");
 	for (cursor = first_board; cursor; cursor = cursor->next) {
-		fprintf(stderr, "Board %-15s: %s\n", cursor->name, cursor->description);
+		LOG_Info("BOARD", "Board %-15s: %s", cursor->name, cursor->description);
 	}
 	return NULL;
 }
@@ -59,6 +61,7 @@ Board_Find(const char *name)
 void
 Board_Register(Board * board)
 {
+	LOG_Info("BOARD", "Register %s", board->name);
 	board->next = first_board;
 	first_board = board;
 }
