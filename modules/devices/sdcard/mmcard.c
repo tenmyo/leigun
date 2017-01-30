@@ -34,7 +34,7 @@
  *
  *************************************************************************************************
  */
-
+#if 0
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -4656,3 +4656,12 @@ MMCard_New(const char *name)
 
 	return &card->mmcdev;
 }
+#else
+#include <stdlib.h>
+#include "mmcdev.h"
+MMCDev *
+MMCard_New(const char *name)
+{
+    return NULL;
+}
+#endif
