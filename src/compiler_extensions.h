@@ -45,7 +45,6 @@
 #if defined(_MSC_VER)
 // softgun
 #define NO_DEBUGGER
-#define NO_SHLIB
 #define NO_LOAD_BIN
 
 #define NO_ALSA

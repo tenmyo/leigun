@@ -42,7 +42,6 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     serial.c
     sglib.c
     sgstring.c
-    shlib.c
     signode.c
     sound.c
     spidevice.c

@@ -55,9 +55,6 @@
 #ifndef NO_DEBUGGER
 #include "debugvars.h"
 #endif
-#ifndef NO_SHLIB
-#  include "shlib.h"
-#endif
 #ifdef __unix__
 #  include "senseless.h"
 #endif
@@ -288,7 +285,7 @@ main(int argc, char *argv[])
 	}
 	SGLib_Init();
 	CRC16_Init();
-#ifdef __unix
+#ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
 	parse_commandline(argc - 1, argv + 1);
@@ -309,9 +306,6 @@ main(int argc, char *argv[])
 #endif
 	SignodesInit();
 	ClocksInit();
-#ifndef NO_SHLIB
-	Shlibs_Init();
-#endif
 	boardname = Config_ReadVar("global", "board");
 	if (!boardname) {
 		LOG_Error("MAIN", "No Board selected in Configfile global section");
