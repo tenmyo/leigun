@@ -1,0 +1,4 @@
+The i.MX21ADS board is a development board from Freescale using the i.MX21 ARM926ejs CPU.
+The emulator includes a CS8900 Ethernet controller and an SD-Card Slot.
+For an example configuration file look in the "configs" subdirectory of softgun.
+This board and the emulator are tested to run linux-2.6.16.20 and u-boot-1.1.4.

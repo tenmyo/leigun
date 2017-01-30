@@ -1,0 +1,413 @@
+Softgun - A Software ARM 
+---------------------------
+
+Softgun is intended to emulate complete embedded Systems.
+Boards with Netsilicon NS9750, Freescale i.MX21, Atmel
+AT91RM92000, AT91SAM9263, ATMega644, R8C/M16C/M32C/RX are 
+supported.
+
+Compilation
+-------------
+Softgun requires a little Endian Linux machine  with a 
+GNU Compiler installed. (It is known to work on IA32, AMD64 
+PowerPC and ARM)
+Type:
+
+make
+make install
+
+For using the network you must give user of the emulator access
+to /dev/net/tun and allow the user to execute ifconfig using "sudo".
+Unfortunately newer linux kernels require the additional programm
+sg_tunctl to create the virtual network interfaces.
+Here a configuration example line for your /etc/sudoers
+
+jkarrer   ALL=NOPASSWD: /sbin/ifconfig
+jkarrer   ALL=NOPASSWD: /sbin/brctl
+jkarrer   ALL=NOPASSWD: /usr/local/bin/sg_tunctl
+
+
+Usage
+---------
+Create a directory for softgun configuration files called ~/.softgun.
+Select the configuration file for your board from the directory
+"configs" and copy it to the directory ~/.softgun/
+Edit the ~/.softgun/yourboard.sg. It is required to change at least the path
+for storing the diskimages. You have to create an empty directory
+for the diskimages.
+Run the emulator:
+
+softgun yourboard -l flash flash.img
+
+FS-Forth UNC90 Real world example:
+------------------------------------
+Use the unc90 configuration:
+
+# mkdir ~/.softgun
+# cp softgun/configs/unc90.sg ~/.softgun/
+
+Edit the diskimage Path in ~/.softgun/unc90.sg
+
+# mkdir ~user/unc90images
+# vi ~/.softgun 
+
+imagedir: /home/user/unc90images
+
+Now start softgun. On first startup you have to load at least a bootloader 
+into the flash. Here we load all (boot,kernel,rootfs). So insert the LxNETES-3.2 
+CD-Rom from FS-Forth which contains precompiled images.
+
+# softgun  -l uboot  /cdrom/images/unc90dev/u-boot-unc90dev.bin \
+           -l kernel /cdrom/images/unc90dev/uImage-unc90dev \
+           -l rootfs /cdrom/images/unc90dev/rootfs-unc90dev.jffs2 \
+	   unc90
+
+Byteorder
+---------------
+
+"softgun" is the binary for little endian memory system and
+works with CPU in little endian or big endian mode.
+
+The ARM CPU emulation can run in both byteorders.
+Changing the endianess of  the CPU means that the CPU selects different byte
+lanes for 16Bit and 8Bit accesses. If the CPU runs in big endian this
+does NOT mean that the memory system is big endian. 
+
+Running Big endian linux
+------------------------
+The ARM core of the real NS9750 goes to bigendian mode when the gpio 44 pin
+is low during boot. In the emulator this is done in the configuration
+file:    
+
+[ns9750]
+gpio44:         0       # Big Endian
+
+Normally you want to run a big endian linux on softgun with a little
+endian memory system. You have to store a big endian image in a little
+endian memory. This means
+you have to swap byteorder before or during loading. This is not a bug o
+softgun. You have to do the same thing if you use a JTAG-programmer
+which uses the Boundary scan mode. To avoid work, softgun can
+convert the files which are loaded from the commandline to the memory or to
+the flash image (binary, Intel-Hex or Srecord). 
+The following configuration lines should be used whenever the memory system
+Byteorder of your emulated system differs from the 32 Bit CPU Byteorder:
+
+[loader]
+swap32: 1 
+
+
+Select Board
+------------
+softgun can emulate different Boards. You can select the
+board in the global section of the config file:
+
+[global]
+board: NS9750DEV 
+
+If you want to have a list of available boards, select some
+nonsense. softgun will then display an error message with
+a list of available boards
+
+Every Board has a builtin default configuration. So you need
+not specify RAM size and Flash Types if you want to use
+the default types/sizes.
+
+Loading Motorola S-Records
+---------------------------
+The filename should have the ending .mot
+Start Addresses (S7, S8 and S9 records) found in S-Record file 
+are currently ignored. Example:
+
+softgun programm.mot
+
+Loading Intel Hex Records
+---------------------------
+The filename should have the ending .hex
+Start Addresses found in Hex-Record file are currently ignored 
+Segmented address records are not implemented
+Example:
+
+softgun programm.hex
+
+Current features
+---------------------
+
+ARM9 32Bit Instruction Set and DSP Extensions
+MMU with 3 Entry first level TLB and 3*128 second level TLB and halt instruction
+ARM PL172 Memory Controller
+Serial line emulation redirected to stdin/stdout or real serial
+NS9750 timer emulation in 32 Bit mode with interrupts
+NS9750/NS9360 GPIO Port emulation
+NS9750 OHCI USB-Controller not yet working but detected by Linux
+NS9750 Interrupt Controller Emulation
+NS9750 Ethernet Controller 
+i.MX21 LCD controller
+i.MX21 Clock and Reset module
+i.MX21 DMA controller (downward direction missing)
+i.MX21 GPIO module
+i.MX21 SD-Card Controller
+i.MX21 Timers
+STE10/100 Tulip compatible Ethernet controller 
+Davicom DM9000 Ethernet controller 
+SJA-1000 CAN controller emulation in PeliCAN mode
+AMD29LV640 and many other AMD compatible NOR Flash chips with writeback to file
+I2C-Bus Emulation using GPIO ports with timing check
+NS9750 CPU internal I2C master and slave
+M24Cxx I2C-EEProms
+PCF8563 Real time clock
+PCF8591 and ADS7828 A/D Converters
+PCF8574/8575 I2C IO-Expanders
+PCA9544 I2C Multiplexer
+LM75 Temperature Sensor (without National Semiconductor bug)
+ARM PL190 Vectored Interrupt controller
+Philips LPC2106 Timers
+
+Emulation runs at 21MHz per Intel Celeron GHz
+
+Missing Features
+----------------
+Debugger Interface and GUI
+BBus DMA Controller
+Complete the timers (16 Bit mode is missing for example)
+Big Endian target support
+NS9750 LCD-Display Controller emulation
+ELF-reader
+NS9750 Builtin I2C-Controller
+Big Endian host support
+Add USB-Devices and complete the OHCI
+MMU Modified Virtual address support (MVA)
+Clean implementation of 8 Bit and 16 Bit IO-accesses to 32 Bit registers
+Checks for correct DRAM setup because the emulator works with every timing.
+
+
+Ethernet Emulation:
+-----------------------
+
+Ethernet emulation is only working when the emulator is
+running on Linux.
+
+By default the NS9750 builtin Ethernet Controller and
+three STE10/100 Tulip Compatible PCI-Ethernet Controllers
+are emulated.
+The  Linux TAP Ethernet Tunnel /dev/net/tun is used.  
+Make sure that this device file exists and the emulator user
+has the right to use it. Make sure that the driver tun.ko coming with the 
+linux kernel is loaded.  
+
+For every emulated Ethernet Card there will be two IP addresses. One on Host side and
+one in the emulated environment.
+Host side IP-Addresses are configured in the configfile .emuconfig.  
+For SUSE Linux 9.3 you have to disable the firewall for the emulator interfaces. 
+On Emulator side the IP addresses have to be configured using the
+OS running in the emulator. If the emulator runs linux this is done 
+with ifconfig in the shell running in the emulator.
+
+Example: 
+Add the following section to the configfile:
+
+[ns9750_eth]
+host_ip: 192.168.81.3
+host_ifname: emu0
+
+After booting the emulator login as root and type:
+
+root@emu # ifconfig eth0 192.168.81.10
+root@emu # ping -c 1 192.168.81.3
+
+Bridged networking
+------------------
+Softgun can attach to a already existing bridge in
+your Linux Host. This is useful if you want to reach
+the emulator not only from the host machine, or if you
+want to connect many emulators to a cluster. 
+Using a bridge only one IP address for the host is required
+(or none if you only want to create a cluster of emulators and you 
+do not want to reach the host from the emulator) 
+and one IP address in the OS on emulator for every emulated Interface.
+The following example shows how to configure a host
+with IP address 192.168.2.3 and an emulator with 
+Address 192.168.2.4 to appear on your LAN using eth0.
+
+1. Step: Prepare your host machine
+--------
+- Install the linux bridge_utils.
+- Create a bridge with 
+
+#root@host # brctl addbr br0
+
+- Configure Interfaces which should be part 
+  of the bridge:
+
+root@host # ifconfig eth0 0.0.0.0 up
+root@host # brctl addif br0 eth0
+root@host # ifconfig br0 192.168.2.3 up
+
+2. Step: attach your emulator to the bridge
+--------
+Add to the emulator configuration file:
+
+[ns9750_eth]
+host_ifname: emu0
+host_ip: 0.0.0.0
+bridge: br0
+
+3. Step
+-------
+Start the emulator and configure the interface in 
+the emulator to be in the same subnet like the host. 
+Under Linux this is done in the emulator shell:
+
+root@emu:/ # ifconfig eth0 192.168.2.4
+
+
+SJA1000 CAN Controller Emulation
+--------------------------------
+The SJA-1000 CAN controller emulator is accessible through
+/dev/canX in the emulator. From the host system you can 
+send and receive the CAN messages from/to a TCP-Server socket. 
+The port numbers are given in the configuration file:
+
+[lacc_can0]
+port: 8530
+
+[lacc_can1]
+port: 8531
+
+System Clock
+------------
+The timing source for the emulated System is the CPU cycle counter of the
+emulated CPU (target).
+During the ARM's MMU wait-for-interrupt instruction the system runs with
+the full speed of the real CPU. During other instructions the emulator is
+slower. The wait for Interrupt function catches up a maximum of 1/4 of a
+second when system has fallen behind the speed of the real device.
+
+
+Permanent Flash storage and EEPROM storage
+-------------------------------------------
+There is one storage directory for all images of your Flash chips and
+EEProms in the global configuration section. You have to create this
+directory manually
+
+[global]   
+imagedir: /home/user/softgun_images 
+
+to the .emuconfig 
+On first startup one file per flash/eeprom will be created. The file
+has the same name like the chip instance.  
+
+Images which are loaded to the flash from the commandline will overwrite 
+the old contents of your flash partially. This way you can update your basic
+ system while keeping the rest of the flash.
+
+Flash statistics
+----------------
+Flash statistics is useful for estimating the livetime of your NOR flash device.
+Flash statistics is written into your diskimage directory.
+
+The file flash1.stat contains the erase counters and will be updated whenever a 
+sector is erased which contains at least one bit which is 0. 
+The file is an array of unsigned 32Bit Integers in host byte order. There is
+one integer for each sector. 
+You can read the statistics file with a hexdumper:
+
+od -tx4 -Ax flash1.stat
+
+Flash Types
+-----------
+Available types:
+ AM29LV800BT     - size 1024k
+ AM29LV320MB     - size 4096k
+ M29W320DB       - size 4096k
+ MX29LV800CB     - size 1024k
+ MX29LV800CT     - size 1024k
+ AM29LV320ML     - size 4096k
+ AM29LV640ML     - size 8192k
+ MBM29LV650UE    - size 8192k
+ AM29LV128ML     - size 16384k
+ AM29LV256ML     - size 32768k
+ S29GL256MR2    - size 32768k
+ S29GL256MR4    - size 32768k
+ AM29BDS128H     - size 16384k
+ S29GL128NR2    - size 16384k
+ S29GL256NR2    - size 32768k
+ S29GL512NR2    - size 32768k
+ MX29LV640BU     - size 8192k
+ S29AL016DT      - size 2048k
+ S29AL016DB      - size 2048k
+
+The Chips are always used in 16 Bit mode, a bank
+can have one (1x16) or two chips (2x16).
+When more than one chip per bank is used the 
+Flash image and the Flash statistics are interleaved
+
+Configuration Example:
+
+[flash1]
+type: AM29LV640ML 
+chips: 1
+
+Serial Interfaces
+-----------------
+The default configuration file connects serial-A to stdin:
+
+[ns9750] 
+serialA: /dev/stdin
+
+Do not connect more than one serial emulation to the same
+device.
+
+Debugging with gdb
+-------------------
+softgun listens on gdb remote protocol when enabled in config file.
+GDB interface implements only the minimal required functions. 
+You need gdb-6.8 build for arm:
+
+configure --target arm-elf
+make
+
+Configuration file example:
+
+[gdebug]
+host: 127.0.0.1
+port: 4711
+
+First start the emulator, then connect with gdb:
+
+# gdb ~/linux.arm/vmlinux
+
+GNU gdb 6.8
+Copyright 2004 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "--host=i686-pc-linux-gnu --target=arm-linux-elf"...
+
+(gdb) target remote :4711
+Remote debugging using :4711
+<Press Ctrl-C here to stop target>
+0xc033a018 in cpu_arm926_do_idle ()
+(gdb) disas
+Dump of assembler code for function cpu_arm926_do_idle:
+0xc033a000 <cpu_arm926_do_idle+0>:      mov     r0, #0  ; 0x0
+0xc033a004 <cpu_arm926_do_idle+4>:      mrc     15, 0, r1, cr1, cr0, {0}
+0xc033a008 <cpu_arm926_do_idle+8>:      mcr     15, 0, r0, cr7, cr10, {4}
+0xc033a00c <cpu_arm926_do_idle+12>:     bic     r2, r1, #4096   ; 0x1000
+0xc033a010 <cpu_arm926_do_idle+16>:     mcr     15, 0, r2, cr1, cr0, {0}
+0xc033a014 <cpu_arm926_do_idle+20>:     mcr     15, 0, r0, cr7, cr0, {4}
+0xc033a018 <cpu_arm926_do_idle+24>:     mcr     15, 0, r1, cr1, cr0, {0}
+0xc033a01c <cpu_arm926_do_idle+28>:     mov     pc, lr
+End of assembler dump.
+(gdb) detach
+(gdb) quit
+
+
+Security
+----------
+When you allow the User to modify your network using ifconfig he can mess up your
+network configuration. Tcp connection to the gdb interface and the debugshell 
+and connection to the CAN-Bus emulator socket are not encrypted and not 
+protected with a password. Best configure them to allow connections only from
+localhost (host: 127.0.0.1)  and disable them if you don't need them.

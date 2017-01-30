@@ -1,0 +1,44 @@
+[global]
+board: ETH-M32 
+imagedir: /home/user/emulator/ethm32
+cpu_clock: 16000000 
+
+[regions]
+flash: 0
+
+[avr]
+variant: ATMega644
+
+[usart0]
+#type: ptmx
+#link: /tmp/ethm32
+file: stdin
+
+[cli]
+host: 127.0.0.1 
+port: 4712
+
+
+[lcd0]
+rows: 2
+cols: 16
+colorset: 1
+backend: rfbserver
+host: 127.0.0.1
+port: 5903
+width: 310
+height: 75
+startupdelay: 0
+start: vncviewer localhost:5903
+exit_on_close: 1
+
+#[card0]
+#type: auto_sd 
+
+[spi0]
+zerodelay: 0
+parallel: 0
+
+[enc28j60]
+host_ifname: ethm32 
+host_ip: 192.168.80.3

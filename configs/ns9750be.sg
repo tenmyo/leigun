@@ -1,0 +1,75 @@
+[global]
+board: LACC
+imagedir: /home/user/images_be/
+cpu_clock: 200000000
+
+[loader]
+swap32: 1
+
+[region]
+flash: 0x50000000 0x02000000
+
+[ns9750_eth]
+host_ip: 192.168.80.3 
+host_ifname: emu0
+#bridge: br0
+
+[ste_0]
+host_ip: 192.168.81.3
+host_ifname: emu1
+
+[ste_1]
+host_ip: 192.168.82.3
+host_ifname: emu2
+
+[ste_2]
+host_ip: 192.168.83.3
+host_ifname: emu3
+
+[lacc_can0]
+port: 8530
+
+[lacc_can1]
+port: 8531
+
+#[gdebug]
+#host: 127.0.0.1 
+#port: 4711
+
+# ------------------------------------------------------
+# Memory Chips: Use board default when commented out
+# ------------------------------------------------------
+
+[dram0]
+size: 32M
+
+[dram1]
+size: 32M
+
+[flash1]
+type: AM29LV256ML
+chips:  2
+
+[ns9750]
+serialA:	stdin
+Revision:	0
+rtck:	  	1	# PCI Arbiter
+boot_strap_0:	0	# Byte Lane as R/W
+boot_strap_1:   1	# PCI Mode	
+boot_strap_2:	0	# Command delayed mode	
+boot_strap_3:	0	# Flash 16 Bit Mode
+boot_strap_4:	0
+gpio49:		1	# CS is active low
+gpio44:		0	# Little Endian
+reset_done:	1	# Boot from flash
+gpio19:		0	# PLL Bypassed
+gpio17:		1	# PLL Multiplier 27
+gpio12:		1
+gpio10:		1
+gpio8:		1
+gpio4:		1
+gpio2:		0	# PLL Divide by 2
+gpio0:		1
+gpio24:		1 	# Don't know for what these fields are 
+gpio22:		1
+gpio7:		1	# 0 = Rescue system mode

@@ -1,0 +1,6 @@
+Deskjet 460 PCL3GUI interpreter
+-------------------------------
+
+This directory contains the source code for a PCL3GUI to PPM/PNG converter.
+The converter can also be used as a standalone application by using the
+pcl3gui2png binary.

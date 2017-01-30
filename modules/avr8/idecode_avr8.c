@@ -1,0 +1,1001 @@
+/*
+ *************************************************************************************************
+ *
+ * Atmel AVR8 instruction decoder 
+ *
+ * State: working 
+ *
+ * Copyright 2009 Jochen Karrer. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are
+ * permitted provided that the following conditions are met:
+ *
+ *   1. Redistributions of source code must retain the above copyright notice, this list of
+ *       conditions and the following disclaimer.
+ *
+ *   2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *       of conditions and the following disclaimer in the documentation and/or other materials
+ *       provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY Jochen Karrer ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those of the
+ * authors and should not be interpreted as representing official policies, either expressed
+ * or implied, of Jochen Karrer.
+ *
+ *************************************************************************************************
+ */
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "instructions_avr8.h"
+#include "idecode_avr8.h"
+#include "sgstring.h"
+
+AVR8_InstructionProc **avr8_iProcTab = NULL;
+AVR8_Instruction **avr8_instrTab = NULL;
+
+/*
+ **********************************************************
+ * Instruction List with opcodes and masks
+ * v1
+ **********************************************************
+ */
+static AVR8_Instruction instrlist[] = {
+    {
+     .opcode = 0x1c00,
+     .mask = 0xfc00,
+     .name = "avr8_adc",
+     .iproc = avr8_adc,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0c00,
+     .mask = 0xfc00,
+     .name = "avr8_add",
+     .iproc = avr8_add,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9600,
+     .mask = 0xff00,
+     .name = "avr8_adiw",
+     .iproc = avr8_adiw,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x2000,
+     .mask = 0xfc00,
+     .name = "avr8_and",
+     .iproc = avr8_and,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x7000,
+     .mask = 0xf000,
+     .name = "avr8_andi",
+     .iproc = avr8_andi,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9405,
+     .mask = 0xfe0f,
+     .name = "avr8_asr",
+     .iproc = avr8_asr,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9488,
+     .mask = 0xff8f,
+     .name = "avr8_bclr",
+     .iproc = avr8_bclr,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xf800,
+     .mask = 0xfe08,
+     .name = "avr8_bld",
+     .iproc = avr8_bld,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xf400,
+     .mask = 0xfc00,
+     .name = "avr8_brbc",
+     .iproc = avr8_brbc,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xf000,
+     .mask = 0xfc00,
+     .name = "avr8_brbs",
+     .iproc = avr8_brbs,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9598,
+     .mask = 0xffff,
+     .name = "avr8_break",
+     .iproc = avr8_break,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9408,
+     .mask = 0xff8f,
+     .name = "avr8_bset",
+     .iproc = avr8_bset,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xfa00,
+     .mask = 0xfe08,
+     .name = "avr8_bst",
+     .iproc = avr8_bst,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x940e,
+     .mask = 0xfe0e,
+     .name = "avr8_call",
+     .iproc = avr8_call,
+     .cycles = 4,
+     .length = 2,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x940e,
+     .mask = 0xfe0e,
+     .name = "avr8_call_24",
+     .iproc = avr8_call_24,
+     .cycles = 4,
+     .length = 2,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9800,
+     .mask = 0xff00,
+     .name = "avr8_cbi",
+     .iproc = avr8_cbi,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9400,
+     .mask = 0xfe0f,
+     .name = "avr8_com",
+     .iproc = avr8_com,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x1400,
+     .mask = 0xfc00,
+     .name = "avr8_cp",
+     .iproc = avr8_cp,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0400,
+     .mask = 0xfc00,
+     .name = "avr8_cpc",
+     .iproc = avr8_cpc,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x3000,
+     .mask = 0xf000,
+     .name = "avr8_cpi",
+     .iproc = avr8_cpi,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x1000,
+     .mask = 0xfc00,
+     .name = "avr8_cpse",
+     .iproc = avr8_cpse,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x940a,
+     .mask = 0xfe0f,
+     .name = "avr8_dec",
+     .iproc = avr8_dec,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9519,
+     .mask = 0xffff,
+     .name = "avr8_eicall",
+     .iproc = avr8_eicall,
+     .cycles = 4,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9419,
+     .mask = 0xffff,
+     .name = "avr8_eijmp",
+     .iproc = avr8_eijmp,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x95d8,
+     .mask = 0xffff,
+     .name = "avr8_elpm1",
+     .iproc = avr8_elpm1,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9006,
+     .mask = 0xfe0f,
+     .name = "avr8_elpm2",
+     .iproc = avr8_elpm2,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9007,
+     .mask = 0xfe0f,
+     .name = "avr8_elpm3",
+     .iproc = avr8_elpm3,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x2400,
+     .mask = 0xfc00,
+     .name = "avr8_eor",
+     .iproc = avr8_eor,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0308,
+     .mask = 0xff88,
+     .name = "avr8_fmul",
+     .iproc = avr8_fmul,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0380,
+     .mask = 0xff88,
+     .name = "avr8_fmuls",
+     .iproc = avr8_fmuls,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0388,
+     .mask = 0xff88,
+     .name = "avr8_fmulsu",
+     .iproc = avr8_fmulsu,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9509,
+     .mask = 0xffff,
+     .name = "avr8_icall",
+     .iproc = avr8_icall,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x9509,
+     .mask = 0xffff,
+     .name = "avr8_icall_24",
+     .iproc = avr8_icall_24,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9409,
+     .mask = 0xffff,
+     .name = "avr8_ijmp",
+     .iproc = avr8_ijmp,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xb000,
+     .mask = 0xf800,
+     .name = "avr8_in",
+     .iproc = avr8_in,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9403,
+     .mask = 0xfe0f,
+     .name = "avr8_inc",
+     .iproc = avr8_inc,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x940c,
+     .mask = 0xfe0e,
+     .name = "avr8_jmp",
+     .iproc = avr8_jmp,
+     .cycles = 3,
+     .length = 2,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x940c,
+     .mask = 0xfe0e,
+     .name = "avr8_jmp_24",
+     .iproc = avr8_jmp_24,
+     .cycles = 3,
+     .length = 2,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x900c,
+     .mask = 0xfe0f,
+     .name = "avr8_ld1",
+     .iproc = avr8_ld1,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x900d,
+     .mask = 0xfe0f,
+     .name = "avr8_ld2",
+     .iproc = avr8_ld2,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x900e,
+     .mask = 0xfe0f,
+     .name = "avr8_ld3",
+     .iproc = avr8_ld3,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9009,
+     .mask = 0xfe0f,
+     .name = "avr8_ldy2",
+     .iproc = avr8_ldy2,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x900a,
+     .mask = 0xfe0f,
+     .name = "avr8_ldy3",
+     .iproc = avr8_ldy3,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x8008,
+     .mask = 0xd208,
+     .name = "avr8_ldy4",
+     .iproc = avr8_ldy4,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9001,
+     .mask = 0xfe0f,
+     .name = "avr8_ldz2",
+     .iproc = avr8_ldz2,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9002,
+     .mask = 0xfe0f,
+     .name = "avr8_ldz3",
+     .iproc = avr8_ldz3,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x8000,
+     .mask = 0xd208,
+     .name = "avr8_ldz4",
+     .iproc = avr8_ldz4,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xe000,
+     .mask = 0xf000,
+     .name = "avr8_ldi",
+     .iproc = avr8_ldi,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9000,
+     .mask = 0xfe0f,
+     .name = "avr8_lds",
+     .iproc = avr8_lds,
+     .cycles = 2,
+     .length = 2,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x95c8,
+     .mask = 0xffff,
+     .name = "avr8_lpm1",
+     .iproc = avr8_lpm1,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x95c8,
+     .mask = 0xffff,
+     .name = "avr8_lpm1_24",
+     .iproc = avr8_lpm1_24,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9004,
+     .mask = 0xfe0f,
+     .name = "avr8_lpm2",
+     .iproc = avr8_lpm2,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x9004,
+     .mask = 0xfe0f,
+     .name = "avr8_lpm2_24",
+     .iproc = avr8_lpm2_24,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9005,
+     .mask = 0xfe0f,
+     .name = "avr8_lpm3",
+     .iproc = avr8_lpm3,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x9005,
+     .mask = 0xfe0f,
+     .name = "avr8_lpm3_24",
+     .iproc = avr8_lpm3_24,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9406,
+     .mask = 0xfe0f,
+     .name = "avr8_lsr",
+     .iproc = avr8_lsr,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x2c00,
+     .mask = 0xfc00,
+     .name = "avr8_mov",
+     .iproc = avr8_mov,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0100,
+     .mask = 0xff00,
+     .name = "avr8_movw",
+     .iproc = avr8_movw,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9c00,
+     .mask = 0xfc00,
+     .name = "avr8_mul",
+     .iproc = avr8_mul,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0200,
+     .mask = 0xff00,
+     .name = "avr8_muls",
+     .iproc = avr8_muls,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0300,
+     .mask = 0xff88,
+     .name = "avr8_mulsu",
+     .iproc = avr8_mulsu,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9401,
+     .mask = 0xfe0f,
+     .name = "avr8_neg",
+     .iproc = avr8_neg,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0000,
+     .mask = 0xffff,
+     .name = "avr8_nop",
+     .iproc = avr8_nop,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x2800,
+     .mask = 0xfc00,
+     .name = "avr8_or",
+     .iproc = avr8_or,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x6000,
+     .mask = 0xf000,
+     .name = "avr8_ori",
+     .iproc = avr8_ori,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xb800,
+     .mask = 0xf800,
+     .name = "avr8_out",
+     .iproc = avr8_out,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x900f,
+     .mask = 0xfe0f,
+     .name = "avr8_pop",
+     .iproc = avr8_pop,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x920f,
+     .mask = 0xfe0f,
+     .name = "avr8_push",
+     .iproc = avr8_push,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xd000,
+     .mask = 0xf000,
+     .name = "avr8_rcall",
+     .iproc = avr8_rcall,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0xd000,
+     .mask = 0xf000,
+     .name = "avr8_rcall_24",
+     .iproc = avr8_rcall_24,
+     .cycles = 3,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9508,
+     .mask = 0xffff,
+     .name = "avr8_ret",
+     .iproc = avr8_ret,
+     .cycles = 4,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x9508,
+     .mask = 0xffff,
+     .name = "avr8_ret_24",
+     .iproc = avr8_ret_24,
+     .cycles = 4,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0x9518,
+     .mask = 0xffff,
+     .name = "avr8_reti",
+     .iproc = avr8_reti,
+     .cycles = 4,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC16,
+     },
+    {
+     .opcode = 0x9518,
+     .mask = 0xffff,
+     .name = "avr8_reti_24",
+     .iproc = avr8_reti_24,
+     .cycles = 4,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_PC24,
+     },
+    {
+     .opcode = 0xc000,
+     .mask = 0xf000,
+     .name = "avr8_rjmp",
+     .iproc = avr8_rjmp,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9407,
+     .mask = 0xfe0f,
+     .name = "avr8_ror",
+     .iproc = avr8_ror,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x0800,
+     .mask = 0xfc00,
+     .name = "avr8_sbc",
+     .iproc = avr8_sbc,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x4000,
+     .mask = 0xf000,
+     .name = "avr8_sbci",
+     .iproc = avr8_sbci,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9a00,
+     .mask = 0xff00,
+     .name = "avr8_sbi",
+     .iproc = avr8_sbi,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9900,
+     .mask = 0xff00,
+     .name = "avr8_sbic",
+     .iproc = avr8_sbic,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9b00,
+     .mask = 0xff00,
+     .name = "avr8_sbis",
+     .iproc = avr8_sbis,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9700,
+     .mask = 0xff00,
+     .name = "avr8_sbiw",
+     .iproc = avr8_sbiw,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xfc00,
+     .mask = 0xfe08,
+     .name = "avr8_sbrc",
+     .iproc = avr8_sbrc,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0xfe00,
+     .mask = 0xfe08,
+     .name = "avr8_sbrs",
+     .iproc = avr8_sbrs,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9588,
+     .mask = 0xffff,
+     .name = "avr8_sleep",
+     .iproc = avr8_sleep,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x95e8,
+     .mask = 0xffff,
+     .name = "avr8_spm",
+     .iproc = avr8_spm,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x920c,
+     .mask = 0xfe0f,
+     .name = "avr8_st1",
+     .iproc = avr8_st1,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x920d,
+     .mask = 0xfe0f,
+     .name = "avr8_st2",
+     .iproc = avr8_st2,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x920e,
+     .mask = 0xfe0f,
+     .name = "avr8_st3",
+     .iproc = avr8_st3,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9209,
+     .mask = 0xfe0f,
+     .name = "avr8_sty2",
+     .iproc = avr8_sty2,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x920a,
+     .mask = 0xfe0f,
+     .name = "avr8_sty3",
+     .iproc = avr8_sty3,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x8208,
+     .mask = 0xd208,
+     .name = "avr8_sty4",
+     .iproc = avr8_sty4,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9201,
+     .mask = 0xfe0f,
+     .name = "avr8_stz2",
+     .iproc = avr8_stz2,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9202,
+     .mask = 0xfe0f,
+     .name = "avr8_stz3",
+     .iproc = avr8_stz3,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x8200,
+     .mask = 0xd208,
+     .name = "avr8_stz4",
+     .iproc = avr8_stz4,
+     .cycles = 2,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9200,
+     .mask = 0xfe0f,
+     .name = "avr8_sts",
+     .iproc = avr8_sts,
+     .cycles = 2,
+     .length = 2,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x1800,
+     .mask = 0xfc00,
+     .name = "avr8_sub",
+     .iproc = avr8_sub,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x5000,
+     .mask = 0xf000,
+     .name = "avr8_subi",
+     .iproc = avr8_subi,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x9402,
+     .mask = 0xfe0f,
+     .name = "avr8_swap",
+     .iproc = avr8_swap,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+    {
+     .opcode = 0x95a8,
+     .mask = 0xffff,
+     .name = "avr8_wdr",
+     .iproc = avr8_wdr,
+     .cycles = 1,
+     .length = 1,
+     .cpuVariant = AVR8_VARIANT_ALL,
+     },
+};
+
+void
+AVR8_IDecoderNew(uint32_t cpuVariant)
+{
+    uint32_t icode;
+    int j;
+    int num_instr = sizeof(instrlist) / sizeof(AVR8_Instruction);
+    avr8_iProcTab = sg_calloc(sizeof(AVR8_InstructionProc *) * 0x10000);
+    avr8_instrTab = sg_calloc(sizeof(AVR8_Instruction *) * 0x10000);
+    for (icode = 0; icode < 65536; icode++) {
+        for (j = num_instr - 1; j >= 0; j--) {
+            AVR8_Instruction *instr = &instrlist[j];
+            if ((instr->cpuVariant & cpuVariant) != 0) {
+                if ((icode & instr->mask) == instr->opcode) {
+                    if (avr8_iProcTab[icode]) {
+                        fprintf(stdout, "conflict at %04x %s\n", icode, instr->name);
+                    } else {
+                        avr8_iProcTab[icode] = instr->iproc;
+                        avr8_instrTab[icode] = instr;
+                    }
+                }
+            }
+        }
+        if (avr8_iProcTab[icode] == NULL) {
+            avr8_iProcTab[icode] = avr8_undef;
+        }
+    }
+    fprintf(stderr, "AVR8 instruction decoder with %d Instructions created\n", num_instr);
+}
+
+#ifdef TEST
+int
+main()
+{
+    int i;
+    AVR8_IDecoderNew();
+    int num_instr = sizeof(instrlist) / sizeof(AVR8_Instruction);
+    for (i = 0; i < num_instr; i++) {
+        AVR8_Instruction *instr = &instrlist[i];
+        fprintf(stdout,
+                "void\n%s(void) {\n\tfprintf(stderr,\"%s not implemented\\n\");\n}\n\n",
+                instr->name, instr->name);
+    }
+
+}
+#endif

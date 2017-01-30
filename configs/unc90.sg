@@ -1,0 +1,37 @@
+[global]
+board: UNC90 
+imagedir: /home/user/emulator/unc90
+random_seed: 12345678901234
+dbgwait: 0
+
+[emac]
+host_ip: 192.168.80.3
+host_ifname: unc90
+
+[regions]
+flash:     0x10000000 0x01000000
+uboot:	   0x10000000 0x00040000
+kernel:    0x10040000 0x00300000
+rootfs:    0x10340000 0x00300000
+flash_rw:  0x10640000 0x00200000
+flash_ro:  0x10840000 0x00200000
+flash2_rw: 0x10a40000 0x00200000
+unused:    0x10c40000 0x003c0000
+
+[gdebug]
+host: 127.0.0.1
+port: 4711
+
+# ------------------------------------------------------
+# Memory Chips: Use board default when commented out
+# ------------------------------------------------------
+
+#[dram0]
+#size: 32M
+
+[flash0]
+type: AM29LV128ML
+chips: 1
+
+[usart2]
+file: stdin

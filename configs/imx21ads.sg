@@ -1,0 +1,94 @@
+[global]
+dbgwait: 0
+board: iMX21ADS 
+imagedir: /home/user/emulator/imx21ads
+cpu_clock: 266000000
+libpath: 
+libs: 
+start_address: 0xc8000000
+
+# -------------------------------------------------------------------
+# This is the region map for my u-boot+linux
+# The region map is not required. It is only a help for flashing 
+# from commandline. 
+# -------------------------------------------------------------------
+[regions]
+flash:	0xc8000000 0x02000000
+uboot:  0xc8000000 0x00040000
+params: 0xc8004000 0x00020000
+kernel: 0xc8006000 0x001a0000
+rootfs: 0xc8020000 0x01e00000
+
+# ------------------------------------------------------
+# This is the region map for th blob+linux 
+# which is comming with the i.MX21ADS development board
+# ------------------------------------------------------
+
+#[regions]
+#flash:  0xc8000000 0x02000000
+#blob:   0xc8000000 0x00010000
+#params: 0xc8010000 0x00004000
+#kernel: 0xc8014000 0x001ec000
+#rootfs: 0xc8200000 0x01e00000
+
+[gdebug]
+host: 127.0.0.1
+port: 4711
+
+[cs8900]
+host_ip: 192.168.80.3
+host_ifname: imx0 
+
+# -----------------------------------------------------------------
+# DRAM:
+#	i.MX21 CPU can has 2 Banks with a maximum of 64MB per bank
+*	the i.MX21ADS uses one bank with 64MB
+# -----------------------------------------------------------------
+
+[dram0]
+size: 64M
+
+#[dram1]
+#size: 32M
+
+[flash0]
+type: AM29BDS128H
+chips: 2
+
+[uart1]
+file: stdin
+
+# -------------------------------------------------------------------
+# The displayemulator is configured for a size of 240x320 here 
+# and uses the RFB-Server  (VNC Protocol) for output. 
+# The vncviewer is started with connection to localhost 
+# --------------------------------------------------------------------
+[display0]
+backend: rfbserver
+host: 127.0.0.1
+port: 5900
+width: 240
+height: 320
+start: vncviewer localhost
+
+# --------------------------------------------------------------------
+# Clock and reset module section
+#	This section can be ommitted because there are default values.
+# 	The development board uses only the 32768 Hz Crystal.
+# 	The 26MHz Crystal is present but not connected.
+# --------------------------------------------------------------------
+
+[crm]
+clk32:	32768
+clk26:	0
+
+# -------------------------------------------------------------------
+# Deskjet 460 
+#	output_dir: directory where the PCL3GUI interpreter writes 
+#		    a png per page.
+#	lpdevice: real printer device where the uninterpreted PCL
+*		  data is written to.	
+# -------------------------------------------------------------------
+[dj460]
+#lpdevice: /dev/usb/lp0
+output_dir: /home/jkarrer/emulator/printer

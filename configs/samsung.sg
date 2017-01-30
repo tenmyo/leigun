@@ -1,0 +1,15 @@
+[global]
+cpu_clock: 266000000
+imagedir: /home/jkarrer/emulator/samsung
+libpath: /home/jkarrer/emulator/softgun/boards:/usr/local/lib/softgun/libs
+libs: samsung.so 
+board: SAMSUNG 
+dbgwait: 0
+
+
+[gdebug]
+host: 127.0.0.1
+port: 4711
+
+[nand0]
+type: K9F1208

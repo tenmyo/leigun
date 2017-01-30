@@ -1,0 +1,60 @@
+#
+# ----------------------------------------------------------------------
+# Configuration file for emulation of the NS9750 development board
+# in big endian CPU mode
+# ----------------------------------------------------------------------
+#
+[global]
+board: NS9750DEV 
+imagedir: /home/jkarrer/images_be
+cpu_clock:  200000000
+dbgwait: 0
+
+[loader]
+swap32: 1
+
+[regions]
+flash: 0x50000000 0x01000000
+
+[ns9750_eth]
+host_ip: 192.168.80.3 
+host_ifname: emu0
+
+[dram0]
+size: 16M
+
+[flash1]
+type: M29W320DB
+chips: 2
+
+[gdebug]
+host: 127.0.0.1
+port: 4711
+
+[serialA]
+type: file
+file: stdin
+
+[ns9750]
+#serialB: 	/dev/ttyS0
+Revision:	0
+rtck:	  	1	# PCI Arbiter
+boot_strap_0:	0	# Byte Lane as R/W
+boot_strap_1:   1	# PCI Mode	
+boot_strap_2:	0	# Command delayed mode	
+boot_strap_3:	0	# Flash 16 Bit Mode
+boot_strap_4:	0
+gpio49:		1	# CS is active low
+gpio44:		0	# CPU is Big Endian
+reset_done:	1	# Boot from flash
+gpio19:		0	# PLL Bypassed
+gpio17:		1	# PLL Multiplier 27
+gpio12:		1
+gpio10:		1
+gpio8:		1
+gpio4:		1
+gpio2:		0	# PLL Divide by 2
+gpio0:		1
+gpio24:		1 	# Don't know for what these fields are 
+gpio22:		1
+gpio7:		1	# 0 = rescue system jumper set
