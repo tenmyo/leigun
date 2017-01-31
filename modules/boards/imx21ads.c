@@ -214,7 +214,7 @@ board_imx21ads_create()
 
 	Bus_Init(MMU_InvalidateTlb, 1 * 1024);
 	ARM9_New();
-	copro = MMU9_Create("mmu", TARGET_BYTEORDER, MMU_ARM926EJS | MMUV_IMX21);
+	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_IMX21);
 	ARM9_RegisterCoprocessor(copro, 15);
 
 	/* Currently I have no dram controller */

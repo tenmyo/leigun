@@ -12,7 +12,7 @@
 #include "avr8/idecode_avr8.h"
 #include "cycletimer.h"
 #include "clock.h"
-#include "byteorder.h"
+#include "core/byteorder.h"
 #ifndef NO_DEBUGGER
 #include "debugger.h"
 #endif
@@ -133,25 +133,10 @@ AVR8_ReadReg(unsigned int reg)
 	return gavr8.gpr[reg];
 }
 
-static inline uint16_t 
-read_uint16_t(void *ptr) {
-	return (uint16_t) (*(uint16_t *) (ptr));
-}
-
-static inline void 
-write_uint16_t(void *ptr, uint16_t val) {
-	*(uint16_t *) (ptr) = (uint16_t) (val);
-}
-
 static inline uint16_t
 AVR8_ReadReg16(unsigned int reg)
 {
-	/* Byteorder Low, High  */
-#if __BYTE_ORDER == __BIG_ENDIAN
-	return gavr8.gpr[reg] | (gavr8.gpr[reg + 1] << 8);
-#else
-	return read_uint16_t(&gavr8.gpr[reg]);
-#endif
+	return BYTE_ReadFromLe16(gavr8.gpr, reg);
 }
 
 static inline void
@@ -163,12 +148,7 @@ AVR8_WriteReg(uint8_t val, unsigned int reg)
 static inline void
 AVR8_WriteReg16(uint16_t val, unsigned int reg)
 {
-#if __BYTE_ORDER == __BIG_ENDIAN
-	gavr8.gpr[reg + 1] = val >> 8;
-	gavr8.gpr[reg] = val & 0xff;
-#else
-	write_uint16_t(&gavr8.gpr[reg],val); 
-#endif
+	BYTE_WriteToLe16(gavr8.gpr, reg, val);
 }
 
 static inline void
@@ -250,11 +230,7 @@ AVR8_ReadAppMem(uint32_t word_addr)
 static inline uint8_t
 AVR8_ReadAppMem8(uint32_t byte_addr)
 {
-#if __BYTE_ORDER == __BIG_ENDIAN
-	return gavr8.appmem_byte[(byte_addr ^ 1) & gavr8.appmem_byte_mask];
-#else
 	return gavr8.appmem_byte[byte_addr & gavr8.appmem_byte_mask];
-#endif
 }
 
 /*
@@ -267,11 +243,7 @@ AVR8_ReadAppMem8(uint32_t byte_addr)
 static inline void
 AVR8_WriteAppMem8(uint8_t value, uint32_t byte_addr)
 {
-#if __BYTE_ORDER == __BIG_ENDIAN
-	gavr8.appmem_byte[(byte_addr ^ 1) & gavr8.appmem_byte_mask] = value;
-#else
 	gavr8.appmem_byte[byte_addr & gavr8.appmem_byte_mask] = value;
-#endif
 }
 
 void AVR8_RegisterIOHandler(uint32_t addr, AVR8_IoReadProc *, AVR8_IoWriteProc *, void *clientData);

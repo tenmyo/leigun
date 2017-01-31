@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include "bus.h"
 #include "controllers/ns9750/ns9750_timer.h"
+#include "core/byteorder.h"
 
 #define PCI_CONFIG_ENABLED(confreg)     (((confreg)>>31)&1)
 #define PCI_CONFIG_BUS(confreg)         (((confreg)>>16)&0xff)
@@ -97,7 +98,7 @@ PCI_MasterRead32(PCI_Function * bridge, uint32_t addr)
 static inline void
 PCI_MasterWrite32LE(PCI_Function * bridge, uint32_t value, uint32_t addr)
 {
-	return bridge->bdev.write32(host32_to_le(value), addr);
+	return bridge->bdev.write32(BYTE_HToLe32(value), addr);
 }
 
 /* Read in little endian from target bus and return in host Byteorder   */
@@ -110,7 +111,7 @@ PCI_MasterRead32LE(PCI_Function * bridge, uint32_t addr)
 static inline void
 PCI_MasterWrite32BE(PCI_Function * bridge, uint32_t value, uint32_t addr)
 {
-	return bridge->bdev.write32(host32_to_be(value), addr);
+	return bridge->bdev.write32(BYTE_HToBe32(value), addr);
 }
 
 /* Read in little endian from target bus and return in host Byteorder   */

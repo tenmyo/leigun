@@ -47,6 +47,8 @@
 #include "compiler_extensions.h"
 #include "sgstring.h"
 
+#include "core/byteorder.h"
+
 typedef void McrProc(void *clientData, uint32_t icode, uint32_t value);
 typedef uint32_t MrcProc(void *clientData, uint32_t icode);
 
@@ -176,9 +178,9 @@ int
 MMU_Byteorder()
 {
 	if (gmmu->ctrl & MCTRL_BE) {
-		return NON_TARGET_BYTEORDER;
+		return BYTE_ORDER_BIG;
 	} else {
-		return TARGET_BYTEORDER;
+		return BYTE_ORDER_LITTLE;
 	}
 }
 
@@ -1108,7 +1110,7 @@ MMU9_Create(const char *name, int endian, uint32_t mmu_type)
 		fprintf(stderr, "Can not create MMU. EndianNode \n");
 		exit(3429);
 	}
-	if (endian == en_BIG_ENDIAN) {
+	if (endian == BYTE_ORDER_BIG) {
 		mmu->ctrl |= MCTRL_BE;
 	}
 	update_byteorder(mmu);

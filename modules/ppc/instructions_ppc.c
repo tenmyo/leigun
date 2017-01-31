@@ -13,10 +13,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "instructions_ppc.h"
-#include <byteorder.h>
 #include "cpu_ppc.h"
 #include "mmu_ppc.h"
 #include <cycletimer.h>
+#include "core/byteorder.h"
 
 #ifdef DEBUG
 #define dbgprintf(...) { if(unlikely(debugflags&DEBUG_INSTRUCTIONS)) { fprintf(stderr,__VA_ARGS__); fflush(stderr); } }

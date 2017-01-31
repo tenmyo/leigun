@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
-#include "byteorder.h"
+#include "core/byteorder.h"
 
 /* 32-bit ELF base types. */
 typedef uint32_t Elf32_Addr;
@@ -207,19 +207,19 @@ Elf_CheckElf(const char *filename)
 static void
 Elf32_HeaderLittleEndianToHost(Elf32_Ehdr * elf32Hdr)
 {
-    elf32Hdr->e_type = le16_to_host(elf32Hdr->e_type);
-    elf32Hdr->e_machine = le16_to_host(elf32Hdr->e_machine);
-    elf32Hdr->e_version = le32_to_host(elf32Hdr->e_version);
-    elf32Hdr->e_entry = le32_to_host(elf32Hdr->e_entry);
-    elf32Hdr->e_phoff = le32_to_host(elf32Hdr->e_phoff);
-    elf32Hdr->e_shoff = le32_to_host(elf32Hdr->e_shoff);
-    elf32Hdr->e_flags = le32_to_host(elf32Hdr->e_flags);
-    elf32Hdr->e_ehsize = le16_to_host(elf32Hdr->e_ehsize);
-    elf32Hdr->e_phentsize = le16_to_host(elf32Hdr->e_phentsize);
-    elf32Hdr->e_phnum = le16_to_host(elf32Hdr->e_phnum);
-    elf32Hdr->e_shentsize = le16_to_host(elf32Hdr->e_shentsize);
-    elf32Hdr->e_shnum = le16_to_host(elf32Hdr->e_shnum);
-    elf32Hdr->e_shstrndx = le16_to_host(elf32Hdr->e_shstrndx);
+    elf32Hdr->e_type = BYTE_LeToH16(elf32Hdr->e_type);
+    elf32Hdr->e_machine = BYTE_LeToH16(elf32Hdr->e_machine);
+    elf32Hdr->e_version = BYTE_LeToH32(elf32Hdr->e_version);
+    elf32Hdr->e_entry = BYTE_LeToH32(elf32Hdr->e_entry);
+    elf32Hdr->e_phoff = BYTE_LeToH32(elf32Hdr->e_phoff);
+    elf32Hdr->e_shoff = BYTE_LeToH32(elf32Hdr->e_shoff);
+    elf32Hdr->e_flags = BYTE_LeToH32(elf32Hdr->e_flags);
+    elf32Hdr->e_ehsize = BYTE_LeToH16(elf32Hdr->e_ehsize);
+    elf32Hdr->e_phentsize = BYTE_LeToH16(elf32Hdr->e_phentsize);
+    elf32Hdr->e_phnum = BYTE_LeToH16(elf32Hdr->e_phnum);
+    elf32Hdr->e_shentsize = BYTE_LeToH16(elf32Hdr->e_shentsize);
+    elf32Hdr->e_shnum = BYTE_LeToH16(elf32Hdr->e_shnum);
+    elf32Hdr->e_shstrndx = BYTE_LeToH16(elf32Hdr->e_shstrndx);
 }
 
 /**
@@ -231,55 +231,55 @@ Elf32_HeaderLittleEndianToHost(Elf32_Ehdr * elf32Hdr)
 static void
 Elf32_HeaderBigEndianToHost(Elf32_Ehdr * elf32Hdr)
 {
-    elf32Hdr->e_type = be16_to_host(elf32Hdr->e_type);
-    elf32Hdr->e_machine = be16_to_host(elf32Hdr->e_machine);
-    elf32Hdr->e_version = be32_to_host(elf32Hdr->e_version);
-    elf32Hdr->e_entry = be32_to_host(elf32Hdr->e_entry);
-    elf32Hdr->e_phoff = be32_to_host(elf32Hdr->e_phoff);
-    elf32Hdr->e_shoff = be32_to_host(elf32Hdr->e_shoff);
-    elf32Hdr->e_flags = be32_to_host(elf32Hdr->e_flags);
-    elf32Hdr->e_ehsize = be16_to_host(elf32Hdr->e_ehsize);
-    elf32Hdr->e_phentsize = be16_to_host(elf32Hdr->e_phentsize);
-    elf32Hdr->e_phnum = be16_to_host(elf32Hdr->e_phnum);
-    elf32Hdr->e_shentsize = be16_to_host(elf32Hdr->e_shentsize);
-    elf32Hdr->e_shnum = be16_to_host(elf32Hdr->e_shnum);
-    elf32Hdr->e_shstrndx = be16_to_host(elf32Hdr->e_shstrndx);
+    elf32Hdr->e_type = BYTE_BeToH16(elf32Hdr->e_type);
+    elf32Hdr->e_machine = BYTE_BeToH16(elf32Hdr->e_machine);
+    elf32Hdr->e_version = BYTE_BeToH32(elf32Hdr->e_version);
+    elf32Hdr->e_entry = BYTE_BeToH32(elf32Hdr->e_entry);
+    elf32Hdr->e_phoff = BYTE_BeToH32(elf32Hdr->e_phoff);
+    elf32Hdr->e_shoff = BYTE_BeToH32(elf32Hdr->e_shoff);
+    elf32Hdr->e_flags = BYTE_BeToH32(elf32Hdr->e_flags);
+    elf32Hdr->e_ehsize = BYTE_BeToH16(elf32Hdr->e_ehsize);
+    elf32Hdr->e_phentsize = BYTE_BeToH16(elf32Hdr->e_phentsize);
+    elf32Hdr->e_phnum = BYTE_BeToH16(elf32Hdr->e_phnum);
+    elf32Hdr->e_shentsize = BYTE_BeToH16(elf32Hdr->e_shentsize);
+    elf32Hdr->e_shnum = BYTE_BeToH16(elf32Hdr->e_shnum);
+    elf32Hdr->e_shstrndx = BYTE_BeToH16(elf32Hdr->e_shstrndx);
 }
 
 static void 
 Elf64_HeaderLittleEndianToHost(Elf64_Ehdr *elf64Hdr)
 {
-    elf64Hdr->e_type = le16_to_host(elf64Hdr->e_type);
-    elf64Hdr->e_machine = le16_to_host(elf64Hdr->e_machine);
-    elf64Hdr->e_version = le32_to_host(elf64Hdr->e_version);
-    elf64Hdr->e_entry = le64_to_host(elf64Hdr->e_entry);
-    elf64Hdr->e_phoff = le64_to_host(elf64Hdr->e_phoff);
-    elf64Hdr->e_shoff = le64_to_host(elf64Hdr->e_shoff);
-    elf64Hdr->e_flags = le32_to_host(elf64Hdr->e_flags);
-    elf64Hdr->e_ehsize = le16_to_host(elf64Hdr->e_ehsize),
-    elf64Hdr->e_phentsize = le16_to_host(elf64Hdr->e_phentsize);
-    elf64Hdr->e_phnum = le16_to_host(elf64Hdr->e_phnum);
-    elf64Hdr->e_shentsize = le16_to_host(elf64Hdr->e_shentsize);
-    elf64Hdr->e_shnum = le16_to_host(elf64Hdr->e_shnum);
-    elf64Hdr->e_shstrndx = le16_to_host(elf64Hdr->e_shstrndx);
+    elf64Hdr->e_type = BYTE_LeToH16(elf64Hdr->e_type);
+    elf64Hdr->e_machine = BYTE_LeToH16(elf64Hdr->e_machine);
+    elf64Hdr->e_version = BYTE_LeToH32(elf64Hdr->e_version);
+    elf64Hdr->e_entry = BYTE_LeToH64(elf64Hdr->e_entry);
+    elf64Hdr->e_phoff = BYTE_LeToH64(elf64Hdr->e_phoff);
+    elf64Hdr->e_shoff = BYTE_LeToH64(elf64Hdr->e_shoff);
+    elf64Hdr->e_flags = BYTE_LeToH32(elf64Hdr->e_flags);
+    elf64Hdr->e_ehsize = BYTE_LeToH16(elf64Hdr->e_ehsize),
+    elf64Hdr->e_phentsize = BYTE_LeToH16(elf64Hdr->e_phentsize);
+    elf64Hdr->e_phnum = BYTE_LeToH16(elf64Hdr->e_phnum);
+    elf64Hdr->e_shentsize = BYTE_LeToH16(elf64Hdr->e_shentsize);
+    elf64Hdr->e_shnum = BYTE_LeToH16(elf64Hdr->e_shnum);
+    elf64Hdr->e_shstrndx = BYTE_LeToH16(elf64Hdr->e_shstrndx);
 }
 
 static void 
 Elf64_HeaderBigEndianToHost(Elf64_Ehdr *elf64Hdr)
 {
-    elf64Hdr->e_type = be16_to_host(elf64Hdr->e_type);
-    elf64Hdr->e_machine = be16_to_host(elf64Hdr->e_machine);
-    elf64Hdr->e_version = be32_to_host(elf64Hdr->e_version);
-    elf64Hdr->e_entry = be64_to_host(elf64Hdr->e_entry);
-    elf64Hdr->e_phoff = be64_to_host(elf64Hdr->e_phoff);
-    elf64Hdr->e_shoff = be64_to_host(elf64Hdr->e_shoff);
-    elf64Hdr->e_flags = be32_to_host(elf64Hdr->e_flags);
-    elf64Hdr->e_ehsize = be16_to_host(elf64Hdr->e_ehsize),
-    elf64Hdr->e_phentsize = be16_to_host(elf64Hdr->e_phentsize);
-    elf64Hdr->e_phnum = be16_to_host(elf64Hdr->e_phnum);
-    elf64Hdr->e_shentsize = be16_to_host(elf64Hdr->e_shentsize);
-    elf64Hdr->e_shnum = be16_to_host(elf64Hdr->e_shnum);
-    elf64Hdr->e_shstrndx = be16_to_host(elf64Hdr->e_shstrndx);
+    elf64Hdr->e_type = BYTE_BeToH16(elf64Hdr->e_type);
+    elf64Hdr->e_machine = BYTE_BeToH16(elf64Hdr->e_machine);
+    elf64Hdr->e_version = BYTE_BeToH32(elf64Hdr->e_version);
+    elf64Hdr->e_entry = BYTE_BeToH64(elf64Hdr->e_entry);
+    elf64Hdr->e_phoff = BYTE_BeToH64(elf64Hdr->e_phoff);
+    elf64Hdr->e_shoff = BYTE_BeToH64(elf64Hdr->e_shoff);
+    elf64Hdr->e_flags = BYTE_BeToH32(elf64Hdr->e_flags);
+    elf64Hdr->e_ehsize = BYTE_BeToH16(elf64Hdr->e_ehsize),
+    elf64Hdr->e_phentsize = BYTE_BeToH16(elf64Hdr->e_phentsize);
+    elf64Hdr->e_phnum = BYTE_BeToH16(elf64Hdr->e_phnum);
+    elf64Hdr->e_shentsize = BYTE_BeToH16(elf64Hdr->e_shentsize);
+    elf64Hdr->e_shnum = BYTE_BeToH16(elf64Hdr->e_shnum);
+    elf64Hdr->e_shstrndx = BYTE_BeToH16(elf64Hdr->e_shstrndx);
 }
 
 /**
@@ -291,14 +291,14 @@ Elf64_HeaderBigEndianToHost(Elf64_Ehdr *elf64Hdr)
 static void
 Elf32_PHeaderLittleEndianToHost(Elf32_Phdr * elf32PHdr)
 {
-    elf32PHdr->p_type = le32_to_host(elf32PHdr->p_type);
-    elf32PHdr->p_offset = le32_to_host(elf32PHdr->p_offset);
-    elf32PHdr->p_vaddr = le32_to_host(elf32PHdr->p_vaddr);
-    elf32PHdr->p_paddr = le32_to_host(elf32PHdr->p_paddr);
-    elf32PHdr->p_filesz = le32_to_host(elf32PHdr->p_filesz);
-    elf32PHdr->p_memsz = le32_to_host(elf32PHdr->p_memsz);
-    elf32PHdr->p_flags = le32_to_host(elf32PHdr->p_flags);
-    elf32PHdr->p_align = le32_to_host(elf32PHdr->p_align);
+    elf32PHdr->p_type = BYTE_LeToH32(elf32PHdr->p_type);
+    elf32PHdr->p_offset = BYTE_LeToH32(elf32PHdr->p_offset);
+    elf32PHdr->p_vaddr = BYTE_LeToH32(elf32PHdr->p_vaddr);
+    elf32PHdr->p_paddr = BYTE_LeToH32(elf32PHdr->p_paddr);
+    elf32PHdr->p_filesz = BYTE_LeToH32(elf32PHdr->p_filesz);
+    elf32PHdr->p_memsz = BYTE_LeToH32(elf32PHdr->p_memsz);
+    elf32PHdr->p_flags = BYTE_LeToH32(elf32PHdr->p_flags);
+    elf32PHdr->p_align = BYTE_LeToH32(elf32PHdr->p_align);
 }
 
 /**
@@ -310,41 +310,41 @@ Elf32_PHeaderLittleEndianToHost(Elf32_Phdr * elf32PHdr)
 static void
 Elf32_PHeaderBigEndianToHost(Elf32_Phdr * elf32PHdr)
 {
-    elf32PHdr->p_type = be32_to_host(elf32PHdr->p_type);
-    elf32PHdr->p_offset = be32_to_host(elf32PHdr->p_offset);
-    elf32PHdr->p_vaddr = be32_to_host(elf32PHdr->p_vaddr);
-    elf32PHdr->p_paddr = be32_to_host(elf32PHdr->p_paddr);
-    elf32PHdr->p_filesz = be32_to_host(elf32PHdr->p_filesz);
-    elf32PHdr->p_memsz = be32_to_host(elf32PHdr->p_memsz);
-    elf32PHdr->p_flags = be32_to_host(elf32PHdr->p_flags);
-    elf32PHdr->p_align = be32_to_host(elf32PHdr->p_align);
+    elf32PHdr->p_type = BYTE_BeToH32(elf32PHdr->p_type);
+    elf32PHdr->p_offset = BYTE_BeToH32(elf32PHdr->p_offset);
+    elf32PHdr->p_vaddr = BYTE_BeToH32(elf32PHdr->p_vaddr);
+    elf32PHdr->p_paddr = BYTE_BeToH32(elf32PHdr->p_paddr);
+    elf32PHdr->p_filesz = BYTE_BeToH32(elf32PHdr->p_filesz);
+    elf32PHdr->p_memsz = BYTE_BeToH32(elf32PHdr->p_memsz);
+    elf32PHdr->p_flags = BYTE_BeToH32(elf32PHdr->p_flags);
+    elf32PHdr->p_align = BYTE_BeToH32(elf32PHdr->p_align);
 }
 
 
 static void
 Elf64_PHeaderLittleEndianToHost(Elf64_Phdr * elf64PHdr)
 {
-    elf64PHdr->p_type = le32_to_host(elf64PHdr->p_type);
-    elf64PHdr->p_flags = le32_to_host(elf64PHdr->p_flags);
-    elf64PHdr->p_offset = le64_to_host(elf64PHdr->p_offset); 
-    elf64PHdr->p_vaddr = le64_to_host(elf64PHdr->p_vaddr);
-    elf64PHdr->p_paddr = le64_to_host(elf64PHdr->p_paddr);
-    elf64PHdr->p_filesz = le64_to_host(elf64PHdr->p_filesz);
-    elf64PHdr->p_memsz = le64_to_host(elf64PHdr->p_memsz);
-    elf64PHdr->p_align = le64_to_host(elf64PHdr->p_align);
+    elf64PHdr->p_type = BYTE_LeToH32(elf64PHdr->p_type);
+    elf64PHdr->p_flags = BYTE_LeToH32(elf64PHdr->p_flags);
+    elf64PHdr->p_offset = BYTE_LeToH64(elf64PHdr->p_offset); 
+    elf64PHdr->p_vaddr = BYTE_LeToH64(elf64PHdr->p_vaddr);
+    elf64PHdr->p_paddr = BYTE_LeToH64(elf64PHdr->p_paddr);
+    elf64PHdr->p_filesz = BYTE_LeToH64(elf64PHdr->p_filesz);
+    elf64PHdr->p_memsz = BYTE_LeToH64(elf64PHdr->p_memsz);
+    elf64PHdr->p_align = BYTE_LeToH64(elf64PHdr->p_align);
 }
 
 static void
 Elf64_PHeaderBigEndianToHost(Elf64_Phdr * elf64PHdr)
 {
-    elf64PHdr->p_type = be32_to_host(elf64PHdr->p_type);
-    elf64PHdr->p_flags = be32_to_host(elf64PHdr->p_flags);
-    elf64PHdr->p_offset = be64_to_host(elf64PHdr->p_offset); 
-    elf64PHdr->p_vaddr = be64_to_host(elf64PHdr->p_vaddr);
-    elf64PHdr->p_paddr = be64_to_host(elf64PHdr->p_paddr);
-    elf64PHdr->p_filesz = be64_to_host(elf64PHdr->p_filesz);
-    elf64PHdr->p_memsz = be64_to_host(elf64PHdr->p_memsz);
-    elf64PHdr->p_align = be64_to_host(elf64PHdr->p_align);
+    elf64PHdr->p_type = BYTE_BeToH32(elf64PHdr->p_type);
+    elf64PHdr->p_flags = BYTE_BeToH32(elf64PHdr->p_flags);
+    elf64PHdr->p_offset = BYTE_BeToH64(elf64PHdr->p_offset); 
+    elf64PHdr->p_vaddr = BYTE_BeToH64(elf64PHdr->p_vaddr);
+    elf64PHdr->p_paddr = BYTE_BeToH64(elf64PHdr->p_paddr);
+    elf64PHdr->p_filesz = BYTE_BeToH64(elf64PHdr->p_filesz);
+    elf64PHdr->p_memsz = BYTE_BeToH64(elf64PHdr->p_memsz);
+    elf64PHdr->p_align = BYTE_BeToH64(elf64PHdr->p_align);
 }
 
 /**
@@ -355,16 +355,16 @@ Elf64_PHeaderBigEndianToHost(Elf64_Phdr * elf64PHdr)
  */
 __UNUSED__ static void
 Elf32_SHeaderLittleEndianToHost(Elf32_Shdr *elf32Shdr) {
-    elf32Shdr->sh_name = le32_to_host(elf32Shdr->sh_name);
-    elf32Shdr->sh_type = le32_to_host(elf32Shdr->sh_type);
-    elf32Shdr->sh_flags = le32_to_host(elf32Shdr->sh_flags);
-    elf32Shdr->sh_addr = le32_to_host(elf32Shdr->sh_addr);
-    elf32Shdr->sh_offset = le32_to_host(elf32Shdr->sh_offset);
-    elf32Shdr->sh_size = le32_to_host(elf32Shdr->sh_size);
-    elf32Shdr->sh_link = le32_to_host(elf32Shdr->sh_link);
-    elf32Shdr->sh_info = le32_to_host(elf32Shdr->sh_info);
-    elf32Shdr->sh_addralign = le32_to_host(elf32Shdr->sh_addralign);
-    elf32Shdr->sh_entsize = le32_to_host(elf32Shdr->sh_entsize);
+    elf32Shdr->sh_name = BYTE_LeToH32(elf32Shdr->sh_name);
+    elf32Shdr->sh_type = BYTE_LeToH32(elf32Shdr->sh_type);
+    elf32Shdr->sh_flags = BYTE_LeToH32(elf32Shdr->sh_flags);
+    elf32Shdr->sh_addr = BYTE_LeToH32(elf32Shdr->sh_addr);
+    elf32Shdr->sh_offset = BYTE_LeToH32(elf32Shdr->sh_offset);
+    elf32Shdr->sh_size = BYTE_LeToH32(elf32Shdr->sh_size);
+    elf32Shdr->sh_link = BYTE_LeToH32(elf32Shdr->sh_link);
+    elf32Shdr->sh_info = BYTE_LeToH32(elf32Shdr->sh_info);
+    elf32Shdr->sh_addralign = BYTE_LeToH32(elf32Shdr->sh_addralign);
+    elf32Shdr->sh_entsize = BYTE_LeToH32(elf32Shdr->sh_entsize);
 }
 
 /**
@@ -376,46 +376,46 @@ Elf32_SHeaderLittleEndianToHost(Elf32_Shdr *elf32Shdr) {
 __UNUSED__ static void
 Elf32_SHeaderBigEndianToHost(Elf32_Shdr *elf32Shdr) 
 {
-    elf32Shdr->sh_name = be32_to_host(elf32Shdr->sh_name);
-    elf32Shdr->sh_type = be32_to_host(elf32Shdr->sh_type);
-    elf32Shdr->sh_flags = be32_to_host(elf32Shdr->sh_flags);
-    elf32Shdr->sh_addr = be32_to_host(elf32Shdr->sh_addr);
-    elf32Shdr->sh_offset = be32_to_host(elf32Shdr->sh_offset);
-    elf32Shdr->sh_size = be32_to_host(elf32Shdr->sh_size);
-    elf32Shdr->sh_link = be32_to_host(elf32Shdr->sh_link);
-    elf32Shdr->sh_info = be32_to_host(elf32Shdr->sh_info);
-    elf32Shdr->sh_addralign = be32_to_host(elf32Shdr->sh_addralign);
-    elf32Shdr->sh_entsize = be32_to_host(elf32Shdr->sh_entsize);
+    elf32Shdr->sh_name = BYTE_BeToH32(elf32Shdr->sh_name);
+    elf32Shdr->sh_type = BYTE_BeToH32(elf32Shdr->sh_type);
+    elf32Shdr->sh_flags = BYTE_BeToH32(elf32Shdr->sh_flags);
+    elf32Shdr->sh_addr = BYTE_BeToH32(elf32Shdr->sh_addr);
+    elf32Shdr->sh_offset = BYTE_BeToH32(elf32Shdr->sh_offset);
+    elf32Shdr->sh_size = BYTE_BeToH32(elf32Shdr->sh_size);
+    elf32Shdr->sh_link = BYTE_BeToH32(elf32Shdr->sh_link);
+    elf32Shdr->sh_info = BYTE_BeToH32(elf32Shdr->sh_info);
+    elf32Shdr->sh_addralign = BYTE_BeToH32(elf32Shdr->sh_addralign);
+    elf32Shdr->sh_entsize = BYTE_BeToH32(elf32Shdr->sh_entsize);
 }
 
 __UNUSED__ static void
 Elf64_SHeaderLittleEndianToHost(Elf64_Shdr *elf64Shdr) 
 {
-    elf64Shdr->sh_name = le32_to_host(elf64Shdr->sh_name);    
-    elf64Shdr->sh_type = le32_to_host(elf64Shdr->sh_type);
-    elf64Shdr->sh_flags = le64_to_host(elf64Shdr->sh_flags);
-    elf64Shdr->sh_addr = le64_to_host(elf64Shdr->sh_addr);
-    elf64Shdr->sh_offset = le64_to_host(elf64Shdr->sh_offset);
-    elf64Shdr->sh_size = le64_to_host(elf64Shdr->sh_size);
-    elf64Shdr->sh_link = le32_to_host(elf64Shdr->sh_link);
-    elf64Shdr->sh_info = le32_to_host(elf64Shdr->sh_info);
-    elf64Shdr->sh_addralign = le64_to_host(elf64Shdr->sh_addralign);
-    elf64Shdr->sh_entsize = le64_to_host(elf64Shdr->sh_entsize);
+    elf64Shdr->sh_name = BYTE_LeToH32(elf64Shdr->sh_name);    
+    elf64Shdr->sh_type = BYTE_LeToH32(elf64Shdr->sh_type);
+    elf64Shdr->sh_flags = BYTE_LeToH64(elf64Shdr->sh_flags);
+    elf64Shdr->sh_addr = BYTE_LeToH64(elf64Shdr->sh_addr);
+    elf64Shdr->sh_offset = BYTE_LeToH64(elf64Shdr->sh_offset);
+    elf64Shdr->sh_size = BYTE_LeToH64(elf64Shdr->sh_size);
+    elf64Shdr->sh_link = BYTE_LeToH32(elf64Shdr->sh_link);
+    elf64Shdr->sh_info = BYTE_LeToH32(elf64Shdr->sh_info);
+    elf64Shdr->sh_addralign = BYTE_LeToH64(elf64Shdr->sh_addralign);
+    elf64Shdr->sh_entsize = BYTE_LeToH64(elf64Shdr->sh_entsize);
 }
 
 __UNUSED__ static void
 Elf64_SHeaderBigEndianToHost(Elf64_Shdr *elf64Shdr) 
 {
-    elf64Shdr->sh_name = be32_to_host(elf64Shdr->sh_name);    
-    elf64Shdr->sh_type = be32_to_host(elf64Shdr->sh_type);
-    elf64Shdr->sh_flags = be64_to_host(elf64Shdr->sh_flags);
-    elf64Shdr->sh_addr = be64_to_host(elf64Shdr->sh_addr);
-    elf64Shdr->sh_offset = be64_to_host(elf64Shdr->sh_offset);
-    elf64Shdr->sh_size = be64_to_host(elf64Shdr->sh_size);
-    elf64Shdr->sh_link = be32_to_host(elf64Shdr->sh_link);
-    elf64Shdr->sh_info = be32_to_host(elf64Shdr->sh_info);
-    elf64Shdr->sh_addralign = be64_to_host(elf64Shdr->sh_addralign);
-    elf64Shdr->sh_entsize = be64_to_host(elf64Shdr->sh_entsize);
+    elf64Shdr->sh_name = BYTE_BeToH32(elf64Shdr->sh_name);    
+    elf64Shdr->sh_type = BYTE_BeToH32(elf64Shdr->sh_type);
+    elf64Shdr->sh_flags = BYTE_BeToH64(elf64Shdr->sh_flags);
+    elf64Shdr->sh_addr = BYTE_BeToH64(elf64Shdr->sh_addr);
+    elf64Shdr->sh_offset = BYTE_BeToH64(elf64Shdr->sh_offset);
+    elf64Shdr->sh_size = BYTE_BeToH64(elf64Shdr->sh_size);
+    elf64Shdr->sh_link = BYTE_BeToH32(elf64Shdr->sh_link);
+    elf64Shdr->sh_info = BYTE_BeToH32(elf64Shdr->sh_info);
+    elf64Shdr->sh_addralign = BYTE_BeToH64(elf64Shdr->sh_addralign);
+    elf64Shdr->sh_entsize = BYTE_BeToH64(elf64Shdr->sh_entsize);
 }
 
 static void

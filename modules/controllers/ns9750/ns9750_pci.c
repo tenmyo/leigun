@@ -42,9 +42,9 @@
 #include "pci.h"
 #include "ns9750_pci.h"
 #include "bus.h"
-#include "byteorder.h"
 #include "signode.h"
 #include "sgstring.h"
+#include "core/byteorder.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -125,11 +125,11 @@ change_endian(SigNode * node, int value, void *clientData)
 	PCI_Function *cursor;
 	if (value == SIG_HIGH) {
 		fprintf(stderr, "PCI Byteorder conversion to little endian enabled\n");
-		br->endian = en_BIG_ENDIAN;
-		gcpu_endian = en_BIG_ENDIAN;
+		br->endian = BYTE_ORDER_BIG;
+		gcpu_endian = BYTE_ORDER_BIG;
 	} else if (value == SIG_LOW) {
-		br->endian = en_LITTLE_ENDIAN;
-		gcpu_endian = en_LITTLE_ENDIAN;
+		br->endian = BYTE_ORDER_LITTLE;
+		gcpu_endian = BYTE_ORDER_LITTLE;
 	} else {
 		fprintf(stderr, "NS9750 PCI bridge: Endian is neither Little nor Big\n");
 		exit(3424);
@@ -231,7 +231,7 @@ pci_config_data_write(void *cd, uint32_t value, uint32_t address, int rqlen)
 	function = PCI_CONFIG_FUNCTION(config_addr);
 	type = PCI_CONFIG_TYPE(config_addr);
 	reg = PCI_CONFIG_REGISTER(config_addr);
-	if (br->endian != TARGET_BYTEORDER) {
+	if (br->endian != BYTE_ORDER_BIG) {
 		if (rqlen == 1) {
 			address ^= 3;
 		} else if (rqlen == 2) {
@@ -274,7 +274,7 @@ pci_config_data_read(void *cd, uint32_t address, int rqlen)
 	function = PCI_CONFIG_FUNCTION(config_addr);
 	type = PCI_CONFIG_TYPE(config_addr);
 	reg = PCI_CONFIG_REGISTER(config_addr);
-	if (br->endian != TARGET_BYTEORDER) {
+	if (br->endian != BYTE_ORDER_BIG) {
 		if (rqlen == 1) {
 			address ^= 3;
 		} else if (rqlen == 2) {
@@ -570,7 +570,7 @@ PCI_RegisterIOH(uint32_t pci_addr, PCI_IOReadProc * readproc, PCI_IOWriteProc * 
 	if ((cpu_addr > 0xa00fffff) || (cpu_addr < 0xa0000000)) {
 		return -1;
 	}
-	if (gcpu_endian == HOST_BYTEORDER) {
+	if (gcpu_endian == BYTE_ORDER_LITTLE) {
 		IOH_New32f(cpu_addr, readproc, writeproc, clientData, IOH_FLG_LITTLE_ENDIAN);
 	} else {
 		IOH_New32f(cpu_addr, readproc, writeproc, clientData, IOH_FLG_BIG_ENDIAN);
@@ -598,7 +598,7 @@ PCI_RegisterMMIOH(uint32_t pci_addr, PCI_MMIOReadProc * readproc, PCI_MMIOWriteP
 	if ((cpu_addr > 0x8fffffff) || (cpu_addr < 0x80000000)) {
 		return -1;
 	}
-	if (gcpu_endian == en_BIG_ENDIAN) {
+	if (gcpu_endian == BYTE_ORDER_BIG) {
 		IOH_New32f(cpu_addr, readproc, writeproc, clientData, IOH_FLG_BIG_ENDIAN);
 	} else {
 		IOH_New32f(cpu_addr, readproc, writeproc, clientData, IOH_FLG_LITTLE_ENDIAN);
@@ -1041,7 +1041,7 @@ NS9750Pci_UnMap(void *owner, uint32_t base, uint32_t mapsize)
 static void
 PCIBr_Write32(uint32_t value, uint32_t addr)
 {
-	if (gcpu_endian == TARGET_BYTEORDER) {
+	if (gcpu_endian == BYTE_ORDER_BIG) {
 		Bus_Write32(value, addr);
 	} else {
 		Bus_Write32(swap32(value), addr);
@@ -1051,7 +1051,7 @@ PCIBr_Write32(uint32_t value, uint32_t addr)
 static void
 PCIBr_Write(uint32_t addr, uint8_t * buf, uint32_t count)
 {
-	if (gcpu_endian == TARGET_BYTEORDER) {
+	if (gcpu_endian == BYTE_ORDER_BIG) {
 		return Bus_Write(addr, buf, count);
 	} else {
 		return Bus_WriteSwap32(addr, buf, count);
@@ -1061,7 +1061,7 @@ PCIBr_Write(uint32_t addr, uint8_t * buf, uint32_t count)
 static uint32_t
 PCIBr_Read32(uint32_t addr)
 {
-	if (gcpu_endian == TARGET_BYTEORDER) {
+	if (gcpu_endian == BYTE_ORDER_BIG) {
 		return Bus_Read32(addr);
 	} else {
 		return swap32(Bus_Read32(addr));
@@ -1071,7 +1071,7 @@ PCIBr_Read32(uint32_t addr)
 static void
 PCIBr_Read(uint8_t * buf, uint32_t addr, uint32_t count)
 {
-	if (gcpu_endian == TARGET_BYTEORDER) {
+	if (gcpu_endian == BYTE_ORDER_BIG) {
 		return Bus_Read(buf, addr, count);
 	} else {
 		return Bus_ReadSwap32(buf, addr, count);

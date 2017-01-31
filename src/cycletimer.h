@@ -16,6 +16,7 @@
 #ifndef CYCLETIMER_H
 #define CYCLETIMER_H
 #include <stdint.h>
+#include <stdlib.h>
 #include <xy_tree.h>
 #include <compiler_extensions.h>
 
@@ -107,7 +108,7 @@ CyclesToMicroseconds(int64_t cycles)
 static inline int64_t
 CyclesToNanoseconds(int64_t cycles)
 {
-	if ((uint64_t) abs(cycles) < (100 * CycleTimerRate)) {
+	if (labs(cycles) < (100 * CycleTimerRate)) {
 		return (10000 * cycles) / (CycleTimerRate / 100000);
 	} else {
 		return (cycles / CycleTimerRate) * 1000000000;

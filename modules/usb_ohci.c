@@ -45,6 +45,7 @@
 #include "cycletimer.h"
 #include "signode.h"
 #include "sgstring.h"
+#include "core/byteorder.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -185,20 +186,20 @@ update_interrupts(OhciHC * hc)
 static inline void
 HcMasterWrite32(OhciHC * hc, uint32_t value, uint32_t addr)
 {
-	if (hc->endian == TARGET_BYTEORDER) {
+	if (hc->endian == BYTE_ORDER_BIG) {
 		return hc->bus->write32(value, addr);
 	} else {
-		return hc->bus->write32(swap32(value), addr);
+		return hc->bus->write32(BYTE_Swap32(value), addr);
 	}
 }
 
 static inline int
 HcMasterRead32(OhciHC * hc, uint32_t addr)
 {
-	if (hc->endian == TARGET_BYTEORDER) {
+	if (hc->endian == BYTE_ORDER_BIG) {
 		return hc->bus->read32(addr);
 	} else {
-		return swap32(hc->bus->read32(addr));
+		return BYTE_Swap32(hc->bus->read32(addr));
 	}
 }
 
@@ -1297,10 +1298,10 @@ change_endian(SigNode * node, int value, void *clientData)
 {
 	OhciHC *hc = clientData;
 	if (value == SIG_HIGH) {
-		hc->endian = en_BIG_ENDIAN;
+		hc->endian = BYTE_ORDER_BIG;
 		fprintf(stderr, "USB OHCI is now big endian\n");
 	} else if (value == SIG_LOW) {
-		hc->endian = en_LITTLE_ENDIAN;
+		hc->endian = BYTE_ORDER_LITTLE;
 	} else {
 		fprintf(stderr, "OHCI: Endian is neither Little nor Big\n");
 		exit(3424);
@@ -1326,7 +1327,7 @@ OhciHC_New(char *name, Bus * bus)
 		exit(1);
 	}
 
-	hc->endian = en_LITTLE_ENDIAN;
+	hc->endian = BYTE_ORDER_LITTLE;
 	hc->endianNode = SigNode_New("%s.endian", name);
 	if (!hc->endianNode) {
 		exit(3429);

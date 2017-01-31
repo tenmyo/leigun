@@ -191,7 +191,7 @@ board_unc90_create()
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
-	copro = MMU9_Create("mmu", en_LITTLE_ENDIAN, MMU_ARM920T);
+	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM920T);
 	ARM9_RegisterCoprocessor(copro, 15);
 
 	/* 

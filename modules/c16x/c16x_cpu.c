@@ -323,8 +323,8 @@ C16x_New()
 	//REG_SFR(SFR_ONES) = 0xffff; 
 	C16x_IDecoderNew();
 	C16x_InitInstructions();
-	IOH_NewRegion(SFR_BASE, 512, c16x_sfr_read, c16x_sfr_write, TARGET_BYTEORDER, c16x);
-	IOH_NewRegion(ESFR_BASE, 512, c16x_esfr_read, c16x_esfr_write, TARGET_BYTEORDER, c16x);
+	IOH_NewRegion(SFR_BASE, 512, c16x_sfr_read, c16x_sfr_write, IOH_FLG_LITTLE_ENDIAN, c16x);
+	IOH_NewRegion(ESFR_BASE, 512, c16x_esfr_read, c16x_esfr_write, IOH_FLG_LITTLE_ENDIAN, c16x);
 
 	IOH_New16(SFR_ADDR(SFR_DPP0), dpp_read, dpp_write, c16x);
 	IOH_New16(SFR_ADDR(SFR_DPP1), dpp_read, dpp_write, c16x);

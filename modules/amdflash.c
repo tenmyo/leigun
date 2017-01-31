@@ -1511,7 +1511,7 @@ FlashBank_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flag
 		flags &= MEM_FLAG_READABLE;
 		Mem_MapRange(base, host_mem, bank->size, mapsize, flags);
 	}
-	IOH_NewRegion(base, mapsize, flashbank_read, flashbank_write, HOST_BYTEORDER, bank);
+	IOH_NewRegion(base, mapsize, flashbank_read, flashbank_write, IOH_FLG_HOST_ENDIAN, bank);
 }
 
 static void
@@ -1724,7 +1724,7 @@ change_endian(SigNode * node, int value, void *clientData)
 		fprintf(stderr,
 			"AMD-Flash Warning: Runtime endian switching is broken currently\n");
 		fprintf(stderr, "AMD-Flash now big endian\n");
-		bank->endian = en_BIG_ENDIAN;
+		bank->endian = BYTE_ORDER_BIG;
 		if (bank->bankwidth == 32) {
 			bank->endian_xor = 0;
 		} else if (bank->bankwidth == 16) {
@@ -1736,7 +1736,7 @@ change_endian(SigNode * node, int value, void *clientData)
 		}
 		fprintf(stderr, "new xor : %d\n", bank->endian_xor);
 	} else if (value == SIG_LOW) {
-		bank->endian = en_LITTLE_ENDIAN;
+		bank->endian = BYTE_ORDER_LITTLE;
 		bank->endian_xor = 0;
 	} else {
 		fprintf(stderr, "NS9750 Serial: Endian is neither Little nor Big\n");

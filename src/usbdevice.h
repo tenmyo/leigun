@@ -11,7 +11,6 @@
 #include <usbhost.h>
 #include <stdint.h>
 #include <xy_hash.h>
-#include <byteorder.h>
 
 /* use bitwise ? */
 #define le16 uint16_t

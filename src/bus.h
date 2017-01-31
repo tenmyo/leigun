@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <compiler_extensions.h>
-#include "byteorder.h"
+#include "core/byteorder.h"
 
 /*
  * ----------------------------------------------------
@@ -327,19 +327,19 @@ Bus_GetHVARead(uint32_t addr)
 static inline uint64_t
 HMemRead64(uint8_t * host_addr)
 {
-	return host64_to_target(*((uint64_t *) host_addr));
+	return (*((uint64_t *) host_addr));
 }
 
 static inline uint32_t
 HMemRead32(uint8_t * host_addr)
 {
-	return host32_to_target(*((uint32_t *) host_addr));
+	return (*((uint32_t *) host_addr));
 }
 
 static inline uint16_t
 HMemRead16(uint8_t * host_addr)
 {
-	return host16_to_target(*((uint16_t *) host_addr));
+	return (*((uint16_t *) host_addr));
 }
 
 static inline uint8_t
@@ -351,19 +351,19 @@ HMemRead8(uint8_t * host_addr)
 static inline void
 HMemWrite64(uint64_t value, uint8_t * addr)
 {
-	*((uint64_t *) addr) = target64_to_host(value);
+	*((uint64_t *) addr) = (value);
 }
 
 static inline void
 HMemWrite32(uint32_t value, uint8_t * addr)
 {
-	*((uint32_t *) addr) = target32_to_host(value);
+	*((uint32_t *) addr) = (value);
 }
 
 static inline void
 HMemWrite16(uint16_t value, uint8_t * addr)
 {
-	*((uint16_t *) addr) = target16_to_host(value);
+	*((uint16_t *) addr) = (value);
 }
 
 static inline void

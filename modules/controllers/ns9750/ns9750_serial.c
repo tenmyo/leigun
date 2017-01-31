@@ -57,6 +57,7 @@
 #include "sgstring.h"
 #include "serial.h"
 #include "bus.h"
+#include "core/byteorder.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
@@ -159,9 +160,9 @@ change_endian(SigNode * node, int value, void *clientData)
 	Serial *ser = clientData;
 	if (value == SIG_HIGH) {
 		fprintf(stderr, "Serial now big endian\n");
-		ser->endian = en_BIG_ENDIAN;
+		ser->endian = BYTE_ORDER_BIG;
 	} else if (value == SIG_LOW) {
-		ser->endian = en_LITTLE_ENDIAN;
+		ser->endian = BYTE_ORDER_LITTLE;
 	} else {
 		fprintf(stderr, "NS9750 Serial: Endian is neither Little nor Big\n");
 		exit(3424);
@@ -585,9 +586,9 @@ ser_rxfifo_read(void *clientData, uint32_t address, int rqlen)
 		return 0;
 	}
 	for (i = 0; i < bytes; i++) {
-		if (ser->endian == en_LITTLE_ENDIAN) {
+		if (ser->endian == BYTE_ORDER_LITTLE) {
 			data = data | (ser->rx_fifo[ser->rxfifo_rp] << (8 * i));
-		} else if (ser->endian == en_BIG_ENDIAN) {
+		} else if (ser->endian == BYTE_ORDER_BIG) {
 			data = data | (ser->rx_fifo[ser->rxfifo_rp] << (8 * (3 - i)));
 		}
 		ser->rxfifo_rp = (ser->rxfifo_rp + 1) & RX_FIFO_MASK;
@@ -618,9 +619,9 @@ ser_txfifo_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 	int i;
 	Serial *ser = clientData;
 	for (i = 0; i < rqlen; i++) {
-		if (ser->endian == en_LITTLE_ENDIAN) {
+		if (ser->endian == BYTE_ORDER_LITTLE) {
 			serial_tx_fifo_put(ser, (value >> (i << 3)) & 0xff);
-		} else if (ser->endian == en_BIG_ENDIAN) {
+		} else if (ser->endian == BYTE_ORDER_BIG) {
 			serial_tx_fifo_put(ser, (value >> ((rqlen - 1 - i) << 3)) & 0xff);
 		}
 	}

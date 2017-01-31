@@ -141,7 +141,7 @@ DPRam_Map(void *module_owner, uint32_t base, uint32_t mapsize, uint32_t flags)
 	fprintf(stderr, "Mapping DPRAM ************* to 0x%08x, size 0x%04x\n",
 		base + dpram->immr_offset, dpram->size);
 	IOH_NewRegion(base + dpram->immr_offset, dpram->size, DPRam_read, DPRam_write,
-		      HOST_BYTEORDER, dpram);
+		      IOH_FLG_HOST_ENDIAN, dpram);
 }
 
 static void

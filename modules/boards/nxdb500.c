@@ -107,7 +107,7 @@ board_nxdb500_create()
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
-	copro = MMU9_Create("mmu", TARGET_BYTEORDER, MMU_ARM926EJS);
+	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS);
 	ARM9_RegisterCoprocessor(copro, 15);
 
 	dev = NetXSysco_New("sysco");

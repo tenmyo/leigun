@@ -77,7 +77,7 @@ board_ns9750dev_create()
 	PCI_Function *bridge;
 
 	ARM9_New();
-	copro = MMU9_Create("mmu", TARGET_BYTEORDER, MMU_ARM926EJS | MMUV_NS9750);
+	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
 	ARM9_RegisterCoprocessor(copro, 15);
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 

@@ -57,9 +57,9 @@
 #include "sgstring.h"
 #include "linux-tap.h"
 #include "ns9750_timer.h"
-#include "byteorder.h"
 
 #include "core/asyncmanager.h"
+#include "core/byteorder.h"
 
 
 #if 0
@@ -323,9 +323,9 @@ change_dataendian(SigNode * node, int value, void *clientData)
 {
 	NS9750eth *eth = clientData;
 	if (value == SIG_HIGH) {
-		eth->dataendian = en_BIG_ENDIAN;
+		eth->dataendian = BYTE_ORDER_BIG;
 	} else if (value == SIG_LOW) {
-		eth->dataendian = en_LITTLE_ENDIAN;
+		eth->dataendian = BYTE_ORDER_LITTLE;
 	} else {
 		fprintf(stderr, "NS9750 Eth: Data endian is neither Little nor Big\n");
 		exit(3424);
@@ -688,7 +688,7 @@ receive(NS9750eth * eth)
 				rbd->source &= ~3UL;
 			}
 			if ((eth->egcr1 & EGCR1_RXALIGN) && (bus_size > 16)) {
-				if (eth->dataendian != TARGET_BYTEORDER) {
+				if (eth->dataendian != BYTE_ORDER_BIG) {
 					Bus_WriteSwap32(rbd->source, eth->rxfifo, 14);
 					Bus_WriteSwap32(rbd->source + 16, eth->rxfifo + 14,
 							bus_size - 16);
@@ -698,7 +698,7 @@ receive(NS9750eth * eth)
 						  bus_size - 16);
 				}
 			} else {
-				if (eth->dataendian != TARGET_BYTEORDER) {
+				if (eth->dataendian != BYTE_ORDER_BIG) {
 					Bus_WriteSwap32(rbd->source, eth->rxfifo, bus_size);
 				} else {
 					Bus_Write(rbd->source, eth->rxfifo, bus_size);
@@ -940,7 +940,7 @@ transmit_frame(NS9750eth * eth)
 			break;
 		}
 		//fprintf(stderr,"reading packet from %08x\n",tbd.source);
-		if (eth->dataendian != TARGET_BYTEORDER) {
+		if (eth->dataendian != BYTE_ORDER_BIG) {
 			Bus_ReadSwap32(eth->txfifo + eth->txfifo_count, tbd.source, tbd.blength);
 		} else {
 			Bus_Read(eth->txfifo + eth->txfifo_count, tbd.source, tbd.blength);

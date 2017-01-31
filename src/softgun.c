@@ -59,6 +59,7 @@
 #  include "senseless.h"
 #endif
 
+#include "core/byteorder.h"
 #include "core/lib.h"
 #include "core/logging.h"
 

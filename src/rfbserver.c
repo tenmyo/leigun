@@ -54,7 +54,7 @@
 #endif
 
 // include user header
-#include "byteorder.h"
+#include "core/byteorder.h"
 #include "configfile.h"
 #include "fbdisplay.h"
 #include "sgstring.h"
@@ -493,13 +493,12 @@ encode_pixval(RfbConnection * rcon, void *src, PixelFormat * pixf, PixelFormat *
   uint32_t pixval;
   uint8_t red, green, blue;
 
-#if __BYTE_ORDER == __BIG_ENDIAN
   switch (fbpixf->bits_per_pixel) {
   case 32:
-    pixval = le32_to_host(*(uint32_t *)src);
+    pixval = BYTE_LeToH32(*(uint32_t *)src);
     break;
   case 16:
-    pixval = le16_to_host(*(uint16_t *)src);
+    pixval = BYTE_LeToH16(*(uint16_t *)src);
     break;
   case 8:
     pixval = *(uint8_t *)src;
@@ -507,9 +506,6 @@ encode_pixval(RfbConnection * rcon, void *src, PixelFormat * pixf, PixelFormat *
   default:
     pixval = 0;
   }
-#else
-  pixval = le32_to_host(*(uint32_t *)src);
-#endif
   red = (pixval >> fbpixf->red_shift) & fbpixf->red_max;
   green = (pixval >> fbpixf->green_shift) & fbpixf->green_max;
   blue = (pixval >> fbpixf->blue_shift) & fbpixf->blue_max;
@@ -529,7 +525,7 @@ write_pixel8(uint8_t * dst, uint32_t pixval) {
 
 static int
 write_pixel16_swap(uint8_t * dst, uint32_t pixval) {
-  write16(dst, swap16(pixval));
+  write16(dst, BYTE_Swap16(pixval));
   return 2;
 }
 
@@ -560,7 +556,7 @@ write_pixel24(uint8_t * dst, uint32_t pixval) {
 
 static int
 write_pixel32_swap(uint8_t * dst, uint32_t pixval) {
-  write32(dst, swap32(pixval));
+  write32(dst, BYTE_Swap32(pixval));
   return 4;
 }
 
@@ -612,7 +608,7 @@ write_pixel(int con_bypp, int swap, uint8_t * dst, uint32_t pixval) {
     return 1;
   case 2:
     if (swap) {
-      write16(dst, swap16(pixval));
+      write16(dst, BYTE_Swap16(pixval));
     } else {
       write16(dst, pixval);
     }
@@ -633,7 +629,7 @@ write_pixel(int con_bypp, int swap, uint8_t * dst, uint32_t pixval) {
     return 3;
   case 4:
     if (swap) {
-      write32(dst, swap32(pixval));
+      write32(dst, BYTE_Swap32(pixval));
     } else {
       write32(dst, pixval);
     }
@@ -1516,9 +1512,9 @@ RfbServer_New(const char *name, FbDisplay ** displayPP, Keyboard ** keyboardPP, 
   pixf->bypp = 2;
   pixf->depth = 12;
 
-  if (HOST_BYTEORDER == en_BIG_ENDIAN) {
+  if (BYTE_ORDER_NATIVE == BYTE_ORDER_BIG) {
     pixf->big_endian_flag = 1;
-  } else if (HOST_BYTEORDER == en_LITTLE_ENDIAN) {
+  } else if (BYTE_ORDER_NATIVE == BYTE_ORDER_LITTLE) {
     pixf->big_endian_flag = 0;
   } else {
     fprintf(stderr, "No byteorder detected\n");

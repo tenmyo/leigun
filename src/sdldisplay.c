@@ -4,7 +4,7 @@
 #include "fbdisplay.h"
 #include "keyboard.h"
 #include "configfile.h"
-#include "byteorder.h"
+#include "core/byteorder.h"
 #include "cycletimer.h"
 
 #define write16(addr,value) (*(uint16_t*)(addr) = (value))
@@ -115,13 +115,12 @@ encode_pixval(SDLDisplay * sd, void *src, PixelFormat * inpixf)
 	uint32_t pixval;
 	uint8_t red, green, blue;
 
-#if __BYTE_ORDER == __BIG_ENDIAN
 	switch (fbpixf->bits_per_pixel) {
 	    case 32:
-		    pixval = le32_to_host(*(uint32_t *) src);
+		    pixval = BYTE_LeToH32(*(uint32_t *) src);
 		    break;
 	    case 16:
-		    pixval = le16_to_host(*(uint16_t *) src);
+		    pixval = BYTE_LeToH16(*(uint16_t *) src);
 		    break;
 	    case 8:
 		    pixval = *(uint8_t *) src;
@@ -129,9 +128,6 @@ encode_pixval(SDLDisplay * sd, void *src, PixelFormat * inpixf)
 	    default:
 		    pixval = 0;
 	}
-#else
-	pixval = le32_to_host(*(uint32_t *) src);
-#endif
 
 	red = (pixval >> inpixf->red_shift) & inpixf->red_max;
 	green = (pixval >> inpixf->green_shift) & inpixf->green_max;

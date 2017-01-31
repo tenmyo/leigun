@@ -98,10 +98,10 @@ debugger_getreg(void *clientData, uint8_t * data, uint32_t index, int maxlen)
 	} else {
 		return 0;
 	}
-	if (MMU_Byteorder() == TARGET_BYTEORDER) {
-		*((uint32_t *) data) = host32_to_target(value);
+	if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+		BYTE_WriteToBe32(data, 0, value);
 	} else {
-		*((uint32_t *) data) = swap32(host32_to_target(value));
+		BYTE_WriteToLe32(data, 0, value);
 	}
 	return 4;
 }
@@ -112,10 +112,10 @@ debugger_setreg(void *clientData, const uint8_t * data, uint32_t index, int len)
 	uint32_t value;
 	if (len != 4)
 		return;
-	if (MMU_Byteorder() == TARGET_BYTEORDER) {
-		value = target32_to_host(*((uint32_t *) data));
+	if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+		BYTE_WriteToBe32(value, 0, *((uint32_t *)data));
 	} else {
-		value = swap32(target32_to_host(*((uint32_t *) data)));
+		BYTE_WriteToLe32(value, 0, *((uint32_t *)data));
 	}
 	if (index < 16) {
 		ARM9_WriteReg(value, index);
@@ -141,17 +141,17 @@ debugger_get_bkpt_ins(void *clientData, uint8_t * ins, uint64_t addr, int len)
 {
 	if (len == 2) {
 		uint16_t value = 0xbe00;
-		if (MMU_Byteorder() == TARGET_BYTEORDER) {
-			*((uint16_t *) ins) = host16_to_target(value);
+		if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+			BYTE_WriteToBe16(ins, 0, value);
 		} else {
-			*((uint16_t *) ins) = swap16(host16_to_target(value));
+			BYTE_WriteToLe16(ins, 0, value);
 		}
 	} else if (len == 4) {
 		uint32_t value = 0xe1200070;
-		if (MMU_Byteorder() == TARGET_BYTEORDER) {
-			*((uint32_t *) ins) = host32_to_target(value);
+		if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+			BYTE_WriteToBe32(ins, 0, value);
 		} else {
-			*((uint32_t *) ins) = swap32(host32_to_target(value));
+			BYTE_WriteToLe32(ins, 0, value);
 		}
 	}
 }
@@ -217,18 +217,18 @@ debugger_getmem(void *clientData, uint8_t * data, uint64_t addr, uint32_t len)
 	}
 	for (; len >= 4; len -= 4, count += 4, data += 4) {
 		uint32_t value = MMU_Read32(addr + count);
-		if (MMU_Byteorder() == TARGET_BYTEORDER) {
-			*((uint32_t *) data) = host32_to_target(value);
+		if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+			BYTE_WriteToBe32(data, 0, value);
 		} else {
-			*((uint32_t *) data) = swap32(host32_to_target(value));
+			BYTE_WriteToLe32(data, 0, value);
 		}
 	}
 	for (; len > 2; len -= 2, count += 2, data += 2) {
 		uint16_t value = MMU_Read16(addr + count);
-		if (MMU_Byteorder() == TARGET_BYTEORDER) {
-			*((uint16_t *) data) = host16_to_target(value);
+		if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+			BYTE_WriteToBe16(data, 0, value);
 		} else {
-			*((uint16_t *) data) = swap16(host16_to_target(value));
+			BYTE_WriteToLe16(data, 0, value);
 		}
 	}
 	for (; len > 0; len--, count++, data++) {
@@ -252,18 +252,18 @@ debugger_setmem(void *clientData, const uint8_t * data, uint64_t addr, uint32_t 
 	}
 	for (; len >= 4; len -= 4, count += 4, data += 4) {
 		uint32_t value = *((uint32_t *) data);
-		if (MMU_Byteorder() == TARGET_BYTEORDER) {
-			MMU_Write32(target32_to_host(value), addr + count);
+		if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+			MMU_Write32(BYTE_HToBe32(value), addr + count);
 		} else {
-			MMU_Write32(swap32(target32_to_host(value)), addr + count);
+			MMU_Write32(BYTE_HToLe32(value), addr + count);
 		}
 	}
 	for (; len > 2; len -= 2, count += 2, data += 2) {
 		uint16_t value = *((uint32_t *) data);
-		if (MMU_Byteorder() == TARGET_BYTEORDER) {
-			MMU_Write16(target16_to_host(value), addr);
+		if (MMU_Byteorder() == BYTE_ORDER_BIG) {
+			MMU_Write16(BYTE_HToBe16(value), addr +  count);
 		} else {
-			MMU_Write16(swap16(target16_to_host(value)), addr + count);
+			MMU_Write16(BYTE_HToLe16(value), addr + count);
 		}
 	}
 	for (; len > 0; len--, count++, data++) {

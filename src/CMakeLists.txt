@@ -114,7 +114,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${CMAKE_DL_LIBS} rt m)
 # ENABLE WARNINGS
 TARGET_COMPILE_OPTIONS(
   ${PROJECT_NAME} PRIVATE
-  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
+#  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
   "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef>"
   "$<$<C_COMPILER_ID:MSVC>:/W4>"
   )

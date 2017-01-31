@@ -246,7 +246,7 @@ static void
 PmGpio_Map(void *owner, uint32_t base, uint32_t mask, uint32_t flags)
 {
 	PmGpio *gpio = owner;
-	IOH_NewRegion(BACKUP_RAM(base), 2048, bram_read, bram_write, HOST_BYTEORDER, gpio);
+	IOH_NewRegion(BACKUP_RAM(base), 2048, bram_read, bram_write, IOH_FLG_HOST_ENDIAN, gpio);
 
 	//      IOH_New32(GPIOPK_RST(base),rst_read,rst_write,gpio);
 	IOH_New32(PMGPIO_DAT(base), dat_read, dat_write, gpio);

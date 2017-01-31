@@ -761,13 +761,13 @@ IOH_New(uint32_t cpu_addr, IOReadProc * readproc, IOWriteProc * writeproc, void 
 	int swap_endian;
 	int byteorder;
 	if (flags & IOH_FLG_BIG_ENDIAN) {
-		byteorder = en_BIG_ENDIAN;
+		byteorder = BYTE_ORDER_BIG;
 	} else if (flags & IOH_FLG_HOST_ENDIAN) {
-		byteorder = HOST_BYTEORDER;
+		byteorder = BYTE_ORDER_NATIVE;
 	} else {
-		byteorder = en_LITTLE_ENDIAN;
+		byteorder = BYTE_ORDER_LITTLE;
 	}
-	if (byteorder != HOST_BYTEORDER) {
+	if (byteorder != BYTE_ORDER_NATIVE) {
 		swap_endian = 1;
 	} else {
 		swap_endian = 0;
@@ -885,13 +885,13 @@ IOH_NewRegion(uint32_t addr, uint32_t length, IOReadProc * readproc, IOWriteProc
 	int swap_endian;
 	int byteorder;
 	if (flags & IOH_FLG_BIG_ENDIAN) {
-		byteorder = en_BIG_ENDIAN;
+		byteorder = BYTE_ORDER_BIG;
 	} else if (flags & IOH_FLG_HOST_ENDIAN) {
-		byteorder = HOST_BYTEORDER;
+		byteorder = BYTE_ORDER_NATIVE;
 	} else {
-		byteorder = en_LITTLE_ENDIAN;
+		byteorder = BYTE_ORDER_LITTLE;
 	}
-	if (byteorder != HOST_BYTEORDER) {
+	if (byteorder != BYTE_ORDER_NATIVE) {
 		swap_endian = 1;
 	} else {
 		swap_endian = 0;
@@ -1066,11 +1066,11 @@ IO_Write32(uint32_t value, uint32_t addr)
 		if (!h->swap_endian) {
 			h->writeproc(h->clientData, value, addr, 4);
 		} else {
-			h->writeproc(h->clientData, swap32(value), addr, 4);
+			h->writeproc(h->clientData, BYTE_Swap32(value), addr, 4);
 		}
 	} else if (likely(h->len == 2)) {
 		if (h->swap_endian) {
-			value = swap32(value);
+			value = BYTE_Swap32(value);
 		}
 		h->writeproc(h->clientData, value, addr, 2);
 		if (h->flags & IOH_FLG_OSZW_NEXT) {
@@ -1081,7 +1081,7 @@ IO_Write32(uint32_t value, uint32_t addr)
 		}
 	} else if (likely(h->len == 1)) {
 		if (h->swap_endian) {
-			value = swap32(value);
+			value = BYTE_Swap32(value);
 		}
 		if (h->flags & IOH_FLG_OSZW_NEXT) {
 			fprintf(stderr, "Please implement %s, line %d\n", __FILE__, __LINE__);
@@ -1105,11 +1105,11 @@ IO_Write16(uint16_t value, uint32_t addr)
 		if (!h->swap_endian) {
 			h->writeproc(h->clientData, value, addr, 2);
 		} else {
-			h->writeproc(h->clientData, swap16(value), addr, 2);
+			h->writeproc(h->clientData, BYTE_Swap16(value), addr, 2);
 		}
 	} else if (h->len == 1) {
 		if (h->swap_endian) {
-			value = swap16(value);
+			value = BYTE_Swap16(value);
 		}
 		h->writeproc(h->clientData, value, addr, 1);
 		if (h->flags & IOH_FLG_OSZW_NEXT) {
@@ -1138,7 +1138,7 @@ IO_Write8(uint8_t value, uint32_t addr)
         val32 = value;
     } else if (h->len == 2) {
 		if (h->swap_endian ^ (addr & 1)) {
-			val32 = swap16((uint16_t)value);
+			val32 = BYTE_Swap16((uint16_t)value);
 		} else {
             val32 = value;
         }
@@ -1153,7 +1153,7 @@ IO_Write8(uint8_t value, uint32_t addr)
         } 
     } else /* if(h->len == 4) */ {
 		if (h->swap_endian) {
-			val32 = swap32((uint32_t)value);
+			val32 = BYTE_Swap32((uint32_t)value);
 		} else {
             val32 = value;
         }
@@ -1191,7 +1191,7 @@ IO_Read32(uint32_t addr)
 		if (!h->swap_endian) {
 			return h->readproc(h->clientData, addr, 4);
 		} else {
-			return swap32(h->readproc(h->clientData, addr, 4));
+			return BYTE_Swap32(h->readproc(h->clientData, addr, 4));
 		}
 	} else if (h->len == 2) {
 		if (h->flags & IOH_FLG_OSZR_NEXT) {
@@ -1204,7 +1204,7 @@ IO_Read32(uint32_t addr)
 			value = h->readproc(h->clientData, addr, 4);
 		}
 		if (h && h->swap_endian) {
-			value = swap32(value);
+			value = BYTE_Swap32(value);
 		}
 	} else if (h->len == 1) {
 		if (h->flags & IOH_FLG_OSZR_NEXT) {
@@ -1223,7 +1223,7 @@ IO_Read32(uint32_t addr)
 			value = h->readproc(h->clientData, addr, 4);
 		}
 		if (h->swap_endian) {
-			value = swap32(value);
+			value = BYTE_Swap32(value);
 		}
 	} else {
 		fprintf(stderr, "Illegal handler len %d for addr 0x%08x\n", h->len, addr);
@@ -1244,7 +1244,7 @@ IO_Read16(uint32_t addr)
 		value = h->readproc(h->clientData, addr, 2);
 		if (h->swap_endian) {
             fprintf(stderr, "SWAP16 %04x\n",value);
-			value = swap16(value);
+			value = BYTE_Swap16(value);
 		}
 	} else if (h->len == 1) {
 		if (h->flags & IOH_FLG_OSZR_NEXT) {
@@ -1253,7 +1253,7 @@ IO_Read16(uint32_t addr)
 			if (h && h->readproc) {
 				value = value | h->readproc(h->clientData, addr + 1, 1) << 8;
 				if (h->swap_endian) {
-					value = swap16(value);
+					value = BYTE_Swap16(value);
 				}
 			}
 		} else {
@@ -1267,7 +1267,7 @@ IO_Read16(uint32_t addr)
 			value = h->readproc(h->clientData, addr, 2);
 		}
 		if (h->swap_endian) {
-			value = swap32(value);
+			value = BYTE_Swap32(value);
 		}
 	} else {
 		fprintf(stderr, "Illegal handler len %d for addr 0x%08x\n", h->len, addr);
@@ -1289,7 +1289,7 @@ IO_Read8(uint32_t addr)
 		return value;
 	} else if (h->len == 2) {
 		if (h->swap_endian) {
-			value = swap16(value);
+			value = BYTE_Swap16(value);
             if (h->flags & IOH_FLG_PRD_RARP) {
                 value = value >> (((addr ^ 1) & 1) << 3);
                 return value;
@@ -1302,7 +1302,7 @@ IO_Read8(uint32_t addr)
         }
 	} else if (h->len == 4) {
 		if (h->swap_endian) {
-			value = swap32(value);
+			value = BYTE_Swap32(value);
             if (h->flags & IOH_FLG_PRD_RARP) {
                 value = value >> (((addr ^ 3) & 3) << 3);
                 return value;

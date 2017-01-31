@@ -114,7 +114,7 @@ board_armee_create(void)
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
 	/* Copro is created but not registered (1:1 translation is bootup default) */
-	copro = MMU9_Create("mmu", TARGET_BYTEORDER, MMU_ARM926EJS | MMUV_NS9750);
+	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
 
 	dev = PL190_New("vic");
 	Mem_AreaAddMapping(dev, 0xfffff000, 0x1000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);

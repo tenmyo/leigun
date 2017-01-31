@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include "bus.h"
 #include "sgstring.h"
-#include "byteorder.h"
 #include "compiler_extensions.h"
 #include "vmmu_tcc8k.h"
+#include "core/byteorder.h"
 
 #define	REG_REGION(base,region)	((base) + ((region) << 2))
 #define		REGION_SA_MSK 	(0xfff << 20)
@@ -29,7 +29,7 @@ dump_pte_vrom(TccVmmu * vm)
 	int i;
 	for (i = 0; i < 4096; i++) {
 		uint32_t *pteP = (uint32_t *) (vm->PteVRom + (i << 2));
-		uint32_t pte = le32_to_host(*pteP);
+		uint32_t pte = BYTE_LeToH32(*pteP);
 		if ((i & 7) == 0) {
 			fprintf(stdout, "%03x: ", i);
 		}
@@ -57,7 +57,7 @@ update_pte_vrom(TccVmmu * vm)
 			uint32_t pte = i & REGION_SA_MSK;
 			uint32_t *pteP = (uint32_t *) (vm->PteVRom + (i >> 18));
 			pte |= (region & 0x0dff) | 0x12;
-			*pteP = host32_to_le(pte);
+			*pteP = BYTE_HToLE32(pte);
 		}
 	}
 }
