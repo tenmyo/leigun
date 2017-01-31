@@ -39,8 +39,8 @@
 
 #elif defined(_MSC_VER)
 
-#define __LITTLE_ENDIAN 1234
-#define __BYTE_ORDER __LITTLE_ENDIAN
+#define __LITTLE_ENDIAN__ 1234
+#define __BYTE_ORDER__ __LITTLE_ENDIAN__
 #include <stdlib.h>
 #define swap64(x)		_byteswap_uint64(x)
 #define swap32(x)		_byteswap_ulong(x)
@@ -62,10 +62,10 @@ enum en_endianness {
     en_BIG_ENDIAN = 1,
 };
 
-#ifndef __BYTE_ORDER
-#error __BYTE_ORDER undefined
+#ifndef __BYTE_ORDER__
+#error __BYTE_ORDER__ undefined
 #endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if __BYTE_ORDER__ == __BIG_ENDIAN__
 #define HOST_BYTEORDER en_BIG_ENDIAN
 
 #define host64_to_be(x)		(x)
