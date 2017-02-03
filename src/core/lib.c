@@ -30,6 +30,7 @@
 
 // Local/Private Headers
 #include "core/lg-errno.h"
+#include "core/list.h"
 #include "core/logging.h"
 #include "core/str.h"
 
@@ -50,38 +51,46 @@
 //==============================================================================
 //= Types
 //==============================================================================
-struct LibList {
-    struct LibList *next;
+typedef struct Lib_List_s Lib_List_t;
+struct Lib_List_s {
+    List_ElementMembesr(Lib_List_t);
     uv_lib_t lib;
+    char *path;
 };
 
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
+static void Lib_close(Lib_List_t *lib);
+static void Lib_onExit(void);
 
 
 //==============================================================================
 //= Variables
 //==============================================================================
-static struct LibList *g_libs;
+static struct { List_Members(Lib_List_t) } g_libs;
 
 
 //==============================================================================
 //= Function definitions(static)
 //==============================================================================
+//===----------------------------------------------------------------------===//
+/// Close loaded librarie.
+//===----------------------------------------------------------------------===//
+static void Lib_close(Lib_List_t *lib) {
+    LOG_Verbose("Lib", "Close %s", lib->path);
+    uv_dlclose(&lib->lib);
+    free(lib->path);
+    free(lib);
+}
 
 //===----------------------------------------------------------------------===//
 /// Close loaded libraries.
 //===----------------------------------------------------------------------===//
-static void LIB_exitHandler(void) {
-    LOG_Verbose("LIB", "LIB_exitHandler");
-    struct LibList *next = g_libs;
-    while (next) {
-        struct LibList *lib = next;
-        uv_dlclose(&lib->lib);
-        next = lib->next;
-        free(lib);
-    }
+static void Lib_onExit(void) {
+    LOG_Verbose("Lib", "Lib_onExit");
+    List_Map(Lib_List_t, &g_libs, Lib_close);
+    List_Init(&g_libs);
 }
 
 
@@ -119,23 +128,22 @@ Lg_Errno_t Lib_Init(void) {
     char path[FILENAME_MAX];
     size_t size = sizeof(path);
     int err;
-    struct LibList **pnext = &g_libs;
-    struct LibList *lib;
+    Lib_List_t *lib;
     void (*initfunc)(void);
-    atexit(&LIB_exitHandler);
-    LOG_Info("LIB", "Load libraries...");
+    atexit(&Lib_onExit);
+    LOG_Info("Lib", "Load libraries...");
     err = uv_os_homedir(path, &size);
     if (err < 0) {
-        LOG_Warn("LIB", "uv_os_homedir failed. %s: %s", uv_err_name(err),
+        LOG_Warn("Lib", "uv_os_homedir failed. %s: %s", uv_err_name(err),
                  uv_strerror(err));
         return LG_EENV;
     }
-    LOG_Verbose("LIB", "homedir: %s", path);
+    LOG_Verbose("Lib", "homedir: %s", path);
     strcat(path, "/.leigun/libs.txt");
-    LOG_Verbose("LIB", "list file: %s", path);
+    LOG_Verbose("Lib", "list file: %s", path);
     fp = fopen(path, "r");
     if (!fp) {
-        LOG_Info("LIB", "fopen failed. %s", strerror(errno));
+        LOG_Info("Lib", "fopen failed. %s", strerror(errno));
         return LG_ESUCCESS;
     }
     while (fgets(path, sizeof(path), fp)) {
@@ -145,26 +153,27 @@ Lg_Errno_t Lib_Init(void) {
         if (strlen(path) == 0) {
             continue;
         }
-        LOG_Info("LIB", "dlopen %s", path);
+        LOG_Info("Lib", "dlopen %s", path);
         lib = calloc(1, sizeof(*lib));
         err = uv_dlopen(path, &lib->lib);
         if (err < 0) {
-            LOG_Warn("LIB", "dlopen(%s) failed. %s", path,
-                     uv_dlerror(&lib->lib));
-            free(lib);
-            continue;
-        }
-        LOG_Verbose("LIB", "dlsym(initialize)");
-        err = uv_dlsym(&lib->lib, "initialize", &initfunc);
-        if (err < 0) {
-            LOG_Warn("LIB", "dlsym(initialize) failed. %s",
+            LOG_Warn("Lib", "dlopen(%s) failed. %s", path,
                      uv_dlerror(&lib->lib));
             uv_dlclose(&lib->lib);
             free(lib);
             continue;
         }
-        *pnext = lib;
-        pnext = &lib->next;
+        LOG_Verbose("Lib", "dlsym(initialize)");
+        err = uv_dlsym(&lib->lib, "initialize", (void **)&initfunc);
+        if (err < 0) {
+            LOG_Warn("Lib", "dlsym(initialize) failed. %s",
+                     uv_dlerror(&lib->lib));
+            uv_dlclose(&lib->lib);
+            free(lib);
+            continue;
+        }
+        lib->path = strdup(path);
+        List_Push(&g_libs, lib);
         initfunc();
     }
     fclose(fp);
