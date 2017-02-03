@@ -280,7 +280,7 @@ main(int argc, char *argv[])
 #endif
 	Board *board;
 	LOG_Info("MAIN", "%s", softgun_version);
-	if (LIB_Init() < 0) {
+	if (Lib_Init() < 0) {
 		LOG_Error("MAIN", "LIB_Init %s.", "failed");
 		exit(1);
 	}

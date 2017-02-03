@@ -33,13 +33,15 @@ extern "C" {
 //= Constants(also Enumerations)
 //==============================================================================
 /* Expand this list if necessary. */
-#define LG_ERRNO_MAP(XX) XX(EENV, -1, "Can't get environment")
+#define LG_ERRNO_MAP(XX)                                                       \
+    XX(ESUCCESS, 0, "Success")                                                 \
+    XX(EENV, -1, "Can't get environment")
 
-typedef enum {
+typedef enum Lg_Errno_e {
 #define XX(code, num, _) LG_##code = (num),
     LG_ERRNO_MAP(XX)
 #undef XX
-} lg_errno_t;
+} Lg_Errno_t;
 
 
 //==============================================================================

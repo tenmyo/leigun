@@ -111,10 +111,10 @@ static void LIB_exitHandler(void) {
 /// @attention
 /// Even if dlopen or dlsym fails, not occur error to return.
 ///
-/// @retval 0       No Error
-/// @retval LG_EENV Can't get ENV['HOME']
+/// @retval LG_ESUCCESS     No Error
+/// @retval LG_EENV         Can't get ENV['HOME']
 //===----------------------------------------------------------------------===//
-int LIB_Init(void) {
+Lg_Errno_t Lib_Init(void) {
     FILE *fp;
     char path[FILENAME_MAX];
     size_t size = sizeof(path);
@@ -136,7 +136,7 @@ int LIB_Init(void) {
     fp = fopen(path, "r");
     if (!fp) {
         LOG_Info("LIB", "fopen failed. %s", strerror(errno));
-        return 0;
+        return LG_ESUCCESS;
     }
     while (fgets(path, sizeof(path), fp)) {
         STR_StripL(path);
@@ -168,5 +168,5 @@ int LIB_Init(void) {
         initfunc();
     }
     fclose(fp);
-    return 0;
+    return LG_ESUCCESS;
 }
