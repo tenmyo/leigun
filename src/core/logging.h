@@ -17,8 +17,8 @@
 //===----------------------------------------------------------------------===//
 ///
 /// @file
-/// This file contains the declaration of the Logging facility functions, which
-/// provides a flexible event logging system for simulators.
+/// This file contains the declaration of the Logging facility function(macro)s,
+/// which provides a flexible event logging system for simulators.
 ///
 //===----------------------------------------------------------------------===//
 #pragma once
@@ -56,7 +56,7 @@ extern int LOG_level;
 
 
 //==============================================================================
-//= Functions
+//= Macros
 //==============================================================================
 #define LOG_Log(level, pri, tag, ...)                                          \
     do {                                                                       \
@@ -73,6 +73,11 @@ extern int LOG_level;
 #define LOG_Info(tag, ...) LOG_Log(LOG_LEVEL_INFO, "INFO", tag, __VA_ARGS__)
 #define LOG_Warn(tag, ...) LOG_Log(LOG_LEVEL_WARN, "WARN", tag, __VA_ARGS__)
 #define LOG_Error(tag, ...) LOG_Log(LOG_LEVEL_ERROR, "ERROR", tag, __VA_ARGS__)
+
+
+//==============================================================================
+//= Functions
+//==============================================================================
 
 
 #ifdef __cplusplus
