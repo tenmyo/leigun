@@ -61,6 +61,7 @@
 #endif
 
 #include "core/byteorder.h"
+#include "core/exithandler.h"
 #include "core/lib.h"
 #include "core/logging.h"
 
@@ -280,7 +281,13 @@ main(int argc, char *argv[])
 	uint64_t seedval;
 #endif
 	Board *board;
+	
 	LOG_Info("MAIN", "%s", softgun_version);
+	
+	if (ExitHandler_Init() < 0) {
+		LOG_Error("MAIN", "ExitHandler_Init failed.");
+		exit(1);
+	}
 	if (Lib_Init() < 0) {
 		LOG_Error("MAIN", "LIB_Init %s.", "failed");
 		exit(1);

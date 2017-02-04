@@ -89,8 +89,8 @@ static void Lib_close(Lib_List_t *lib) {
 //===----------------------------------------------------------------------===//
 static void Lib_onExit(void) {
     LOG_Verbose("Lib", "Lib_onExit");
-    List_Map(Lib_List_t, &g_libs, Lib_close);
     List_Init(&g_libs);
+    List_Map(libs, Lib_close);
 }
 
 

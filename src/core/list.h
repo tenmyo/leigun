@@ -79,13 +79,25 @@ struct List_Element_s {
         (l)->l_head = e;                                                       \
     } while (0)
 
-#define List_Map(member_t, l, proc)                                            \
+#define List_Map(l, proc)                                                      \
     do {                                                                       \
-        member_t *element, *next; /* NOLINT for member_t parentheses */        \
-        for (element = (l)->l_head; element; element = next) {                 \
-            next = element->l_next;                                            \
-            proc(element);                                                     \
+        List_Element_t *e, *next;                                              \
+        for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
+            next = e->l_next;                                                  \
+            proc((void *)e);                                                   \
         }                                                                      \
+    } while (0)
+
+#define List_PopBy(l, comparator, operand_element, result_element)             \
+    do {                                                                       \
+        List_Element_t *e, *next;                                              \
+        for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
+            next = e->l_next;                                                  \
+            if (!comparator((void *)e, operand_element)) {                     \
+                break;                                                         \
+            }                                                                  \
+        }                                                                      \
+        (result_element) = (void *)e;                                          \
     } while (0)
 
 

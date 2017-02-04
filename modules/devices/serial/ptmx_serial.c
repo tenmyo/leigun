@@ -49,12 +49,12 @@
 
 // include user header
 #include "initializer.h"
-#include "cleanup.h"
 #include "sgstring.h"
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sglib.h"
 #include "core/asyncmanager.h"
+#include "core/exithandler.h"
 
 
 #define RXBUF_SIZE 128

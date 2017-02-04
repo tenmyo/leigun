@@ -46,7 +46,7 @@ TARGET_COMPILE_OPTIONS(
 # DISABLE FUSSY WARNINGS
 TARGET_COMPILE_OPTIONS(
   ${PROJECT_NAME} PRIVATE
-  "$<$<C_COMPILER_ID:Clang>:-Wno-format-pedantic;-Wno-padded;-Wno-reserved-id-macro;-Wno-unused-parameter;-Wno-unused-macros>"
+  "$<$<C_COMPILER_ID:Clang>:-Wno-padded;-Wno-unused-parameter;-Wno-unused-macros>"
   "$<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>"
   "$<$<C_COMPILER_ID:MSVC>:>"
   )

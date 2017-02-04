@@ -1,4 +1,4 @@
-//===-- core/lg-errno.h - Error constants -------------------------*- C -*-===//
+//===-- core/exithandler.h - Generic cleanup facilities -----------*- C -*-===//
 //
 //              The Leigun Embedded System Simulator Platform
 //
@@ -17,7 +17,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file contains the declaration of the Error constants.
+/// This file contains the declaration of Generic cleanup facilities.
 ///
 //===----------------------------------------------------------------------===//
 #pragma once
@@ -27,31 +27,18 @@ extern "C" {
 //==============================================================================
 //= Dependencies
 //==============================================================================
+#include "core/lg-errno.h"
 
 
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-/* Expand this list if necessary. */
-#define LG_ERRNO_MAP(XX)                                                       \
-    XX(ESUCCESS, 0, "Success")                                                 \
-    XX(EENV, -1, "Can't get environment")                                      \
-    XX(EUV_MUTEX, -2, "uv_mutex error")                                        \
-    XX(ENOMEM, -3, "Out of memory")                                            \
-    XX(EATEXIT, -4, "atexit failed")                                           \
-    XX(ESIGNAL, -5, "signal() failed")
-
-
-typedef enum Lg_Errno_e {
-#define XX(code, num, _) LG_##code = (num),
-    LG_ERRNO_MAP(XX)
-#undef XX
-} Lg_Errno_t;
 
 
 //==============================================================================
 //= Types
 //==============================================================================
+typedef void (*ExitHandler_Callback_cb)(void *data);
 
 
 //==============================================================================
@@ -60,8 +47,17 @@ typedef enum Lg_Errno_e {
 
 
 //==============================================================================
+//= Macros
+//==============================================================================
+
+
+//==============================================================================
 //= Functions
 //==============================================================================
+Lg_Errno_t ExitHandler_Init(void);
+Lg_Errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data);
+Lg_Errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data);
+
 
 #ifdef __cplusplus
 }
