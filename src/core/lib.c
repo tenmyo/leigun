@@ -29,6 +29,7 @@
 #include "core/lib.h"
 
 // Local/Private Headers
+#include "core/exithandler.h"
 #include "core/lg-errno.h"
 #include "core/list.h"
 #include "core/logging.h"
@@ -51,24 +52,25 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Lib_List_s Lib_List_t;
-struct Lib_List_s {
-    List_ElementMembesr(Lib_List_t);
+typedef struct Lib_listMember_s Lib_listMember_t;
+struct Lib_listMember_s {
+    List_ElementMembesr(Lib_listMember_t);
     uv_lib_t lib;
     char *path;
 };
+typedef struct Lib_list_s { List_Members(Lib_listMember_t) } Lib_list_t;
 
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
-static void Lib_close(Lib_List_t *lib);
-static void Lib_onExit(void);
+static void Lib_close(Lib_listMember_t *lib);
+static void Lib_onExit(Lib_list_t *libs);
 
 
 //==============================================================================
 //= Variables
 //==============================================================================
-static struct { List_Members(Lib_List_t) } g_libs;
+static Lib_list_t Lib_loadedLibs;
 
 
 //==============================================================================
@@ -77,8 +79,8 @@ static struct { List_Members(Lib_List_t) } g_libs;
 //===----------------------------------------------------------------------===//
 /// Close loaded librarie.
 //===----------------------------------------------------------------------===//
-static void Lib_close(Lib_List_t *lib) {
-    LOG_Verbose("Lib", "Close %s", lib->path);
+static void Lib_close(Lib_listMember_t *lib) {
+    LOG_Debug("Lib", "Unload %s", lib->path);
     uv_dlclose(&lib->lib);
     free(lib->path);
     free(lib);
@@ -87,10 +89,10 @@ static void Lib_close(Lib_List_t *lib) {
 //===----------------------------------------------------------------------===//
 /// Close loaded libraries.
 //===----------------------------------------------------------------------===//
-static void Lib_onExit(void) {
+static void Lib_onExit(Lib_list_t *libs) {
     LOG_Verbose("Lib", "Lib_onExit");
-    List_Init(&g_libs);
     List_Map(libs, Lib_close);
+    List_Init(libs);
 }
 
 
@@ -120,17 +122,24 @@ static void Lib_onExit(void) {
 /// @attention
 /// Even if dlopen or dlsym fails, not occur error to return.
 ///
-/// @retval LG_ESUCCESS     No Error
-/// @retval LG_EENV         Can't get ENV['HOME']
+/// @return imply an error if negative
 //===----------------------------------------------------------------------===//
 Lg_Errno_t Lib_Init(void) {
     FILE *fp;
     char path[FILENAME_MAX];
     size_t size = sizeof(path);
     int err;
-    Lib_List_t *lib;
+    Lib_listMember_t *lib;
     void (*initfunc)(void);
-    atexit(&Lib_onExit);
+    Lg_Errno_t lg_errno;
+
+    List_Init(&Lib_loadedLibs);
+    lg_errno = ExitHandler_Register((ExitHandler_Callback_cb)&Lib_onExit,
+                                    &Lib_loadedLibs);
+    if (lg_errno < 0) {
+        LOG_Warn("Lib", "register exit handler failed. %d", lg_errno);
+        return lg_errno;
+    }
     LOG_Info("Lib", "Load libraries...");
     err = uv_os_homedir(path, &size);
     if (err < 0) {
@@ -173,7 +182,7 @@ Lg_Errno_t Lib_Init(void) {
             continue;
         }
         lib->path = strdup(path);
-        List_Push(&g_libs, lib);
+        List_Push(&Lib_loadedLibs, lib);
         initfunc();
     }
     fclose(fp);
