@@ -29,6 +29,7 @@
 #include "core/asyncmanager.h"
 
 // Local/Private Headers
+#include "core/exithandler.h"
 #include "core/logging.h"
 
 // External headers
@@ -217,8 +218,6 @@ typedef struct AsyncManager AsyncManager;
 // -----------------------------------------------------
 static struct req_data *new_req_data(enum req_type reqno);
 static struct sreq_data *new_sreq_data(enum sreq_type reqno);
-static void init(void);
-static void init_once(void);
 
 static void server_thread(void *arg);
 static int send_req(enum req_type type, void *data);
@@ -228,7 +227,7 @@ static void on_wakeup_sreq(uv_async_t *handle);
 
 static void free_data(uv_handle_t *handle);
 static void close_all(uv_handle_t *handle, void *arg);
-static void on_quit(void);
+static void AsyncManager_onExit(void *);
 
 // -----------------------------------------------------
 static void on_connection(uv_stream_t *server, int status);
@@ -259,7 +258,6 @@ static int poll_stop(PollHandle_t *handle);
 //= Variables
 //==============================================================================
 static AsyncManager *g_singleton;
-static uv_once_t init_guard = UV_ONCE_INIT;
 
 
 //==============================================================================
@@ -311,81 +309,14 @@ REQ_ALLOCED:
     return NULL;
 }
 
-
-// -----------------------------------------------------
-
-static void init(void) {
-    int err = 0;
-    int reqno;
-    uv_barrier_t blocker;
-    LOG_Info("AM", "AsyncManager %s.", "init");
-    g_singleton = calloc(1, sizeof(*g_singleton));
-    err = (g_singleton) ? 0 : UV_EAI_MEMORY;
-    UV_ERRCHECK(err, return );
-    // prepare server loop
-    g_singleton->loop = uv_default_loop();
-    // prepare async event notifier
-    for (reqno = 0; reqno < REQ_NUM; ++reqno) {
-        g_singleton->req[reqno] = new_req_data(reqno);
-        if (!g_singleton->req[reqno]) {
-            goto ERR_REQ_INIT;
-        }
-    }
-    for (reqno = 0; reqno < SREQ_NUM; ++reqno) {
-        g_singleton->sreq[reqno] = new_sreq_data(reqno);
-        if (!g_singleton->sreq[reqno]) {
-            goto ERR_SREQ_INIT;
-        }
-    }
-    // start server loop in the new thread
-    err = uv_barrier_init(&blocker, 2);
-    UV_ERRCHECK(err, goto ERR_SREQ_INITED);
-    g_singleton->loop->data = &blocker;
-    err =
-        uv_thread_create(&g_singleton->tid, &server_thread, g_singleton->loop);
-    UV_ERRCHECK(err, goto ERR_SREQ_INITED);
-    uv_barrier_wait(&blocker);
-    uv_barrier_destroy(&blocker);
-    // register resource release
-    atexit(&on_quit);
-    return;
-
-// error handlers
-ERR_SREQ_INITED:
-ERR_SREQ_INIT:
-    for (reqno = 0; (reqno < SREQ_NUM) && g_singleton->sreq[reqno]; ++reqno) {
-        uv_close((uv_handle_t *)&g_singleton->sreq[reqno]->async, NULL);
-        uv_sem_destroy(&g_singleton->sreq[reqno]->bsem);
-        uv_sem_destroy(&g_singleton->sreq[reqno]->respsem);
-        free(g_singleton->sreq[reqno]);
-    }
-ERR_REQ_INIT:
-    for (reqno = 0; (reqno < REQ_NUM) && g_singleton->req[reqno]; ++reqno) {
-        uv_close((uv_handle_t *)&g_singleton->req[reqno]->async, NULL);
-        uv_sem_destroy(&g_singleton->req[reqno]->bsem);
-        free(g_singleton->req[reqno]);
-    }
-    while (uv_loop_close(g_singleton->loop)) {
-        ;
-    }
-
-    free(g_singleton);
-    g_singleton = NULL;
-    abort();
-}
-
-static void init_once(void) {
-    uv_once(&init_guard, init);
-}
-
 // -----------------------------------------------------
 
 static void server_thread(void *arg) {
     uv_loop_t *loop = arg;
-    LOG_Debug("AM", "AsyncManager %s.", "start");
+    LOG_Debug("AM", "AsyncManager thread start");
     uv_barrier_wait((uv_barrier_t *)loop->data);
     uv_run(loop, UV_RUN_DEFAULT);
-    LOG_Debug("AM", "AsyncManager %s.", "start");
+    LOG_Debug("AM", "AsyncManager thread end");
 }
 
 static int send_req(enum req_type type, void *data) {
@@ -450,10 +381,10 @@ static void on_wakeup_sreq(uv_async_t *handle) {
     struct sreq_data *req = handle->data;
     switch (req->type) {
     case SREQ_WRITE:
-        req->status = writesync_stream(req->reqdata, &req->respdata);
+        req->status = writesync_stream(req->reqdata, (void *)&req->respdata);
         break;
     case SREQ_POLL_INIT:
-        req->status = poll_init(req->reqdata, &req->respdata);
+        req->status = poll_init(req->reqdata, (void *)&req->respdata);
         break;
     default:
         break;
@@ -474,7 +405,7 @@ static void close_all(uv_handle_t *handle, void *arg) {
     }
 }
 
-static void on_quit(void) {
+static void AsyncManager_onExit(void *data) {
     if (!g_singleton) {
         return;
     }
@@ -677,6 +608,79 @@ static int poll_stop(PollHandle_t *handle) {
 //= Function definitions(global)
 //==============================================================================
 
+//===----------------------------------------------------------------------===//
+/// Init handlers, And register The module handler.
+///
+/// - Initialize handler lists
+/// - Register The module handler to exit
+/// - Register The module handler to signal SIGINT
+///
+/// The module handler will be calling handlers,
+/// which registered by ExitHandler_Register at the leigun terminate.
+///
+/// @return imply an error if negative
+//===----------------------------------------------------------------------===//
+int AsyncManager_Init(void) {
+    int err = 0;
+    int reqno;
+    uv_barrier_t blocker;
+    LOG_Info("AM", "AsyncManager init");
+    g_singleton = calloc(1, sizeof(*g_singleton));
+    err = (g_singleton) ? 0 : UV_EAI_MEMORY;
+    UV_ERRCHECK(err, return LG_ENOMEM);
+    // prepare server loop
+    g_singleton->loop = uv_default_loop();
+    // prepare async event notifier
+    for (reqno = 0; reqno < REQ_NUM; ++reqno) {
+        g_singleton->req[reqno] = new_req_data(reqno);
+        if (!g_singleton->req[reqno]) {
+            goto ERR_REQ_INIT;
+        }
+    }
+    for (reqno = 0; reqno < SREQ_NUM; ++reqno) {
+        g_singleton->sreq[reqno] = new_sreq_data(reqno);
+        if (!g_singleton->sreq[reqno]) {
+            goto ERR_SREQ_INIT;
+        }
+    }
+    // start server loop in the new thread
+    err = uv_barrier_init(&blocker, 2);
+    UV_ERRCHECK(err, goto ERR_SREQ_INITED);
+    g_singleton->loop->data = &blocker;
+    err =
+        uv_thread_create(&g_singleton->tid, &server_thread, g_singleton->loop);
+    UV_ERRCHECK(err, goto ERR_SREQ_INITED);
+    uv_barrier_wait(&blocker);
+    uv_barrier_destroy(&blocker);
+    // register resource release
+    ExitHandler_Register(&AsyncManager_onExit, g_singleton);
+    return LG_ESUCCESS;
+
+// error handlers
+ERR_SREQ_INITED:
+ERR_SREQ_INIT:
+    for (reqno = 0; (reqno < SREQ_NUM) && g_singleton->sreq[reqno]; ++reqno) {
+        uv_close((uv_handle_t *)&g_singleton->sreq[reqno]->async, NULL);
+        uv_sem_destroy(&g_singleton->sreq[reqno]->bsem);
+        uv_sem_destroy(&g_singleton->sreq[reqno]->respsem);
+        free(g_singleton->sreq[reqno]);
+    }
+ERR_REQ_INIT:
+    for (reqno = 0; (reqno < REQ_NUM) && g_singleton->req[reqno]; ++reqno) {
+        uv_close((uv_handle_t *)&g_singleton->req[reqno]->async, NULL);
+        uv_sem_destroy(&g_singleton->req[reqno]->bsem);
+        free(g_singleton->req[reqno]);
+    }
+    while (uv_loop_close(g_singleton->loop)) {
+        ;
+    }
+
+    free(g_singleton);
+    g_singleton = NULL;
+    return err; /// @todo convert errno
+}
+
+
 int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb,
                        void *clientdata) {
     int ret;
@@ -796,7 +800,6 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
                                int nodelay, AsyncManager_connection_cb cb,
                                void *clientdata) {
     int err;
-    init_once();
     LOG_Info("AM", "%s(ip:%s, port:%d)", __func__, ip, port);
     TcpServerStreamHandle_t *svr = malloc(sizeof(*svr));
     err = (svr) ? 0 : UV_EAI_MEMORY;
@@ -820,7 +823,6 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
 PollHandle_t *AsyncManager_PollInit(int fd) {
     int ret;
     PollHandle_t *handle = NULL;
-    init_once();
     LOG_Info("AM", "%s[%d] %s", __FILE__, __LINE__, __func__);
     // check context == libuv
     uv_thread_t tid = uv_thread_self();

@@ -70,6 +70,8 @@ typedef void (*AsyncManager_poll_cb)(PollHandle_t *handle, int status,
 //==============================================================================
 //= Functions
 //==============================================================================
+int AsyncManager_Init(void);
+
 /// @name Conversions to Handle_t
 /// @{
 static inline Handle_t *AsyncManager_Stream2Handle(StreamHandle_t *stream) {

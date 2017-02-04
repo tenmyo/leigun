@@ -60,6 +60,7 @@
 #  include "senseless.h"
 #endif
 
+#include "core/asyncmanager.h"
 #include "core/byteorder.h"
 #include "core/exithandler.h"
 #include "core/lib.h"
@@ -288,8 +289,12 @@ main(int argc, char *argv[])
 		LOG_Error("MAIN", "ExitHandler_Init failed.");
 		exit(1);
 	}
+	if (AsyncManager_Init() < 0) {
+		LOG_Error("MAIN", "AsyncManager_Init failed.");
+		exit(1);
+	}
 	if (Lib_Init() < 0) {
-		LOG_Error("MAIN", "LIB_Init %s.", "failed");
+		LOG_Error("MAIN", "LIB_Init failed.");
 		exit(1);
 	}
 	SGLib_Init();
