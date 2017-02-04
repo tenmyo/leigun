@@ -63,9 +63,9 @@ CycleTimers_Check()
 			CycleTimer_Proc *proc;
 			firstCycleTimerNode = XY_NextTreeNode(&CycleTimerTree, firstCycleTimerNode);
 			if (firstCycleTimerNode) {
-				CycleTimer *timer =
+				CycleTimer *next =
 				    (CycleTimer *) XY_NodeValue(firstCycleTimerNode);
-				firstCycleTimerTimeout = timer->timeout;
+				firstCycleTimerTimeout = next->timeout;
 			} else {
 				// Never
 				firstCycleTimerTimeout = ~0ULL;
