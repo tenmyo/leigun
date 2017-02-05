@@ -28,10 +28,10 @@ extern "C" {
 //==============================================================================
 //= Dependencies
 //==============================================================================
-#include "core/lg-errno.h"
 // Local/Private Headers
 
 // External headers
+#include <uv.h> // for uv_errno_t
 
 // System headers
 
@@ -54,7 +54,7 @@ extern "C" {
 //==============================================================================
 //= Functions
 //==============================================================================
-Lg_Errno_t Lib_Init(void);
+uv_errno_t Lib_Init(void);
 
 
 #ifdef __cplusplus

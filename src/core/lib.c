@@ -30,7 +30,6 @@
 
 // Local/Private Headers
 #include "core/exithandler.h"
-#include "core/lg-errno.h"
 #include "core/list.h"
 #include "core/logging.h"
 #include "core/str.h"
@@ -124,28 +123,27 @@ static void Lib_onExit(Lib_list_t *libs) {
 ///
 /// @return imply an error if negative
 //===----------------------------------------------------------------------===//
-Lg_Errno_t Lib_Init(void) {
+uv_errno_t Lib_Init(void) {
     FILE *fp;
     char path[FILENAME_MAX];
     size_t size = sizeof(path);
     int err;
     Lib_listMember_t *lib;
     void (*initfunc)(void);
-    Lg_Errno_t lg_errno;
 
     List_Init(&Lib_loadedLibs);
-    lg_errno = ExitHandler_Register((ExitHandler_Callback_cb)&Lib_onExit,
-                                    &Lib_loadedLibs);
-    if (lg_errno < 0) {
-        LOG_Warn("Lib", "register exit handler failed. %d", lg_errno);
-        return lg_errno;
+    err = ExitHandler_Register((ExitHandler_Callback_cb)&Lib_onExit,
+                               &Lib_loadedLibs);
+    if (err < 0) {
+        LOG_Warn("Lib", "register exit handler failed. %d", err);
+        return err;
     }
     LOG_Info("Lib", "Load libraries...");
     err = uv_os_homedir(path, &size);
     if (err < 0) {
         LOG_Warn("Lib", "uv_os_homedir failed. %s: %s", uv_err_name(err),
                  uv_strerror(err));
-        return LG_EENV;
+        return err;
     }
     LOG_Verbose("Lib", "homedir: %s", path);
     strcat(path, "/.leigun/libs.txt");
@@ -153,7 +151,7 @@ Lg_Errno_t Lib_Init(void) {
     fp = fopen(path, "r");
     if (!fp) {
         LOG_Info("Lib", "fopen failed. %s", strerror(errno));
-        return LG_ESUCCESS;
+        return 0;
     }
     while (fgets(path, sizeof(path), fp)) {
         STR_StripL(path);
@@ -162,7 +160,7 @@ Lg_Errno_t Lib_Init(void) {
         if (strlen(path) == 0) {
             continue;
         }
-        LOG_Info("Lib", "dlopen %s", path);
+        LOG_Info("Lib", "Load %s", path);
         lib = calloc(1, sizeof(*lib));
         err = uv_dlopen(path, &lib->lib);
         if (err < 0) {
@@ -186,5 +184,5 @@ Lg_Errno_t Lib_Init(void) {
         initfunc();
     }
     fclose(fp);
-    return LG_ESUCCESS;
+    return 0;
 }

@@ -27,10 +27,10 @@ extern "C" {
 //==============================================================================
 //= Dependencies
 //==============================================================================
-#include "core/lg-errno.h"
 // Local/Private Headers
 
 // External headers
+#include <uv.h> // for uv_errno_t
 
 // System headers
 
@@ -59,9 +59,9 @@ typedef void (*ExitHandler_Callback_cb)(void *data);
 //==============================================================================
 //= Functions
 //==============================================================================
-Lg_Errno_t ExitHandler_Init(void);
-Lg_Errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data);
-Lg_Errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data);
+uv_errno_t ExitHandler_Init(void);
+uv_errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data);
+uv_errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data);
 
 
 #ifdef __cplusplus

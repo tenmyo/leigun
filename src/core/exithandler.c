@@ -72,7 +72,6 @@ static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b);
 //==============================================================================
 static struct {
     List_Members(ExitHandler_t);
-    uv_mutex_t mutex;
     sighandler_t sighandler;
 } ExitHandler_handlers;
 
@@ -89,7 +88,6 @@ static void ExitHandler_call(ExitHandler_t *handler) {
 static void ExitHandler_onExit(void) {
     LOG_Debug("ExitHandler", "Call registerd handler...");
     List_Map(&ExitHandler_handlers, ExitHandler_call);
-    uv_mutex_destroy(&ExitHandler_handlers.mutex);
     List_Init(&ExitHandler_handlers);
 }
 
@@ -134,21 +132,21 @@ static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b) {
 ///
 /// @return imply an error if negative
 //===----------------------------------------------------------------------===//
-Lg_Errno_t ExitHandler_Init(void) {
+uv_errno_t ExitHandler_Init(void) {
     int err;
     sighandler_t sighandler;
     LOG_Debug("ExitHandler", "Init...");
     List_Init(&ExitHandler_handlers);
-    err = uv_mutex_init(&ExitHandler_handlers.mutex);
+    err = uv_mutex_init(&ExitHandler_handlers.list_mutex);
     if (err < 0) {
         LOG_Error("ExitHandler", "uv_mutex_init failed. %s %s",
                   uv_err_name(err), uv_strerror(err));
-        return LG_EUV_MUTEX;
+        return err;
     }
     err = atexit(&ExitHandler_onExit);
     if (err) {
         LOG_Error("ExitHandler", "atexit failed %s", strerror(err));
-        return LG_EATEXIT;
+        return uv_translate_sys_error(err);
     }
     sighandler = signal(SIGINT, &ExitHandler_onSIGINT);
     LOG_Verbose("ExitHandler", "original SIGINT handler:%p", sighandler);
@@ -157,7 +155,7 @@ Lg_Errno_t ExitHandler_Init(void) {
         return LG_ESIGNAL;
     }
     ExitHandler_handlers.sighandler = sighandler;
-    return LG_ESUCCESS;
+    return 0;
 }
 
 
@@ -169,20 +167,20 @@ Lg_Errno_t ExitHandler_Init(void) {
 ///
 /// @return imply an error if negative
 //===----------------------------------------------------------------------===//
-Lg_Errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
+uv_errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
     LOG_Debug("ExitHandler", "Register %p:%p", proc, data);
     ExitHandler_t *handler = malloc(sizeof(*handler));
     if (!handler) {
         LOG_Error("ExitHandler", "malloc failed %s", strerror(errno));
-        return LG_ENOMEM;
+        return UV_EAI_MEMORY;
     }
     List_InitElement(handler);
     handler->cb = proc;
     handler->data = data;
-    uv_mutex_lock(&ExitHandler_handlers.mutex);
+    uv_mutex_lock(&ExitHandler_handlers.list_mutex);
     List_Push(&ExitHandler_handlers, handler);
-    uv_mutex_unlock(&ExitHandler_handlers.mutex);
-    return LG_ESUCCESS;
+    uv_mutex_unlock(&ExitHandler_handlers.list_mutex);
+    return 0;
 }
 
 
@@ -197,14 +195,14 @@ Lg_Errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
 ///
 /// @return imply an error if negative
 //===----------------------------------------------------------------------===//
-Lg_Errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data) {
+uv_errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data) {
     LOG_Debug("ExitHandler", "Unregister %p:%p", proc, data);
     const ExitHandler_t handler = {.cb = proc, .data = data};
     ExitHandler_t *result;
-    uv_mutex_lock(&ExitHandler_handlers.mutex);
+    uv_mutex_lock(&ExitHandler_handlers.list_mutex);
     List_PopBy(&ExitHandler_handlers, ExitHandler_compare, &handler, result);
     free(result);
-    uv_mutex_unlock(&ExitHandler_handlers.mutex);
+    uv_mutex_unlock(&ExitHandler_handlers.list_mutex);
 
-    return LG_ESUCCESS;
+    return 0;
 }

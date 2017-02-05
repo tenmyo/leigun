@@ -31,6 +31,7 @@ extern "C" {
 // Local/Private Headers
 
 // External headers
+#include <uv.h> // for uv_errno_t
 
 // System headers
 #include <stddef.h> // for size_t
@@ -75,7 +76,7 @@ typedef void (*AsyncManager_poll_cb)(PollHandle_t *handle, int status,
 //==============================================================================
 //= Functions
 //==============================================================================
-int AsyncManager_Init(void);
+uv_errno_t AsyncManager_Init(void);
 
 /// @name Conversions to Handle_t
 /// @{
