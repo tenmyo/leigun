@@ -36,6 +36,7 @@
 #include <uv.h>
 
 // System headers
+#include <stdbool.h>
 #include <stdlib.h>
 
 
@@ -43,7 +44,6 @@
 //= Constants(also Enumerations)
 //==============================================================================
 enum req_type {
-    REQ_QUIT,
     REQ_LISTEN,
     REQ_CLOSE,
     REQ_WRITE,
@@ -201,6 +201,8 @@ struct AsyncManager {
     uv_thread_t tid;
     struct req_data *req[REQ_NUM];
     struct sreq_data *sreq[SREQ_NUM];
+    uv_idle_t idle;
+    bool quit;
 };
 typedef struct AsyncManager AsyncManager;
 
@@ -215,10 +217,12 @@ typedef struct AsyncManager AsyncManager;
         failed;                                                                \
     }
 
+
 // -----------------------------------------------------
 static struct req_data *new_req_data(enum req_type reqno);
 static struct sreq_data *new_sreq_data(enum sreq_type reqno);
 
+static void AsyncManager_onIdle(uv_idle_t *handle);
 static void server_thread(void *arg);
 static int send_req(enum req_type type, void *data);
 static int send_sreq(enum sreq_type type, void *data, void *result);
@@ -257,7 +261,7 @@ static int poll_stop(PollHandle_t *handle);
 //==============================================================================
 //= Variables
 //==============================================================================
-static AsyncManager *g_singleton;
+static AsyncManager g_singleton;
 
 
 //==============================================================================
@@ -272,7 +276,7 @@ static struct req_data *new_req_data(enum req_type reqno) {
     req->type = reqno;
     ret = uv_sem_init(&req->bsem, 1);
     UV_ERRCHECK(ret, goto REQ_ALLOCED);
-    ret = uv_async_init(g_singleton->loop, &req->async, &on_wakeup_req);
+    ret = uv_async_init(g_singleton.loop, &req->async, &on_wakeup_req);
     UV_ERRCHECK(ret, goto REQ_SEM_INITED);
     req->async.data = req;
     return req;
@@ -295,7 +299,7 @@ static struct sreq_data *new_sreq_data(enum sreq_type reqno) {
     UV_ERRCHECK(ret, goto REQ_ALLOCED);
     ret = uv_sem_init(&req->respsem, 0);
     UV_ERRCHECK(ret, goto REQ_BSEM_INITED);
-    ret = uv_async_init(g_singleton->loop, &req->async, &on_wakeup_sreq);
+    ret = uv_async_init(g_singleton.loop, &req->async, &on_wakeup_sreq);
     UV_ERRCHECK(ret, goto REQ_RESPSEM_INITED);
     req->async.data = req;
     return req;
@@ -310,6 +314,11 @@ REQ_ALLOCED:
 }
 
 // -----------------------------------------------------
+static void AsyncManager_onIdle(uv_idle_t *handle) {
+    if (g_singleton.quit) {
+        uv_stop(g_singleton.loop);
+    }
+}
 
 static void server_thread(void *arg) {
     uv_loop_t *loop = arg;
@@ -317,28 +326,29 @@ static void server_thread(void *arg) {
     uv_barrier_wait((uv_barrier_t *)loop->data);
     uv_run(loop, UV_RUN_DEFAULT);
     LOG_Debug("AM", "AsyncManager thread end");
+    uv_loop_close(g_singleton.loop);
 }
 
 static int send_req(enum req_type type, void *data) {
-    uv_sem_wait(&g_singleton->req[type]->bsem);
+    uv_sem_wait(&g_singleton.req[type]->bsem);
     LOG_Verbose("AM", "%s(%d)", __func__, type);
-    g_singleton->req[type]->data = data;
-    return uv_async_send(&g_singleton->req[type]->async);
+    g_singleton.req[type]->data = data;
+    return uv_async_send(&g_singleton.req[type]->async);
 }
 
 static int send_sreq(enum sreq_type type, void *data, void *result) {
     int ret;
-    uv_sem_wait(&g_singleton->sreq[type]->bsem);
+    uv_sem_wait(&g_singleton.sreq[type]->bsem);
     LOG_Verbose("AM", "%s(%d)", __func__, type);
-    g_singleton->sreq[type]->reqdata = data;
-    ret = uv_async_send(&g_singleton->sreq[type]->async);
+    g_singleton.sreq[type]->reqdata = data;
+    ret = uv_async_send(&g_singleton.sreq[type]->async);
     UV_ERRCHECK(ret, goto END);
-    uv_sem_wait(&g_singleton->sreq[type]->respsem);
-    ret = g_singleton->sreq[type]->status;
-    (*(void **)result) = g_singleton->sreq[type]->respdata;
+    uv_sem_wait(&g_singleton.sreq[type]->respsem);
+    ret = g_singleton.sreq[type]->status;
+    (*(void **)result) = g_singleton.sreq[type]->respdata;
     UV_ERRCHECK(ret, );
 END:
-    uv_sem_post(&g_singleton->sreq[type]->bsem);
+    uv_sem_post(&g_singleton.sreq[type]->bsem);
     return ret;
 }
 
@@ -346,9 +356,6 @@ static void on_wakeup_req(uv_async_t *handle) {
     struct req_data *req = handle->data;
     int err = 0;
     switch (req->type) {
-    case REQ_QUIT:
-        uv_walk(handle->loop, &close_all, NULL);
-        break;
     case REQ_LISTEN:
         err = listen_tcp(req->data);
         break;
@@ -406,18 +413,8 @@ static void close_all(uv_handle_t *handle, void *arg) {
 }
 
 static void AsyncManager_onExit(void *data) {
-    if (!g_singleton) {
-        return;
-    }
-    LOG_Debug("AM", "AsyncManager %s...", "stopping");
-    if (uv_loop_alive(g_singleton->loop)) {
-        send_req(REQ_QUIT, NULL);
-    }
-    uv_thread_join(&g_singleton->tid);
-    uv_loop_close(g_singleton->loop);
-    free(g_singleton);
-    g_singleton = NULL;
-    LOG_Debug("AM", "AsyncManager %s.", "fin");
+    LOG_Debug("AM", "AsyncManager stopping...");
+    g_singleton.quit = true;
 }
 
 
@@ -471,7 +468,7 @@ EMIT:
 
 static int listen_tcp(TcpServerStreamHandle_t *svr) {
     int err;
-    err = uv_tcp_init(g_singleton->loop, &svr->uv.tcp);
+    err = uv_tcp_init(g_singleton.loop, &svr->uv.tcp);
     UV_ERRCHECK(err, free(svr); return err);
     svr->uv.tcp.data = svr;
     err = uv_tcp_bind(&svr->uv.tcp, (const struct sockaddr *)&svr->addr, 0);
@@ -578,7 +575,7 @@ static int poll_init(int *fd, PollHandle_t **handle) {
     *handle = NULL;
     ret = (p) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return ret);
-    ret = uv_poll_init(g_singleton->loop, &p->uv.poll, *fd);
+    ret = uv_poll_init(g_singleton.loop, &p->uv.poll, *fd);
     UV_ERRCHECK(ret, free(p); return ret);
     p->uv.poll.data = p;
     *handle = p;
@@ -620,64 +617,64 @@ static int poll_stop(PollHandle_t *handle) {
 ///
 /// @return imply an error if negative
 //===----------------------------------------------------------------------===//
-int AsyncManager_Init(void) {
+uv_errno_t AsyncManager_Init(void) {
     int err = 0;
     int reqno;
     uv_barrier_t blocker;
     LOG_Info("AM", "AsyncManager init");
-    g_singleton = calloc(1, sizeof(*g_singleton));
-    err = (g_singleton) ? 0 : UV_EAI_MEMORY;
-    UV_ERRCHECK(err, return LG_ENOMEM);
     // prepare server loop
-    g_singleton->loop = uv_default_loop();
+    g_singleton.loop = uv_default_loop();
+    // prepare idle
+    g_singleton.quit = false;
+    err = uv_idle_init(g_singleton.loop, &g_singleton.idle);
+    UV_ERRCHECK(err, return err);
+    err = uv_idle_start(&g_singleton.idle, &AsyncManager_onIdle);
+    UV_ERRCHECK(err, return err);
     // prepare async event notifier
     for (reqno = 0; reqno < REQ_NUM; ++reqno) {
-        g_singleton->req[reqno] = new_req_data(reqno);
-        if (!g_singleton->req[reqno]) {
+        g_singleton.req[reqno] = new_req_data(reqno);
+        if (!g_singleton.req[reqno]) {
             goto ERR_REQ_INIT;
         }
     }
     for (reqno = 0; reqno < SREQ_NUM; ++reqno) {
-        g_singleton->sreq[reqno] = new_sreq_data(reqno);
-        if (!g_singleton->sreq[reqno]) {
+        g_singleton.sreq[reqno] = new_sreq_data(reqno);
+        if (!g_singleton.sreq[reqno]) {
             goto ERR_SREQ_INIT;
         }
     }
     // start server loop in the new thread
     err = uv_barrier_init(&blocker, 2);
     UV_ERRCHECK(err, goto ERR_SREQ_INITED);
-    g_singleton->loop->data = &blocker;
-    err =
-        uv_thread_create(&g_singleton->tid, &server_thread, g_singleton->loop);
+    g_singleton.loop->data = &blocker;
+    err = uv_thread_create(&g_singleton.tid, &server_thread, g_singleton.loop);
     UV_ERRCHECK(err, goto ERR_SREQ_INITED);
     uv_barrier_wait(&blocker);
     uv_barrier_destroy(&blocker);
     // register resource release
-    ExitHandler_Register(&AsyncManager_onExit, g_singleton);
-    return LG_ESUCCESS;
+    ExitHandler_Register(&AsyncManager_onExit, &g_singleton);
+    return 0;
 
 // error handlers
 ERR_SREQ_INITED:
 ERR_SREQ_INIT:
-    for (reqno = 0; (reqno < SREQ_NUM) && g_singleton->sreq[reqno]; ++reqno) {
-        uv_close((uv_handle_t *)&g_singleton->sreq[reqno]->async, NULL);
-        uv_sem_destroy(&g_singleton->sreq[reqno]->bsem);
-        uv_sem_destroy(&g_singleton->sreq[reqno]->respsem);
-        free(g_singleton->sreq[reqno]);
+    for (reqno = 0; (reqno < SREQ_NUM) && g_singleton.sreq[reqno]; ++reqno) {
+        uv_close((uv_handle_t *)&g_singleton.sreq[reqno]->async, NULL);
+        uv_sem_destroy(&g_singleton.sreq[reqno]->bsem);
+        uv_sem_destroy(&g_singleton.sreq[reqno]->respsem);
+        free(g_singleton.sreq[reqno]);
     }
 ERR_REQ_INIT:
-    for (reqno = 0; (reqno < REQ_NUM) && g_singleton->req[reqno]; ++reqno) {
-        uv_close((uv_handle_t *)&g_singleton->req[reqno]->async, NULL);
-        uv_sem_destroy(&g_singleton->req[reqno]->bsem);
-        free(g_singleton->req[reqno]);
+    for (reqno = 0; (reqno < REQ_NUM) && g_singleton.req[reqno]; ++reqno) {
+        uv_close((uv_handle_t *)&g_singleton.req[reqno]->async, NULL);
+        uv_sem_destroy(&g_singleton.req[reqno]->bsem);
+        free(g_singleton.req[reqno]);
     }
-    while (uv_loop_close(g_singleton->loop)) {
+    while (uv_loop_close(g_singleton.loop)) {
         ;
     }
 
-    free(g_singleton);
-    g_singleton = NULL;
-    return err; /// @todo convert errno
+    return err;
 }
 
 
@@ -694,7 +691,7 @@ int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb,
     cr->close_clientdata = clientdata;
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = close_handle(cr);
     } else {
         ret = send_req(REQ_CLOSE, cr);
@@ -730,7 +727,7 @@ int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
     wr->write_clientdata = clientdata;
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = write_stream(wr);
     } else {
         ret = send_req(REQ_WRITE, wr);
@@ -753,7 +750,7 @@ int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base,
     wr->buf = uv_buf_init((char *)base, len);
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = writesync_stream(wr, &err);
     } else {
         ret = send_sreq(SREQ_WRITE, wr, &err);
@@ -772,7 +769,7 @@ int AsyncManager_ReadStart(StreamHandle_t *handle, AsyncManager_read_cb read_cb,
     handle->read_clientdata = clientdata;
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = read_start(handle);
     } else {
         ret = send_req(REQ_READ_START, handle);
@@ -787,7 +784,7 @@ int AsyncManager_ReadStop(StreamHandle_t *handle) {
     // create read stop request -> NONE
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = read_stop(handle);
     } else {
         ret = send_req(REQ_READ_STOP, handle);
@@ -811,7 +808,7 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
     svr->connection_cb = cb;
     svr->connection_clientdata = clientdata;
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         err = listen_tcp(svr);
     } else {
         err = send_req(REQ_LISTEN, svr);
@@ -826,7 +823,7 @@ PollHandle_t *AsyncManager_PollInit(int fd) {
     LOG_Info("AM", "%s[%d] %s", __FILE__, __LINE__, __func__);
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = poll_init(&fd, &handle);
     } else {
         ret = send_sreq(SREQ_POLL_INIT, &fd, &handle);
@@ -847,7 +844,7 @@ int AsyncManager_PollStart(PollHandle_t *handle, int events,
     handle->events |= (events & ASYNCMANAGER_EVENT_WRITABLE) ? UV_WRITABLE : 0;
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = poll_start(handle);
     } else {
         ret = send_req(REQ_POLL_START, handle);
@@ -861,7 +858,7 @@ int AsyncManager_PollStop(PollHandle_t *handle) {
     // create read start request -> already PollHandle
     // check context == libuv
     uv_thread_t tid = uv_thread_self();
-    if (uv_thread_equal(&g_singleton->tid, &tid)) {
+    if (uv_thread_equal(&g_singleton.tid, &tid)) {
         ret = poll_stop(handle);
     } else {
         ret = send_req(REQ_POLL_STOP, handle);
