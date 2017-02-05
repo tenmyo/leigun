@@ -79,8 +79,9 @@ static Lib_list_t Lib_loadedLibs;
 /// Close loaded librarie.
 //===----------------------------------------------------------------------===//
 static void Lib_close(Lib_listMember_t *lib) {
-    LOG_Debug("Lib", "Unload %s", lib->path);
-    uv_dlclose(&lib->lib);
+    // DO NOT UNLOAD for debugging (e.g. valgrind)
+    // LOG_Debug("Lib", "Unload %s", lib->path);
+    // uv_dlclose(&lib->lib);
     free(lib->path);
     free(lib);
 }
