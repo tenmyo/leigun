@@ -508,11 +508,11 @@ static int writesync_stream(struct write_req_t *wr, int *err) {
     do {
         ret = uv_try_write(&wr->stream->uv.stream, &wr->buf, 1);
     } while (ret == UV_EAGAIN);
-    free(wr);
     UV_ERRCHECK(ret, );
     ret = uv_stream_set_blocking(&wr->stream->uv.stream, 0);
     UV_ERRCHECK(ret, );
     *err = ret;
+    free(wr);
     return ret;
 }
 
