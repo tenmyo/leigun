@@ -158,7 +158,7 @@ LoadChain_Load(void)
 static void
 help()
 {
-	fprintf(stderr, "\nThis is %s first compiled on %s %s\n", softgun_version, __DATE__,
+	fprintf(stderr, "\nThis is %s first compiled on %s %s\n", leigun_version, __DATE__,
 		__TIME__);
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "\tsoftgun [options] ?configuration_name?\n");
@@ -283,7 +283,7 @@ main(int argc, char *argv[])
 #endif
 	Board *board;
 	
-	LOG_Info("MAIN", "%s", softgun_version);
+	LOG_Info("MAIN", "%s", leigun_version);
 	
 	if (ExitHandler_Init() < 0) {
 		LOG_Error("MAIN", "ExitHandler_Init failed.");
