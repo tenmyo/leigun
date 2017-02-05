@@ -36,10 +36,19 @@
 
 // System headers
 #include <errno.h>
-#include <signal.h>
+#include <stdbool.h>
 #include <stddef.h> // for ptrdiff_t
 #include <stdlib.h> // for atexit, malloc
 #include <string.h> // for strerror
+#ifdef __unix__
+#include <sched.h>
+#define yield() sched_yield()
+#elif defined(_MSC_VER)
+#include <windows.h>
+#define yield() SwitchToThread()
+#else
+#define yield()
+#endif
 
 
 //==============================================================================
@@ -62,8 +71,11 @@ struct ExitHandler_List_s {
 //= Function declarations(static)
 //==============================================================================
 static void ExitHandler_call(ExitHandler_t *handler);
+static void ExitHandler_callAll(void);
 static void ExitHandler_onExit(void);
-static void ExitHandler_onSIGINT(int signal);
+static void ExitHandler_onSIGINT(uv_signal_t *handle, int signum);
+static void ExitHandler_onAsync(uv_async_t *handle);
+static void ExitHandler_thread(void *arg);
 static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b);
 
 
@@ -72,7 +84,14 @@ static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b);
 //==============================================================================
 static struct {
     List_Members(ExitHandler_t);
-    sighandler_t sighandler;
+    uv_mutex_t list_mutex;
+    struct {
+        uv_thread_t id;
+        uv_loop_t loop;
+        uv_signal_t sigint;
+        uv_async_t async;
+    } thread;
+    bool exitting;
 } ExitHandler_handlers;
 
 
@@ -85,19 +104,51 @@ static void ExitHandler_call(ExitHandler_t *handler) {
 }
 
 
-static void ExitHandler_onExit(void) {
+static void ExitHandler_callAll(void) {
     LOG_Debug("ExitHandler", "Call registerd handler...");
-    List_Map(&ExitHandler_handlers, ExitHandler_call);
-    List_Init(&ExitHandler_handlers);
+    uv_mutex_lock(&ExitHandler_handlers.list_mutex);
+    List_PopEach(&ExitHandler_handlers, ExitHandler_call);
+    uv_mutex_unlock(&ExitHandler_handlers.list_mutex);
+    yield();
 }
 
 
-static void ExitHandler_onSIGINT(int signal) {
+static void ExitHandler_onExit(void) {
+    int err;
+    LOG_Debug("ExitHandler", "Catch EXIT");
+    ExitHandler_handlers.exitting = true;
+    if (uv_is_active((uv_handle_t *)&ExitHandler_handlers.thread.async)) {
+        uv_async_send(&ExitHandler_handlers.thread.async);
+    }
+    uv_thread_join(&ExitHandler_handlers.thread.id);
+}
+
+
+static void ExitHandler_onSIGINT(uv_signal_t *handle, int signum) {
     LOG_Debug("ExitHandler", "Catch SIGINT");
-    ExitHandler_onExit();
-    if (ExitHandler_handlers.sighandler) {
-        LOG_Debug("ExitHandler", "Call original SIGINT handler");
-        ExitHandler_handlers.sighandler(signal);
+    ExitHandler_callAll();
+    uv_stop(&ExitHandler_handlers.thread.loop);
+}
+
+
+static void ExitHandler_onAsync(uv_async_t *handle) {
+    LOG_Debug("ExitHandler", "Receive QUIT Message");
+    ExitHandler_callAll();
+    uv_stop(&ExitHandler_handlers.thread.loop);
+}
+
+
+static void ExitHandler_thread(void *arg) {
+    LOG_Debug("ExitHandler", "Thread start");
+    uv_run(&ExitHandler_handlers.thread.loop, UV_RUN_DEFAULT);
+    uv_signal_stop(&ExitHandler_handlers.thread.sigint);
+    uv_close((uv_handle_t *)&ExitHandler_handlers.thread.sigint, NULL);
+    uv_close((uv_handle_t *)&ExitHandler_handlers.thread.async, NULL);
+    uv_run(&ExitHandler_handlers.thread.loop, UV_RUN_NOWAIT);
+    uv_loop_close(&ExitHandler_handlers.thread.loop);
+    LOG_Debug("ExitHandler", "Thread stop");
+    if (!ExitHandler_handlers.exitting) {
+        exit(0);
     }
 }
 
@@ -137,25 +188,58 @@ uv_errno_t ExitHandler_Init(void) {
     sighandler_t sighandler;
     LOG_Debug("ExitHandler", "Init...");
     List_Init(&ExitHandler_handlers);
+    ExitHandler_handlers.exitting = false;
     err = uv_mutex_init(&ExitHandler_handlers.list_mutex);
     if (err < 0) {
         LOG_Error("ExitHandler", "uv_mutex_init failed. %s %s",
                   uv_err_name(err), uv_strerror(err));
         return err;
     }
+    err = uv_loop_init(&ExitHandler_handlers.thread.loop);
+    if (err < 0) {
+        LOG_Error("ExitHandler", "uv_thread_create failed. %s %s",
+                  uv_err_name(err), uv_strerror(err));
+        return err;
+    }
+    err =
+        uv_async_init(&ExitHandler_handlers.thread.loop,
+                      &ExitHandler_handlers.thread.async, &ExitHandler_onAsync);
+    if (err < 0) {
+        LOG_Error("ExitHandler", "uv_async_init failed. %s %s",
+                  uv_err_name(err), uv_strerror(err));
+        goto ERR_LOOP;
+    }
+    err = uv_signal_init(&ExitHandler_handlers.thread.loop,
+                         &ExitHandler_handlers.thread.sigint);
+    if (err < 0) {
+        LOG_Error("ExitHandler", "uv_signal_init failed. %s %s",
+                  uv_err_name(err), uv_strerror(err));
+        goto ERR_LOOP;
+    }
+    err = uv_signal_start(&ExitHandler_handlers.thread.sigint,
+                          &ExitHandler_onSIGINT, SIGINT);
+    if (err < 0) {
+        LOG_Error("ExitHandler", "uv_signal_start failed. %s %s",
+                  uv_err_name(err), uv_strerror(err));
+        goto ERR_LOOP;
+    }
+    err = uv_thread_create(&ExitHandler_handlers.thread.id, &ExitHandler_thread,
+                           NULL);
+    if (err < 0) {
+        LOG_Error("ExitHandler", "uv_thread_create failed. %s %s",
+                  uv_err_name(err), uv_strerror(err));
+        goto ERR_LOOP;
+    }
     err = atexit(&ExitHandler_onExit);
     if (err) {
         LOG_Error("ExitHandler", "atexit failed %s", strerror(err));
         return uv_translate_sys_error(err);
     }
-    sighandler = signal(SIGINT, &ExitHandler_onSIGINT);
-    LOG_Verbose("ExitHandler", "original SIGINT handler:%p", sighandler);
-    if (sighandler == SIG_ERR) {
-        LOG_Error("ExitHandler", "signal(SIGINT) failed %s", strerror(errno));
-        return LG_ESIGNAL;
-    }
-    ExitHandler_handlers.sighandler = sighandler;
     return 0;
+
+ERR_LOOP:
+    uv_loop_close(&ExitHandler_handlers.thread.loop);
+    return err;
 }
 
 

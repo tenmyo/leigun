@@ -21,7 +21,7 @@
 /// manupulation macros.
 ///
 /// \ attention
-/// THREAD UNSAFE.
+/// NOT REENTLANT. THREAD UNSAFE.
 ///
 //===----------------------------------------------------------------------===//
 #pragma once
@@ -84,6 +84,7 @@ struct List_Element_s {
         (l)->l_head = e;                                                       \
     } while (0)
 
+/// \ attention DO NOT CHANGE LIST at proc(e.g. Push, Pop...)
 #define List_Map(l, proc)                                                      \
     do {                                                                       \
         List_Element_t *e, *next;                                              \
@@ -93,7 +94,32 @@ struct List_Element_s {
         }                                                                      \
     } while (0)
 
+/// \ attention DO NOT CHANGE LIST at proc(e.g. Push...)
+#define List_PopEach(l, proc)                                                  \
+    do {                                                                       \
+        List_Element_t *e, *next;                                              \
+        for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
+            next = e->l_next;                                                  \
+            proc((void *)e);                                                   \
+        }                                                                      \
+        List_Init(l);                                                          \
+    } while (0)
+
 #define List_PopBy(l, comparator, operand_element, result_element)             \
+    do {                                                                       \
+        List_Element_t *e, *next;                                              \
+        List_Element_t **prev_next = (List_Element_t **)(&(l)->l_head);        \
+        for (e = *prev_next; e; prev_next = &e->l_next, e = next) {            \
+            next = e->l_next;                                                  \
+            if (!comparator((void *)e, operand_element)) {                     \
+                *prev_next = e->l_next;                                        \
+                break;                                                         \
+            }                                                                  \
+        }                                                                      \
+        (result_element) = (void *)e;                                          \
+    } while (0)
+
+#define List_Find(l, comparator, operand_element, result_element)              \
     do {                                                                       \
         List_Element_t *e, *next;                                              \
         for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
