@@ -64,9 +64,9 @@ struct List_Element_s {
 //==============================================================================
 //= Macros
 //==============================================================================
-#define List_Members(member_t) member_t *l_head;
+#define List_Members(member_t) member_t *l_head
 
-#define List_ElementMembesr(member_t) member_t *l_next;
+#define List_ElementMembesr(member_t) member_t *l_next
 
 #define List_Init(l)                                                           \
     do {                                                                       \

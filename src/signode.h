@@ -84,7 +84,7 @@ static inline int
 SigNode_Val(SigNode * signode)
 {
 	return signode->propval;
-};
+}
 
 static inline int
 SigNode_State(SigNode * signode)

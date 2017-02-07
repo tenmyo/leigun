@@ -271,7 +271,7 @@ rxdata_read(void *clientData, uint32_t address, int rqlen)
 		}
 	}
 	if (cspi->controlreg & CSPI_CTRL_SWAP) {
-		return swap32(value);
+		return BYTE_Swap32(value);
 	} else {
 		return value;
 	}
@@ -305,7 +305,7 @@ txdata_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 	uint32_t intreg;
 	uint32_t dmareg;
 	if (cspi->controlreg & CSPI_CTRL_SWAP) {
-		value = swap32(value);
+		value = BYTE_Swap32(value);
 	}
 	txcount = TXFIFO_COUNT(cspi);
 	if (txcount < TXFIFO_SIZE) {

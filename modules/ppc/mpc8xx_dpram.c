@@ -47,6 +47,8 @@
 #include "mpc8xx_dpram.h"
 #include <assert.h>
 
+#include "core/byteorder.h"
+
 #define DPRAM_MAGIC (0x73829345)
 
 typedef struct DPRamTrace {
@@ -74,10 +76,10 @@ DPRam_read(void *clientData, uint32_t mem_addr, int rqlen)
 	void *mem = &dpram->host_mem[mem_addr & (dpram->size - 1)];
 	switch (rqlen) {
 	    case 4:
-		    value = be32_to_host(*(uint32_t *) mem);
+		    value = BYTE_BeToH32(*(uint32_t *) mem);
 		    break;
 	    case 2:
-		    value = be16_to_host(*(uint16_t *) mem);
+		    value = BYTE_BeToH16(*(uint16_t *) mem);
 		    break;
 	    case 1:
 	    default:
@@ -106,10 +108,10 @@ DPRam_write(void *clientData, uint32_t value, uint32_t mem_addr, int rqlen)
 	mem = &dpram->host_mem[addr];
 	switch (rqlen) {
 	    case 4:
-		    *(uint32_t *) mem = host32_to_be(value);
+		    *(uint32_t *) mem = BYTE_HToBe32(value);
 		    break;
 	    case 2:
-		    *(uint16_t *) mem = host16_to_be(value);
+		    *(uint16_t *) mem = BYTE_HToBe16(value);
 		    break;
 	    case 1:
 		    *(uint8_t *) mem = value;

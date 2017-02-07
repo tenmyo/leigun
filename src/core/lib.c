@@ -57,7 +57,7 @@ struct Lib_listMember_s {
     uv_lib_t lib;
     char *path;
 };
-typedef struct Lib_list_s { List_Members(Lib_listMember_t) } Lib_list_t;
+typedef struct Lib_list_s { List_Members(Lib_listMember_t); } Lib_list_t;
 
 //==============================================================================
 //= Function declarations(static)

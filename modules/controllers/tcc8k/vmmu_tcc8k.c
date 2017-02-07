@@ -57,7 +57,7 @@ update_pte_vrom(TccVmmu * vm)
 			uint32_t pte = i & REGION_SA_MSK;
 			uint32_t *pteP = (uint32_t *) (vm->PteVRom + (i >> 18));
 			pte |= (region & 0x0dff) | 0x12;
-			*pteP = BYTE_HToLE32(pte);
+			*pteP = BYTE_HToLe32(pte);
 		}
 	}
 }

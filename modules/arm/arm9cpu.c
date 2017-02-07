@@ -113,9 +113,9 @@ debugger_setreg(void *clientData, const uint8_t * data, uint32_t index, int len)
 	if (len != 4)
 		return;
 	if (MMU_Byteorder() == BYTE_ORDER_BIG) {
-		BYTE_WriteToBe32(value, 0, *((uint32_t *)data));
+		BYTE_WriteToBe32(&value, 0, *((uint32_t *)data));
 	} else {
-		BYTE_WriteToLe32(value, 0, *((uint32_t *)data));
+		BYTE_WriteToLe32(&value, 0, *((uint32_t *)data));
 	}
 	if (index < 16) {
 		ARM9_WriteReg(value, index);

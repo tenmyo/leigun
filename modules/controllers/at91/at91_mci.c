@@ -531,7 +531,7 @@ rspr_read(void *clientData, uint32_t address, int rqlen)
 	uint32_t value = 0;
 	fprintf(stdout, "\nRSPR read, rp %d\n", mci->rsprRP);
 	if (mci->rsprRP <= 12) {
-		value = be32_to_target(*(uint32_t *) (mci->rsp + mci->rsprRP));
+		value = BYTE_Swap32(*(uint32_t *) (mci->rsp + mci->rsprRP));
 		mci->rsprRP += 4;
 	}
 	return value;
@@ -558,7 +558,7 @@ rdr_read(void *clientData, uint32_t address, int rqlen)
 		value = (value << 8) | mci->rxfifo[RXFIFO_RP(mci)];
 		mci->rxfifo_rp++;
 		fprintf(stderr, "Resp read %08x\n", value);
-		return be32_to_target(value);
+		return BYTE_Swap32(value);
 	}
 	return 0;
 }

@@ -105,7 +105,7 @@ PCI_MasterWrite32LE(PCI_Function * bridge, uint32_t value, uint32_t addr)
 static inline uint32_t
 PCI_MasterRead32LE(PCI_Function * bridge, uint32_t addr)
 {
-	return le32_to_host(bridge->bdev.read32(addr));
+	return BYTE_LeToH32(bridge->bdev.read32(addr));
 }
 
 static inline void
@@ -118,7 +118,7 @@ PCI_MasterWrite32BE(PCI_Function * bridge, uint32_t value, uint32_t addr)
 static inline uint32_t
 PCI_MasterRead32BE(PCI_Function * bridge, uint32_t addr)
 {
-	return be32_to_host(bridge->bdev.read32(addr));
+	return BYTE_BeToH32(bridge->bdev.read32(addr));
 }
 
 static inline void

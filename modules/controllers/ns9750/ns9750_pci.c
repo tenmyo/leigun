@@ -1044,7 +1044,7 @@ PCIBr_Write32(uint32_t value, uint32_t addr)
 	if (gcpu_endian == BYTE_ORDER_BIG) {
 		Bus_Write32(value, addr);
 	} else {
-		Bus_Write32(swap32(value), addr);
+		Bus_Write32(BYTE_Swap32(value), addr);
 	}
 }
 
@@ -1064,7 +1064,7 @@ PCIBr_Read32(uint32_t addr)
 	if (gcpu_endian == BYTE_ORDER_BIG) {
 		return Bus_Read32(addr);
 	} else {
-		return swap32(Bus_Read32(addr));
+		return BYTE_Swap32(Bus_Read32(addr));
 	}
 }
 

@@ -36,6 +36,7 @@
 #include <uv.h>
 
 // System headers
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -230,7 +231,6 @@ static void on_wakeup_req(uv_async_t *handle);
 static void on_wakeup_sreq(uv_async_t *handle);
 
 static void free_data(uv_handle_t *handle);
-static void close_all(uv_handle_t *handle, void *arg);
 static void AsyncManager_onExit(void *);
 
 // -----------------------------------------------------
@@ -326,6 +326,7 @@ static void server_thread(void *arg) {
     uv_barrier_wait((uv_barrier_t *)loop->data);
     uv_run(loop, UV_RUN_DEFAULT);
     LOG_Debug("AM", "AsyncManager thread end");
+    /// @todo: stop&close all handle
     uv_loop_close(g_singleton.loop);
 }
 
@@ -377,7 +378,9 @@ static void on_wakeup_req(uv_async_t *handle) {
     case REQ_POLL_STOP:
         err = poll_stop(req->data);
         break;
-    default:
+    case REQ_NUM:
+        assert(!"on_wakeup_req received unknown type");
+        /* NOTREACHED */
         break;
     }
     UV_ERRCHECK(err, );
@@ -393,7 +396,9 @@ static void on_wakeup_sreq(uv_async_t *handle) {
     case SREQ_POLL_INIT:
         req->status = poll_init(req->reqdata, (void *)&req->respdata);
         break;
-    default:
+    case SREQ_NUM:
+        assert(!"on_wakeup_sreq received unknown type");
+        /* NOTREACHED */
         break;
     }
     uv_sem_post(&req->respsem);
@@ -403,13 +408,6 @@ static void free_data(uv_handle_t *handle) {
     void *buf = handle->data;
     handle->data = NULL;
     free(buf);
-}
-
-static void close_all(uv_handle_t *handle, void *arg) {
-    // FIXME: leak req->bsem
-    if (!uv_is_closing(handle)) {
-        uv_close(handle, &free_data);
-    }
 }
 
 static void AsyncManager_onExit(void *data) {
@@ -542,7 +540,7 @@ static void alloc_buffer(uv_handle_t *handle, size_t suggested_size,
 
 static void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
     StreamHandle_t *handle = (StreamHandle_t *)stream;
-    UV_ERRCHECK(nread, );
+    UV_ERRCHECK((int)nread, );
     if (nread == 0) {
         // EAGAIN or EWOULDBLOCK
         return;
@@ -632,13 +630,13 @@ uv_errno_t AsyncManager_Init(void) {
     UV_ERRCHECK(err, return err);
     // prepare async event notifier
     for (reqno = 0; reqno < REQ_NUM; ++reqno) {
-        g_singleton.req[reqno] = new_req_data(reqno);
+        g_singleton.req[reqno] = new_req_data((enum req_type)reqno);
         if (!g_singleton.req[reqno]) {
             goto ERR_REQ_INIT;
         }
     }
     for (reqno = 0; reqno < SREQ_NUM; ++reqno) {
-        g_singleton.sreq[reqno] = new_sreq_data(reqno);
+        g_singleton.sreq[reqno] = new_sreq_data((enum sreq_type)reqno);
         if (!g_singleton.sreq[reqno]) {
             goto ERR_SREQ_INIT;
         }
@@ -712,10 +710,11 @@ int AsyncManager_BufferSizeRecv(Handle_t *handle, int *value) {
 }
 
 
-int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
-                       AsyncManager_write_cb write_cb, void *clientdata) {
+int AsyncManager_Write(StreamHandle_t *handle, const void *base,
+                       unsigned int len, AsyncManager_write_cb write_cb,
+                       void *clientdata) {
     int ret;
-    LOG_Debug("AM", "%s(handle:%p, base:%p, len:%zd)", __func__, handle, base,
+    LOG_Debug("AM", "%s(handle:%p, base:%p, len:%d)", __func__, handle, base,
               len);
     // create write request
     struct write_req_t *wr = malloc(sizeof(*wr));
@@ -737,10 +736,10 @@ int AsyncManager_Write(StreamHandle_t *handle, const void *base, size_t len,
 
 
 int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base,
-                           size_t len) {
+                           unsigned int len) {
     int ret;
     int err;
-    LOG_Debug("AM", "%s(handle:%p, base:%p, len:%zd)", __func__, handle, base,
+    LOG_Debug("AM", "%s(handle:%p, base:%p, len:%d)", __func__, handle, base,
               len);
     // create write request
     struct write_req_t *wr = malloc(sizeof(*wr));

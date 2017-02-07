@@ -1,4 +1,4 @@
-//===-- core/exithandler.h - Generic Cleanup Facilities -----------*- C -*-===//
+//===-- core/exithandler.c - Generic Cleanup Facilities -----------*- C -*-===//
 //
 //              The Leigun Embedded System Simulator Platform
 //
@@ -17,7 +17,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file contains the declaration of generic cleanup facilities.
+/// This file contains the definitions of generic cleanup facilities.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -37,7 +37,7 @@
 // System headers
 #include <errno.h>
 #include <stdbool.h>
-#include <stddef.h> // for ptrdiff_t
+#include <stdint.h> // for intptr_t
 #include <stdlib.h> // for atexit, malloc
 #include <string.h> // for strerror
 #ifdef __unix__
@@ -114,7 +114,6 @@ static void ExitHandler_callAll(void) {
 
 
 static void ExitHandler_onExit(void) {
-    int err;
     LOG_Debug("ExitHandler", "Catch EXIT");
     ExitHandler_handlers.exitting = true;
     if (uv_is_active((uv_handle_t *)&ExitHandler_handlers.thread.async)) {
@@ -154,12 +153,12 @@ static void ExitHandler_thread(void *arg) {
 
 
 static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b) {
-    ptrdiff_t diff;
-    diff = b->cb - a->cb;
+    intptr_t diff;
+    diff = (intptr_t)b->cb - (intptr_t)a->cb;
     if (diff) {
         return (diff < 0) ? -1 : 1;
     }
-    diff = b->data - a->data;
+    diff = (intptr_t)b->data - (intptr_t)a->data;
     if (diff == 0) {
         return 0;
     }
@@ -185,7 +184,6 @@ static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b) {
 //===----------------------------------------------------------------------===//
 uv_errno_t ExitHandler_Init(void) {
     int err;
-    sighandler_t sighandler;
     LOG_Debug("ExitHandler", "Init...");
     List_Init(&ExitHandler_handlers);
     ExitHandler_handlers.exitting = false;

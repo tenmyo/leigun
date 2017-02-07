@@ -209,16 +209,13 @@ extern "C" {
 #endif // ifndef BYTE_HToBe16
 
 
-static inline const uint16_t BYTE_Read16(const void *base,
-                                         uintptr_t byteOffset) {
+static inline uint16_t BYTE_Read16(const void *base, uintptr_t byteOffset) {
     return *(uint16_t *)((uintptr_t)base + byteOffset);
 }
-static inline const uint32_t BYTE_Read32(const void *base,
-                                         uintptr_t byteOffset) {
+static inline uint32_t BYTE_Read32(const void *base, uintptr_t byteOffset) {
     return *(uint32_t *)((uintptr_t)base + byteOffset);
 }
-static inline const uint64_t BYTE_Read64(const void *base,
-                                         uintptr_t byteOffset) {
+static inline uint64_t BYTE_Read64(const void *base, uintptr_t byteOffset) {
     return *(uint64_t *)((uintptr_t)base + byteOffset);
 }
 
