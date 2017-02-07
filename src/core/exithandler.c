@@ -180,9 +180,9 @@ static int ExitHandler_compare(const ExitHandler_t *a, const ExitHandler_t *b) {
 /// The module handler will be calling handlers,
 /// which registered by ExitHandler_Register at the leigun terminate.
 ///
-/// @return imply an error if negative
+/// @return same as libuv. imply an error if negative.
 //===----------------------------------------------------------------------===//
-uv_errno_t ExitHandler_Init(void) {
+int ExitHandler_Init(void) {
     int err;
     LOG_Debug("ExitHandler", "Init...");
     List_Init(&ExitHandler_handlers);
@@ -247,9 +247,9 @@ ERR_LOOP:
 /// @param[in]      proc        handler, calling at the leigun terminate.
 /// @param[in]      data        data for handler calling. allow NULL.
 ///
-/// @return imply an error if negative
+/// @return same as libuv. imply an error if negative.
 //===----------------------------------------------------------------------===//
-uv_errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
+int ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
     LOG_Debug("ExitHandler", "Register %p:%p", proc, data);
     ExitHandler_t *handler = malloc(sizeof(*handler));
     if (!handler) {
@@ -275,9 +275,9 @@ uv_errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
 /// @attention if not registered, it's not an error.
 /// @attention if duplicated, unregister only a last registered handler.
 ///
-/// @return imply an error if negative
+/// @return same as libuv. imply an error if negative.
 //===----------------------------------------------------------------------===//
-uv_errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data) {
+int ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data) {
     LOG_Debug("ExitHandler", "Unregister %p:%p", proc, data);
     const ExitHandler_t handler = {.cb = proc, .data = data};
     ExitHandler_t *result;

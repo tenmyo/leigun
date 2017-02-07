@@ -30,7 +30,6 @@ extern "C" {
 // Local/Private Headers
 
 // External headers
-#include <uv.h> // for uv_errno_t
 
 // System headers
 
@@ -59,9 +58,9 @@ typedef void (*ExitHandler_Callback_cb)(void *data);
 //==============================================================================
 //= Functions
 //==============================================================================
-uv_errno_t ExitHandler_Init(void);
-uv_errno_t ExitHandler_Register(ExitHandler_Callback_cb proc, void *data);
-uv_errno_t ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data);
+int ExitHandler_Init(void);
+int ExitHandler_Register(ExitHandler_Callback_cb proc, void *data);
+int ExitHandler_Unregister(ExitHandler_Callback_cb proc, void *data);
 
 
 #ifdef __cplusplus

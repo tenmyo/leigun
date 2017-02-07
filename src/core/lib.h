@@ -31,7 +31,6 @@ extern "C" {
 // Local/Private Headers
 
 // External headers
-#include <uv.h> // for uv_errno_t
 
 // System headers
 
@@ -54,7 +53,7 @@ extern "C" {
 //==============================================================================
 //= Functions
 //==============================================================================
-uv_errno_t Lib_Init(void);
+int Lib_Init(void);
 
 
 #ifdef __cplusplus

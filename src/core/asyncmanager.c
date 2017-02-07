@@ -613,9 +613,9 @@ static int poll_stop(PollHandle_t *handle) {
 /// The module handler will be calling handlers,
 /// which registered by ExitHandler_Register at the leigun terminate.
 ///
-/// @return imply an error if negative
+/// @return same as libuv. imply an error if negative.
 //===----------------------------------------------------------------------===//
-uv_errno_t AsyncManager_Init(void) {
+int AsyncManager_Init(void) {
     int err = 0;
     int reqno;
     uv_barrier_t blocker;

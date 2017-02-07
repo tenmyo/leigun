@@ -122,9 +122,9 @@ static void Lib_onExit(Lib_list_t *libs) {
 /// @attention
 /// Even if dlopen or dlsym fails, not occur error to return.
 ///
-/// @return imply an error if negative
+/// @return same as libuv. imply an error if negative.
 //===----------------------------------------------------------------------===//
-uv_errno_t Lib_Init(void) {
+int Lib_Init(void) {
     FILE *fp;
     char path[FILENAME_MAX];
     size_t size = sizeof(path);
