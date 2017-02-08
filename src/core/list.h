@@ -90,7 +90,7 @@ struct List_Element_s {
         List_Element_t *e, *next;                                              \
         for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
             next = e->l_next;                                                  \
-            proc((void *)e);                                                   \
+            (proc)((void *)e);                                                 \
         }                                                                      \
     } while (0)
 
@@ -100,7 +100,7 @@ struct List_Element_s {
         List_Element_t *e, *next;                                              \
         for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
             next = e->l_next;                                                  \
-            proc((void *)e);                                                   \
+            (proc)((void *)e);                                                 \
         }                                                                      \
         List_Init(l);                                                          \
     } while (0)
@@ -111,7 +111,7 @@ struct List_Element_s {
         List_Element_t **prev_next = (List_Element_t **)(&(l)->l_head);        \
         for (e = *prev_next; e; prev_next = &e->l_next, e = next) {            \
             next = e->l_next;                                                  \
-            if (!comparator((void *)e, operand_element)) {                     \
+            if (!(comparator)((void *)e, operand_element)) {                   \
                 *prev_next = e->l_next;                                        \
                 break;                                                         \
             }                                                                  \
@@ -124,7 +124,7 @@ struct List_Element_s {
         List_Element_t *e, *next;                                              \
         for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
             next = e->l_next;                                                  \
-            if (!comparator((void *)e, operand_element)) {                     \
+            if (!(comparator)((void *)e, operand_element)) {                   \
                 break;                                                         \
             }                                                                  \
         }                                                                      \
