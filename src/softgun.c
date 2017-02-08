@@ -62,6 +62,7 @@
 
 #include "core/asyncmanager.h"
 #include "core/byteorder.h"
+#include "core/device.h"
 #include "core/exithandler.h"
 #include "core/lib.h"
 #include "core/logging.h"
@@ -291,6 +292,10 @@ main(int argc, char *argv[])
 	}
 	if (AsyncManager_Init() < 0) {
 		LOG_Error("MAIN", "AsyncManager_Init failed.");
+		exit(1);
+	}
+	if (Device_Init() < 0) {
+		LOG_Error("MAIN", "Device_Init failed.");
 		exit(1);
 	}
 	if (Lib_Init() < 0) {
