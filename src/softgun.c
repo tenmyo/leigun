@@ -74,8 +74,8 @@ typedef struct LoadChainEntry {
 	uint32_t region_size;	/* 0 = unlimited */
 } LoadChainEntry;
 
-static char *configfpath = NULL;
-static char *configname = "defaultboard";
+static const char *configfpath = NULL;
+static const char *configname = "defaultboard";
 static LoadChainEntry *loadChainHead = NULL;
 
 static void
