@@ -73,11 +73,11 @@ extern int LOG_level;
     } while (0)
 
 #define LOG_Verbose(tag, ...)                                                  \
-    LOG_Log(LOG_LEVEL_VERBOSE, "VERB", tag, __VA_ARGS__)
-#define LOG_Debug(tag, ...) LOG_Log(LOG_LEVEL_DEBUG, "DEBUG", tag, __VA_ARGS__)
-#define LOG_Info(tag, ...) LOG_Log(LOG_LEVEL_INFO, "INFO", tag, __VA_ARGS__)
-#define LOG_Warn(tag, ...) LOG_Log(LOG_LEVEL_WARN, "WARN", tag, __VA_ARGS__)
-#define LOG_Error(tag, ...) LOG_Log(LOG_LEVEL_ERROR, "ERROR", tag, __VA_ARGS__)
+    LOG_Log(LOG_LEVEL_VERBOSE, "\033[37mVERB\033[0m", tag, __VA_ARGS__)
+#define LOG_Debug(tag, ...) LOG_Log(LOG_LEVEL_DEBUG, "\033[1;34mDEBUG\033[0m", tag, __VA_ARGS__)
+#define LOG_Info(tag, ...) LOG_Log(LOG_LEVEL_INFO, "\033[1;33mINFO\033[0m", tag, __VA_ARGS__)
+#define LOG_Warn(tag, ...) LOG_Log(LOG_LEVEL_WARN, "\033[1;35mWARN\033[0m", tag, __VA_ARGS__)
+#define LOG_Error(tag, ...) LOG_Log(LOG_LEVEL_ERROR, "\033[1;31mERROR\033[0m", tag, __VA_ARGS__)
 
 
 //==============================================================================
