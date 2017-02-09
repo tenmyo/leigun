@@ -56,25 +56,24 @@
 //==============================================================================
 static const char *BOARD_NAME = "LITE5200B";
 static const char *BOARD_DESCRIPTION = "LITE5200B";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"start_address: 0x00000000\n"
-"cpu_clock: 400000000\n"
-"\n"
-"[flash0]\n"
-"type: S29GL128NR2\n"
-"chips: 1\n"
-"\n"
-"[flash1]\n"
-"type: S29GL128NR2\n"
-"chips: 1\n"
-"\n"
-"[dram0]\n"
-"size: 128M\n"
-"\n"
-"[dram1]\n"
-"size: 128M\n"
-"\n";
+static const char *BOARD_DEFAULTCONFIG = "[global]\n"
+                                         "start_address: 0x00000000\n"
+                                         "cpu_clock: 400000000\n"
+                                         "\n"
+                                         "[flash0]\n"
+                                         "type: S29GL128NR2\n"
+                                         "chips: 1\n"
+                                         "\n"
+                                         "[flash1]\n"
+                                         "type: S29GL128NR2\n"
+                                         "chips: 1\n"
+                                         "\n"
+                                         "[dram0]\n"
+                                         "size: 128M\n"
+                                         "\n"
+                                         "[dram1]\n"
+                                         "size: 128M\n"
+                                         "\n";
 
 
 //==============================================================================
@@ -100,32 +99,28 @@ static int run(Device_Board_t *board);
 //= Function definitions(static)
 //==============================================================================
 
-static int
-run(Device_Board_t *board)
-{
-	PpcCpu_Run();
-	return 0;
+static int run(Device_Board_t *board) {
+    PpcCpu_Run();
+    return 0;
 }
 
-static Device_Board_t *
-create(void)
-{
-	Device_Board_t *board;
-	board = malloc(sizeof(*board));
-	board->run = &run;
+static Device_Board_t *create(void) {
+    Device_Board_t *board;
+    board = malloc(sizeof(*board));
+    board->run = &run;
 
-	// PpcCpu *cpu = PpcCpu_New(CPU_MPC866P,0);
-	Bus_Init(NULL, 4 * 1024);
-	BusDevice *dev;
-	/* CS0 */
-	dev = AMDFlashBank_New("flash0");
-	/* CS1 */
-	dev = AMDFlashBank_New("flash1");
-	/* SDRAM_CS0 */
-	dev = DRam_New("dram0");
-	/* SDRAM_CS1 */
-	dev = DRam_New("dram1");
-	return board;
+    // PpcCpu *cpu = PpcCpu_New(CPU_MPC866P,0);
+    Bus_Init(NULL, 4 * 1024);
+    BusDevice *dev;
+    /* CS0 */
+    dev = AMDFlashBank_New("flash0");
+    /* CS1 */
+    dev = AMDFlashBank_New("flash1");
+    /* SDRAM_CS0 */
+    dev = DRam_New("dram0");
+    /* SDRAM_CS1 */
+    dev = DRam_New("dram1");
+    return board;
 }
 
 
@@ -133,5 +128,6 @@ create(void)
 //= Function definitions(global)
 //==============================================================================
 INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                         BOARD_DEFAULTCONFIG);
 }

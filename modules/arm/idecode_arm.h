@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <compiler_extensions.h>
 
-#define INSTR_INDEX(icode) ( (((icode)&0xfff00000)>>20) | ((icode & 0xf0)<<8) )
-#define INSTR_UNINDEX(i) ((i&0xfff)<<20 | (((i>>12)&0xf)<<4) )
+#define INSTR_INDEX(icode) ( (((icode)&0xfff00000)>>20) | (((icode) & 0xf0)<<8) )
+#define INSTR_UNINDEX(i) (((i)&0xfff)<<20 | ((((i)>>12)&0xf)<<4) )
 #define INSTR_INDEX_MASK (0xfff000f0)
 #define INSTR_INDEX_MAX (0xffff)
 

@@ -56,19 +56,18 @@
 //==============================================================================
 static const char *BOARD_NAME = "AT91SAM7A3_EK";
 static const char *BOARD_DESCRIPTION = "Atmel SAM7A3 Evaluation Kit";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"start_address: 0\n"
-"\n"
-"[iram]\n"
-"size: 32k\n"
-"\n"
-"[loader]\n"
-"load_address: 0x0\n"
-"\n"
-"[iflash]\n"
-"size: 256k\n"
-"\n";
+static const char *BOARD_DEFAULTCONFIG = "[global]\n"
+                                         "start_address: 0\n"
+                                         "\n"
+                                         "[iram]\n"
+                                         "size: 32k\n"
+                                         "\n"
+                                         "[loader]\n"
+                                         "load_address: 0x0\n"
+                                         "\n"
+                                         "[iflash]\n"
+                                         "size: 256k\n"
+                                         "\n";
 
 
 //==============================================================================
@@ -91,34 +90,34 @@ static int run(Device_Board_t *board);
 //==============================================================================
 //= Function definitions(static)
 //==============================================================================
-static Device_Board_t *
-create(void)
-{
-//      ArmCoprocessor *copro;
-	Device_Board_t *board;
-	board = malloc(sizeof(*board));
-	board->run = &run;
-	BusDevice *dev, *flash, *efc;
+static Device_Board_t *create(void) {
+    //      ArmCoprocessor *copro;
+    Device_Board_t *board;
+    board = malloc(sizeof(*board));
+    board->run = &run;
+    BusDevice *dev, *flash, *efc;
 
-	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-	ARM9_New();
-	dev = SRam_New("iram");
-	Mem_AreaAddMapping(dev, 0x00200000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	//Mem_AreaAddMapping(dev,0x00000000,1024*1024,MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	AT91SAM7_EfcNew(&flash, &efc, "efc", "iflash");
+    Bus_Init(MMU_InvalidateTlb, 4 * 1024);
+    ARM9_New();
+    dev = SRam_New("iram");
+    Mem_AreaAddMapping(dev, 0x00200000, 1024 * 1024,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    // Mem_AreaAddMapping(dev,0x00000000,1024*1024,MEM_FLAG_WRITABLE |
+    // MEM_FLAG_READABLE);
+    AT91SAM7_EfcNew(&flash, &efc, "efc", "iflash");
 
-	/* Before remap only */
-	Mem_AreaAddMapping(flash, 0x00000000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	Mem_AreaAddMapping(flash, 0x00100000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    /* Before remap only */
+    Mem_AreaAddMapping(flash, 0x00000000, 1024 * 1024,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    Mem_AreaAddMapping(flash, 0x00100000, 1024 * 1024,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	return board;
+    return board;
 }
 
-static int
-run(Device_Board_t *board)
-{
-	ARM9_Run();
-	return 0;
+static int run(Device_Board_t *board) {
+    ARM9_Run();
+    return 0;
 }
 
 
@@ -126,5 +125,6 @@ run(Device_Board_t *board)
 //= Function definitions(global)
 //==============================================================================
 INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                         BOARD_DEFAULTCONFIG);
 }

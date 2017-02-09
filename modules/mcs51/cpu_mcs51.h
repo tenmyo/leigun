@@ -23,7 +23,7 @@
 #define EXMEM_MAP_ENTRY_SHIFT	(8)
 #define EXMEM_MAP_ENTRIES		(256)
 #define EXMEM_MAP_ENTRY_SIZE	(65536/EXMEM_MAP_ENTRIES)
-#define EXMEM_MAP_ENTRY(addr)	((addr >> 8))
+#define EXMEM_MAP_ENTRY(addr)	(((addr) >> 8))
 
 typedef void C51_SfrWriteProc(void *dev, uint8_t addr, uint8_t value);
 typedef uint8_t C51_SfrReadProc(void *dev, uint8_t addr);

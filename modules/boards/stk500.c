@@ -43,10 +43,9 @@
 //==============================================================================
 static const char *BOARD_NAME = "STK500";
 static const char *BOARD_DESCRIPTION = "STK500 AVR8 development Board";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"cpu_clock: 20000000\n"
-"\n";
+static const char *BOARD_DEFAULTCONFIG = "[global]\n"
+                                         "cpu_clock: 20000000\n"
+                                         "\n";
 
 
 //==============================================================================
@@ -69,18 +68,14 @@ static int run(Device_Board_t *board);
 //==============================================================================
 //= Function definitions(static)
 //==============================================================================
-static Device_Board_t *
-create(void)
-{
-	AVR8_Init("avr");
-	return 0;
+static Device_Board_t *create(void) {
+    AVR8_Init("avr");
+    return 0;
 }
 
-static int
-run(Device_Board_t *board)
-{
-	AVR8_Run();
-	return 0;
+static int run(Device_Board_t *board) {
+    AVR8_Run();
+    return 0;
 }
 
 
@@ -88,5 +83,6 @@ run(Device_Board_t *board)
 //= Function definitions(global)
 //==============================================================================
 INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                         BOARD_DEFAULTCONFIG);
 }

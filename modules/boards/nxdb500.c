@@ -17,7 +17,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// @file
-/// 
+///
 ///
 //===----------------------------------------------------------------------===//
 
@@ -91,42 +91,41 @@
 //==============================================================================
 static const char *BOARD_NAME = "NXDB500";
 static const char *BOARD_DESCRIPTION = "NXDB500 ARM Controller Card";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"start_address: 0\n"
-"cpu_clock: 200000000\n"
-"\n"
-"[dram0]\n"
-"size: 64M\n"
-"\n"
-"[loader]\n"
-"load_address: 0x50000000\n"
-"\n"
-"[sram0]\n"
-"size: 32k\n"
-"\n"
-"[sram1]\n"
-"size: 32k\n"
-"\n"
-"[sram2]\n"
-"size: 32k\n"
-"\n"
-"[sram3]\n"
-"size: 32k\n"
-"\n"
-"[tcdm]\n"
-"size: 8k\n"
-"\n"
-"[backupram]\n"
-"size: 16k\n"
-"\n"
-"[dram1]\n"
-"size: 32M\n"
-"\n"
-"[flash0]\n"
-"type: AM29LV256ML\n"
-"chips: 1\n"
-"\n";
+static const char *BOARD_DEFAULTCONFIG = "[global]\n"
+                                         "start_address: 0\n"
+                                         "cpu_clock: 200000000\n"
+                                         "\n"
+                                         "[dram0]\n"
+                                         "size: 64M\n"
+                                         "\n"
+                                         "[loader]\n"
+                                         "load_address: 0x50000000\n"
+                                         "\n"
+                                         "[sram0]\n"
+                                         "size: 32k\n"
+                                         "\n"
+                                         "[sram1]\n"
+                                         "size: 32k\n"
+                                         "\n"
+                                         "[sram2]\n"
+                                         "size: 32k\n"
+                                         "\n"
+                                         "[sram3]\n"
+                                         "size: 32k\n"
+                                         "\n"
+                                         "[tcdm]\n"
+                                         "size: 8k\n"
+                                         "\n"
+                                         "[backupram]\n"
+                                         "size: 16k\n"
+                                         "\n"
+                                         "[dram1]\n"
+                                         "size: 32M\n"
+                                         "\n"
+                                         "[flash0]\n"
+                                         "type: AM29LV256ML\n"
+                                         "chips: 1\n"
+                                         "\n";
 
 
 //==============================================================================
@@ -151,22 +150,20 @@ static int run(Device_Board_t *board);
 //= Function definitions(static)
 //==============================================================================
 
-static void
-create_signal_links(void)
-{
-	SigName_Link("arm.irq", "vic.irq");
-	SigName_Link("arm.fiq", "vic.fiq");
-	SigName_Link("gpio.timer0.irq", "vic.nVICINTSOURCE1");
-	SigName_Link("gpio.timer1.irq", "vic.nVICINTSOURCE2");
-	SigName_Link("gpio.timer2.irq", "vic.nVICINTSOURCE3");
+static void create_signal_links(void) {
+    SigName_Link("arm.irq", "vic.irq");
+    SigName_Link("arm.fiq", "vic.fiq");
+    SigName_Link("gpio.timer0.irq", "vic.nVICINTSOURCE1");
+    SigName_Link("gpio.timer1.irq", "vic.nVICINTSOURCE2");
+    SigName_Link("gpio.timer2.irq", "vic.nVICINTSOURCE3");
 #if 0
 	SigName_Link("systime_ns.irq", "vic.nVICINTSOURCE4");
 	SigName_Link("systime_s.irq", "vic.nVICINTSOURCE5");
 	SigName_Link("gpio.15.irq", "vic.nVICINTSOURCE6");
 #endif
-	SigName_Link("uart0.irq", "vic.nVICINTSOURCE8");
-	SigName_Link("uart1.irq", "vic.nVICINTSOURCE9");
-	SigName_Link("uart2.irq", "vic.nVICINTSOURCE10");
+    SigName_Link("uart0.irq", "vic.nVICINTSOURCE8");
+    SigName_Link("uart1.irq", "vic.nVICINTSOURCE9");
+    SigName_Link("uart2.irq", "vic.nVICINTSOURCE10");
 #if 0
 	SigName_Link("usb.irq", "vic.nVICINTSOURCE11");
 	SigName_Link("spi.irq", "vic.nVICINTSOURCE12");
@@ -174,7 +171,7 @@ create_signal_links(void)
 	SigName_Link("lcd.irq", "vic.nVICINTSOURCE14");
 	SigName_Link("hif.irq", "vic.nVICINTSOURCE15");
 #endif
-	SigName_Link("gpio.irq", "vic.nVICINTSOURCE16");
+    SigName_Link("gpio.irq", "vic.nVICINTSOURCE16");
 #if 0
 	SigName_Link("com0.irq", "vic.nVICINTSOURCE17");
 	SigName_Link("com1.irq", "vic.nVICINTSOURCE18");
@@ -187,93 +184,109 @@ create_signal_links(void)
 	SigName_Link("intphy.irq", "vic.nVICINTSOURCE25");
 	SigName_Link("isoarea.irq", "vic.nVICINTSOURCE26");
 #endif
-	SigName_Link("gpio.timer3.irq", "vic.nVICINTSOURCE29");
-	SigName_Link("gpio.timer4.irq", "vic.nVICINTSOURCE30");
+    SigName_Link("gpio.timer3.irq", "vic.nVICINTSOURCE29");
+    SigName_Link("gpio.timer4.irq", "vic.nVICINTSOURCE30");
 }
 
-static Device_Board_t *
-create(void)
-{
-	ArmCoprocessor *copro;
-	BusDevice *dev;
-	Device_Board_t *board;
-	board = malloc(sizeof(*board));
-	board->run = &run;
+static Device_Board_t *create(void) {
+    ArmCoprocessor *copro;
+    BusDevice *dev;
+    Device_Board_t *board;
+    board = malloc(sizeof(*board));
+    board->run = &run;
 
-	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-	ARM9_New();
-	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS);
-	ARM9_RegisterCoprocessor(copro, 15);
+    Bus_Init(MMU_InvalidateTlb, 4 * 1024);
+    ARM9_New();
+    copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS);
+    ARM9_RegisterCoprocessor(copro, 15);
 
-	dev = NetXSysco_New("sysco");
-	Mem_AreaAddMapping(dev, 0x00100000, 0x300, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = NetXSysco_New("sysco");
+    Mem_AreaAddMapping(dev, 0x00100000, 0x300,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = NetXUart_New("uart0");
-	Mem_AreaAddMapping(dev, 0x00100a00, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = NetXUart_New("uart1");
-	Mem_AreaAddMapping(dev, 0x00100a40, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = NetXUart_New("uart2");
-	Mem_AreaAddMapping(dev, 0x00100a80, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = NetXUart_New("uart0");
+    Mem_AreaAddMapping(dev, 0x00100a00, 0x40,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = NetXUart_New("uart1");
+    Mem_AreaAddMapping(dev, 0x00100a40, 0x40,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = NetXUart_New("uart2");
+    Mem_AreaAddMapping(dev, 0x00100a80, 0x40,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = NetXGpio_New("gpio");
-	Mem_AreaAddMapping(dev, 0x00100800, 0xff, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = NetXGpio_New("gpio");
+    Mem_AreaAddMapping(dev, 0x00100800, 0xff,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = XMac_New("xmac0");
-	Mem_AreaAddMapping(dev, 0x00160000, 0x1000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = XMac_New("xmac1");
-	Mem_AreaAddMapping(dev, 0x00161000, 0x1000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = XMac_New("xmac2");
-	Mem_AreaAddMapping(dev, 0x00162000, 0x1000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = XMac_New("xmac3");
-	Mem_AreaAddMapping(dev, 0x00163000, 0x1000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XMac_New("xmac0");
+    Mem_AreaAddMapping(dev, 0x00160000, 0x1000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XMac_New("xmac1");
+    Mem_AreaAddMapping(dev, 0x00161000, 0x1000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XMac_New("xmac2");
+    Mem_AreaAddMapping(dev, 0x00162000, 0x1000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XMac_New("xmac3");
+    Mem_AreaAddMapping(dev, 0x00163000, 0x1000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = XPec_New("xpec0");
-	Mem_AreaAddMapping(dev, 0x00170000, 0x4000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = XPec_New("xpec1");
-	Mem_AreaAddMapping(dev, 0x00174000, 0x4000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = XPec_New("xpec2");
-	Mem_AreaAddMapping(dev, 0x00178000, 0x4000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = XPec_New("xpec3");
-	Mem_AreaAddMapping(dev, 0x0017c000, 0x4000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = PL190_New("vic");
-	Mem_AreaAddMapping(dev, 0x001ff000, 0x400, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XPec_New("xpec0");
+    Mem_AreaAddMapping(dev, 0x00170000, 0x4000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XPec_New("xpec1");
+    Mem_AreaAddMapping(dev, 0x00174000, 0x4000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XPec_New("xpec2");
+    Mem_AreaAddMapping(dev, 0x00178000, 0x4000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = XPec_New("xpec3");
+    Mem_AreaAddMapping(dev, 0x0017c000, 0x4000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = PL190_New("vic");
+    Mem_AreaAddMapping(dev, 0x001ff000, 0x400,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = DRam_New("dram0");
-	if (dev) {
-		Mem_AreaAddMapping(dev, 0x80000000, 0x40000000,
-				   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	}
+    dev = DRam_New("dram0");
+    if (dev) {
+        Mem_AreaAddMapping(dev, 0x80000000, 0x40000000,
+                           MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    }
 
-	dev = SRam_New("sram0");
-	Mem_AreaAddMapping(dev, 0x00000000, 0x00008000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = SRam_New("sram1");
-	Mem_AreaAddMapping(dev, 0x00008000, 0x00008000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = SRam_New("sram2");
-	Mem_AreaAddMapping(dev, 0x00010000, 0x00008000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	dev = SRam_New("sram3");
-	Mem_AreaAddMapping(dev, 0x00008000, 0x00008000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("sram0");
+    Mem_AreaAddMapping(dev, 0x00000000, 0x00008000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("sram1");
+    Mem_AreaAddMapping(dev, 0x00008000, 0x00008000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("sram2");
+    Mem_AreaAddMapping(dev, 0x00010000, 0x00008000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("sram3");
+    Mem_AreaAddMapping(dev, 0x00008000, 0x00008000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = SRam_New("backupram");
-	Mem_AreaAddMapping(dev, 0x00300000, 0x00004000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("backupram");
+    Mem_AreaAddMapping(dev, 0x00300000, 0x00004000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = SRam_New("tcdm");
-	Mem_AreaAddMapping(dev, 0x10000000, 0x00002000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("tcdm");
+    Mem_AreaAddMapping(dev, 0x10000000, 0x00002000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = AMDFlashBank_New("flash0");
-	if (dev) {
-		Mem_AreaAddMapping(dev, 0xC0000000, 0x40000000,
-				   MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
-	}
-	//create_i2c_devices();
-	create_signal_links();
-	return board;
+    dev = AMDFlashBank_New("flash0");
+    if (dev) {
+        Mem_AreaAddMapping(dev, 0xC0000000, 0x40000000,
+                           MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    }
+    // create_i2c_devices();
+    create_signal_links();
+    return board;
 }
 
-static int
-run(Device_Board_t *board)
-{
-	ARM9_Run();
-	return 0;
+static int run(Device_Board_t *board) {
+    ARM9_Run();
+    return 0;
 }
 
 
@@ -281,5 +294,6 @@ run(Device_Board_t *board)
 //= Function definitions(global)
 //==============================================================================
 INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                         BOARD_DEFAULTCONFIG);
 }

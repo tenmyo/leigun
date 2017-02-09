@@ -43,10 +43,9 @@
 //==============================================================================
 static const char *BOARD_NAME = "ALT9";
 static const char *BOARD_DESCRIPTION = "Alt-9 8051 example board";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"cpu_clock: 8000000\n"
-"\n";
+static const char *BOARD_DEFAULTCONFIG = "[global]\n"
+                                         "cpu_clock: 8000000\n"
+                                         "\n";
 
 
 //==============================================================================
@@ -87,5 +86,6 @@ static int run(Device_Board_t *board) {
 //= Function definitions(global)
 //==============================================================================
 INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                         BOARD_DEFAULTCONFIG);
 }

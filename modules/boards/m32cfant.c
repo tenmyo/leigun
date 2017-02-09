@@ -27,34 +27,34 @@
  *******************************************************************************
  */
 #if 0
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include "boards.h"
-#include "signode.h"
-#include "sram.h"
-#include "cpu_m32c.h"
-#include "flash_m32c.h"
-#include "irq_m32c87.h"
-#include "uart_m32c.h"
-#include "uart56_m32c.h"
-#include "iio_m32c.h"
-#include "sysco_m32c.h"
-#include "timer_m32c.h"
-#include "can_m32c.h"
 #include "adc_m32c.h"
-#include "pio_m32c.h"
-#include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "mmcard.h"
-#include "sd_spi.h"
+#include "boards.h"
+#include "can_m32c.h"
+#include "compiler_extensions.h"
+#include "cpu_m32c.h"
 #include "ds1388.h"
+#include "flash_m32c.h"
+#include "i2c_serdes.h"
+#include "iio_m32c.h"
+#include "initializer.h"
+#include "irq_m32c87.h"
+#include "m24cxx.h"
 #include "m25p16.h"
 #include "m32c_crc.h"
-#include "compiler_extensions.h"
-#include "initializer.h"
+#include "mmcard.h"
+#include "pio_m32c.h"
+#include "sd_spi.h"
+#include "signode.h"
+#include "sram.h"
+#include "sysco_m32c.h"
+#include "timer_m32c.h"
+#include "uart56_m32c.h"
+#include "uart_m32c.h"
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 static void
 create_i2c_devices()
@@ -202,16 +202,16 @@ board_m32cfant_run(Board * bd)
 	M32C_Run();
 }
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"cpu_clock: 24000000\n" \
-"\n" \
-"[iflash]\n" \
-"size: 1024k\n" \
-"\n" \
-"[iram0]\n" \
-"size: 48k\n" \
-"\n"
+#define DEFAULTCONFIG                                                          \
+    "[global]\n"                                                               \
+    "cpu_clock: 24000000\n"                                                    \
+    "\n"                                                                       \
+    "[iflash]\n"                                                               \
+    "size: 1024k\n"                                                            \
+    "\n"                                                                       \
+    "[iram0]\n"                                                                \
+    "size: 48k\n"                                                              \
+    "\n"
 
 static Board board_m32cfant = {
 	.name = "M32CFANT",

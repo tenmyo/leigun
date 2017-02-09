@@ -95,30 +95,29 @@
 //==============================================================================
 static const char *BOARD_NAME = "ARMee";
 static const char *BOARD_DESCRIPTION = "Elektor ARMee Board";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"start_address: 0\n"
-"cpu_clock: 58982400\n"
-"oscillator: 14745600\n"
-"\n"
-"[iram]\n"
-"size: 64k\n"
-"\n"
-"[lcd0]\n"
-"backend: rfbserver\n"
-"host: 127.0.0.1\n"
-"port: 5901\n"
-"width: 310\n"
-"height: 75\n"
-"start: vncviewer localhost:5901\n"
-"exit_on_close: 1\n"
-"\n"
-"[loader]\n"
-"load_address: 0x0\n"
-"\n"
-"[iflash]\n"
-"size: 128k\n"
-"\n";
+static const char *BOARD_DEFAULTCONFIG = "[global]\n"
+                                         "start_address: 0\n"
+                                         "cpu_clock: 58982400\n"
+                                         "oscillator: 14745600\n"
+                                         "\n"
+                                         "[iram]\n"
+                                         "size: 64k\n"
+                                         "\n"
+                                         "[lcd0]\n"
+                                         "backend: rfbserver\n"
+                                         "host: 127.0.0.1\n"
+                                         "port: 5901\n"
+                                         "width: 310\n"
+                                         "height: 75\n"
+                                         "start: vncviewer localhost:5901\n"
+                                         "exit_on_close: 1\n"
+                                         "\n"
+                                         "[loader]\n"
+                                         "load_address: 0x0\n"
+                                         "\n"
+                                         "[iflash]\n"
+                                         "size: 128k\n"
+                                         "\n";
 
 
 //==============================================================================
@@ -152,97 +151,97 @@ static int run(Device_Board_t *board);
  * you can not link nonexisting Signals
  * ---------------------------------------------------------------
  */
-static void
-create_signal_links(void)
-{
-	SigName_Link("arm.irq", "vic.irq");
-	SigName_Link("arm.fiq", "vic.fiq");
-	SigName_Link("timer0.irq", "vic.nVICINTSOURCE4");
-	SigName_Link("timer1.irq", "vic.nVICINTSOURCE5");
-	SigName_Link("uart0.irq", "vic.nVICINTSOURCE6");
-	SigName_Link("uart1.irq", "vic.nVICINTSOURCE7");
-	/* Connect the LCD */
-	SigName_Link("gpio.P0.4", "lcd0.D4");
-	SigName_Link("gpio.P0.5", "lcd0.D5");
-	SigName_Link("gpio.P0.6", "lcd0.D6");
-	SigName_Link("gpio.P0.7", "lcd0.D7");
+static void create_signal_links(void) {
+    SigName_Link("arm.irq", "vic.irq");
+    SigName_Link("arm.fiq", "vic.fiq");
+    SigName_Link("timer0.irq", "vic.nVICINTSOURCE4");
+    SigName_Link("timer1.irq", "vic.nVICINTSOURCE5");
+    SigName_Link("uart0.irq", "vic.nVICINTSOURCE6");
+    SigName_Link("uart1.irq", "vic.nVICINTSOURCE7");
+    /* Connect the LCD */
+    SigName_Link("gpio.P0.4", "lcd0.D4");
+    SigName_Link("gpio.P0.5", "lcd0.D5");
+    SigName_Link("gpio.P0.6", "lcd0.D6");
+    SigName_Link("gpio.P0.7", "lcd0.D7");
 
-	SigName_Link("gpio.P0.8", "lcd0.RS");
-	SigName_Link("gpio.P0.9", "lcd0.RW");
-	SigName_Link("gpio.P0.10", "lcd0.E");
-
+    SigName_Link("gpio.P0.8", "lcd0.RS");
+    SigName_Link("gpio.P0.9", "lcd0.RW");
+    SigName_Link("gpio.P0.10", "lcd0.E");
 }
 
-static void
-create_clock_links(void)
-{
-	Clock_Link("arm.clk", "scb.cclk");
-	Clock_Link("uart0.clk", "scb.pclk");
-	Clock_Link("uart1.clk", "scb.pclk");
-	Clock_Link("timer0.pclk", "scb.pclk");
-	Clock_Link("timer1.pclk", "scb.pclk");
+static void create_clock_links(void) {
+    Clock_Link("arm.clk", "scb.cclk");
+    Clock_Link("uart0.clk", "scb.pclk");
+    Clock_Link("uart1.clk", "scb.pclk");
+    Clock_Link("timer0.pclk", "scb.pclk");
+    Clock_Link("timer1.pclk", "scb.pclk");
 }
 
-static Device_Board_t *
-create(void)
-{
-	ArmCoprocessor *copro;
-	BusDevice *dev;
-	FbDisplay *display = NULL;
-	Keyboard *keyboard = NULL;
-	Device_Board_t *board;
-	board = malloc(sizeof(*board));
-	board->run = &run;
+static Device_Board_t *create(void) {
+    ArmCoprocessor *copro;
+    BusDevice *dev;
+    FbDisplay *display = NULL;
+    Keyboard *keyboard = NULL;
+    Device_Board_t *board;
+    board = malloc(sizeof(*board));
+    board->run = &run;
 
-	FbDisplay_New("lcd0", &display, &keyboard, NULL, NULL);
-	if (!display) {
-		LOG_Error(BOARD_NAME, "LCD creation failed");
-		exit(1);
-	}
+    FbDisplay_New("lcd0", &display, &keyboard, NULL, NULL);
+    if (!display) {
+        LOG_Error(BOARD_NAME, "LCD creation failed");
+        exit(1);
+    }
 
-	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-	ARM9_New();
-	/* Copro is created but not registered (1:1 translation is bootup default) */
-	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
+    Bus_Init(MMU_InvalidateTlb, 4 * 1024);
+    ARM9_New();
+    /* Copro is created but not registered (1:1 translation is bootup default)
+     */
+    copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
 
-	dev = PL190_New("vic");
-	Mem_AreaAddMapping(dev, 0xfffff000, 0x1000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = PL190_New("vic");
+    Mem_AreaAddMapping(dev, 0xfffff000, 0x1000,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = SRam_New("iram");
-	Mem_AreaAddMapping(dev, 0x40000000, 256 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = SRam_New("iram");
+    Mem_AreaAddMapping(dev, 0x40000000, 256 * 1024,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = LPCFlash_New("iflash");
-	Mem_AreaAddMapping(dev, 0x00000000, 128 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = LPCFlash_New("iflash");
+    Mem_AreaAddMapping(dev, 0x00000000, 128 * 1024,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = LPC2106Timer_New("timer0");
-	Mem_AreaAddMapping(dev, 0xE0004000, 0x20, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = LPC2106Timer_New("timer0");
+    Mem_AreaAddMapping(dev, 0xE0004000, 0x20,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = LPC2106Timer_New("timer1");
-	Mem_AreaAddMapping(dev, 0xE0008000, 0x20, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = LPC2106Timer_New("timer1");
+    Mem_AreaAddMapping(dev, 0xE0008000, 0x20,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = PC16550_New("uart0", 2);
-	Mem_AreaAddMapping(dev, 0xE000C000, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = PC16550_New("uart0", 2);
+    Mem_AreaAddMapping(dev, 0xE000C000, 0x40,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	dev = PC16550_New("uart1", 2);
-	Mem_AreaAddMapping(dev, 0xE0010000, 0x40, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = PC16550_New("uart1", 2);
+    Mem_AreaAddMapping(dev, 0xE0010000, 0x40,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	LPC2106_GpioNew("gpio.P0");
+    LPC2106_GpioNew("gpio.P0");
 
-	dev = LPC2106_ScbNew("scb");
-	Mem_AreaAddMapping(dev, 0xE01FC000, 0x200, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
+    dev = LPC2106_ScbNew("scb");
+    Mem_AreaAddMapping(dev, 0xE01FC000, 0x200,
+                       MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-	HD44780_LcdNew("lcd0", display);
+    HD44780_LcdNew("lcd0", display);
 
-	create_signal_links();
-	create_clock_links();
-	return board;
+    create_signal_links();
+    create_clock_links();
+    return board;
 }
 
-static int
-run(Device_Board_t *board)
-{
-	ARM9_Run();
-	return 0;
+static int run(Device_Board_t *board) {
+    ARM9_Run();
+    return 0;
 }
 
 
@@ -250,5 +249,6 @@ run(Device_Board_t *board)
 //= Function definitions(global)
 //==============================================================================
 INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                         BOARD_DEFAULTCONFIG);
 }
