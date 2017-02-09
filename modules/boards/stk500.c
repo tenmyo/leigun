@@ -1,43 +1,92 @@
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <avr8_cpu.h>
-#include <boards.h>
-#include "compiler_extensions.h"
+//===-- boards/stk500.c -------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a STK500 AVR8 development Board
+///
+//===----------------------------------------------------------------------===//
+
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+
+// Local/Private Headers
+#include "avr8/avr8_cpu.h"
+
+// Leigun Core Headers
+#include "core/device.h"
 #include "initializer.h"
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"cpu_clock: 20000000\n"\
-"\n"
+// External headers
 
-static int
-board_stk500_create()
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "STK500";
+static const char *BOARD_DESCRIPTION = "STK500 AVR8 development Board";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"cpu_clock: 20000000\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
+static Device_Board_t *
+create(void)
 {
 	AVR8_Init("avr");
 	return 0;
 }
 
-static void
-board_stk500_run(Board * bd)
+static int
+run(Device_Board_t *board)
 {
 	AVR8_Run();
+	return 0;
 }
 
-static Board board_stk500 = {
-	.name = "STK500",
-	.description = "STK500 AVR8 development Board",
-	.createBoard = board_stk500_create,
-	.runBoard = board_stk500_run,
-	.defaultconfig = DEFAULTCONFIG
-};
 
-INITIALIZER(stk500_init)
-{
-	fprintf(stderr, "Loading STK500 Board module\n");
-	Board_Register(&board_stk500);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

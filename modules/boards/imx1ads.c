@@ -1,3 +1,27 @@
+//===-- boards/imx1ads.c ------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a Freescale iMX1ADS Board
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  *  Compose a Freescale iMX1ADS Board
@@ -33,33 +57,80 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include "dram.h"
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "bus.h"
-#include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "loader.h"
-#include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "boards.h"
-#include "imx21_uart.h"
-#include "imx_timer.h"
+// Local/Private Headers
 #include "aitc.h"
+#include "amdflash.h"
+#include "arm/mmu_arm9.h"
+#include "controllers/imx21/imx21_uart.h"
+#include "imx_timer.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "dram.h"
 #include "initializer.h"
+#include "signode.h"
+
+// External headers
+
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "iMX1ADS";
+static const char *BOARD_DESCRIPTION = "iMX1ADS";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0x0\n"
+"\n"
+"[dram0]\n"
+"size: 32M\n"
+"\n"
+"[loader]\n"
+"load_address: 0x10000000\n"
+"\n"
+"[dram0]\n"
+"size: 32M\n"
+"\n"
+"[flash0]\n"
+"type: AM29BDS128H\n"
+"chips: 2\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_signal_links(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 static void
-create_signal_links()
+create_signal_links(void)
 {
 	/* Connect the interrupt controller to the CPU */
 	SigName_Link("arm.irq", "aitc.irq");
@@ -131,11 +202,14 @@ create_signal_links()
 	//SigName_Link("aitc.nIntSrc63","wdt_int");
 }
 
-static int
-board_imx1ads_create()
+static Device_Board_t *
+create(void)
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
@@ -172,43 +246,20 @@ board_imx1ads_create()
 	Mem_AreaAddMapping(dev, 0x00203000, 0x00001000, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
 	create_signal_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_imx1ads_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0x0\n"\
-"\n"\
-"[dram0]\n" \
-"size: 32M\n" \
-"\n" \
-"[loader]\n" \
-"load_address: 0x10000000\n"\
-"\n" \
-"[dram0]\n"\
-"size: 32M\n"\
-"\n"\
-"[flash0]\n"\
-"type: AM29BDS128H\n"\
-"chips: 2\n"\
-"\n"
-
-static Board board_imx1ads = {
-	.name = "iMX1ADS",
-	.description = "iMX1ADS",
-	.createBoard = board_imx1ads_create,
-	.runBoard = board_imx1ads_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(imx1ads_board_init)
-{
-	fprintf(stderr, "Loading iMX1ADS Board module\n");
-	Board_Register(&board_imx1ads);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

@@ -1,3 +1,27 @@
+//===-- boards/ns9759dev.c ----------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose the NS9750 development board from Netsilicon
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  ************************************************************************************************
  *
@@ -33,40 +57,88 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "ns9750_mem.h"
-#include "ns9750_pci.h"
-#include "ns9750_serial.h"
-#include "ns9750_timer.h"
-#include "ns9750_bbus.h"
-#include "ns9750_bbdma.h"
-#include "ns9750_usb.h"
-#include "ns9750_eth.h"
-#include "bus.h"
-#include "lacc_can.h"
+// Local/Private Headers
 #include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "lxt971a.h"
-#include "loader.h"
-#include "boards.h"
+#include "arm/mmu_arm9.h"
+#include "controllers/ns9750/ns9750_bbdma.h"
+#include "controllers/ns9750/ns9750_bbus.h"
+#include "controllers/ns9750/ns9750_eth.h"
+#include "controllers/ns9750/ns9750_mem.h"
+#include "controllers/ns9750/ns9750_pci.h"
+#include "controllers/ns9750/ns9750_serial.h"
+#include "controllers/ns9750/ns9750_timer.h"
+#include "controllers/ns9750/ns9750_usb.h"
+#include "controllers/ns9750/ns9xxx_i2c.h"
+#include "devices/can/lacc_can.h"
+#include "devices/phy/lxt971a.h"
+#include "devices/phy/phy.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "core/logging.h"
+#include "dram.h"
 #include "initializer.h"
+#include "signode.h"
+
+// External headers
+
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "NS9750DEV";
+static const char *BOARD_DESCRIPTION = "Netsilicon NS9750 development Board";
+static const char *BOARD_DEFAULTCONFIG = 
+"[loader]\n"
+"load_address: 0x50000000\n"
+"\n"
+"[dram0]\n"
+"size: 16M\n"
+"\n"
+"[flash1]\n"
+"type: M29W320DB\n"
+"chips: 2\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 /*
  * -------------------------------------------------------------------------------
  * 
  * -------------------------------------------------------------------------------
  */
-int
-board_ns9750dev_create()
+static Device_Board_t *
+create(void)
 {
 	BusDevice *dev;
 	BusDevice *bbus;
@@ -75,6 +147,9 @@ board_ns9750dev_create()
 	NS9750_MemController *memco;
 	PHY_Device *phy;
 	PCI_Function *bridge;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	ARM9_New();
 	copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
@@ -129,8 +204,7 @@ board_ns9750dev_create()
 	if (dev) {
 		NS9750_RegisterDevice(memco, dev, NS9750_CS1);
 	} else {
-		fprintf(stderr, "Warning ! no boot Flash available !\n");
-		sleep(2);
+		LOG_Warn(BOARD_NAME, "Warning ! no boot Flash available !");
 	}
 
 	dev = LaccCAN_New();
@@ -169,37 +243,20 @@ board_ns9750dev_create()
 	SigName_Link("mmu.endian", "ns9750_pci.cpu_endian");
 	SigName_Link("flash1.big_endian", "memco.big_endian");
 
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_ns9750dev_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[loader]\n" \
-"load_address: 0x50000000\n" \
-"\n" \
-"[dram0]\n" \
-"size: 16M\n" \
-"\n" \
-"[flash1]\n"\
-"type: M29W320DB\n"\
-"chips: 2\n"\
-"\n"
-
-static Board board_ns9750dev = {
- name:	"NS9750DEV",
- description:"Netsilicon NS9750 development Board",
- createBoard:board_ns9750dev_create,
- runBoard:board_ns9750dev_run,
- defaultconfig:DEFAULTCONFIG
-};
-
-INITIALIZER(ns9750dev_init)
-{
-	fprintf(stderr, "Loading NS9750 development board module\n");
-	Board_Register(&board_ns9750dev);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

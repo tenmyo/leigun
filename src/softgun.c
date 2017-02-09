@@ -48,7 +48,6 @@
 #include "clock.h"
 #include "loader.h"
 #include "configfile.h"
-#include "boards/boards.h"
 #include "version.h"
 #include "sgstring.h"
 #include "sglib.h"
@@ -277,12 +276,12 @@ parse_commandline(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	char *boardname;
+	const char *boardname;
 #ifdef __unix
 	struct timeval tv;
 	uint64_t seedval;
 #endif
-	Board *board;
+	Device_Board_t *board;
 	
 	LOG_Info("MAIN", "%s", leigun_version);
 	
@@ -330,16 +329,12 @@ main(int argc, char *argv[])
 		LOG_Error("MAIN", "No Board selected in Configfile global section");
 		exit(1);
 	}
-	board = Board_Find(boardname);
+	board = Device_CreateBoard(boardname);
 	if (!board) {
 		LOG_Error("MAIN", "Board(%s) Not Found", boardname);
+		Device_DumpBoards();
 		exit(1);
 	}
-	if (Board_DefaultConfig(board)) {
-		LOG_Warn("MAIN", "defaultconfig %s",Board_DefaultConfig(board));
-		Config_AddString(Board_DefaultConfig(board));
-	}
-	Board_Create(board);
 	LoadChain_Resolve();
 	if (LoadChain_Load() < 0) {
 		LOG_Error("MAIN", "Loading failed");
@@ -348,6 +343,6 @@ main(int argc, char *argv[])
 #ifdef __unix
 	Senseless_Init();
 #endif
-	Board_Run(board);
+	board->run(board);
 	exit(0);
 }

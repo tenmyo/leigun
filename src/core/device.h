@@ -72,6 +72,7 @@ int Device_RegisterBoard(const char *name, const char *description,
                          const char *defaultconfig);
 int Device_UnregisterBoard(const char *name);
 Device_Board_t *Device_CreateBoard(const char *name);
+void Device_DumpBoards(void);
 
 
 #ifdef __cplusplus

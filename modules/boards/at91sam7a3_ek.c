@@ -1,5 +1,28 @@
+//===-- boards/at91sam7a3_ek.c ------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a AT91_SAM7A3-EK Development Board
+///
+//===----------------------------------------------------------------------===//
+
 /*
- * ------------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------
  *  Compose a AT91_SAM7A3-EK Development Board
  *
  * (C) 2009 Jochen Karrer
@@ -8,35 +31,73 @@
  * -----------------------------------------------------------------------------
  */
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include <signode.h>
-#include <mmu_arm9.h>
-#include <bus.h>
-#include <configfile.h>
-#include <loader.h>
-#include <boards.h>
-#include <i2c_serdes.h>
-#include <clock.h>
-#include <sram.h>
-#include <at91sam_efc.h>
+// Local/Private Headers
+#include "arm/mmu_arm9.h"
+#include "controllers/at91/at91sam_efc.h"
 
-static void
-board_sam7a3_ek_run(Board * bd)
-{
-	ARM9_Run();
-}
+// Leigun Core Headers
 
-static int
-board_sam7a3_ek_create()
+// External headers
+
+// System headers
+#include "bus.h"
+#include "core/device.h"
+#include "initializer.h"
+#include "sram.h"
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "AT91SAM7A3_EK";
+static const char *BOARD_DESCRIPTION = "Atmel SAM7A3 Evaluation Kit";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0\n"
+"\n"
+"[iram]\n"
+"size: 32k\n"
+"\n"
+"[loader]\n"
+"load_address: 0x0\n"
+"\n"
+"[iflash]\n"
+"size: 256k\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
+static Device_Board_t *
+create(void)
 {
 //      ArmCoprocessor *copro;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 	BusDevice *dev, *flash, *efc;
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
@@ -50,36 +111,20 @@ board_sam7a3_ek_create()
 	Mem_AreaAddMapping(flash, 0x00000000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 	Mem_AreaAddMapping(flash, 0x00100000, 1024 * 1024, MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0\n"\
-"\n" \
-"[iram]\n" \
-"size: 32k\n" \
-"\n" \
-"[loader]\n" \
-"load_address: 0x0\n"\
-"\n" \
-"[iflash]\n"\
-"size: 256k\n"\
-"\n"
 
-Board board_sam7a3_ek = {
-	.name = "AT91SAM7A3_EK",
-	.description = "Atmel SAM7A3 Evaluation Kit",
-	.createBoard = board_sam7a3_ek_create,
-	.runBoard = board_sam7a3_ek_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-#ifdef _SHARED_
-void
-_init()
-{
-	fprintf(stderr, "Loading SAM7A3 Board module\n");
-	Board_Register(&board_sam7a3_ek);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }
-#endif

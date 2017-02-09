@@ -1,3 +1,28 @@
+//===-- boards/facc.c ---------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// NS9360 Fantasy ARM Controller Card
+///     Compose a NS9360 Fantasy Board
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  * NS9360 Fantasy ARM Controller Card 
@@ -31,44 +56,88 @@
  *
  *************************************************************************************************
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
+// clang-format on
 
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "ns9750_mem.h"
-#include "ns9750_pci.h"
-#include "ns9750_serial.h"
-#include "ns9750_timer.h"
-#include "ns9750_bbus.h"
-#include "ns9750_bbdma.h"
-#include "ns9750_usb.h"
-#include "ns9750_eth.h"
-#include "bus.h"
-#include "sja1000.h"
-#include "lacc_can.h"
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+
+// Local/Private Headers
 #include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "lxt971a.h"
-#include "ml6652.h"
-#include "loader.h"
-#include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "pcf8563.h"
-#include "pcf8575.h"
-#include "pca9544.h"
-#include "max6651.h"
-#include "lm75.h"
-#include "pcf8591.h"
-#include "ads7828.h"
+#include "arm/mmu_arm9.h"
+#include "controllers/ns9750/ns9750_bbdma.h"
+#include "controllers/ns9750/ns9750_bbus.h"
+#include "controllers/ns9750/ns9750_eth.h"
+#include "controllers/ns9750/ns9750_mem.h"
+#include "controllers/ns9750/ns9750_pci.h"
+#include "controllers/ns9750/ns9750_serial.h"
+#include "controllers/ns9750/ns9750_timer.h"
+#include "controllers/ns9750/ns9750_usb.h"
+#include "devices/can/lacc_can.h"
 #include "devices/dm9000/dm9000.h"
-#include "boards.h"
-#include "compiler_extensions.h"
+#include "devices/i2c/m24cxx.h"
+#include "devices/i2c/pcf8563.h"
+#include "devices/phy/lxt971a.h"
+#include "devices/phy/phy.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "core/logging.h"
+#include "dram.h"
+#include "i2c_serdes.h"
 #include "initializer.h"
+#include "signode.h"
+
+// External headers
+
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "FACC";
+static const char *BOARD_DESCRIPTION = "Fantasy NS9360 ARM Controller Card";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0\n"
+"\n"
+"[loader]\n"
+"load_address: 0x50000000\n"
+"\n"
+"[dram0]\n"
+"size: 32M\n"
+"\n"
+"[flash1]\n"
+"type: AM29LV640ML\n"
+"chips: 1\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_signal_links(void);
+static void create_i2c_devices(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 /*
  * ---------------------------------------------------------------
@@ -78,7 +147,7 @@
  * ---------------------------------------------------------------
  */
 static void
-create_signal_links()
+create_signal_links(void)
 {
 	SigName_Link("i2cbus0000.sda", "bbutil.gpio.13");
 	SigName_Link("i2cbus0000.scl", "bbutil.gpio.14");
@@ -118,7 +187,7 @@ create_signal_links()
  * ----------------------------------------------------
  */
 static void
-create_i2c_devices()
+create_i2c_devices(void)
 {
 	I2C_Slave *i2c_slave;
 	I2C_SerDes *i2c_serdes0000;
@@ -139,8 +208,8 @@ create_i2c_devices()
  * 	Create a fantasy bord
  * -----------------------------
  */
-static int
-board_facc_create()
+static Device_Board_t *
+create(void)
 {
 	BusDevice *dev;
 	BusDevice *bbus;
@@ -148,6 +217,9 @@ board_facc_create()
 	NS9750_MemController *memco;
 	ArmCoprocessor *copro;
 	PHY_Device *phy;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
@@ -200,8 +272,7 @@ board_facc_create()
 	if (dev) {
 		NS9750_RegisterDevice(memco, dev, NS9750_CS1);
 	} else {
-		fprintf(stderr, "Warning ! no boot Flash available !\n");
-		sleep(2);
+		LOG_Warn(BOARD_NAME, "Warning ! no boot Flash available !");
 	}
 	dev = DM9000_New("dm9000", 4);
 	if (dev) {
@@ -213,40 +284,20 @@ board_facc_create()
 
 	create_i2c_devices();
 	create_signal_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_facc_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0\n"\
-\
-"[loader]\n" \
-"load_address: 0x50000000\n"\
-\
-"[dram0]\n" \
-"size: 32M\n" \
-"\n" \
-"[flash1]\n" \
-"type: AM29LV640ML\n" \
-"chips: 1\n" \
-"\n"
-
-static Board board_facc = {
-	.name = "FACC",
-	.description = "Fantasy NS9360 ARM Controller Card",
-	.createBoard = board_facc_create,
-	.runBoard = board_facc_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(facc_init)
-{
-	fprintf(stderr, "Loading Fantasy ARM controller board module\n");
-	Board_Register(&board_facc);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

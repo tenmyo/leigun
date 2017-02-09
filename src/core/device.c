@@ -28,6 +28,7 @@
 #include "core/device.h"
 
 // Local/Private Headers
+#include "configfile.h"
 #include "core/exithandler.h"
 #include "core/list.h"
 #include "core/logging.h"
@@ -118,6 +119,14 @@ static int Device_compareBoard(const Device_board_t *a,
     return strcmp(a->name, b->name);
 }
 
+//===----------------------------------------------------------------------===//
+/// Free device list.
+//===----------------------------------------------------------------------===//
+static void Device_printBoard(Device_board_t *device) {
+    printf("%s: %s\n", device->name, device->description);
+    printf("%s\n\n", device->defaultconfig);
+}
+
 
 //==============================================================================
 //= Function definitions(global)
@@ -168,7 +177,7 @@ int Device_RegisterBoard(const char *name, const char *description,
                              .create = create};
     Device_board_t *devicep;
 
-    LOG_Info(MOD_NAME, "Register board board %s", name);
+    LOG_Info(MOD_NAME, "Register board %s", name);
     List_InitElement(&device);
 
     uv_mutex_lock(&Device_devices.list_mutex);
@@ -235,5 +244,19 @@ Device_Board_t *Device_CreateBoard(const char *name) {
         LOG_Warn(MOD_NAME, "Board %s not found", name);
         return NULL;
     }
+    LOG_Info(MOD_NAME, "defaultconfig %s", result->defaultconfig);
+    Config_AddString(result->defaultconfig);
     return result->create();
+}
+
+
+//===----------------------------------------------------------------------===//
+/// Dump board info.
+//===----------------------------------------------------------------------===//
+void Device_DumpBoards(void) {
+    printf("-- Registered bords are:\n");
+    uv_mutex_lock(&Device_devices.list_mutex);
+    List_Map(&Device_devices, &Device_printBoard);
+    uv_mutex_unlock(&Device_devices.list_mutex);
+    printf("--\n");
 }

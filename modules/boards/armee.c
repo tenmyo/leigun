@@ -1,3 +1,27 @@
+//===-- boards/armee.c --------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose the ARMee board from Electronic magazine elektor
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  ***************************************************************************************************
  *
@@ -31,34 +55,97 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "bus.h"
-#include "configfile.h"
-#include "loader.h"
-#include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "boards.h"
-#include "lpcflash.h"
-#include "sram.h"
+// Local/Private Headers
+#include "arm/mmu_arm9.h"
+#include "controllers/lpc2106/lpc2106_gpio.h"
+#include "controllers/lpc2106/lpc2106_scb.h"
+#include "controllers/lpc2106/lpc2106_timer.h"
+#include "controllers/lpc2106/lpcflash.h"
+#include "devices/i2c/m24cxx.h"
+#include "devices/lcd/lcd_hd44780.h"
 #include "pc16550.h"
 #include "pl190_irq.h"
-#include "clock.h"
-#include "lpc2106_timer.h"
-#include "lpc2106_gpio.h"
-#include "lpc2106_scb.h"
-#include "lcd_hd44780.h"
-#include "compiler_extensions.h"
-#include "initializer.h"
 
-/*
+// Leigun Core Headers
+#include "bus.h"
+#include "clock.h"
+#include "configfile.h"
+#include "core/device.h"
+#include "core/logging.h"
+#include "i2c_serdes.h"
+#include "initializer.h"
+#include "signode.h"
+#include "sram.h"
+
+// External headers
+
+// System headers
+#include <stdlib.h>
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "ARMee";
+static const char *BOARD_DESCRIPTION = "Elektor ARMee Board";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0\n"
+"cpu_clock: 58982400\n"
+"oscillator: 14745600\n"
+"\n"
+"[iram]\n"
+"size: 64k\n"
+"\n"
+"[lcd0]\n"
+"backend: rfbserver\n"
+"host: 127.0.0.1\n"
+"port: 5901\n"
+"width: 310\n"
+"height: 75\n"
+"start: vncviewer localhost:5901\n"
+"exit_on_close: 1\n"
+"\n"
+"[loader]\n"
+"load_address: 0x0\n"
+"\n"
+"[iflash]\n"
+"size: 128k\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_signal_links(void);
+static void create_clock_links(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
+
+
+/**
  * ---------------------------------------------------------------
  * Link some Electrical signals in the same way as in schematics
  * This has to be done when all devices are created, because
@@ -96,17 +183,20 @@ create_clock_links(void)
 	Clock_Link("timer1.pclk", "scb.pclk");
 }
 
-static int
-board_armee_create(void)
+static Device_Board_t *
+create(void)
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
 	FbDisplay *display = NULL;
 	Keyboard *keyboard = NULL;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	FbDisplay_New("lcd0", &display, &keyboard, NULL, NULL);
 	if (!display) {
-		fprintf(stderr, "LCD creation failed\n");
+		LOG_Error(BOARD_NAME, "LCD creation failed");
 		exit(1);
 	}
 
@@ -145,50 +235,20 @@ board_armee_create(void)
 
 	create_signal_links();
 	create_clock_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_armee_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0\n"\
-"cpu_clock: 58982400\n"\
-"oscillator: 14745600\n" \
-"\n" \
-"[iram]\n" \
-"size: 64k\n" \
-"\n" \
-"[lcd0]\n" \
-"backend: rfbserver\n" \
-"host: 127.0.0.1\n" \
-"port: 5901\n" \
-"width: 310\n" \
-"height: 75\n" \
-"start: vncviewer localhost:5901\n" \
-"exit_on_close: 1\n" \
-"\n" \
-"[loader]\n" \
-"load_address: 0x0\n"\
-"\n" \
-"[iflash]\n"\
-"size: 128k\n"\
-"\n"
-
-static Board board_armee = {
-	.name = "ARMee",
-	.description = "Elektor ARMee Board",
-	.createBoard = board_armee_create,
-	.runBoard = board_armee_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(armee_init)
-{
-	fprintf(stderr, "Loading Elektor ARMee Board module\n");
-	Board_Register(&board_armee);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

@@ -1,3 +1,27 @@
+//===-- boards/eth_m32.c ------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose ETH-M32 board from Ulrich Radig
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  ************************************************************************************************* 
  * Compose ETH-M32 board from Ulrich Radig
@@ -30,42 +54,73 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include "avr8_cpu.h"
-#include "atm644_usart.h"
-#include "atm644_timer02.h"
-#include "atm644_timer1.h"
-#include "avr8_eeprom.h"
-#include "avr8_port.h"
-#include "boards.h"
-#include "i2c_serdes.h"
-#include "avr8_adc.h"
-#include "atm644_sysreset.h"
-#include "atm644_twi.h"
-#include "avr8_gpio.h"
-#include "uze_video.h"
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+
+// Local/Private Headers
+#include "avr8/atm644_extint.h"
+#include "avr8/atm644_spi.h"
+#include "avr8/atm644_sysreset.h"
+#include "avr8/atm644_timer02.h"
+#include "avr8/atm644_timer1.h"
+#include "avr8/atm644_twi.h"
+#include "avr8/atm644_usart.h"
+#include "avr8/avr8_adc.h"
+#include "avr8/avr8_cpu.h"
+#include "avr8/avr8_eeprom.h"
+#include "avr8/avr8_gpio.h"
+#include "avr8/avr8_port.h"
+#include "devices/enc28j60/enc28j60.h"
+#include "devices/i2c/ds1337.h"
+#include "devices/lcd/lcd_hd44780.h"
+#include "devices/sdcard/sd_spi.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "clock.h"
+#include "core/device.h"
 #include "fbdisplay.h"
-#include "keyboard.h"
-#include "rfbserver.h"
-#include "sound.h"
-#include "atm644_spi.h"
-#include "mmcdev.h"
-#include "sd_spi.h"
-#include "atm644_extint.h"
-#include "sgstring.h"
-#include "compiler_extensions.h"
-#include "enc28j60.h"
-#include "lcd_hd44780.h"
-#include "ds1337.h"
+#include "i2c_serdes.h"
 #include "initializer.h"
+#include "mmcdev.h"
+#include "sgstring.h"
+#include "signode.h"
 
+// External headers
+
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "ETH-M32";
+static const char *BOARD_DESCRIPTION = "ETH-M32";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"cpu_clock: 16000000\n"
+"\n"
+"[lcd0]\n"
+"rows: 2\n"
+"cols: 16\n"
+"colorset: 1\n"
+"backend: rfbserver\n"
+"host: 127.0.0.1\n"
+"port: 5903\n"
+"width: 310\n"
+"height: 75\n"
+"startupdelay: 0\n"
+"exit_on_close: 1\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
 typedef struct EthM32 {
 	AVR8_Adc *adc;
 	FbDisplay *display;
@@ -74,22 +129,24 @@ typedef struct EthM32 {
 	SD_Spi *sdspi;
 } EthM32;
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"cpu_clock: 16000000\n"\
-"\n" \
-"[lcd0]\n" \
-"rows: 2\n" \
-"cols: 16\n" \
-"colorset: 1\n" \
-"backend: rfbserver\n" \
-"host: 127.0.0.1\n" \
-"port: 5903\n" \
-"width: 310\n" \
-"height: 75\n" \
-"startupdelay: 0\n" \
-"exit_on_close: 1\n" \
-"\n"
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void link_signals(EthM32 *em32);
+static void create_i2c_devices();
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 
 static void
@@ -248,6 +305,7 @@ link_signals(EthM32 *em32) {
 	SigName_Link("portC.P0","i2cbus.scl");
 	SigName_Link("portC.P1","i2cbus.sda");
 }
+
 static void
 create_i2c_devices()
 {
@@ -258,8 +316,9 @@ create_i2c_devices()
         i2c_slave = DS1337_New("i2cbus.ds1337");
         I2C_SerDesAddSlave(i2c_serdes,i2c_slave,0x68);
 }
-static int
-board_em32_create()
+
+static Device_Board_t *
+create(void)
 {
 	EthM32 *em32 = sg_new(EthM32);
 	ATMUsartRegisterMap usartRegMap = {
@@ -270,6 +329,9 @@ board_em32_create()
 		.addrUBRRH = 5,
 		.addrUDR = 6,
 	};
+    Device_Board_t *board;
+    board = malloc(sizeof(*board));
+    board->run = &run;
 
 	FbDisplay_New("lcd0",&em32->display,&em32->keyboard,NULL,NULL);
         if(!em32->display) {
@@ -321,23 +383,18 @@ board_em32_create()
 	}
 	create_i2c_devices();
 	link_signals(em32);
-	return 0;
+	return board;
 }
 
-static void
-board_em32_run(Board *bd) {
-        AVR8_Run();
+static int run(Device_Board_t *board) {
+    AVR8_Run();
+    return 0;
 }
 
-static Board board_ethm32 = {
-        .name = "ETH-M32",
-        .description =  "ETH-M32",
-        .createBoard =  board_em32_create,
-        .runBoard =     board_em32_run,
-        .defaultconfig = DEFAULTCONFIG
-};
 
-INITIALIZER(ethm32_init) {
-        fprintf(stderr,"Loading ETH-M32 emulator module\n");
-        Board_Register(&board_ethm32);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

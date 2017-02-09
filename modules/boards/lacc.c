@@ -1,3 +1,27 @@
+//===-- boards/lacc.c ---------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a Lighmaze ARM controller card
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  * Compose a Lighmaze ARM controller card
@@ -30,46 +54,97 @@
  *
  *************************************************************************************************
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
+// clang-format on
 
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "ns9750_mem.h"
-#include "ns9750_pci.h"
-#include "ns9750_serial.h"
-#include "ns9750_timer.h"
-#include "ns9750_bbus.h"
-#include "ns9750_bbdma.h"
-#include "ns9750_usb.h"
-#include "ns9750_eth.h"
-#include "ste10_100.h"
-#include "i82559.h"
-#include "bus.h"
-#include "sja1000.h"
-#include "lacc_can.h"
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+
+// Local/Private Headers
 #include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "lxt971a.h"
+#include "arm/mmu_arm9.h"
+#include "controllers/ns9750/ns9750_bbdma.h"
+#include "controllers/ns9750/ns9750_bbus.h"
+#include "controllers/ns9750/ns9750_eth.h"
+#include "controllers/ns9750/ns9750_mem.h"
+#include "controllers/ns9750/ns9750_pci.h"
+#include "controllers/ns9750/ns9750_serial.h"
+#include "controllers/ns9750/ns9750_timer.h"
+#include "controllers/ns9750/ns9750_usb.h"
+#include "controllers/ns9750/ns9xxx_i2c.h"
+#include "devices/i2c/lm75.h"
+#include "devices/i2c/m24cxx.h"
+#include "devices/i2c/max6651.h"
+#include "devices/i2c/pcf8563.h"
+#include "devices/i2c/pcf8574.h"
+#include "devices/i2c/pcf8575.h"
+#include "devices/i2c/pcf8591.h"
+#include "devices/can/lacc_can.h"
+#include "devices/phy/lxt971a.h"
+#include "devices/phy/phy.h"
 #include "ml6652.h"
-#include "loader.h"
+#include "ste10_100.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "core/logging.h"
+#include "dram.h"
 #include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "pcf8563.h"
-#include "pcf8574.h"
-#include "pcf8575.h"
-#include "pca9544.h"
-#include "max6651.h"
-#include "lm75.h"
-#include "pcf8591.h"
-#include "ads7828.h"
-#include "boards.h"
-#include "ns9xxx_i2c.h"
 #include "initializer.h"
+#include "signode.h"
+
+// External headers
+
+// System headers
+#include <stdio.h>
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "LACC";
+static const char *BOARD_DESCRIPTION = "Lightmaze NS9750 ARM Controller Card";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0\n"
+"[dram0]\n"
+"size: 32M\n"
+"\n"
+"[loader]\n"
+"load_address: 0x50000000\n"
+"\n"
+"[dram1]\n"
+"size: 32M\n"
+"\n"
+"[flash1]\n"
+"type: AM29LV256ML\n"
+"chips: 1\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_signal_links(void);
+static void create_i2c_devices(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 /*
  * ---------------------------------------------------------------
@@ -79,7 +154,7 @@
  * ---------------------------------------------------------------
  */
 static void
-create_signal_links()
+create_signal_links(void)
 {
 	SigName_Link("i2cbus0000.sda", "bbutil.gpio.13");
 	SigName_Link("i2cbus0000.scl", "bbutil.gpio.14");
@@ -142,7 +217,7 @@ create_signal_links()
  * ----------------------------------------------------
  */
 static void
-create_i2c_devices()
+create_i2c_devices(void)
 {
 	I2C_Slave *i2c_slave;
 	I2C_SerDes *i2c_serdes0000;
@@ -219,8 +294,8 @@ create_i2c_devices()
  * 
  * -------------------------------------------------------------------------------
  */
-static int
-board_lacc_create()
+static Device_Board_t *
+create(void)
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
@@ -229,6 +304,9 @@ board_lacc_create()
 	BBusDMACtrl *bbdma;
 	PHY_Device *phy;
 	PCI_Function *bridge;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
@@ -292,8 +370,7 @@ board_lacc_create()
 	if (dev) {
 		NS9750_RegisterDevice(memco, dev, NS9750_CS1);
 	} else {
-		fprintf(stderr, "Warning ! no boot Flash available !\n");
-		sleep(2);
+		LOG_Warn(BOARD_NAME, "Warning ! no boot Flash available !");
 	}
 
 	dev = LaccCAN_New();
@@ -301,42 +378,20 @@ board_lacc_create()
 
 	create_i2c_devices();
 	create_signal_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_lacc_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0\n"\
-"[dram0]\n" \
-"size: 32M\n" \
-"\n" \
-"[loader]\n" \
-"load_address: 0x50000000\n"\
-"\n" \
-"[dram1]\n"\
-"size: 32M\n"\
-"\n"\
-"[flash1]\n"\
-"type: AM29LV256ML\n"\
-"chips: 1\n"\
-"\n"
-
-static Board board_lacc = {
-	.name = "LACC",
-	.description = "Lightmaze NS9750 ARM Controller Card",
-	.createBoard = board_lacc_create,
-	.runBoard = board_lacc_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(lacc_init)
-{
-	fprintf(stderr, "Loading Lightmaze ARM controller board module\n");
-	Board_Register(&board_lacc);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

@@ -60,7 +60,6 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     core/lib.c
     core/logging.c
     core/str.c
-    boards/boards.c
     )
 
 
