@@ -55,7 +55,6 @@
 #include "lpc2106_gpio.h"
 #include "lpc2106_scb.h"
 #include "lcd_hd44780.h"
-#include "armee.h"
 #include "compiler_extensions.h"
 #include "initializer.h"
 

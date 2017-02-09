@@ -6,7 +6,6 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include "boards.h"
-#include "alt9.h"
 #include "cpu_mcs51.h"
 #include "compiler_extensions.h"
 #include "initializer.h"
