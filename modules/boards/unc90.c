@@ -1,3 +1,27 @@
+//===-- boards/unc90.c --------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a FS-Forth UNC90 module with development board
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  ************************************************************************************************* 
  * Compose a FS-Forth UNC90 module with development board 
@@ -30,46 +54,95 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include "dram.h"
-#include "sram.h"
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "bus.h"
+// Local/Private Headers
 #include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "loader.h"
-#include "boards.h"
-#include "lxt971a.h"
-#include "at91_usart.h"
-#include "at91_tc.h"
-#include "at91_twi.h"
-#include "at91_emac.h"
-#include "at91_aic.h"
+#include "arm/mmu_arm9.h"
+#include "controllers/at91/at91_usart.h"
+#include "controllers/at91/at91_tc.h"
+#include "controllers/at91/at91_twi.h"
+#include "controllers/at91/at91_emac.h"
+#include "controllers/at91/at91_aic.h"
+#include "controllers/at91/at91_ebi.h"
+#include "controllers/at91/at91_mc.h"
+#include "controllers/at91/at91_pio.h"
+#include "controllers/at91/at91_pmc.h"
+#include "controllers/at91/at91_st.h"
+#include "devices/i2c/ds1337.h"
+#include "devices/i2c/m24cxx.h"
+#include "devices/phy/lxt971a.h"
+#include "devices/phy/phy.h"
 #include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "at91_mc.h"
-#include "at91_st.h"
-#include "at91_pmc.h"
-#include "at91_pio.h"
-#include "ds1337.h"
 #include "usb_ohci.h"
+
+// Leigun Core Headers
+#include "bus.h"
 #include "clock.h"
-#include "at91_ebi.h"
-#include "compiler_extensions.h"
+#include "core/device.h"
+#include "dram.h"
 #include "initializer.h"
+#include "signode.h"
+#include "sram.h"
+
+// External headers
+
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "UNC90";
+static const char *BOARD_DESCRIPTION = "FS-Forth UNC90";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0x00000000\n"
+"cpu_clock: 158515200\n"
+"\n"
+"[flash0]\n"
+"type: AM29LV128ML\n"
+"chips: 1\n"
+"\n"
+"[dram0]\n"
+"size: 32M\n"
+"\n"
+"[sram0]\n"
+"size: 16k\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_clock_links(void);
+static void create_signal_links(void);
+static void create_i2c_devices(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 static void
-create_clock_links()
+create_clock_links(void)
 {
 	/* This is wrong ! does not use the clock enables */
 	Clock_Link("st.slck", "pmc.slck");
@@ -93,7 +166,7 @@ create_clock_links()
 }
 
 static void
-create_signal_links()
+create_signal_links(void)
 {
 	int i;
 	/* Connect the interrupt controller to the CPU */
@@ -167,7 +240,7 @@ create_signal_links()
 }
 
 static void
-create_i2c_devices()
+create_i2c_devices(void)
 {
 	I2C_Slave *i2c_slave;
 	I2C_SerDes *i2c_serdes;
@@ -180,14 +253,17 @@ create_i2c_devices()
 	I2C_SerDesAddSlave(i2c_serdes, i2c_slave, 0x68);
 }
 
-static int
-board_unc90_create()
+static Device_Board_t *
+create(void)
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
 	BusDevice *mc;
 	BusDevice *dram0 = NULL;
 	PHY_Device *phy;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
@@ -261,41 +337,20 @@ board_unc90_create()
 	create_i2c_devices();
 	create_signal_links();
 	create_clock_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_unc90_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0x00000000\n"\
-"cpu_clock: 158515200\n"\
-"\n"\
-"[flash0]\n" \
-"type: AM29LV128ML\n"\
-"chips: 1\n"\
-"\n" \
-"[dram0]\n"\
-"size: 32M\n"\
-"\n" \
-"[sram0]\n"\
-"size: 16k\n"\
-"\n"\
-
-static Board board_unc90 = {
-	.name = "UNC90",
-	.description = "FS-Forth UNC90",
-	.createBoard = board_unc90_create,
-	.runBoard = board_unc90_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(unc90_init)
-{
-	fprintf(stderr, "Loading UNC90 Board module\n");
-	Board_Register(&board_unc90);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

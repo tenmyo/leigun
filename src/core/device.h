@@ -1,6 +1,6 @@
-//===-- boards/stk500.c -------------------------------------------*- C -*-===//
+//===-- core/device.h - Leigun Device Management Facilities -------*- C -*-===//
 //
-//              The Leigun Embedded System Simulator Platform : modules
+//              The Leigun Embedded System Simulator Platform
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,18 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// @file
-/// Compose a STK500 AVR8 development Board
+/// \file
+/// This file contains the declaration of device management facilities.
 ///
 //===----------------------------------------------------------------------===//
-
+#pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 //==============================================================================
 //= Dependencies
 //==============================================================================
-// Main Module Header
-
 // Local/Private Headers
-#include "avr8/avr8_cpu.h"
-
-// Leigun Core Headers
-#include "core/device.h"
-#include "initializer.h"
 
 // External headers
 
@@ -41,17 +37,20 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "STK500";
-static const char *BOARD_DESCRIPTION = "STK500 AVR8 development Board";
-static const char *BOARD_DEFAULTCONFIG = 
-"[global]\n"
-"cpu_clock: 20000000\n"
-"\n";
 
 
 //==============================================================================
 //= Types
 //==============================================================================
+typedef struct Device_Board_s Device_Board_t;
+typedef int (*Device_RunBoard_cb)(Device_Board_t *board);
+/// Device_Board_t is board instance data.
+struct Device_Board_s {
+    Device_RunBoard_cb run;
+    void *data;
+};
+
+typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
 
 
 //==============================================================================
@@ -60,33 +59,22 @@ static const char *BOARD_DEFAULTCONFIG =
 
 
 //==============================================================================
-//= Function declarations(static)
+//= Macros
 //==============================================================================
-static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
-//= Function definitions(static)
+//= Functions
 //==============================================================================
-static Device_Board_t *
-create(void)
-{
-	AVR8_Init("avr");
-	return 0;
+int Device_Init(void);
+int Device_RegisterBoard(const char *name, const char *description,
+                         Device_CreateBoard_cb create,
+                         const char *defaultconfig);
+int Device_UnregisterBoard(const char *name);
+Device_Board_t *Device_CreateBoard(const char *name);
+void Device_DumpBoards(void);
+
+
+#ifdef __cplusplus
 }
-
-static int
-run(Device_Board_t *board)
-{
-	AVR8_Run();
-	return 0;
-}
-
-
-//==============================================================================
-//= Function definitions(global)
-//==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
-}
+#endif

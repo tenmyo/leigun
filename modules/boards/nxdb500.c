@@ -1,3 +1,27 @@
+//===-- boards/nxdb500.c ------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// 
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  ****************************************************************************************************
  *
@@ -31,33 +55,101 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "ste10_100.h"
-#include "bus.h"
+// Local/Private Headers
 #include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "loader.h"
-#include "i2c_serdes.h"
-#include "boards.h"
-#include "netx_uart.h"
-#include "netx_gpio.h"
-#include "netx_xpec.h"
-#include "netx_xmac.h"
-#include "netx_sysco.h"
-#include "dram.h"
-#include "sram.h"
+#include "arm/mmu_arm9.h"
+#include "devices/netx/netx_gpio.h"
+#include "devices/netx/netx_sysco.h"
+#include "devices/netx/netx_uart.h"
+#include "devices/netx/netx_xmac.h"
+#include "devices/netx/netx_xpec.h"
 #include "pl190_irq.h"
-#include "compiler_extensions.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "core/logging.h"
+#include "dram.h"
 #include "initializer.h"
+#include "signode.h"
+#include "sram.h"
+
+// External headers
+
+// System headers
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "NXDB500";
+static const char *BOARD_DESCRIPTION = "NXDB500 ARM Controller Card";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0\n"
+"cpu_clock: 200000000\n"
+"\n"
+"[dram0]\n"
+"size: 64M\n"
+"\n"
+"[loader]\n"
+"load_address: 0x50000000\n"
+"\n"
+"[sram0]\n"
+"size: 32k\n"
+"\n"
+"[sram1]\n"
+"size: 32k\n"
+"\n"
+"[sram2]\n"
+"size: 32k\n"
+"\n"
+"[sram3]\n"
+"size: 32k\n"
+"\n"
+"[tcdm]\n"
+"size: 8k\n"
+"\n"
+"[backupram]\n"
+"size: 16k\n"
+"\n"
+"[dram1]\n"
+"size: 32M\n"
+"\n"
+"[flash0]\n"
+"type: AM29LV256ML\n"
+"chips: 1\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_signal_links(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 static void
 create_signal_links(void)
@@ -99,11 +191,14 @@ create_signal_links(void)
 	SigName_Link("gpio.timer4.irq", "vic.nVICINTSOURCE30");
 }
 
-static int
-board_nxdb500_create()
+static Device_Board_t *
+create(void)
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	Bus_Init(MMU_InvalidateTlb, 4 * 1024);
 	ARM9_New();
@@ -171,62 +266,20 @@ board_nxdb500_create()
 	}
 	//create_i2c_devices();
 	create_signal_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_nxdb500_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0\n" \
-"cpu_clock: 200000000\n" \
-"\n" \
-"[dram0]\n" \
-"size: 64M\n" \
-"\n" \
-"[loader]\n" \
-"load_address: 0x50000000\n"\
-"\n"\
-"[sram0]\n" \
-"size: 32k\n" \
-"\n" \
-"[sram1]\n" \
-"size: 32k\n" \
-"\n" \
-"[sram2]\n" \
-"size: 32k\n" \
-"\n" \
-"[sram3]\n" \
-"size: 32k\n" \
-"\n" \
-"[tcdm]\n" \
-"size: 8k\n" \
-"\n" \
-"[backupram]\n" \
-"size: 16k\n" \
-"\n" \
-"[dram1]\n"\
-"size: 32M\n"\
-"\n"\
-"[flash0]\n"\
-"type: AM29LV256ML\n"\
-"chips: 1\n"\
-"\n"
-
-static Board board_nxdb500 = {
-	.name = "NXDB500",
-	.description = "NXDB500 ARM Controller Card",
-	.createBoard = board_nxdb500_create,
-	.runBoard = board_nxdb500_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(nxbd500_init)
-{
-	fprintf(stderr, "Loading NXDB500 Board module\n");
-	Board_Register(&board_nxdb500);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

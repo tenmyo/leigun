@@ -1,5 +1,28 @@
+//===-- boards/lite5200b.c ----------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a LITE5200B Board
+///
+//===----------------------------------------------------------------------===//
+
 /*
- * ------------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------
  *  Compose a LITE5200B Board
  *
  * (C) 2008 Jochen Karrer
@@ -8,40 +31,89 @@
  * -----------------------------------------------------------------------------
  */
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include <idecode_cf.h>
-#include <cpu_cf.h>
-#include <signode.h>
-#include <bus.h>
-#include <configfile.h>
-#include <loader.h>
-#include <boards.h>
-#include <i2c_serdes.h>
-#include <clock.h>
-#include <sram.h>
-#include <dram.h>
-#include <cfm.h>
-#include <ppc/cpu_ppc.h>
-//#include <mpc5200_psc.h>
-#include <amdflash.h>
+// Local/Private Headers
+#include "amdflash.h"
+#include "ppc/cpu_ppc.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "dram.h"
 #include "initializer.h"
 
-static void
-board_lite5200b_run(Board * bd)
-{
-	PpcCpu_Run();
-}
+// External headers
+
+// System headers
+#include <stdio.h>
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "LITE5200B";
+static const char *BOARD_DESCRIPTION = "LITE5200B";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0x00000000\n"
+"cpu_clock: 400000000\n"
+"\n"
+"[flash0]\n"
+"type: S29GL128NR2\n"
+"chips: 1\n"
+"\n"
+"[flash1]\n"
+"type: S29GL128NR2\n"
+"chips: 1\n"
+"\n"
+"[dram0]\n"
+"size: 128M\n"
+"\n"
+"[dram1]\n"
+"size: 128M\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_signal_links(void);
+static void create_i2c_devices(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 static int
-board_lite5200b_create()
+run(Device_Board_t *board)
 {
+	PpcCpu_Run();
+	return 0;
+}
+
+static Device_Board_t *
+create(void)
+{
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
+
 	// PpcCpu *cpu = PpcCpu_New(CPU_MPC866P,0);
 	Bus_Init(NULL, 4 * 1024);
 	BusDevice *dev;
@@ -53,39 +125,13 @@ board_lite5200b_create()
 	dev = DRam_New("dram0");
 	/* SDRAM_CS1 */
 	dev = DRam_New("dram1");
-	return 0;
+	return board;
 }
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0x00000000\n"\
-"cpu_clock: 400000000\n"\
-"\n"\
-"[flash0]\n" \
-"type: S29GL128NR2\n"\
-"chips: 1\n"\
-"\n" \
-"[flash1]\n" \
-"type: S29GL128NR2\n"\
-"chips: 1\n"\
-"\n" \
-"[dram0]\n" \
-"size: 128M\n" \
-"\n" \
-"[dram1]\n" \
-"size: 128M\n" \
-"\n"
 
-static Board board_lite5200b = {
-	.name = "LITE5200B",
-	.description = "LITE5200B",
-	.createBoard = board_lite5200b_create,
-	.runBoard = board_lite5200b_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(lite5200b_init)
-{
-	fprintf(stderr, "Loading Freescale LITE5200B development Board module\n");
-	Board_Register(&board_lite5200b);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }

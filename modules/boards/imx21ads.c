@@ -1,3 +1,27 @@
+//===-- boards/imx21ads.c -----------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Compose a Freescale iMX21ADS Board
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  * Compose a Freescale iMX21ADS Board 
@@ -30,58 +54,101 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 
-#include "dram.h"
-#include "sram.h"
-#include "signode.h"
-#include "mmu_arm9.h"
-#include "bus.h"
-#include "amdflash.h"
-#include "configfile.h"
-#include "phy.h"
-#include "loader.h"
-#include "i2c_serdes.h"
-#include "m24cxx.h"
-#include "boards.h"
-#include "imx21_uart.h"
-#include "imx_timer.h"
-#include "imx21_crm.h"
+// Local/Private Headers
 #include "aitc.h"
+#include "amdflash.h"
+#include "arm/mmu_arm9.h"
+#include "controllers/imx21/imx21_crm.h"
+#include "controllers/imx21/imx21_cspi.h"
+#include "controllers/imx21/imx21_dmac.h"
+#include "controllers/imx21/imx21_eim.h"
+#include "controllers/imx21/imx21_gpio.h"
+#include "controllers/imx21/imx21_i2c.h"
+#include "controllers/imx21/imx21_lcdc.h"
+#include "controllers/imx21/imx21_max.h"
+#include "controllers/imx21/imx21_otg.h"
+#include "controllers/imx21/imx21_pwm.h"
+#include "controllers/imx21/imx21_rtc.h"
+#include "controllers/imx21/imx21_sdhc.h"
+#include "controllers/imx21/imx21_sdrc.h"
+#include "controllers/imx21/imx21_uart.h"
+#include "controllers/imx21/imx21_wdog.h"
 #include "cs8900.h"
-#include "imx21_gpio.h"
-#include "imx21_otg.h"
-#include "imx21_dmac.h"
-#include "imx21_sdhc.h"
-#include "imx21_eim.h"
-#include "imx21_wdog.h"
-#include "imx21_sdrc.h"
-#include "imx21_lcdc.h"
-#include "imx21_cspi.h"
-#include "imx21_rtc.h"
-#include "imx21_pwm.h"
-#include "imx21_i2c.h"
-#include "imx21_max.h"
-#include "mmcdev.h"
-#include "mmcard.h"
-#include "rfbserver.h"
-#include "keyboard.h"
-#include "matrix_keyboard.h"
-#include "usbdevice.h"
-#include "clock.h"
+#include "devices/sdcard/mmcard.h"
 #include "djet460.h"
-#include "compiler_extensions.h"
+#include "imx_timer.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "core/device.h"
+#include "dram.h"
+#include "fbdisplay.h"
 #include "initializer.h"
+#include "mmcdev.h"
+#include "rfbserver.h"
+#include "signode.h"
+#include "sram.h"
+
+// External headers
+
+// System headers
+#include <stdio.h>
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *BOARD_NAME = "iMX21ADS";
+static const char *BOARD_DESCRIPTION = "iMX21ADS";
+static const char *BOARD_DEFAULTCONFIG = 
+"[global]\n"
+"start_address: 0xc8000000\n"
+"cpu_clock: 266000000\n"
+"\n"
+"[dram0]\n"
+"size: 64M\n"
+"\n"
+"[flash0]\n"
+"type: AM29BDS128H\n"
+"chips: 2\n"
+"\n"
+"[vram]\n"
+"size: 6k\n"
+"\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void create_clock_links(void);
+static void create_signal_links(void);
+static Device_Board_t *create(void);
+static int run(Device_Board_t *board);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 static void
-create_clock_links()
+create_clock_links(void)
 {
 	Clock_Link("pwm.clk", "crm.perclk1");
 	Clock_Link("pwm.clk32", "crm.clk32");
@@ -102,7 +169,7 @@ create_clock_links()
 }
 
 static void
-create_signal_links()
+create_signal_links(void)
 {
 	int i;
 	/* Connect the interrupt controller to the CPU */
@@ -201,8 +268,8 @@ create_signal_links()
 
 }
 
-static int
-board_imx21ads_create()
+static Device_Board_t *
+create(void)
 {
 	ArmCoprocessor *copro;
 	BusDevice *dev;
@@ -211,6 +278,9 @@ board_imx21ads_create()
 	FbDisplay *display;
 	Keyboard *keyboard;
 	UsbDevice *usbdev;
+	Device_Board_t *board;
+	board = malloc(sizeof(*board));
+	board->run = &run;
 
 	Bus_Init(MMU_InvalidateTlb, 1 * 1024);
 	ARM9_New();
@@ -318,41 +388,20 @@ board_imx21ads_create()
 
 	create_signal_links();
 	create_clock_links();
+	return board;
+}
+
+static int
+run(Device_Board_t *board)
+{
+	ARM9_Run();
 	return 0;
 }
 
-static void
-board_imx21ads_run(Board * bd)
-{
-	ARM9_Run();
-}
 
-#define DEFAULTCONFIG \
-"[global]\n" \
-"start_address: 0xc8000000\n"\
-"cpu_clock: 266000000\n"\
-"\n"\
-"[dram0]\n"\
-"size: 64M\n"\
-"\n"\
-"[flash0]\n"\
-"type: AM29BDS128H\n"\
-"chips: 2\n"\
-"\n"\
-"[vram]\n"\
-"size: 6k\n"\
-"\n"
-
-static Board board_imx21ads = {
-	.name = "iMX21ADS",
-	.description = "iMX21ADS",
-	.createBoard = board_imx21ads_create,
-	.runBoard = board_imx21ads_run,
-	.defaultconfig = DEFAULTCONFIG
-};
-
-INITIALIZER(imx21ads_init)
-{
-	fprintf(stderr, "Loading iMX21ADS Board module\n");
-	Board_Register(&board_imx21ads);
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create, BOARD_DEFAULTCONFIG);
 }
