@@ -6,13 +6,13 @@ And overwritten with the below.
 ## Naming
 The LLVM are written by C++. But The Leigun are written by C, which has no classes and namespaces.
 Therefore, The module name to prefix, Types to suffix. And case letters by scope.
+If module(=file) local scope, MAY omit prefix module name.
 
 ### Case letters
-Constants MUST BE "UPPER_CASE" (e.g. LIB_DEFAULT_CONF).
+Constants MUST be "UPPER_CASE" (e.g. LIB_DEFAULT_CONF).
 Global scope MUST be "UpperCamelCase" (e.g. Lib_Init()).
 File(static) scope MUST be "lowerCamelCase" (e.g. Lib_onExit()).
-Local(in function) scope MUST be "snake_case" (e.g. dir_path).
-
+Local(in function) scope MUST be "snake_case" (e.g. dir_path), Also struct/union member.
 
 ### Module
 Module name MUST be nouns.
