@@ -16,11 +16,11 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the declaration of the Generic list structure and
 /// manupulation macros.
 ///
-/// \ attention
+/// @attention
 /// NOT REENTLANT. THREAD UNSAFE.
 ///
 //===----------------------------------------------------------------------===//
@@ -84,7 +84,7 @@ struct List_Element_s {
         (l)->l_head = e;                                                       \
     } while (0)
 
-/// \ attention DO NOT CHANGE LIST at proc(e.g. Push, Pop...)
+/// @attention DO NOT CHANGE LIST at proc(e.g. Push, Pop...)
 #define List_Map(l, proc)                                                      \
     do {                                                                       \
         List_Element_t *e, *next;                                              \
@@ -94,7 +94,7 @@ struct List_Element_s {
         }                                                                      \
     } while (0)
 
-/// \ attention DO NOT CHANGE LIST at proc(e.g. Push...)
+/// @attention DO NOT CHANGE LIST at proc(e.g. Push...)
 #define List_PopEach(l, proc)                                                  \
     do {                                                                       \
         List_Element_t *e, *next;                                              \

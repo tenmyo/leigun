@@ -16,7 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the declaration of the String manipulation functions,
 /// which provides a miscellaneous string manipulation.
 ///

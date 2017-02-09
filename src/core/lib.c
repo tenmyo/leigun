@@ -16,7 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file
+/// @file
 /// This file contains the definition of the Sheard library load functions,
 /// which provides a loading shared libraries.
 ///
