@@ -36,6 +36,7 @@ extern "C" {
 // External headers
 
 // System headers
+#include <stddef.h> // for NULL
 
 
 //==============================================================================
@@ -49,11 +50,16 @@ extern "C" {
 typedef struct List_s List_t;
 typedef struct List_Element_s List_Element_t;
 struct List_s {
-    List_Element_t *l_head;
+    List_Element_t *head;
 };
 struct List_Element_s {
-    List_Element_t *l_next;
+    List_Element_t *next;
 };
+
+typedef void (*List_Proc_cb)(List_Element_t *e);
+typedef int (*List_Compare_cb)(const List_Element_t *ea,
+                               const List_Element_t *eb);
+typedef int (*List_Insert_cb)(List_Element_t *ea, List_Element_t *eb);
 
 
 //==============================================================================
@@ -64,72 +70,93 @@ struct List_Element_s {
 //==============================================================================
 //= Macros
 //==============================================================================
-#define List_Members(member_t) member_t *l_head
 
-#define List_ElementMembesr(member_t) member_t *l_next
+static inline void List_Init(List_t *l) {
+    l->head = NULL;
+}
 
-#define List_Init(l)                                                           \
-    do {                                                                       \
-        (l)->l_head = NULL;                                                    \
-    } while (0)
+static inline void List_InitElement(List_Element_t *e) {
+    e->next = NULL;
+}
 
-#define List_InitElement(e)                                                    \
-    do {                                                                       \
-        (e)->l_next = NULL;                                                    \
-    } while (0)
+static inline void *List_Head(List_t *l) {
+    return l->head;
+}
 
-#define List_Push(l, e)                                                        \
-    do {                                                                       \
-        (e)->l_next = (l)->l_head;                                             \
-        (l)->l_head = e;                                                       \
-    } while (0)
+static inline void List_Push(List_t *l, List_Element_t *e) {
+    e->next = l->head;
+    l->head = e;
+}
 
-/// @attention DO NOT CHANGE LIST at proc(e.g. Push, Pop...)
-#define List_Map(l, proc)                                                      \
-    do {                                                                       \
-        List_Element_t *e, *next;                                              \
-        for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
-            next = e->l_next;                                                  \
-            (proc)((void *)e);                                                 \
-        }                                                                      \
-    } while (0)
+static inline void *List_Pop(List_t *l) {
+    List_Element_t *e = l->head;
+    if (e) {
+        l->head = e->next;
+    }
+    return e;
+}
 
-/// @attention DO NOT CHANGE LIST at proc(e.g. Push...)
-#define List_PopEach(l, proc)                                                  \
-    do {                                                                       \
-        List_Element_t *e, *next;                                              \
-        for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
-            next = e->l_next;                                                  \
-            (proc)((void *)e);                                                 \
-        }                                                                      \
-        List_Init(l);                                                          \
-    } while (0)
+/// @attention DO NOT CHANGE LIST in proc(e.g. Push, Pop...)
+static inline void List_Map(List_t *l, List_Proc_cb proc) {
+    List_Element_t *cur;
+    List_Element_t *next;
+    for (cur = l->head; cur; cur = next) {
+        next = cur->next;
+        proc(cur);
+    }
+}
 
-#define List_PopBy(l, comparator, operand_element, result_element)             \
-    do {                                                                       \
-        List_Element_t *e, *next;                                              \
-        List_Element_t **prev_next = (List_Element_t **)(&(l)->l_head);        \
-        for (e = *prev_next; e; prev_next = &e->l_next, e = next) {            \
-            next = e->l_next;                                                  \
-            if (!(comparator)((void *)e, operand_element)) {                   \
-                *prev_next = e->l_next;                                        \
-                break;                                                         \
-            }                                                                  \
-        }                                                                      \
-        (result_element) = (void *)e;                                          \
-    } while (0)
+/// @attention DO NOT CHANGE LIST in proc(e.g. Push, Pop...)
+static inline void List_PopEach(List_t *l, List_Proc_cb proc) {
+    List_Map(l, proc);
+    List_Init(l);
+}
 
-#define List_Find(l, comparator, operand_element, result_element)              \
-    do {                                                                       \
-        List_Element_t *e, *next;                                              \
-        for (e = (List_Element_t *)(l)->l_head; e; e = next) {                 \
-            next = e->l_next;                                                  \
-            if (!(comparator)((void *)e, operand_element)) {                   \
-                break;                                                         \
-            }                                                                  \
-        }                                                                      \
-        (result_element) = (void *)e;                                          \
-    } while (0)
+static inline void *List_PopBy(List_t *l, List_Compare_cb comparator,
+                               const List_Element_t *operand) {
+    List_Element_t *cur;
+    List_Element_t *next;
+    List_Element_t **prev_next = &l->head;
+    for (cur = *prev_next; cur; prev_next = &cur->next, cur = next) {
+        next = cur->next;
+        if (comparator(operand, cur) == 0) {
+            *prev_next = cur->next;
+            break;
+        }
+    }
+    return cur;
+}
+
+static inline void *List_Find(List_t *l, List_Compare_cb comparator,
+                              const List_Element_t *operand) {
+    List_Element_t *cur;
+    List_Element_t *next;
+    List_Element_t **prev_next = &l->head;
+    for (cur = *prev_next; cur; prev_next = &cur->next, cur = next) {
+        next = cur->next;
+        if (comparator(operand, cur) == 0) {
+            break;
+        }
+    }
+    return cur;
+}
+
+static inline void List_Insert(List_t *l, List_Insert_cb comparator,
+                               List_Element_t *e) {
+    List_Element_t *cur;
+    List_Element_t *next;
+    List_Element_t **prev_next = &l->head;
+    for (cur = *prev_next; cur; prev_next = &cur->next, cur = next) {
+        next = cur->next;
+        if (comparator(e, cur) <= 0) {
+            e->next = cur;
+            *prev_next = e;
+            return;
+        }
+    }
+    e->next = NULL;
+    *prev_next = e;
+}
 
 
 //==============================================================================

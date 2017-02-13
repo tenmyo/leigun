@@ -51,13 +51,13 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Lib_listMember_s Lib_listMember_t;
-struct Lib_listMember_s {
-    List_ElementMembesr(Lib_listMember_t);
+struct Lib_listMember_s;
+typedef struct Lib_listMember_s {
+    List_Element_t liste;
     uv_lib_t lib;
     char *path;
-};
-typedef struct Lib_list_s { List_Members(Lib_listMember_t); } Lib_list_t;
+} Lib_listMember_t;
+typedef struct Lib_list_s { List_t list; } Lib_list_t;
 
 //==============================================================================
 //= Function declarations(static)
@@ -91,8 +91,8 @@ static void Lib_close(Lib_listMember_t *lib) {
 //===----------------------------------------------------------------------===//
 static void Lib_onExit(Lib_list_t *libs) {
     LOG_Verbose("Lib", "Lib_onExit");
-    List_Map(libs, Lib_close);
-    List_Init(libs);
+    List_Map(&libs->list, (List_Proc_cb)&Lib_close);
+    List_Init(&libs->list);
 }
 
 
@@ -132,7 +132,7 @@ int Lib_Init(void) {
     Lib_listMember_t *lib;
     void (*initfunc)(void);
 
-    List_Init(&Lib_loadedLibs);
+    List_Init(&Lib_loadedLibs.list);
     err = ExitHandler_Register((ExitHandler_Callback_cb)&Lib_onExit,
                                &Lib_loadedLibs);
     if (err < 0) {
@@ -181,7 +181,7 @@ int Lib_Init(void) {
             continue;
         }
         lib->path = strdup(path);
-        List_Push(&Lib_loadedLibs, lib);
+        List_Push(&Lib_loadedLibs.list, &lib->liste);
         initfunc();
     }
     fclose(fp);

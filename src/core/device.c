@@ -61,7 +61,7 @@ typedef enum Device_kind_e {
 
 typedef struct Device_board_s Device_board_t;
 struct Device_board_s {
-    List_ElementMembesr(Device_board_t);
+    List_Element_t liste;
     Device_kind_t kind;
     const char *name;
     const char *description;
@@ -70,7 +70,7 @@ struct Device_board_s {
 };
 
 typedef struct Devices_s {
-    List_Members(Device_board_t);
+    List_t list;
     uv_mutex_t list_mutex;
 } Devices_t;
 
@@ -110,7 +110,7 @@ static void Device_free(Device_board_t *device) {
 static void Device_onExit(void *data) {
     Devices_t *devices = data;
     LOG_Debug(MOD_NAME, "Device_onExit");
-    List_PopEach(devices, &Device_free);
+    List_PopEach(&devices->list, (List_Proc_cb)&Device_free);
     uv_mutex_destroy(&devices->list_mutex);
 }
 
@@ -143,7 +143,7 @@ static void Device_printBoard(Device_board_t *device) {
 int Device_Init(void) {
     int err;
     LOG_Info(MOD_NAME, "Init");
-    List_Init(&Device_devices);
+    List_Init(&Device_devices.list);
     err = uv_mutex_init(&Device_devices.list_mutex);
     if (err < 0) {
         LOG_Error(MOD_NAME, "uv_mutex_init failed. %s %s", uv_err_name(err),
@@ -178,11 +178,13 @@ int Device_RegisterBoard(const char *name, const char *description,
     Device_board_t *devicep;
 
     LOG_Info(MOD_NAME, "Register board %s", name);
-    List_InitElement(&device);
+    List_InitElement(&device.liste);
 
     uv_mutex_lock(&Device_devices.list_mutex);
     do {
-        List_Find(&Device_devices, &Device_compareBoard, &device, devicep);
+        devicep =
+            List_Find(&Device_devices.list,
+                      (List_Compare_cb)&Device_compareBoard, &device.liste);
         if (devicep) {
             LOG_Warn(MOD_NAME, "Board %s already registered", name);
             err = UV_EEXIST;
@@ -196,7 +198,7 @@ int Device_RegisterBoard(const char *name, const char *description,
             break;
         }
         *devicep = device;
-        List_Push(&Device_devices, devicep);
+        List_Push(&Device_devices.list, &devicep->liste);
     } while (0);
     uv_mutex_unlock(&Device_devices.list_mutex);
     return err;
@@ -217,7 +219,8 @@ int Device_UnregisterBoard(const char *name) {
     const Device_board_t device = {.kind = DK_BOARD, .name = name};
     Device_board_t *result;
     uv_mutex_lock(&Device_devices.list_mutex);
-    List_PopBy(&Device_devices, &Device_compareBoard, &device, result);
+    result = List_PopBy(&Device_devices.list,
+                        (List_Compare_cb)&Device_compareBoard, &device.liste);
     free(result);
     uv_mutex_unlock(&Device_devices.list_mutex);
     return 0;
@@ -238,7 +241,8 @@ Device_Board_t *Device_CreateBoard(const char *name) {
     const Device_board_t device = {.kind = DK_BOARD, .name = name};
     Device_board_t *result;
     uv_mutex_lock(&Device_devices.list_mutex);
-    List_Find(&Device_devices, &Device_compareBoard, &device, result);
+    result = List_Find(&Device_devices.list,
+                       (List_Compare_cb)&Device_compareBoard, &device.liste);
     uv_mutex_unlock(&Device_devices.list_mutex);
     if (!result) {
         LOG_Warn(MOD_NAME, "Board %s not found", name);
@@ -256,7 +260,7 @@ Device_Board_t *Device_CreateBoard(const char *name) {
 void Device_DumpBoards(void) {
     printf("-- Registered bords are:\n");
     uv_mutex_lock(&Device_devices.list_mutex);
-    List_Map(&Device_devices, &Device_printBoard);
+    List_Map(&Device_devices.list, (List_Proc_cb)&Device_printBoard);
     uv_mutex_unlock(&Device_devices.list_mutex);
     printf("--\n");
 }
