@@ -355,7 +355,7 @@ Device_MPU_t *Device_CreateMPU(const char *name) {
     const Device_base_t device = {.kind = DK_MPU, .name = name};
     Device_mpu_t *result;
     uv_mutex_lock(&Device_devices.list_mutex);
-    result = List_Find(&Device_devices.boards, (List_Compare_cb)&Device_compare,
+    result = List_Find(&Device_devices.mpus, (List_Compare_cb)&Device_compare,
                        &device.liste);
     uv_mutex_unlock(&Device_devices.list_mutex);
     if (!result) {
@@ -375,6 +375,18 @@ void Device_DumpBoards(void) {
     printf("-- Registered bords are:\n");
     uv_mutex_lock(&Device_devices.list_mutex);
     List_Map(&Device_devices.boards, (List_Proc_cb)&Device_printBase);
+    uv_mutex_unlock(&Device_devices.list_mutex);
+    printf("--\n");
+}
+
+
+//===----------------------------------------------------------------------===//
+/// Dump MPU info.
+//===----------------------------------------------------------------------===//
+void Device_DumpMPUs(void) {
+    printf("-- Registered MPU are:\n");
+    uv_mutex_lock(&Device_devices.list_mutex);
+    List_Map(&Device_devices.mpus, (List_Proc_cb)&Device_printBase);
     uv_mutex_unlock(&Device_devices.list_mutex);
     printf("--\n");
 }
