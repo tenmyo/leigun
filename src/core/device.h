@@ -43,14 +43,22 @@ extern "C" {
 //= Types
 //==============================================================================
 typedef struct Device_Board_s Device_Board_t;
-typedef int (*Device_RunBoard_cb)(Device_Board_t *board);
+typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
+typedef int (*Device_RunBoard_cb)(Device_Board_t *dev);
 /// Device_Board_t is board instance data.
 struct Device_Board_s {
     Device_RunBoard_cb run;
     void *data;
 };
 
-typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
+typedef struct Device_MPU_s Device_MPU_t;
+typedef Device_MPU_t *(*Device_CreateMPU_cb)(void);
+typedef int (*Device_RunMPU_cb)(Device_MPU_t *dev);
+/// Device_MPU_t is MPU instance data.
+struct Device_MPU_s {
+    Device_RunMPU_cb run;
+    void *data;
+};
 
 
 //==============================================================================
@@ -67,12 +75,19 @@ typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
 //= Functions
 //==============================================================================
 int Device_Init(void);
+
 int Device_RegisterBoard(const char *name, const char *description,
                          Device_CreateBoard_cb create,
                          const char *defaultconfig);
 int Device_UnregisterBoard(const char *name);
 Device_Board_t *Device_CreateBoard(const char *name);
 void Device_DumpBoards(void);
+
+int Device_RegisterMPU(const char *name, const char *description,
+                       Device_CreateMPU_cb create, const char *defaultconfig);
+int Device_UnregisterMPU(const char *name);
+Device_MPU_t *Device_CreateMPU(const char *name);
+void Device_DumpMPUs(void);
 
 
 #ifdef __cplusplus

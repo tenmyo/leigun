@@ -51,26 +51,33 @@ static const char *MOD_NAME = "Device";
 //= Types
 //==============================================================================
 typedef enum Device_kind_e {
-    //    DK_SYSTEM,              /// System composed of multiple boards.
-    DK_BOARD,             /// Board composed of multiple processors, devices.
-    DK_SOC,               /// SOC contains processor, memory, I/O peripherals.
-    DK_PROCESSOR,         /// Processor drived by program.
-    DK_MEMORY_BUS_DEVICE, /// Memory mapped peripherals.
+    DK_BOARD, /// Board composed of multiple processors, devices.
+    DK_MPU,   /// Processor drived by program.
+    //    DK_MEMORY_MAPPED, /// Memory mapped peripherals.
     //    DK_OTHER,               /// Other peripherals.
 } Device_kind_t;
 
-typedef struct Device_board_s Device_board_t;
-struct Device_board_s {
+typedef struct Device_base_s {
     List_Element_t liste;
     Device_kind_t kind;
     const char *name;
     const char *description;
     const char *defaultconfig;
+} Device_base_t;
+
+typedef struct Device_board_s {
+    Device_base_t base;
     Device_CreateBoard_cb create;
-};
+} Device_board_t;
+
+typedef struct Device_mpu_s {
+    Device_base_t base;
+    Device_CreateMPU_cb create;
+} Device_mpu_t;
 
 typedef struct Devices_s {
-    List_t list;
+    List_t boards;
+    List_t mpus;
     uv_mutex_t list_mutex;
 } Devices_t;
 
@@ -84,10 +91,11 @@ static Devices_t Device_devices;
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
-static void Device_free(Device_board_t *device);
+static void Device_free(Device_base_t *device);
+
 static void Device_onExit(void *data);
-static int Device_compareBoard(const Device_board_t *a,
-                               const Device_board_t *b);
+static int Device_compare(const Device_base_t *a, const Device_base_t *b);
+static void Device_printBase(Device_base_t *device);
 
 
 //==============================================================================
@@ -96,12 +104,17 @@ static int Device_compareBoard(const Device_board_t *a,
 //===----------------------------------------------------------------------===//
 /// Free a device list memory.
 //===----------------------------------------------------------------------===//
-static void Device_free(Device_board_t *device) {
-    LOG_Debug(MOD_NAME, "free %s", device->name);
+static void Device_free(Device_base_t *device) {
+    LOG_Verbose(MOD_NAME, "free %s(%d)", device->name, device->kind);
     free((void *)device->name);
     free((void *)device->description);
     free((void *)device->defaultconfig);
-    free(device);
+    switch (device->kind) {
+    case DK_BOARD:
+        break;
+    case DK_MPU:
+        break;
+    }
 }
 
 //===----------------------------------------------------------------------===//
@@ -110,19 +123,22 @@ static void Device_free(Device_board_t *device) {
 static void Device_onExit(void *data) {
     Devices_t *devices = data;
     LOG_Debug(MOD_NAME, "Device_onExit");
-    List_PopEach(&devices->list, (List_Proc_cb)&Device_free);
+    List_PopEach(&devices->boards, (List_Proc_cb)&Device_free);
+    List_PopEach(&devices->mpus, (List_Proc_cb)&Device_free);
     uv_mutex_destroy(&devices->list_mutex);
 }
 
-static int Device_compareBoard(const Device_board_t *a,
-                               const Device_board_t *b) {
-    return strcmp(a->name, b->name);
+//===----------------------------------------------------------------------===//
+/// Compare device.
+//===----------------------------------------------------------------------===//
+static int Device_compare(const Device_base_t *a, const Device_base_t *b) {
+    return !(a->kind == b->kind) || strcmp(a->name, b->name);
 }
 
 //===----------------------------------------------------------------------===//
-/// Free device list.
+/// Print device infomation.
 //===----------------------------------------------------------------------===//
-static void Device_printBoard(Device_board_t *device) {
+static void Device_printBase(Device_base_t *device) {
     printf("%s: %s\n", device->name, device->description);
     printf("%s\n\n", device->defaultconfig);
 }
@@ -143,7 +159,8 @@ static void Device_printBoard(Device_board_t *device) {
 int Device_Init(void) {
     int err;
     LOG_Info(MOD_NAME, "Init");
-    List_Init(&Device_devices.list);
+    List_Init(&Device_devices.boards);
+    List_Init(&Device_devices.mpus);
     err = uv_mutex_init(&Device_devices.list_mutex);
     if (err < 0) {
         LOG_Error(MOD_NAME, "uv_mutex_init failed. %s %s", uv_err_name(err),
@@ -159,10 +176,10 @@ int Device_Init(void) {
 //===----------------------------------------------------------------------===//
 /// Register board.
 ///
-/// @param[in]      name            board name
-/// @param[in]      description     board description
-/// @param[in]      create          board instantiation function(constructor)
-/// @param[in]      defaultconfig   board defaut config
+/// @param[in]      name            name
+/// @param[in]      description     description
+/// @param[in]      create          instantiation function(constructor)
+/// @param[in]      defaultconfig   defaut config
 ///
 /// @return imply an error if negative
 //===----------------------------------------------------------------------===//
@@ -170,21 +187,21 @@ int Device_RegisterBoard(const char *name, const char *description,
                          Device_CreateBoard_cb create,
                          const char *defaultconfig) {
     int err = 0;
-    Device_board_t device = {.kind = DK_BOARD,
-                             .name = strdup(name),
-                             .description = strdup(description),
-                             .defaultconfig = strdup(defaultconfig),
+    Device_board_t device = {.base.kind = DK_BOARD,
+                             .base.name = strdup(name),
+                             .base.description = strdup(description),
+                             .base.defaultconfig = strdup(defaultconfig),
                              .create = create};
     Device_board_t *devicep;
 
     LOG_Info(MOD_NAME, "Register board %s", name);
-    List_InitElement(&device.liste);
+    List_InitElement(&device.base.liste);
 
     uv_mutex_lock(&Device_devices.list_mutex);
     do {
         devicep =
-            List_Find(&Device_devices.list,
-                      (List_Compare_cb)&Device_compareBoard, &device.liste);
+            List_Find(&Device_devices.boards, (List_Compare_cb)&Device_compare,
+                      &device.base.liste);
         if (devicep) {
             LOG_Warn(MOD_NAME, "Board %s already registered", name);
             err = UV_EEXIST;
@@ -198,7 +215,55 @@ int Device_RegisterBoard(const char *name, const char *description,
             break;
         }
         *devicep = device;
-        List_Push(&Device_devices.list, &devicep->liste);
+        List_Push(&Device_devices.boards, &devicep->base.liste);
+    } while (0);
+    uv_mutex_unlock(&Device_devices.list_mutex);
+    return err;
+}
+
+
+//===----------------------------------------------------------------------===//
+/// Register MPU.
+///
+/// @param[in]      name            name
+/// @param[in]      description     description
+/// @param[in]      create          instantiation function(constructor)
+/// @param[in]      defaultconfig   defaut config
+///
+/// @return imply an error if negative
+//===----------------------------------------------------------------------===//
+int Device_RegisterMPU(const char *name, const char *description,
+                       Device_CreateMPU_cb create, const char *defaultconfig) {
+    int err = 0;
+    Device_mpu_t device = {.base.kind = DK_MPU,
+                           .base.name = strdup(name),
+                           .base.description = strdup(description),
+                           .base.defaultconfig = strdup(defaultconfig),
+                           .create = create};
+    Device_mpu_t *devicep;
+
+    LOG_Info(MOD_NAME, "Register MPU %s", name);
+    List_InitElement(&device.base.liste);
+
+    uv_mutex_lock(&Device_devices.list_mutex);
+    do {
+        devicep =
+            List_Find(&Device_devices.mpus, (List_Compare_cb)&Device_compare,
+                      &device.base.liste);
+        if (devicep) {
+            LOG_Warn(MOD_NAME, "MPU %s already registered", name);
+            err = UV_EEXIST;
+            break;
+        }
+
+        devicep = malloc(sizeof(*devicep));
+        if (!devicep) {
+            LOG_Error(MOD_NAME, "malloc failed %s", strerror(errno));
+            err = UV_EAI_MEMORY;
+            break;
+        }
+        *devicep = device;
+        List_Push(&Device_devices.mpus, &devicep->base.liste);
     } while (0);
     uv_mutex_unlock(&Device_devices.list_mutex);
     return err;
@@ -208,7 +273,7 @@ int Device_RegisterBoard(const char *name, const char *description,
 //===----------------------------------------------------------------------===//
 /// Unregister board.
 ///
-/// @param[in]      name        board name
+/// @param[in]      name        name
 ///
 /// @attention if not registered, it's not an error.
 ///
@@ -216,12 +281,34 @@ int Device_RegisterBoard(const char *name, const char *description,
 //===----------------------------------------------------------------------===//
 int Device_UnregisterBoard(const char *name) {
     LOG_Info(MOD_NAME, "Unregister board %s", name);
-    const Device_board_t device = {.kind = DK_BOARD, .name = name};
-    Device_board_t *result;
+    const Device_base_t device = {.kind = DK_BOARD, .name = name};
+    Device_base_t *result;
     uv_mutex_lock(&Device_devices.list_mutex);
-    result = List_PopBy(&Device_devices.list,
-                        (List_Compare_cb)&Device_compareBoard, &device.liste);
-    free(result);
+    result = List_PopBy(&Device_devices.boards,
+                        (List_Compare_cb)&Device_compare, &device.liste);
+    Device_free(result);
+    uv_mutex_unlock(&Device_devices.list_mutex);
+    return 0;
+}
+
+
+//===----------------------------------------------------------------------===//
+/// Unregister MPU.
+///
+/// @param[in]      name        name
+///
+/// @attention if not registered, it's not an error.
+///
+/// @return imply an error if negative
+//===----------------------------------------------------------------------===//
+int Device_UnregisterMPU(const char *name) {
+    LOG_Info(MOD_NAME, "Unregister MPU %s", name);
+    const Device_base_t device = {.kind = DK_MPU, .name = name};
+    Device_base_t *result;
+    uv_mutex_lock(&Device_devices.list_mutex);
+    result = List_PopBy(&Device_devices.mpus, (List_Compare_cb)&Device_compare,
+                        &device.liste);
+    Device_free(result);
     uv_mutex_unlock(&Device_devices.list_mutex);
     return 0;
 }
@@ -238,18 +325,45 @@ int Device_UnregisterBoard(const char *name) {
 //===----------------------------------------------------------------------===//
 Device_Board_t *Device_CreateBoard(const char *name) {
     LOG_Info(MOD_NAME, "Create board %s", name);
-    const Device_board_t device = {.kind = DK_BOARD, .name = name};
+    const Device_base_t device = {.kind = DK_BOARD, .name = name};
     Device_board_t *result;
     uv_mutex_lock(&Device_devices.list_mutex);
-    result = List_Find(&Device_devices.list,
-                       (List_Compare_cb)&Device_compareBoard, &device.liste);
+    result = List_Find(&Device_devices.boards, (List_Compare_cb)&Device_compare,
+                       &device.liste);
     uv_mutex_unlock(&Device_devices.list_mutex);
     if (!result) {
         LOG_Warn(MOD_NAME, "Board %s not found", name);
         return NULL;
     }
-    LOG_Info(MOD_NAME, "defaultconfig %s", result->defaultconfig);
-    Config_AddString(result->defaultconfig);
+    LOG_Info(MOD_NAME, "defaultconfig %s", result->base.defaultconfig);
+    Config_AddString(result->base.defaultconfig);
+    return result->create();
+}
+
+
+//===----------------------------------------------------------------------===//
+/// Create MPU.
+///
+/// @param[in]      name        name
+///
+/// @attention if not registered, it's not an error.
+///
+/// @return created MPU. NULL if error
+//===----------------------------------------------------------------------===//
+Device_MPU_t *Device_CreateMPU(const char *name) {
+    LOG_Info(MOD_NAME, "Create MPU %s", name);
+    const Device_base_t device = {.kind = DK_MPU, .name = name};
+    Device_mpu_t *result;
+    uv_mutex_lock(&Device_devices.list_mutex);
+    result = List_Find(&Device_devices.boards, (List_Compare_cb)&Device_compare,
+                       &device.liste);
+    uv_mutex_unlock(&Device_devices.list_mutex);
+    if (!result) {
+        LOG_Warn(MOD_NAME, "MPU %s not found", name);
+        return NULL;
+    }
+    LOG_Info(MOD_NAME, "defaultconfig %s", result->base.defaultconfig);
+    Config_AddString(result->base.defaultconfig);
     return result->create();
 }
 
@@ -260,7 +374,7 @@ Device_Board_t *Device_CreateBoard(const char *name) {
 void Device_DumpBoards(void) {
     printf("-- Registered bords are:\n");
     uv_mutex_lock(&Device_devices.list_mutex);
-    List_Map(&Device_devices.list, (List_Proc_cb)&Device_printBoard);
+    List_Map(&Device_devices.boards, (List_Proc_cb)&Device_printBase);
     uv_mutex_unlock(&Device_devices.list_mutex);
     printf("--\n");
 }
