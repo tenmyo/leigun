@@ -2785,7 +2785,7 @@ ppc_lwbrx(uint32_t icode)
 	} else {
 		ea = GPR(b) + GPR(a);
 	}
-	GPR(d) = swap32(PPCMMU_Read32(ea));
+	GPR(d) = BYTE_Swap32(PPCMMU_Read32(ea));
 	fprintf(stderr, "instr ppc_lwbrx(%08x)\n", icode);
 }
 
@@ -2993,7 +2993,7 @@ ppc_stwbrx(uint32_t icode)
 	} else {
 		ea = GPR(b);
 	}
-	PPCMMU_Write32(swap32(GPR(s)), ea);
+	PPCMMU_Write32(BYTE_Swap32(GPR(s)), ea);
 	fprintf(stderr, "instr ppc_stwbrx(%08x)\n", icode);
 }
 
@@ -3123,7 +3123,7 @@ ppc_lhbrx(uint32_t icode)
 	} else {
 		ea = GPR(a) + GPR(b);
 	}
-	GPR(d) = swap16(PPCMMU_Read16(ea));
+	GPR(d) = BYTE_Swap16(PPCMMU_Read16(ea));
 	fprintf(stderr, "instr ppc_lhbrx(%08x)\n", icode);
 }
 
@@ -3227,7 +3227,7 @@ ppc_sthbrx(uint32_t icode)
 	} else {
 		ea = GPR(b);
 	}
-	PPCMMU_Write16(swap16(GPR(s) & 0xffff), ea);
+	PPCMMU_Write16(BYTE_Swap16(GPR(s) & 0xffff), ea);
 	fprintf(stderr, "instr ppc_sthbrx(%08x)\n", icode);
 }
 
