@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <arm9cpu.h>
+#include "arm9cpu.h"
 void InitInstructions(void);
 
 extern char *ARM_ConditionMap;

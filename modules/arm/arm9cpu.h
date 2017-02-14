@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <setjmp.h>
 #include <coprocessor.h>
-#include <idecode_arm.h>
+#include "idecode_arm.h"
 #include <xy_tree.h>
 #include <sys/time.h>
 #include <debugger.h>

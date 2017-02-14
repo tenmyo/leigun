@@ -391,7 +391,7 @@ serial_input(void *cd, UartChar c)
  * Uart receive buffer register. This is a 16 byte fifo
  *****************************************************************************************
  */
-#include "arm9cpu.h"
+#include "arm/arm9cpu.h"
 static uint32_t
 rbr_read(void *clientData, uint32_t address, int rqlen)
 {

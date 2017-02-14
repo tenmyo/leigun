@@ -131,7 +131,7 @@ reload_tc32(TC32 * tc32)
 	tc32->regTc32mcnt = 0;
 }
 
-#include "arm9cpu.h"
+#include "arm/arm9cpu.h"
 static void
 actualize_counter_tc32(TC32 * tc32)
 {

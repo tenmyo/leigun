@@ -38,7 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "arm9cpu.h"
+#include "arm/arm9cpu.h"
 #include "cycletimer.h"
 #include "bus.h"
 #include "ns9750_timer.h"

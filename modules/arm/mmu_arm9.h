@@ -9,7 +9,7 @@
  */
 
 #include <bus.h>
-#include <arm9cpu.h>
+#include "arm9cpu.h"
 #include <cycletimer.h>
 #include <sys/time.h>
 #include <time.h>

@@ -338,7 +338,7 @@ PinInfo pinTable[] = {
 	{-1, -1, NULL, NULL}
 };
 
-#include <arm9cpu.h>
+#include "arm/arm9cpu.h"
 static inline void
 check_interrupts()
 {

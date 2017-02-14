@@ -475,7 +475,7 @@ bbu_gpiocfg_read(void *clientData, uint32_t address, int rqlen)
 	return bb->gpiocfg[index];
 }
 
-#include <arm9cpu.h>
+#include "arm/arm9cpu.h"
 static inline void
 check_interrupts()
 {

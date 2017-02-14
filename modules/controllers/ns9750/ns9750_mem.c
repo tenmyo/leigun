@@ -47,7 +47,7 @@
 #include <arpa/inet.h>
 #include "compiler_extensions.h"
 #include "configfile.h"
-#include "arm9cpu.h"
+#include "arm/arm9cpu.h"
 #include "ns9750_mem.h"
 #include "bus.h"
 #include "signode.h"

@@ -614,7 +614,7 @@ aclkuart0_read(void *clientData, uint32_t address, int rqlen)
 	return ckc->regAclkuart0;
 }
 
-#include "arm9cpu.h"
+#include "arm/arm9cpu.h"
 static void
 aclkuart0_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 {

@@ -32,7 +32,12 @@
  *
  *************************************************************************************************
  */
+#include "arm/arm9cpu.h"
 
+#include "arm/idecode_arm.h"
+#include "arm/instructions_arm.h"
+#include "arm/mmu_arm9.h"
+#include "arm/thumb_decode.h"
 #include <unistd.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -45,10 +50,6 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <coprocessor.h>
-#include <arm9cpu.h>
-#include <instructions_arm.h>
-#include <idecode_arm.h>
-#include <thumb_decode.h>
 #include <bus.h>
 #include <mmu_arm9.h>
 #include <xy_tree.h>
