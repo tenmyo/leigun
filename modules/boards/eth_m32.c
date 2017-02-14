@@ -120,12 +120,16 @@ static const char *BOARD_DEFAULTCONFIG = "[global]\n"
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct EthM32 {
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
     AVR8_Adc *adc;
     FbDisplay *display;
     Keyboard *keyboard;
     MMCDev *mmcard;
     SD_Spi *sdspi;
+} board_t;
+typedef struct EthM32 {
 } EthM32;
 
 
@@ -137,7 +141,7 @@ typedef struct EthM32 {
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
-static void link_signals(EthM32 *em32);
+static void link_signals(board_t *em32);
 static void create_i2c_devices();
 static Device_Board_t *create(void);
 static int run(Device_Board_t *board);
@@ -148,7 +152,7 @@ static int run(Device_Board_t *board);
 //==============================================================================
 
 
-static void link_signals(EthM32 *em32) {
+static void link_signals(board_t *em32) {
     SigName_Link("extint.extint_out0", "avr.irq1");
     SigName_Link("extint.extintAck0", "avr.irqAck1");
     SigName_Link("extint.extint_out1", "avr.irq2");
@@ -314,7 +318,6 @@ static void create_i2c_devices() {
 }
 
 static Device_Board_t *create(void) {
-    EthM32 *em32 = sg_new(EthM32);
     ATMUsartRegisterMap usartRegMap = {
         .addrUCSRA = 0,
         .addrUCSRB = 1,
@@ -323,22 +326,21 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    Device_Board_t *board;
-    board = malloc(sizeof(*board));
-    board->run = &run;
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
 
-    FbDisplay_New("lcd0", &em32->display, &em32->keyboard, NULL, NULL);
-    if (!em32->display) {
+    FbDisplay_New("lcd0", &board->display, &board->keyboard, NULL, NULL);
+    if (!board->display) {
         fprintf(stderr, "LCD creation failed\n");
     }
 
-    // FbDisplay_New("display0",&em32->display,&em32->keyboard,NULL,NULL);
-    // if(!em32->keyboard) {
+    // FbDisplay_New("display0",&board->display,&board->keyboard,NULL,NULL);
+    // if(!board->keyboard) {
     //       fprintf(stderr,"Keyboard creation failed\n");
     //       sleep(3);
     //}
 
-    AVR8_Init("avr");
+    board->mpu = Device_CreateMPU("AVR8");
     usartRegMap.addrBase = 0xc0;
     ATM644_UsartNew("usart0", &usartRegMap);
     usartRegMap.addrBase = 0xc8;
@@ -354,35 +356,34 @@ static Device_Board_t *create(void) {
     AVR8_PortNew("portC", 6 + 0x20, 0x6d);
     AVR8_PortNew("portD", 9 + 0x20, 0x73);
 
-    em32->adc = AVR8_AdcNew("adc", 0x78);
+    board->adc = AVR8_AdcNew("adc", 0x78);
     ATM644_SRNew("sr");
 
     AVR8_GpioNew("gpior0", 0x3e);
     AVR8_GpioNew("gpior1", 0x4a);
     AVR8_GpioNew("gpior2", 0x4b);
 
-    em32->mmcard = MMCard_New("card0");
-    if (em32->mmcard) {
-        em32->sdspi = SDSpi_New("sdspi0", em32->mmcard);
+    board->mmcard = MMCard_New("card0");
+    if (board->mmcard) {
+        board->sdspi = SDSpi_New("sdspi0", board->mmcard);
     }
-    if (em32->sdspi) {
-        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, em32->sdspi);
+    if (board->sdspi) {
+        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, board->sdspi);
     } else {
         ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
     }
     ATM644_ExtIntNew("extint");
     Enc28j60_New("enc28j60");
-    if (em32->display) {
-        HD44780_LcdNew("lcd0", em32->display);
+    if (board->display) {
+        HD44780_LcdNew("lcd0", board->display);
     }
     create_i2c_devices();
-    link_signals(em32);
-    return board;
+    link_signals(board);
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    AVR8_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

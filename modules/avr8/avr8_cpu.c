@@ -1,3 +1,27 @@
+//===-- avr8/avr8_cpu.c -------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Emulation of the Atmel AVR 8 Bit CPU core
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  *
@@ -33,11 +57,34 @@
  *
  *************************************************************************************************
  */
+// clang-format on
+
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+#include "avr8/avr8_cpu.h"
+
+// Local/Private Headers
+#include "avr8/avr8_io.h"
+#include "avr8/idecode_avr8.h"
+#include "avr8/instructions_avr8.h"
+
+// Leigun Core Headers
 #include "compiler_extensions.h"
-#include "avr8_cpu.h"
+#include "configfile.h"
+#include "cycletimer.h"
+#include "cycletimer.h"
+#include "diskimage.h"
+#include "initializer.h"
+#include "loader.h"
+#include "sgstring.h"
+#include "signode.h"
+#include "core/device.h"
 
-#include <cycletimer.h>
+// External headers
 
+// System headers
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,16 +92,30 @@
 #include <sys/types.h>
 #include <errno.h>
 
-#include "avr8_io.h"
-#include "sgstring.h"
-#include "instructions_avr8.h"
-#include "idecode_avr8.h"
-#include "signode.h"
-#include "diskimage.h"
-#include "cycletimer.h"
-#include "configfile.h"
-#include "loader.h"
 
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *MPU_NAME = "AVR8";
+static const char *MPU_DESCRIPTION = "The Atmel AVR 8 Bit CPU Core";
+static const char *MPU_DEFAULTCONFIG = "[global]\n"
+                                       "cpu_clock: 20000000\n"
+                                       "imagedir: .\n"
+                                       "start_address: 0\n"
+                                       "\n";
+
+
+/* These are stolen from gdb */
+#define DBG_AVR_IMEM_START   0x00000000	/* INSN memory */
+#define DBG_AVR_SMEM_START   0x00800000	/* SRAM memory */
+#define DBG_AVR_MEM_MASK     0x00f00000	/* mask to determine memory space */
+#define DBG_AVR_EMEM_START   0x00810000	/* EEPROM memory */
+#define DBG_AVR_EMEM_MASK     0x00ff0000	/* mask to determine memory space */
+
+
+//==============================================================================
+//= Types
+//==============================================================================
 typedef struct AVR8_Variant {
 	char *name;
 	uint32_t flashwords;
@@ -66,6 +127,10 @@ typedef struct AVR8_Variant {
 	uint32_t nr_intvects;
 } AVR8_Variant;
 
+
+//==============================================================================
+//= Variables
+//==============================================================================
 AVR8_Variant avr8_variants[] = {
 	{
 	 .name = "AT90S2313",
@@ -156,6 +221,59 @@ AVR8_Variant avr8_variants[] = {
 
 AVR8_Cpu gavr8;
 
+CycleTimer exit_timer;
+
+static uint16_t pcbuf[1024];
+static int pcbuf_wp = 0;
+static int pcbuf_rp = 0;
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+#ifndef NO_DEBUGGER
+static void debugger_setreg(void *clientData, const uint8_t * data, uint32_t index, int len);
+static int debugger_getreg(void *clientData, uint8_t * data, uint32_t index, int maxlen);
+static ssize_t debugger_getmem(void *clientData, uint8_t * data, uint64_t addr, uint32_t count);
+static ssize_t debugger_setmem(void *clientData, const uint8_t * data, uint64_t addr, uint32_t count);
+static int debugger_stop(void *clientData);
+static int debugger_cont(void *clientData);
+static int debugger_step(void *clientData, uint64_t addr, int use_addr);
+static Dbg_TargetStat debugger_get_status(void *clientData);
+static void debugger_get_bkpt_ins(void *clientData, uint8_t * ins, uint64_t addr, int len);
+static void Do_Debug(void);
+#endif
+static void AVR8_Interrupt(void *irqData);
+static inline void CheckSignals(void);
+static inline void logPC(void);
+static uint8_t avr8_read_unknown(void *clientData, uint32_t address);
+static void avr8_write_unknown(void *clientData, uint8_t value, uint32_t address);
+static uint8_t avr8_read_rampz(void *clientData, uint32_t address);
+static void avr8_write_rampz(void *clientData, uint8_t value, uint32_t address);
+static uint8_t avr8_read_eind(void *clientData, uint32_t address);
+static void avr8_write_eind(void *clientData, uint8_t value, uint32_t address);
+static void AVR8_IrqTrace(SigNode * sig, int value, void *clientData);
+static uint8_t avr8_read_reg(void *clientData, uint32_t address);
+static void avr8_write_reg(void *clientData, uint8_t value, uint32_t address);
+static uint8_t avr8_read_flags(void *clientData, uint32_t address);
+static void avr8_write_flags(void *clientData, uint8_t value, uint32_t address);
+static void avr8_write_flags(void *clientData, uint8_t value, uint32_t address);
+static uint8_t avr8_read_spl(void *clientData, uint32_t address);
+static void avr8_write_spl(void *clientData, uint8_t value, uint32_t address);
+static uint8_t avr8_read_sph(void *clientData, uint32_t address);
+static void avr8_write_sph(void *clientData, uint8_t value, uint32_t address);
+static int load_to_bus(void *clientData, uint32_t addr, uint8_t * buf, unsigned int count, int flags);
+static void avr_exit(void *clientData);
+static void AVR8_SignalLevelConflict(const char *msg);
+static void AVR8_Reti(void *eventData);
+
+static Device_MPU_t *create(void);
+static int run(Device_MPU_t *dev);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 #ifndef NO_DEBUGGER
 /*
  * 32 Regs + SREG + SP + PC
@@ -243,13 +361,6 @@ debugger_getreg(void *clientData, uint8_t * data, uint32_t index, int maxlen)
 	}
 	return retval;
 }
-
-/* These are stolen from gdb */
-#define DBG_AVR_IMEM_START   0x00000000	/* INSN memory */
-#define DBG_AVR_SMEM_START   0x00800000	/* SRAM memory */
-#define DBG_AVR_MEM_MASK     0x00f00000	/* mask to determine memory space */
-#define DBG_AVR_EMEM_START   0x00810000	/* EEPROM memory */
-#define DBG_AVR_EMEM_MASK     0x00ff0000	/* mask to determine memory space */
 
 static ssize_t
 debugger_getmem(void *clientData, uint8_t * data, uint64_t addr, uint32_t count)
@@ -380,17 +491,6 @@ Do_Debug(void)
 }
 #endif
 
-void
-AVR8_UpdateCpuSignals(void)
-{
-	if (gavr8.sreg & FLG_I) {
-		gavr8.cpu_signal_mask |= AVR8_SIG_IRQ;
-	} else {
-		gavr8.cpu_signal_mask &= ~AVR8_SIG_IRQ;
-	}
-	gavr8.cpu_signals = gavr8.cpu_signals_raw & gavr8.cpu_signal_mask;
-}
-
 static void
 AVR8_Interrupt(void *irqData)
 {
@@ -447,76 +547,11 @@ CheckSignals(void)
 	}
 }
 
-static uint16_t pcbuf[1024];
-static int pcbuf_wp = 0;
-static int pcbuf_rp = 0;
-
 static inline void
 logPC(void)
 {
 	pcbuf[pcbuf_wp] = GET_REG_PC;
 	pcbuf_wp = (pcbuf_wp + 1) & ((sizeof(pcbuf) / 2) - 1);
-}
-
-void
-AVR8_DumpRegisters(void)
-{
-	int i;
-	fprintf(stderr, "Register Dump, PC: %04x\n", GET_REG_PC << 1);
-	for (i = 0; i < 32; i++) {
-		fprintf(stderr, "R%02d: 0x%02x ", i, AVR8_ReadReg(i));
-		if ((i & 7) == 7) {
-			fprintf(stderr, "\n");
-		}
-	}
-}
-
-void
-AVR8_DumpPcBuf(void)
-{
-	int i;
-	pcbuf_rp = (pcbuf_wp - 200) & ((sizeof(pcbuf) / 2) - 1);
-	for (i = 0; i < 200; i++) {
-		fprintf(stderr, "PC: %04x\n", pcbuf[pcbuf_rp] << 1);
-		pcbuf_rp = (pcbuf_rp + 1) & ((sizeof(pcbuf) / 2) - 1);
-	}
-	AVR8_DumpRegisters();
-}
-
-/*
- *******************************************************************
- * AVR8 CPU main loop
- *******************************************************************
- */
-void
-AVR8_Run()
-{
-	AVR8_Cpu *avr = &gavr8;
-	uint32_t addr = 0;
-	AVR8_InstructionProc *iproc;
-	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
-		addr = 0;
-	}
-	SET_REG_PC(addr);
-	setjmp(avr->restart_idec_jump);
-#ifndef NO_DEBUGGER
-	while (avr->dbg_state == AVRDBG_STOPPED) {
-		struct timespec tout;
-		tout.tv_nsec = 0;
-		tout.tv_sec = 10000;
-		// FIXME: FIO_WaitEventTimeout(&tout);
-		sleep(1);
-	}
-#endif
-  while (1) {
-		CheckSignals();
-		CycleTimers_Check();
-		ICODE = AVR8_ReadAppMem(GET_REG_PC);
-		//logPC();
-		SET_REG_PC(GET_REG_PC + 1);
-		iproc = AVR8_InstructionProcFind(ICODE);
-		iproc();
-	}
 }
 
 static uint8_t
@@ -554,36 +589,6 @@ static void
 avr8_write_eind(void *clientData, uint8_t value, uint32_t address)
 {
 	gavr8.regEIND = value;
-}
-
-void
-AVR8_RegisterIOHandler(uint32_t addr, AVR8_IoReadProc * readproc, AVR8_IoWriteProc * writeproc,
-		       void *clientData)
-{
-
-	AVR8_Iohandler *ioh;
-	AVR8_Cpu *avr = &gavr8;
-	if (addr >= avr->io_registers) {
-		fprintf(stderr, "Bug: registering IO-Handler outside of IO address space of CPU: %u\n", 
-            addr);
-		exit(1);
-	}
-	if (readproc && (avr->mmioHandler[addr]->ioReadProc != avr8_read_unknown)) {
-		fprintf(stderr, "Bug: IO-Handler for address 0x%04x already exists\n", addr);
-		exit(1);
-	}
-	if (writeproc && (avr->mmioHandler[addr]->ioWriteProc != avr8_write_unknown)) {
-		fprintf(stderr, "Bug: IO-Handler for address 0x%04x already exists\n", addr);
-		exit(1);
-	}
-	ioh = avr->mmioHandler[addr];
-	if (readproc) {
-		ioh->ioReadProc = readproc;
-	}
-	if (writeproc) {
-		ioh->ioWriteProc = writeproc;
-	}
-	ioh->clientData = clientData;
 }
 
 /*
@@ -678,8 +683,6 @@ load_to_bus(void *clientData, uint32_t addr, uint8_t * buf, unsigned int count, 
 	return 0;
 }
 
-CycleTimer exit_timer;
-
 static void
 avr_exit(void *clientData)
 {
@@ -691,15 +694,6 @@ static void
 AVR8_SignalLevelConflict(const char *msg)
 {
 	fprintf(stderr, "PC 0x%04x: %s\n", ((GET_REG_PC - 1) << 1), msg);
-}
-
-void
-AVR8_RegisterIntco(void (*ackProc) (void *), void (*retiProc) (void *), void *eventData)
-{
-	gavr8.avrAckIrq = ackProc;
-	gavr8.avrReti = retiProc;
-	gavr8.avrIrqData = eventData;
-
 }
 
 static void
@@ -714,8 +708,8 @@ AVR8_Reti(void *eventData)
  *      Initialize the CPU.
  * ----------------------------------------------------------
  */
-void
-AVR8_Init(const char *instancename)
+static Device_MPU_t *
+create(void)
 {
 	AVR8_Cpu *avr = &gavr8;
 	AVR8_Variant *var;
@@ -723,8 +717,12 @@ AVR8_Init(const char *instancename)
 	char *flashname;
 	char *imagedir;
 	uint32_t cpu_clock = 20000000;
+	const char *instancename = "avr";
 	int nr_variants = sizeof(avr8_variants) / sizeof(AVR8_Variant);
 	int i;
+    Device_MPU_t *dev = malloc(sizeof(*dev));
+    dev->run = &run;
+    dev->data = avr;
 	variantname = Config_ReadVar(instancename, "variant");
 	if (!variantname) {
 		fprintf(stderr, "No CPU variant selected\n");
@@ -835,4 +833,126 @@ AVR8_Init(const char *instancename)
 	avr->dbgops.get_bkpt_ins = debugger_get_bkpt_ins;
 	avr->debugger = Debugger_New(&avr->dbgops, avr);
 #endif
+    return dev;
+}
+
+/*
+ *******************************************************************
+ * AVR8 CPU main loop
+ *******************************************************************
+ */
+static int
+run(Device_MPU_t *dev)
+{
+	AVR8_Cpu *avr = &gavr8;
+	uint32_t addr = 0;
+	AVR8_InstructionProc *iproc;
+	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
+		addr = 0;
+	}
+	SET_REG_PC(addr);
+	setjmp(avr->restart_idec_jump);
+#ifndef NO_DEBUGGER
+	while (avr->dbg_state == AVRDBG_STOPPED) {
+		struct timespec tout;
+		tout.tv_nsec = 0;
+		tout.tv_sec = 10000;
+		// FIXME: FIO_WaitEventTimeout(&tout);
+		sleep(1);
+	}
+#endif
+  while (1) {
+		CheckSignals();
+		CycleTimers_Check();
+		ICODE = AVR8_ReadAppMem(GET_REG_PC);
+		//logPC();
+		SET_REG_PC(GET_REG_PC + 1);
+		iproc = AVR8_InstructionProcFind(ICODE);
+		iproc();
+	}
+	return 0;
+}
+
+
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+void
+AVR8_UpdateCpuSignals(void)
+{
+	if (gavr8.sreg & FLG_I) {
+		gavr8.cpu_signal_mask |= AVR8_SIG_IRQ;
+	} else {
+		gavr8.cpu_signal_mask &= ~AVR8_SIG_IRQ;
+	}
+	gavr8.cpu_signals = gavr8.cpu_signals_raw & gavr8.cpu_signal_mask;
+}
+
+void
+AVR8_DumpRegisters(void)
+{
+	int i;
+	fprintf(stderr, "Register Dump, PC: %04x\n", GET_REG_PC << 1);
+	for (i = 0; i < 32; i++) {
+		fprintf(stderr, "R%02d: 0x%02x ", i, AVR8_ReadReg(i));
+		if ((i & 7) == 7) {
+			fprintf(stderr, "\n");
+		}
+	}
+}
+
+void
+AVR8_DumpPcBuf(void)
+{
+	int i;
+	pcbuf_rp = (pcbuf_wp - 200) & ((sizeof(pcbuf) / 2) - 1);
+	for (i = 0; i < 200; i++) {
+		fprintf(stderr, "PC: %04x\n", pcbuf[pcbuf_rp] << 1);
+		pcbuf_rp = (pcbuf_rp + 1) & ((sizeof(pcbuf) / 2) - 1);
+	}
+	AVR8_DumpRegisters();
+}
+
+void
+AVR8_RegisterIOHandler(uint32_t addr, AVR8_IoReadProc * readproc, AVR8_IoWriteProc * writeproc,
+		       void *clientData)
+{
+
+	AVR8_Iohandler *ioh;
+	AVR8_Cpu *avr = &gavr8;
+	if (addr >= avr->io_registers) {
+		fprintf(stderr, "Bug: registering IO-Handler outside of IO address space of CPU: %u\n", 
+            addr);
+		exit(1);
+	}
+	if (readproc && (avr->mmioHandler[addr]->ioReadProc != avr8_read_unknown)) {
+		fprintf(stderr, "Bug: IO-Handler for address 0x%04x already exists\n", addr);
+		exit(1);
+	}
+	if (writeproc && (avr->mmioHandler[addr]->ioWriteProc != avr8_write_unknown)) {
+		fprintf(stderr, "Bug: IO-Handler for address 0x%04x already exists\n", addr);
+		exit(1);
+	}
+	ioh = avr->mmioHandler[addr];
+	if (readproc) {
+		ioh->ioReadProc = readproc;
+	}
+	if (writeproc) {
+		ioh->ioWriteProc = writeproc;
+	}
+	ioh->clientData = clientData;
+}
+
+void
+AVR8_RegisterIntco(void (*ackProc) (void *), void (*retiProc) (void *), void *eventData)
+{
+	gavr8.avrAckIrq = ackProc;
+	gavr8.avrReti = retiProc;
+	gavr8.avrIrqData = eventData;
+
+}
+
+INITIALIZER(init) {
+    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
+                       MPU_DEFAULTCONFIG);
 }

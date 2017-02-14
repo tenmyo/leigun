@@ -83,13 +83,17 @@ static const char *BOARD_DEFAULTCONFIG = "[global]\n"
 //= Types
 //==============================================================================
 typedef struct Uzebox {
+} Uzebox;
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
     AVR8_Adc *adc;
     FbDisplay *display;
     Keyboard *keyboard;
     SoundDevice *sounddevice;
     MMCDev *mmcard;
     SD_Spi *sdspi;
-} Uzebox;
+} board_t;
 
 
 //==============================================================================
@@ -100,7 +104,7 @@ typedef struct Uzebox {
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
-static void link_signals(Uzebox *box);
+static void link_signals(board_t *box);
 static Device_Board_t *create(void);
 static int run(Device_Board_t *board);
 
@@ -108,7 +112,7 @@ static int run(Device_Board_t *board);
 //==============================================================================
 //= Function definitions(static)
 //==============================================================================
-static void link_signals(Uzebox *box) {
+static void link_signals(board_t *box) {
     SigName_Link("extint.extint_out0", "avr.irq1");
     SigName_Link("extint.extintAck0", "avr.irqAck1");
     SigName_Link("extint.extint_out1", "avr.irq2");
@@ -241,7 +245,6 @@ static void link_signals(Uzebox *box) {
 }
 
 static Device_Board_t *create(void) {
-    Uzebox *box = sg_new(Uzebox);
     ATMUsartRegisterMap usartRegMap = {
         .addrUCSRA = 0,
         .addrUCSRB = 1,
@@ -250,17 +253,15 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    Device_Board_t *board;
-    board = malloc(sizeof(*board));
-    board->run = &run;
-
-    FbDisplay_New("display0", &box->display, &box->keyboard, NULL,
-                  &box->sounddevice);
-    if (!box->keyboard) {
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
+    FbDisplay_New("display0", &board->display, &board->keyboard, NULL,
+                  &board->sounddevice);
+    if (!board->keyboard) {
         LOG_Warn(BOARD_NAME, "Keyboard creation failed");
     }
 
-    AVR8_Init("avr");
+    board->mpu = Device_CreateMPU("AVR8");
     usartRegMap.addrBase = 0xc0;
     ATM644_UsartNew("usart0", &usartRegMap);
     usartRegMap.addrBase = 0xc8;
@@ -268,47 +269,46 @@ static Device_Board_t *create(void) {
     AVR8_EEPromNew("eeprom", "3f4041", 2048);
     ATM644_Timer02New("timer0", 0x44, 0);
     ATM644_Timer1New("timer1");
-    if (box->sounddevice == NULL) {
-        box->sounddevice = SoundDevice_New("sound0");
+    if (board->sounddevice == NULL) {
+        board->sounddevice = SoundDevice_New("sound0");
     }
     /* ATM644_Timer02New("timer2",0xb0,2); */
-    Uze_Timer2New("timer2", box->sounddevice);
+    Uze_Timer2New("timer2", board->sounddevice);
     ATM644_TwiNew("twi");
 
     AVR8_PortNew("portA", 0 + 0x20, 0x6b);
     AVR8_PortNew("portB", 3 + 0x20, 0x6c);
     /* AVR8_PortNew("portC",6 + 0x20); */
-    Uze_VidPortNew("portC", 6 + 0x20, box->display);
+    Uze_VidPortNew("portC", 6 + 0x20, board->display);
     AVR8_PortNew("portD", 9 + 0x20, 0x73);
 
-    box->adc = AVR8_AdcNew("adc", 0x78);
+    board->adc = AVR8_AdcNew("adc", 0x78);
     ATM644_SRNew("sr");
 
     AVR8_GpioNew("gpior0", 0x3e);
     AVR8_GpioNew("gpior1", 0x4a);
     AVR8_GpioNew("gpior2", 0x4b);
 
-    box->mmcard = MMCard_New("card0");
-    if (box->mmcard) {
-        box->sdspi = SDSpi_New("sdspi0", box->mmcard);
+    board->mmcard = MMCard_New("card0");
+    if (board->mmcard) {
+        board->sdspi = SDSpi_New("sdspi0", board->mmcard);
     }
-    if (box->sdspi) {
-        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, box->sdspi);
+    if (board->sdspi) {
+        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, board->sdspi);
     } else {
         ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
     }
     ATM644_ExtIntNew("extint");
 
-    Uze_SnesNew("snes0", box->keyboard);
-    Uze_SnesNew("snes1", box->keyboard);
+    Uze_SnesNew("snes0", board->keyboard);
+    Uze_SnesNew("snes1", board->keyboard);
 
-    link_signals(box);
-    return board;
+    link_signals(board);
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    AVR8_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

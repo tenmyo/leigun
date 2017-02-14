@@ -51,6 +51,10 @@ static const char *BOARD_DEFAULTCONFIG = "[global]\n"
 //==============================================================================
 //= Types
 //==============================================================================
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -69,13 +73,14 @@ static int run(Device_Board_t *board);
 //= Function definitions(static)
 //==============================================================================
 static Device_Board_t *create(void) {
-    AVR8_Init("avr");
-    return 0;
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
+    board->mpu = Device_CreateMPU("AVR8");
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    AVR8_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 
