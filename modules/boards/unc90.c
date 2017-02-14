@@ -119,6 +119,10 @@ static const char *BOARD_DEFAULTCONFIG = "[global]\n"
 //==============================================================================
 //= Types
 //==============================================================================
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -252,12 +256,11 @@ static Device_Board_t *create(void) {
     BusDevice *mc;
     BusDevice *dram0 = NULL;
     PHY_Device *phy;
-    Device_Board_t *board;
-    board = malloc(sizeof(*board));
-    board->run = &run;
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    ARM9_New();
+    board->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM920T);
     ARM9_RegisterCoprocessor(copro, 15);
 
@@ -346,12 +349,11 @@ static Device_Board_t *create(void) {
     create_i2c_devices();
     create_signal_links();
     create_clock_links();
-    return board;
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    ARM9_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

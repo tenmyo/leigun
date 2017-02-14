@@ -113,6 +113,10 @@ static const char *BOARD_DEFAULTCONFIG = "[loader]\n"
 //==============================================================================
 //= Types
 //==============================================================================
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -144,11 +148,9 @@ static Device_Board_t *create(void) {
     NS9750_MemController *memco;
     PHY_Device *phy;
     PCI_Function *bridge;
-    Device_Board_t *board;
-    board = malloc(sizeof(*board));
-    board->run = &run;
-
-    ARM9_New();
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
+    board->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
     ARM9_RegisterCoprocessor(copro, 15);
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
@@ -244,12 +246,11 @@ static Device_Board_t *create(void) {
     SigName_Link("mmu.endian", "ns9750_pci.cpu_endian");
     SigName_Link("flash1.big_endian", "memco.big_endian");
 
-    return board;
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    ARM9_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

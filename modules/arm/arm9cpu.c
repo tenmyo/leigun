@@ -1,3 +1,27 @@
+//===-- arm/arm9cpu.c ---------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Emulation of the ARM CPU, Initialization and main loop
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  *
@@ -32,12 +56,32 @@
  *
  *************************************************************************************************
  */
+// clang-format on
+
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
 #include "arm/arm9cpu.h"
 
+// Local/Private Headers
 #include "arm/idecode_arm.h"
 #include "arm/instructions_arm.h"
 #include "arm/mmu_arm9.h"
 #include "arm/thumb_decode.h"
+
+// Leigun Core Headers
+#include "bus.h"
+#include "configfile.h"
+#include "coprocessor.h"
+#include "cycletimer.h"
+#include "initializer.h"
+#include "xy_tree.h"
+#include "core/device.h"
+
+// External headers
+
+// System headers
 #include <unistd.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -49,26 +93,78 @@
 #include <setjmp.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <coprocessor.h>
-#include <bus.h>
-#include <mmu_arm9.h>
-#include <xy_tree.h>
 #include <time.h>
 #include <sys/time.h>
-#include <cycletimer.h>
-#include <configfile.h>
 
-#ifdef DEBUG
-#define dbgprintf(...) { if(unlikely(debugflags & DEBUG_INSTRUCTIONS)) { fprintf(stderr,__VA_ARGS__);fflush(stderr); } }
-#else
-#define dbgprintf(...)
-#endif
 
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+#define VERBOSE 0
+static const char *MPU_NAME = "ARM9";
+static const char *MPU_DESCRIPTION = "ARM9";
+static const char *MPU_DEFAULTCONFIG = "[global]\n"
+                                       "cpu_clock: 200000000\n"
+                                       "start_address: 0\n"
+                                       "dbgwait: 0\n"
+                                       "\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
 ARM9 gcpu;
 
 uint32_t debugflags = 0;
 uint32_t mmu_vector_base = 0;
 uint32_t do_alignment_check = 0;
+
+CycleTimer htimer;
+
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+#ifdef DEBUG
+#define dbgprintf(...) { if(unlikely(debugflags & DEBUG_INSTRUCTIONS)) { fprintf(stderr,__VA_ARGS__);fflush(stderr); } }
+#else
+#define dbgprintf(...)
+#endif
+static int debugger_getreg(void *clientData, uint8_t * data, uint32_t index, int maxlen);
+static void debugger_setreg(void *clientData, const uint8_t * data, uint32_t index, int len);
+static void debugger_get_bkpt_ins(void *clientData, uint8_t * ins, uint64_t addr, int len);
+static int debugger_stop(void *clientData);
+static int debugger_cont(void *clientData);
+static int debugger_step(void *clientData, uint64_t addr, int use_addr);
+static Dbg_TargetStat debugger_get_status(void *clientData);
+static ssize_t debugger_getmem(void *clientData, uint8_t * data, uint64_t addr, uint32_t len);
+static ssize_t debugger_setmem(void *clientData, const uint8_t * data, uint64_t addr, uint32_t len);
+static void ARM9_InitRegs(ARM9 * arm);
+static void hello_proc(void *cd);
+static void irq_change(SigNode * node, int value, void *clientData);
+static void fiq_change(SigNode * node, int value, void *clientData);
+static void arm_throttle(void *clientData);
+static void ARM_ThrottleInit(ARM9 * arm);
+static void dump_stack(void);
+static void dump_regs(void);
+static void Do_Debug(void);
+static inline void CheckSignals(void);
+static inline void debug_print_instruction(uint32_t icode);
+static void Thumb_Loop(void);
+static void ARM9_Loop32(void);
+
+static Device_MPU_t *create(void);
+static int run(Device_MPU_t *dev);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 
 /*
  * ----------------------------------------------
@@ -273,65 +369,6 @@ debugger_setmem(void *clientData, const uint8_t * data, uint64_t addr, uint32_t 
 	}
 	MMU_SetDebugMode(0);
 	return count;
-}
-
-void
-ARM_set_reg_cpsr(uint32_t new_cpsr)
-{
-	uint32_t bank = new_cpsr & 0x1f;
-	uint32_t diff_cpsr = new_cpsr ^ gcpu.reg_cpsr;
-	gcpu.reg_cpsr = new_cpsr;
-	if (gcpu.reg_bank != bank) {
-		if (likely(gcpu.reg_bank != MODE_FIQ)) {
-			uint32_t *rp;
-			*gcpu.regSet[gcpu.reg_bank].r13 = gcpu.registers[13];
-			*gcpu.regSet[gcpu.reg_bank].r14 = gcpu.registers[14];
-			rp = gcpu.regSet[gcpu.reg_bank].spsr;
-			if (rp)
-				*rp = gcpu.registers[16];
-		} else {
-			gcpu.r8_fiq = gcpu.registers[8];
-			gcpu.r9_fiq = gcpu.registers[9];
-			gcpu.r10_fiq = gcpu.registers[10];
-			gcpu.r11_fiq = gcpu.registers[11];
-			gcpu.r12_fiq = gcpu.registers[12];
-			gcpu.r13_fiq = gcpu.registers[13];
-			gcpu.r14_fiq = gcpu.registers[14];
-			gcpu.spsr_fiq = gcpu.registers[16];
-		}
-		if (likely(bank != MODE_FIQ)) {
-			uint32_t *rp;
-			gcpu.registers[13] = *gcpu.regSet[bank].r13;
-			gcpu.registers[14] = *gcpu.regSet[bank].r14;
-			rp = gcpu.regSet[bank].spsr;
-			if (rp)
-				gcpu.registers[16] = *rp;
-		} else {
-			gcpu.registers[8] = gcpu.r8_fiq;
-			gcpu.registers[9] = gcpu.r9_fiq;
-			gcpu.registers[10] = gcpu.r10_fiq;
-			gcpu.registers[11] = gcpu.r11_fiq;
-			gcpu.registers[12] = gcpu.r12_fiq;
-			gcpu.registers[13] = gcpu.r13_fiq;
-			gcpu.registers[14] = gcpu.r14_fiq;
-			gcpu.registers[16] = gcpu.spsr_fiq;
-		}
-		gcpu.signaling_mode = gcpu.reg_bank = bank;
-	}
-	if (unlikely(new_cpsr & FLAG_I)) {
-		gcpu.signal_mask &= ~ARM_SIG_IRQ;
-	} else {
-		gcpu.signal_mask |= ARM_SIG_IRQ;
-	}
-	if (unlikely(new_cpsr & FLAG_F)) {
-		gcpu.signal_mask &= ~ARM_SIG_FIQ;
-	} else {
-		gcpu.signal_mask |= ARM_SIG_FIQ;
-	}
-	if (unlikely(diff_cpsr & FLAG_T)) {
-		ARM_PostRestartIdecoder();
-	}
-	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
 /* 
@@ -551,9 +588,7 @@ ARM9_InitRegs(ARM9 * arm)
 	fprintf(stderr, "- Register Pointers initialized\n");
 }
 
-CycleTimer htimer;
-
-void
+static void
 hello_proc(void *cd)
 {
 	struct timeval *tv_start;
@@ -643,61 +678,8 @@ ARM_ThrottleInit(ARM9 * arm)
 	CycleTimer_Add(&arm->throttle_timer, CycleTimerRate_Get() / 25, arm_throttle, arm);
 }
 
-/*
- * -----------------------------------------------------
- * Create a new ARM9 CPU
- * -----------------------------------------------------
- */
-ARM9 *
-ARM9_New()
-{
-	uint32_t cpu_clock = 200000000;
-	int i;
-	const char *instancename = "arm";
-	ARM9 *arm = &gcpu;
-	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
-	fprintf(stderr, "Creating ARM9 CPU with clock %d HZ\n", cpu_clock);
-	memset(arm, 0, sizeof(ARM9));
-	IDecoder_New();
-	ARM9_InitRegs(&gcpu);
-	InitInstructions();
-	ThumbDecoder_New();
-	SET_REG_CPSR(MODE_SVC | FLAG_F | FLAG_I);
-	CycleTimers_Init(instancename, cpu_clock);
-	CycleTimer_Add(&htimer, 285000000, hello_proc, NULL);
-	arm->irqNode = SigNode_New("%s.irq", instancename);
-	arm->fiqNode = SigNode_New("%s.fiq", instancename);
-	if (!arm->irqNode || !arm->fiqNode) {
-		fprintf(stderr, "Can not create interrupt nodes for ARM CPU\n");
-		exit(2);
-	}
-	arm->irqTrace = SigNode_Trace(arm->irqNode, irq_change, arm);
-	arm->irqTrace = SigNode_Trace(arm->fiqNode, fiq_change, arm);
-	arm->dbgops.getreg = debugger_getreg;
-	arm->dbgops.setreg = debugger_setreg;
-	arm->dbgops.stop = debugger_stop;
-	arm->dbgops.step = debugger_step;
-	arm->dbgops.cont = debugger_cont;
-	arm->dbgops.get_status = debugger_get_status;
-	arm->dbgops.getmem = debugger_getmem;
-	arm->dbgops.setmem = debugger_setmem;
-	arm->dbgops.get_bkpt_ins = debugger_get_bkpt_ins;
-	arm->debugger = Debugger_New(&arm->dbgops, arm);
-	gcpu.signal_mask |= ARM_SIG_RESTART_IDEC | ARM_SIG_DEBUGMODE;
-	ARM_ThrottleInit(arm);
-	for (i = 0; i < 16; i++) {
-		char regname[10];
-		uint32_t value;
-		sprintf(regname, "r%d", i);
-		if (Config_ReadUInt32(&value, instancename, regname) >= 0) {
-			ARM9_WriteReg(value, i);
-		}
-	}
-	return arm;
-}
-
-void
-dump_stack()
+static void
+dump_stack(void)
 {
 	int i;
 	uint32_t sp, value;
@@ -717,7 +699,7 @@ dump_stack()
 }
 
 __UNUSED__ static void
-dump_regs()
+dump_regs(void)
 {
 	int i;
 	for (i = 0; i < 16; i++) {
@@ -730,36 +712,6 @@ dump_regs()
 	}
 	dbgprintf("CPSR: %08x \n", REG_CPSR);
 	fflush(stderr);
-}
-
-/*
- *********************************************************
- * \fn ARM_Exception(int exception,int nia_offset); 
- * Generate an exception and call the handler.
- * \param exception 
- * ----------------------------------------------------
- */
-void
-ARM_Exception(ARM_ExceptionID exception, int nia_offset)
-{
-	uint32_t old_cpsr = REG_CPSR;
-	int new_mode = EX_TO_MODE(exception);
-	uint32_t new_pc = EX_TO_PC(exception);
-	uint32_t retaddr;
-
-	retaddr = ARM_NIA + nia_offset;
-
-	new_pc |= mmu_vector_base;
-	/* Save CPSR to SPSR in the bank of the new mode */
-	/* clear Thumb, set 0-4 to mode , disable IRQ */
-	SET_REG_CPSR((REG_CPSR & (0xffffffe0 & ~FLAG_T)) | new_mode | FLAG_I);
-	if (new_mode == MODE_FIQ) {
-		REG_CPSR = REG_CPSR | FLAG_F;
-	}
-	ARM9_WriteReg(old_cpsr, REG_NR_SPSR);
-	REG_LR = retaddr;
-	/* jump to exception vector address */
-	ARM_SET_NIA(new_pc);
 }
 
 static void
@@ -851,7 +803,7 @@ debug_print_instruction(uint32_t icode)
 }
 
 static void
-Thumb_Loop()
+Thumb_Loop(void)
 {
 	ThumbInstructionProc *iproc;
 	ThumbInstruction *instr;
@@ -870,14 +822,13 @@ Thumb_Loop()
 	}
 }
 
-#define VERBOSE 0
 /*
  * ---------------------------------------------
  * The main loop for 32Bit instruction set
  * ---------------------------------------------
  */
 static void
-ARM9_Loop32()
+ARM9_Loop32(void)
 {
 	InstructionProc *iproc;
 	/* Exceptions use goto (longjmp) */
@@ -918,8 +869,65 @@ ARM9_Loop32()
 	}
 }
 
-void
-ARM9_Run()
+/*
+ * -----------------------------------------------------
+ * Create a new ARM9 CPU
+ * -----------------------------------------------------
+ */
+static Device_MPU_t *
+create(void)
+{
+	uint32_t cpu_clock = 200000000;
+	int i;
+	const char *instancename = "arm";
+	ARM9 *arm = &gcpu;
+    Device_MPU_t *dev;
+    dev = malloc(sizeof(*dev));
+    dev->run = &run;
+    dev->data = arm;
+	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
+	fprintf(stderr, "Creating ARM9 CPU with clock %d HZ\n", cpu_clock);
+	memset(arm, 0, sizeof(ARM9));
+	IDecoder_New();
+	ARM9_InitRegs(&gcpu);
+	InitInstructions();
+	ThumbDecoder_New();
+	SET_REG_CPSR(MODE_SVC | FLAG_F | FLAG_I);
+	CycleTimers_Init(instancename, cpu_clock);
+	CycleTimer_Add(&htimer, 285000000, hello_proc, NULL);
+	arm->irqNode = SigNode_New("%s.irq", instancename);
+	arm->fiqNode = SigNode_New("%s.fiq", instancename);
+	if (!arm->irqNode || !arm->fiqNode) {
+		fprintf(stderr, "Can not create interrupt nodes for ARM CPU\n");
+		exit(2);
+	}
+	arm->irqTrace = SigNode_Trace(arm->irqNode, irq_change, arm);
+	arm->irqTrace = SigNode_Trace(arm->fiqNode, fiq_change, arm);
+	arm->dbgops.getreg = debugger_getreg;
+	arm->dbgops.setreg = debugger_setreg;
+	arm->dbgops.stop = debugger_stop;
+	arm->dbgops.step = debugger_step;
+	arm->dbgops.cont = debugger_cont;
+	arm->dbgops.get_status = debugger_get_status;
+	arm->dbgops.getmem = debugger_getmem;
+	arm->dbgops.setmem = debugger_setmem;
+	arm->dbgops.get_bkpt_ins = debugger_get_bkpt_ins;
+	arm->debugger = Debugger_New(&arm->dbgops, arm);
+	gcpu.signal_mask |= ARM_SIG_RESTART_IDEC | ARM_SIG_DEBUGMODE;
+	ARM_ThrottleInit(arm);
+	for (i = 0; i < 16; i++) {
+		char regname[10];
+		uint32_t value;
+		sprintf(regname, "r%d", i);
+		if (Config_ReadUInt32(&value, instancename, regname) >= 0) {
+			ARM9_WriteReg(value, i);
+		}
+	}
+	return dev;
+}
+
+static int
+run(Device_MPU_t *dev)
 {
 	uint32_t addr = 0;
 	uint32_t dbgwait;
@@ -957,4 +965,103 @@ ARM9_Run()
 			}
 		}
 	}
+	return 0;
+}
+
+
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+void
+ARM_set_reg_cpsr(uint32_t new_cpsr)
+{
+	uint32_t bank = new_cpsr & 0x1f;
+	uint32_t diff_cpsr = new_cpsr ^ gcpu.reg_cpsr;
+	gcpu.reg_cpsr = new_cpsr;
+	if (gcpu.reg_bank != bank) {
+		if (likely(gcpu.reg_bank != MODE_FIQ)) {
+			uint32_t *rp;
+			*gcpu.regSet[gcpu.reg_bank].r13 = gcpu.registers[13];
+			*gcpu.regSet[gcpu.reg_bank].r14 = gcpu.registers[14];
+			rp = gcpu.regSet[gcpu.reg_bank].spsr;
+			if (rp)
+				*rp = gcpu.registers[16];
+		} else {
+			gcpu.r8_fiq = gcpu.registers[8];
+			gcpu.r9_fiq = gcpu.registers[9];
+			gcpu.r10_fiq = gcpu.registers[10];
+			gcpu.r11_fiq = gcpu.registers[11];
+			gcpu.r12_fiq = gcpu.registers[12];
+			gcpu.r13_fiq = gcpu.registers[13];
+			gcpu.r14_fiq = gcpu.registers[14];
+			gcpu.spsr_fiq = gcpu.registers[16];
+		}
+		if (likely(bank != MODE_FIQ)) {
+			uint32_t *rp;
+			gcpu.registers[13] = *gcpu.regSet[bank].r13;
+			gcpu.registers[14] = *gcpu.regSet[bank].r14;
+			rp = gcpu.regSet[bank].spsr;
+			if (rp)
+				gcpu.registers[16] = *rp;
+		} else {
+			gcpu.registers[8] = gcpu.r8_fiq;
+			gcpu.registers[9] = gcpu.r9_fiq;
+			gcpu.registers[10] = gcpu.r10_fiq;
+			gcpu.registers[11] = gcpu.r11_fiq;
+			gcpu.registers[12] = gcpu.r12_fiq;
+			gcpu.registers[13] = gcpu.r13_fiq;
+			gcpu.registers[14] = gcpu.r14_fiq;
+			gcpu.registers[16] = gcpu.spsr_fiq;
+		}
+		gcpu.signaling_mode = gcpu.reg_bank = bank;
+	}
+	if (unlikely(new_cpsr & FLAG_I)) {
+		gcpu.signal_mask &= ~ARM_SIG_IRQ;
+	} else {
+		gcpu.signal_mask |= ARM_SIG_IRQ;
+	}
+	if (unlikely(new_cpsr & FLAG_F)) {
+		gcpu.signal_mask &= ~ARM_SIG_FIQ;
+	} else {
+		gcpu.signal_mask |= ARM_SIG_FIQ;
+	}
+	if (unlikely(diff_cpsr & FLAG_T)) {
+		ARM_PostRestartIdecoder();
+	}
+	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
+}
+
+/*
+ *********************************************************
+ * \fn ARM_Exception(int exception,int nia_offset); 
+ * Generate an exception and call the handler.
+ * \param exception 
+ * ----------------------------------------------------
+ */
+void
+ARM_Exception(ARM_ExceptionID exception, int nia_offset)
+{
+	uint32_t old_cpsr = REG_CPSR;
+	int new_mode = EX_TO_MODE(exception);
+	uint32_t new_pc = EX_TO_PC(exception);
+	uint32_t retaddr;
+
+	retaddr = ARM_NIA + nia_offset;
+
+	new_pc |= mmu_vector_base;
+	/* Save CPSR to SPSR in the bank of the new mode */
+	/* clear Thumb, set 0-4 to mode , disable IRQ */
+	SET_REG_CPSR((REG_CPSR & (0xffffffe0 & ~FLAG_T)) | new_mode | FLAG_I);
+	if (new_mode == MODE_FIQ) {
+		REG_CPSR = REG_CPSR | FLAG_F;
+	}
+	ARM9_WriteReg(old_cpsr, REG_NR_SPSR);
+	REG_LR = retaddr;
+	/* jump to exception vector address */
+	ARM_SET_NIA(new_pc);
+}
+
+INITIALIZER(init) {
+    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
+                       MPU_DEFAULTCONFIG);
 }

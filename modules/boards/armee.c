@@ -123,6 +123,10 @@ static const char *BOARD_DEFAULTCONFIG = "[global]\n"
 //==============================================================================
 //= Types
 //==============================================================================
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -182,9 +186,8 @@ static Device_Board_t *create(void) {
     BusDevice *dev;
     FbDisplay *display = NULL;
     Keyboard *keyboard = NULL;
-    Device_Board_t *board;
-    board = malloc(sizeof(*board));
-    board->run = &run;
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
 
     FbDisplay_New("lcd0", &display, &keyboard, NULL, NULL);
     if (!display) {
@@ -193,7 +196,7 @@ static Device_Board_t *create(void) {
     }
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    ARM9_New();
+    board->mpu = Device_CreateMPU("ARM9");
     /* Copro is created but not registered (1:1 translation is bootup default)
      */
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
@@ -236,12 +239,11 @@ static Device_Board_t *create(void) {
 
     create_signal_links();
     create_clock_links();
-    return board;
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    ARM9_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

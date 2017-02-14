@@ -228,9 +228,6 @@ ARM9_RegisterCoprocessor(ArmCoprocessor * copro, unsigned int nr)
 	}
 }
 
-ARM9 *ARM9_New();
-void ARM9_Run();
-
 static inline uint32_t
 Thumb_ReadReg(int nr)
 {
@@ -315,7 +312,7 @@ ARM9_WriteRegBank(uint32_t val, int nr, int bank)
 	uint32_t **regpp;
 	regpp = (&CPU_REGS[bank].r0 + nr);
 	if (*regpp == *(&CPU_REGS[gcpu.reg_bank].r0 + nr)) {
-		return ARM9_WriteReg(val, nr);
+		ARM9_WriteReg(val, nr);
 	} else {
 		**regpp = val;
 	}
@@ -327,35 +324,35 @@ ARM9_WriteRegBank(uint32_t val, int nr, int bank)
  * -------------------------------------
  */
 static inline void
-ARM_PostIrq()
+ARM_PostIrq(void)
 {
 	gcpu.signals_raw |= ARM_SIG_IRQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
 static inline void
-ARM_UnPostIrq()
+ARM_UnPostIrq(void)
 {
 	gcpu.signals_raw &= ~ARM_SIG_IRQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
 static inline void
-ARM_PostFiq()
+ARM_PostFiq(void)
 {
 	gcpu.signals_raw |= ARM_SIG_FIQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
 static inline void
-ARM_UnPostFiq()
+ARM_UnPostFiq(void)
 {
 	gcpu.signals_raw &= ~ARM_SIG_FIQ;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
 }
 
 static inline void
-ARM_PostRestartIdecoder()
+ARM_PostRestartIdecoder(void)
 {
 	gcpu.signals_raw |= ARM_SIG_RESTART_IDEC;
 	gcpu.signals = gcpu.signals_raw & gcpu.signal_mask;
@@ -373,7 +370,7 @@ ARM_SigDebugMode(bool value)
 }
 
 static inline void
-ARM_Break()
+ARM_Break(void)
 {
 	gcpu.dbg_state = DBG_STATE_BREAK;
 	ARM_SigDebugMode(true);
@@ -383,7 +380,7 @@ ARM_Break()
 void ARM_Exception(ARM_ExceptionID exception, int nia_offset);
 
 static inline void
-ARM_RestartIdecoder()
+ARM_RestartIdecoder(void)
 {
 	longjmp(gcpu.restart_idec_jump, 1);
 }
