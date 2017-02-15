@@ -44,7 +44,7 @@
 #include <signode.h>
 #include <cycletimer.h>
 #include <sgstring.h>
-#include <mcf5282_flexcan.h>
+#include "coldfire/mcf5282_flexcan.h"
 
 #define FC_MCB(base) 		((base) + 0x1c0000)
 #define FC_CANCTRL0(base)	((base) + 0x1c0006)

@@ -43,7 +43,7 @@
 #include <signode.h>
 #include <serial.h>
 #include <configfile.h>
-#include <mcf5282_uart.h>
+#include "coldfire/mcf5282_uart.h"
 #include <clock.h>
 #include <senseless.h>
 #include <sgstring.h>

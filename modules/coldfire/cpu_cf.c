@@ -1,3 +1,27 @@
+//===-- coldfire/cpu_cf.c -----------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Emulation of Coldfire CPU
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  *
@@ -33,19 +57,137 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
-#include <cpu_cf.h>
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+#include "coldfire/cpu_cf.h"
+
+// Local/Private Headers
+#include "coldfire/idecode_cf.h"
+#include "coldfire/instructions_cf.h"
+#include "coldfire/mem_cf.h"
+
+// Leigun Core Headers
+#include "configfile.h"
+#include "cycletimer.h"
+#include "initializer.h"
+#include "core/device.h"
+
+// External headers
+
+// System headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <idecode_cf.h>
-#include <instructions_cf.h>
-#include <cycletimer.h>
-#include <configfile.h>
-#include <mem_cf.h>
 
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *MPU_NAME = "coldfire";
+static const char *MPU_DESCRIPTION = "Coldfire CPU";
+static const char *MPU_DEFAULTCONFIG = "[global]\n"
+                                       "cpu_clock: 66000000\n"
+                                       "\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
 CFCpu g_CFCpu;
 
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static inline void CheckSignals(void);
+static void dump_instruction(void);
+
+static Device_MPU_t *create(void);
+static int run(Device_MPU_t *dev);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
+static inline void
+CheckSignals(void)
+{
+#if 0
+	if (g_CFCpu.signals) {
+		if (likely(g_CFCpu.signals & CF_SIG_IRQ)) {
+			CF_Exception();
+		}
+	}
+#endif
+}
+
+static void
+dump_instruction(void)
+{
+	Instruction *instr = CF_InstructionFind(ICODE);
+	fprintf(stderr, "%08x: %04x %s d0 %08x\n", CF_GetRegPC(), ICODE, instr->name,
+		CF_GetRegD(0));
+}
+
+static Device_MPU_t *
+create(void)
+{
+	int32_t cpu_clock = 66000000;
+	const char *instancename = "coldfire";
+    Device_MPU_t *dev = malloc(sizeof(*dev));
+    dev->run = &run;
+    dev->data = &g_CFCpu;
+	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
+	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
+	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");
+	CF_IDecoderNew();
+	cf_init_condition_tab();
+	CycleTimers_Init(instancename, cpu_clock);
+	fprintf(stderr, "Initialized Coldfire CPU with %d HZ\n", cpu_clock);
+	CF_SetRegPC(0);
+	CF_SetRegD(HWCONFIG_D0_MFC5282, 0);
+	CF_SetRegD(HWCONFIG_D1_MFC5282, 1);
+	CF_REG_CCR = 0x2700;	/* CFPRM 1.5.1 */
+	return dev;
+}
+
+static int
+run(Device_MPU_t *dev)
+{
+	InstructionProc *iproc;
+	uint32_t pc, sp;
+	sp = CF_MemRead32(0);
+	pc = CF_MemRead32(4);
+	CF_SetRegA(sp, 7);
+	CF_SetRegPC(pc);
+	fprintf(stderr, "Starting Coldfire CPU at 0x%08x\n", pc);
+	while (1) {
+		pc = CF_GetRegPC();
+		ICODE = CF_MemRead16(pc);
+		iproc = InststructionProcFind(ICODE);
+		dump_instruction();
+		CF_SetRegPC(pc + 2);
+		iproc();
+		CycleCounter += 2;	/* Should be moved to iprocs */
+		CycleTimers_Check();
+		CheckSignals();
+	}
+	return 0;
+}
+
+
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
 void
 CF_SetRegCR(uint32_t value, int reg)
 {
@@ -200,45 +342,6 @@ CF_GetRegCR(int reg)
 }
 
 void
-CF_CpuInit(void)
-{
-	int32_t cpu_clock = 66000000;
-	const char *instancename = "coldfire";
-	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
-	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
-	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");
-	CF_IDecoderNew();
-	cf_init_condition_tab();
-	CycleTimers_Init(instancename, cpu_clock);
-	fprintf(stderr, "Initialized Coldfire CPU with %d HZ\n", cpu_clock);
-	CF_SetRegPC(0);
-	CF_SetRegD(HWCONFIG_D0_MFC5282, 0);
-	CF_SetRegD(HWCONFIG_D1_MFC5282, 1);
-	CF_REG_CCR = 0x2700;	/* CFPRM 1.5.1 */
-
-}
-
-static inline void
-CheckSignals()
-{
-#if 0
-	if (g_CFCpu.signals) {
-		if (likely(g_CFCpu.signals & CF_SIG_IRQ)) {
-			CF_Exception();
-		}
-	}
-#endif
-}
-
-static void
-dump_instruction()
-{
-	Instruction *instr = CF_InstructionFind(ICODE);
-	fprintf(stderr, "%08x: %04x %s d0 %08x\n", CF_GetRegPC(), ICODE, instr->name,
-		CF_GetRegD(0));
-}
-
-void
 CF_Exception(uint32_t vecnum, uint8_t fault_status)
 {
 	uint32_t formvec = (4 << 28) | (vecnum << 18);
@@ -286,25 +389,9 @@ CF_Interrupt(uint32_t vecnum, uint8_t fault_status, int priority)
 	Push4(formvec);
 }
 
-void
-CF_CpuRun(void)
-{
-	InstructionProc *iproc;
-	uint32_t pc, sp;
-	sp = CF_MemRead32(0);
-	pc = CF_MemRead32(4);
-	CF_SetRegA(sp, 7);
-	CF_SetRegPC(pc);
-	fprintf(stderr, "Starting Coldfire CPU at 0x%08x\n", pc);
-	while (1) {
-		pc = CF_GetRegPC();
-		ICODE = CF_MemRead16(pc);
-		iproc = InststructionProcFind(ICODE);
-		dump_instruction();
-		CF_SetRegPC(pc + 2);
-		iproc();
-		CycleCounter += 2;	/* Should be moved to iprocs */
-		CycleTimers_Check();
-		CheckSignals();
-	}
+
+INITIALIZER(init) {
+    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
+                       MPU_DEFAULTCONFIG);
 }
+

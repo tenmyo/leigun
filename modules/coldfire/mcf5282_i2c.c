@@ -45,7 +45,7 @@
 #include <cycletimer.h>
 #include <clock.h>
 #include <sgstring.h>
-#include <mcf5282_i2c.h>
+#include "coldfire/mcf5282_i2c.h"
 #include "compiler_extensions.h"
 
 #define I2ADR(x) 	((x)+0x300)

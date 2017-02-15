@@ -35,7 +35,7 @@
 
 #include <bus.h>
 #include <sgstring.h>
-#include <mcf5282_scm.h>
+#include "coldfire/mcf5282_scm.h"
 
 #define SCM_IPSBAR(base) 	((base) + 0x00)
 #define SCM_RAMBAR(base)	((base) + 0x08)

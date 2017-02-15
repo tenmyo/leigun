@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <mem_cf.h>
+#include "coldfire/mem_cf.h"
 
 #define CR_REG_CACR	(2)
 #define CR_REG_ASID	(3)
@@ -311,6 +311,3 @@ Pop4(void)
 	CF_SetRegA(sp, 7);
 	return val;
 }
-
-void CF_CpuInit(void);
-void CF_CpuRun(void);

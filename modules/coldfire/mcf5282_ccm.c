@@ -44,7 +44,7 @@
 #include <cycletimer.h>
 #include <clock.h>
 #include <sgstring.h>
-#include <mcf5282_ccm.h>
+#include "coldfire/mcf5282_ccm.h"
 
 #define CCM_CCR(x) 	((x)+0x110004)
 #define CCM_LPCR(x) 	((x)+0x110006)

@@ -46,7 +46,7 @@
 #include <signode.h>
 #include <cycletimer.h>
 #include <sgstring.h>
-#include <mcf5282_fec.h>
+#include "coldfire/mcf5282_fec.h"
 
 #define FEC_EIR(base)		((base) + 0x1004)
 #define FEC_EIMR(base)		((base) + 0x1008)

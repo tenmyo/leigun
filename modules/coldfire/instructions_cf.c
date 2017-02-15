@@ -36,8 +36,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <cpu_cf.h>
-#include <mem_cf.h>
+#include "coldfire/cpu_cf.h"
+#include "coldfire/mem_cf.h"
 typedef enum {
 	Eat_Invalid = -1,
 	Eat_Addr,

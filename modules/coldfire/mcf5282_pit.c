@@ -46,7 +46,7 @@
 #include <clock.h>
 #include <cycletimer.h>
 #include <sgstring.h>
-#include <mcf5282_pit.h>
+#include "coldfire/mcf5282_pit.h"
 
 #define PIT_PSCR(base)	((base) + 0x0)
 #define		PSCR_PRE_MASK	(0xf<<8)

@@ -47,7 +47,7 @@
 #include <clock.h>
 #include <cycletimer.h>
 #include <sgstring.h>
-#include <mcf5282_dtim.h>
+#include "coldfire/mcf5282_dtim.h"
 
 typedef struct DTim {
 	BusDevice bdev;
