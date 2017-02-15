@@ -27,7 +27,6 @@
 // Main Module Header
 
 // Local/Private Headers
-#include "mcs51/cpu_mcs51.h"
 
 // Leigun Core Headers
 #include "core/device.h"
@@ -36,6 +35,7 @@
 // External headers
 
 // System headers
+#include <stdlib.h> // for malloc
 
 
 //==============================================================================
@@ -51,6 +51,10 @@ static const char *BOARD_DEFAULTCONFIG = "[global]\n"
 //==============================================================================
 //= Types
 //==============================================================================
+typedef struct board_s {
+    Device_Board_t board;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -69,16 +73,14 @@ static int run(Device_Board_t *board);
 //= Function definitions(static)
 //==============================================================================
 static Device_Board_t *create(void) {
-    Device_Board_t *board;
-    board = malloc(sizeof(*board));
-    board->run = &run;
-    MCS51_Init("mcs51");
-    return board;
+    board_t *board = malloc(sizeof(*board));
+    board->board.run = &run;
+    board->mpu = Device_CreateMPU("MCS51");
+    return &board->board;
 }
 
 static int run(Device_Board_t *board) {
-    MCS51_Run();
-    return 0;
+    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

@@ -1,24 +1,63 @@
-/**
- ********************************************************************************
- * 8051 CPU core
- ********************************************************************************
- */
-#include "cpu_mcs51.h"
-#include "sgstring.h"
-#include "instructions_mcs51.h"
-#include "idecode_mcs51.h"
-#include "signode.h"
-#include "diskimage.h"
-#include "cycletimer.h"
+//===-- mcs51/cpu_mcs51.c -----------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Intel 8051 CPU core
+///
+//===----------------------------------------------------------------------===//
+
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+#include "mcs51/cpu_mcs51.h"
+
+// Local/Private Headers
+#include "mcs51/instructions_mcs51.h"
+#include "mcs51/idecode_mcs51.h"
+
+// Leigun Core Headers
 #include "configfile.h"
+#include "cycletimer.h"
+#include "diskimage.h"
+#include "initializer.h"
 #include "loader.h"
+#include "sgstring.h"
+#include "signode.h"
+#include "core/device.h"
 
-#if 0
-#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
-#else
-#define dbgprintf(...)
-#endif
+// External headers
 
+// System headers
+
+
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *MPU_NAME = "MCS51";
+static const char *MPU_DESCRIPTION = "Intel 8051 CPU core";
+static const char *MPU_DEFAULTCONFIG = "[global]\n"
+                                       "cpu_clock: 1000000\n"
+                                       "cycle_mult: 12\n"
+                                       "imagedir: .\n"
+                                       "start_address: 0\n"
+                                       "\n";
 /*
  *****************************************************
  * CPU core SFRs:
@@ -31,26 +70,53 @@
 #define SFR_REG_DPL	(0x82)
 #define SFR_REG_DPH	(0x83)
 
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
 MCS51Cpu g_mcs51;
 
-void
-MCS51_RegisterSFR(uint8_t byte_addr, C51_SfrReadProc * readProc, C51_SfrReadProc * latchedRead,
-		  C51_SfrWriteProc * writeProc, void *cbData)
-{
-	if (byte_addr < 128) {
-		fprintf(stderr, "Registering illegal SFR register 0x%02x\n", byte_addr);
-		exit(1);
-	} else {
-		g_mcs51.sfrDev[byte_addr & 0x7f] = cbData;
-		g_mcs51.sfrRead[byte_addr & 0x7f] = readProc;
-		g_mcs51.sfrLatchedRead[byte_addr & 0x7f] = latchedRead;
-		g_mcs51.sfrWrite[byte_addr & 0x7f] = writeProc;
-	}
-	return;
-}
 
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+#if 0
+#define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }
+#else
+#define dbgprintf(...)
+#endif
+static void MCS51_UpdateIPL(void);
+static inline void MCS51_PushIpl(void);
+static void MCS51_Interrupt(void);
+static inline void CheckSignals(void);
+static int load_to_bus(void *clientData, uint32_t addr, uint8_t * buf, unsigned int count, int flags);
+static uint8_t acc_read(void *eventData, uint8_t addr);
+static void acc_write(void *eventData, uint8_t addr, uint8_t value);
+static uint8_t b_read(void *eventData, uint8_t addr);
+static void b_write(void *eventData, uint8_t addr, uint8_t value);
+static uint8_t psw_read(void *eventData, uint8_t addr);
+static void psw_write(void *eventData, uint8_t addr, uint8_t value);
+static uint8_t sp_read(void *eventData, uint8_t addr);
+static void sp_write(void *eventData, uint8_t addr, uint8_t value);
+static uint8_t dpl_read(void *eventData, uint8_t addr);
+static void dpl_write(void *eventData, uint8_t addr, uint8_t value);
+static uint8_t dph_read(void *eventData, uint8_t addr);
+static void dph_write(void *eventData, uint8_t addr, uint8_t value);
+
+static Device_MPU_t *create(void);
+static int run(Device_MPU_t *dev);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 static void
-MCS51_UpdateIPL()
+MCS51_UpdateIPL(void)
 {
 	if (g_mcs51.maxPendingIpl > g_mcs51.currentIpl) {
 		dbgprintf("Post signal IRQ, maxpending %d, currentIpl %d\n", g_mcs51.maxPendingIpl,
@@ -78,26 +144,6 @@ MCS51_PushIpl(void)
 		mcs51->iplStackP++;
 	} else {
 		fprintf(stderr, "Bug: IPL stack overflow\n");
-	}
-}
-
-/**
- ************************************************************************
- * Pop one IPL from the IPL stack. Used  by RETI instruction to return to
- * the old ipl.
- ************************************************************************
- */
-void
-MCS51_PopIpl(void)
-{
-	MCS51Cpu *mcs51 = &g_mcs51;
-	if (mcs51->iplStackP > 0) {
-		mcs51->iplStackP--;
-		mcs51->currentIpl = mcs51->iplStack[mcs51->iplStackP];
-		dbgprintf("Poped IPL %d\n", mcs51->currentIpl);
-		MCS51_UpdateIPL();
-	} else {
-		fprintf(stderr, "Warning: Unbalanced Pop IPL\n");
 	}
 }
 
@@ -132,40 +178,6 @@ CheckSignals(void)
 {
 	if (g_mcs51.signals & MCS51_SIG_IRQ) {
 		MCS51_Interrupt();
-	}
-}
-
-void
-MCS51_PostILvl(int ilvl, uint16_t vectAddr)
-{
-	g_mcs51.maxPendingIpl = ilvl;
-	g_mcs51.pendingVectAddr = vectAddr;
-	MCS51_UpdateIPL();
-}
-
-void
-MCS51_Run()
-{
-	uint32_t addr = 0;
-	MCS51_Instruction *instr;
-	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
-		addr = 0;
-	}
-	SET_REG_PC(addr);
-
-	while (1) {
-		ICODE = MCS51_ReadPgmMem(GET_REG_PC);
-		//logPC();
-		//fprintf(stderr,"ICODE %02x at %04x\n",icode,GET_REG_PC);
-		//usleep(10000);
-		//fprintf(stderr,"Instr: %s at %08x\n",MCS51_InstructionFind(icode)->name,GET_REG_PC);
-		SET_REG_PC(GET_REG_PC + 1);
-		instr = MCS51_InstructionFind(ICODE);
-		instr->iproc();
-		/* meassurement gave 422566543/268435456*12 = 18.890 */
-		CycleCounter += instr->cycles;
-		CycleTimers_Check();
-		CheckSignals();
 	}
 }
 
@@ -286,54 +298,22 @@ dph_write(void *eventData, uint8_t addr, uint8_t value)
 	MCS51_SetRegDptr((MCS51_GetRegDptr() & 0xff) | ((uint16_t) value << 8));
 }
 
-void
-MCS51_MapExmem(MCS51Cpu * mcs51, uint16_t addr, uint32_t size,
-	       Exmem_ReadProc * rProc, Exmem_WriteProc * wProc, void *dev)
-{
-	uint32_t i;
-	uint32_t entry;
-	if (addr & (EXMEM_MAP_ENTRY_SIZE - 1)) {
-		fprintf(stderr, "Unaligned EXMem address: %u\n", EXMEM_MAP_ENTRY_SIZE);
-		exit(1);
-	}
-	if (size & (EXMEM_MAP_ENTRY_SIZE - 1)) {
-		fprintf(stderr, "Unaligned EXMem size: %u\n", EXMEM_MAP_ENTRY_SIZE);
-		exit(1);
-	}
-	for (i = 0; i < size; i += EXMEM_MAP_ENTRY_SIZE) {
-		entry = (addr + i) / EXMEM_MAP_ENTRY_SIZE;
-		mcs51->exmemWriteProc[entry] = wProc;
-		mcs51->exmemReadProc[entry] = rProc;
-		mcs51->exmemDev[entry] = dev;
-		//      fprintf(stderr,"MAPPED EXMEM entry %u\n",entry);
-	}
-}
-
-void
-MCS51_UnmapExmem(MCS51Cpu * mcs51, uint16_t addr, uint32_t size)
-{
-	uint32_t i;
-	uint32_t entry;
-	for (i = 0; i < size; i += EXMEM_MAP_ENTRY_SIZE) {
-		entry = (addr + i) / EXMEM_MAP_ENTRY_SIZE;
-		mcs51->exmemWriteProc[entry] = NULL;
-		mcs51->exmemReadProc[entry] = NULL;
-		mcs51->exmemDev[entry] = NULL;
-	}
-}
-
 /**
  ****************************************************************************
  * \fn void MCS51_Init(const char *instancename)
  ****************************************************************************
  */
-MCS51Cpu *
-MCS51_Init(const char *instancename)
+static Device_MPU_t *
+create(void)
 {
 	MCS51Cpu *mcs51 = &g_mcs51;
 	char *imagedir, *flashname;
 	uint32_t cpu_clock = 1000000;
+	const char *instancename = "mcs51";
 	uint32_t cycle_mult = 12;
+    Device_MPU_t *dev = malloc(sizeof(*dev));
+    dev->run = &run;
+    dev->data = mcs51;
 	MCS51_SetPSW(0);
 	SET_REG_PC(0);
 	Config_ReadUInt32(&cycle_mult,instancename, "cycle_mult");
@@ -380,5 +360,124 @@ MCS51_Init(const char *instancename)
 	Clock_MakeDerived(mcs51->clock6, mcs51->clock1, 1, 6);
 	Clock_MakeDerived(mcs51->clock12, mcs51->clock1, 1, 12);
 
-	return mcs51;
+	return dev;
 }
+
+
+static int
+run(Device_MPU_t *dev)
+{
+	uint32_t addr = 0;
+	MCS51_Instruction *instr;
+	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
+		addr = 0;
+	}
+	SET_REG_PC(addr);
+
+	while (1) {
+		ICODE = MCS51_ReadPgmMem(GET_REG_PC);
+		//logPC();
+		//fprintf(stderr,"ICODE %02x at %04x\n",icode,GET_REG_PC);
+		//usleep(10000);
+		//fprintf(stderr,"Instr: %s at %08x\n",MCS51_InstructionFind(icode)->name,GET_REG_PC);
+		SET_REG_PC(GET_REG_PC + 1);
+		instr = MCS51_InstructionFind(ICODE);
+		instr->iproc();
+		/* meassurement gave 422566543/268435456*12 = 18.890 */
+		CycleCounter += instr->cycles;
+		CycleTimers_Check();
+		CheckSignals();
+	}
+    return 0;
+}
+
+
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+void
+MCS51_RegisterSFR(uint8_t byte_addr, C51_SfrReadProc * readProc, C51_SfrReadProc * latchedRead,
+		  C51_SfrWriteProc * writeProc, void *cbData)
+{
+	if (byte_addr < 128) {
+		fprintf(stderr, "Registering illegal SFR register 0x%02x\n", byte_addr);
+		exit(1);
+	} else {
+		g_mcs51.sfrDev[byte_addr & 0x7f] = cbData;
+		g_mcs51.sfrRead[byte_addr & 0x7f] = readProc;
+		g_mcs51.sfrLatchedRead[byte_addr & 0x7f] = latchedRead;
+		g_mcs51.sfrWrite[byte_addr & 0x7f] = writeProc;
+	}
+	return;
+}
+
+/**
+ ************************************************************************
+ * Pop one IPL from the IPL stack. Used  by RETI instruction to return to
+ * the old ipl.
+ ************************************************************************
+ */
+void
+MCS51_PopIpl(void)
+{
+	MCS51Cpu *mcs51 = &g_mcs51;
+	if (mcs51->iplStackP > 0) {
+		mcs51->iplStackP--;
+		mcs51->currentIpl = mcs51->iplStack[mcs51->iplStackP];
+		dbgprintf("Poped IPL %d\n", mcs51->currentIpl);
+		MCS51_UpdateIPL();
+	} else {
+		fprintf(stderr, "Warning: Unbalanced Pop IPL\n");
+	}
+}
+
+void
+MCS51_PostILvl(int ilvl, uint16_t vectAddr)
+{
+	g_mcs51.maxPendingIpl = ilvl;
+	g_mcs51.pendingVectAddr = vectAddr;
+	MCS51_UpdateIPL();
+}
+
+
+void
+MCS51_MapExmem(MCS51Cpu * mcs51, uint16_t addr, uint32_t size,
+	       Exmem_ReadProc * rProc, Exmem_WriteProc * wProc, void *dev)
+{
+	uint32_t i;
+	uint32_t entry;
+	if (addr & (EXMEM_MAP_ENTRY_SIZE - 1)) {
+		fprintf(stderr, "Unaligned EXMem address: %u\n", EXMEM_MAP_ENTRY_SIZE);
+		exit(1);
+	}
+	if (size & (EXMEM_MAP_ENTRY_SIZE - 1)) {
+		fprintf(stderr, "Unaligned EXMem size: %u\n", EXMEM_MAP_ENTRY_SIZE);
+		exit(1);
+	}
+	for (i = 0; i < size; i += EXMEM_MAP_ENTRY_SIZE) {
+		entry = (addr + i) / EXMEM_MAP_ENTRY_SIZE;
+		mcs51->exmemWriteProc[entry] = wProc;
+		mcs51->exmemReadProc[entry] = rProc;
+		mcs51->exmemDev[entry] = dev;
+		//      fprintf(stderr,"MAPPED EXMEM entry %u\n",entry);
+	}
+}
+
+void
+MCS51_UnmapExmem(MCS51Cpu * mcs51, uint16_t addr, uint32_t size)
+{
+	uint32_t i;
+	uint32_t entry;
+	for (i = 0; i < size; i += EXMEM_MAP_ENTRY_SIZE) {
+		entry = (addr + i) / EXMEM_MAP_ENTRY_SIZE;
+		mcs51->exmemWriteProc[entry] = NULL;
+		mcs51->exmemReadProc[entry] = NULL;
+		mcs51->exmemDev[entry] = NULL;
+	}
+}
+
+INITIALIZER(init) {
+    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
+                       MPU_DEFAULTCONFIG);
+}
+
