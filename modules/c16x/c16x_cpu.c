@@ -1,3 +1,27 @@
+//===-- c16x/c16x_cpu.c -------------------------------------------*- C -*-===//
+//
+//              The Leigun Embedded System Simulator Platform : modules
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+///
+/// @file
+/// Emulation of the Infineon C16x CPU 
+///
+//===----------------------------------------------------------------------===//
+
+// clang-format off
 /*
  *************************************************************************************************
  *
@@ -34,23 +58,102 @@
  *
  *************************************************************************************************
  */
+// clang-format on
 
+//==============================================================================
+//= Dependencies
+//==============================================================================
+// Main Module Header
+#include "c16x/c16x_cpu.h"
+#include "c16x/idecode_c16x.h"
+#include "c16x/instructions_c16x.h"
+
+// Local/Private Headers
+
+// Leigun Core Headers
+#include "configfile.h"
+#include "cycletimer.h"
+#include "initializer.h"
+#include "core/device.h"
+
+// External headers
+
+// System headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "cycletimer.h"
-#include "instructions_c16x.h"
-#include "idecode_c16x.h"
-#include "c16x/c16x_cpu.h"
-#include "configfile.h"
 
+
+//==============================================================================
+//= Constants(also Enumerations)
+//==============================================================================
+static const char *MPU_NAME = "C16x";
+static const char *MPU_DESCRIPTION = "the Infineon C16x CPU ";
+static const char *MPU_DEFAULTCONFIG = "[global]\n"
+                                       "start_address: 0\n"
+                                       "\n";
+
+
+//==============================================================================
+//= Types
+//==============================================================================
+
+
+//==============================================================================
+//= Variables
+//==============================================================================
 C16x gc16x;
 
 uint16_t c16x_signals_raw = 0;
 uint16_t c16x_signal_mask = 0;
 uint16_t c16x_signals = 0;
 
+
+//==============================================================================
+//= Function declarations(static)
+//==============================================================================
+static void C16x_Reset(C16x * c16x);
+static uint32_t c16x_sfr_read(void *clientData, uint32_t address, int rqlen);
+static void c16x_sfr_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t c16x_esfr_read(void *clientData, uint32_t address, int rqlen);
+static void c16x_esfr_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static inline void modify_masked(uint16_t * reg, uint32_t value, uint32_t address, int rqlen);
+static inline uint32_t read_masked(uint16_t * reg, uint32_t address, int rqlen);
+static uint32_t dpp_read(void *clientData, uint32_t address, int rqlen);
+static void dpp_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t cp_read(void *clientData, uint32_t address, int rqlen);
+static void cp_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t psw_read(void *clientData, uint32_t address, int rqlen);
+static void psw_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t sp_read(void *clientData, uint32_t address, int rqlen);
+static void sp_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t csp_read(void *clientData, uint32_t address, int rqlen);
+static void csp_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t mdl_read(void *clientData, uint32_t address, int rqlen);
+static void mdl_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t mdh_read(void *clientData, uint32_t address, int rqlen);
+static void mdh_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t syscon_read(void *clientData, uint32_t address, int rqlen);
+static void syscon_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t stkun_read(void *clientData, uint32_t address, int rqlen);
+static void stkun_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t stkov_read(void *clientData, uint32_t address, int rqlen);
+static void stkov_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static uint32_t wdtcon_read(void *clientData, uint32_t address, int rqlen);
+static void wdtcon_write(void *clientData, uint32_t value, uint32_t address, int rqlen);
+static inline C16x_Instruction *ifetch_and_decode(uint8_t * icodeP);
+static void c16x_update_interrupts(void);
+static inline void CheckSignals(void);
+static void C16x_PostIPL(int ipl);
+
+static Device_MPU_t *create(void);
+static int run(Device_MPU_t *dev);
+
+
+//==============================================================================
+//= Function definitions(static)
+//==============================================================================
 static void
 C16x_Reset(C16x * c16x)
 {
@@ -311,15 +414,65 @@ wdtcon_write(void *clientData, uint32_t value, uint32_t address, int rqlen)
 }
 
 /*
+ * ----------------------------------------
+ * Fetch an instruction from IP/CSP
+ * and decode it
+ * ----------------------------------------
+ */
+static inline C16x_Instruction *
+ifetch_and_decode(uint8_t * icodeP)
+{
+	C16x_Instruction *instr;
+	uint32_t addr = REG_IP | (REG_CSP << 16);
+	uint16_t ip = addr & 0xffff;
+	uint16_t seg = addr >> 16;
+	icodeP[0] = Bus_Read8(addr);
+	icodeP[1] = Bus_Read8(((ip + 1) & 0xffff) | (seg << 16));
+	instr = C16x_FindInstruction(icodeP[0]);
+	if (instr->len == 4) {
+		icodeP[2] = Bus_Read8(((ip + 2) & 0xffff) | (seg << 16));
+		icodeP[3] = Bus_Read8(((ip + 3) & 0xffff) | (seg << 16));
+	}
+	return instr;
+}
+
+static void
+c16x_update_interrupts(void)
+{
+
+}
+
+static inline void
+CheckSignals(void)
+{
+}
+
+/*
+ *
+ */
+static void
+C16x_PostIPL(int ipl)
+{
+	C16x *c16x = &gc16x;
+	if (ipl > c16x->ipl) {
+
+	}
+//      cpu->posted_ipl = ipl;
+}
+
+/*
  * -------------------------------------------
  * User Manual Chapter 22 System reset
  * -------------------------------------------
  */
-C16x *
-C16x_New()
+static Device_MPU_t *
+create(void)
 {
 	C16x *c16x = &gc16x;
 	memset(c16x, 0, sizeof(C16x));
+    Device_MPU_t *dev = malloc(sizeof(*dev));
+    dev->run = &run;
+    dev->data = c16x;
 	//REG_SFR(SFR_ONES) = 0xffff; 
 	C16x_IDecoderNew();
 	C16x_InitInstructions();
@@ -344,54 +497,7 @@ C16x_New()
 
 	C16x_Reset(c16x);
 	C16x_MemRead16(0xff80);
-	return c16x;
-}
-
-/*
- * ----------------------------------------
- * Fetch an instruction from IP/CSP
- * and decode it
- * ----------------------------------------
- */
-static inline C16x_Instruction *
-ifetch_and_decode(uint8_t * icodeP)
-{
-	C16x_Instruction *instr;
-	uint32_t addr = REG_IP | (REG_CSP << 16);
-	uint16_t ip = addr & 0xffff;
-	uint16_t seg = addr >> 16;
-	icodeP[0] = Bus_Read8(addr);
-	icodeP[1] = Bus_Read8(((ip + 1) & 0xffff) | (seg << 16));
-	instr = C16x_FindInstruction(icodeP[0]);
-	if (instr->len == 4) {
-		icodeP[2] = Bus_Read8(((ip + 2) & 0xffff) | (seg << 16));
-		icodeP[3] = Bus_Read8(((ip + 3) & 0xffff) | (seg << 16));
-	}
-	return instr;
-}
-
-void
-c16x_update_interrupts()
-{
-
-}
-
-static inline void
-CheckSignals()
-{
-}
-
-/*
- *
- */
-void
-C16x_PostIPL(int ipl)
-{
-	C16x *c16x = &gc16x;
-	if (ipl > c16x->ipl) {
-
-	}
-//      cpu->posted_ipl = ipl;
+	return dev;
 }
 
 /*
@@ -399,8 +505,8 @@ C16x_PostIPL(int ipl)
  * The CPU main loop
  * --------------------------------------
  */
-void
-C16x_Run()
+static int
+run(Device_MPU_t *dev)
 {
 	uint32_t start_address;
 	uint8_t icodeP[4];
@@ -427,12 +533,14 @@ C16x_Run()
 			CheckSignals();
 		}
 	}
+	return 0;
 }
 
-#if 0
-void
-_init()
-{
-	fprintf(stderr, "Infineon C16x emulation module loaded\n");
+
+//==============================================================================
+//= Function definitions(global)
+//==============================================================================
+INITIALIZER(init) {
+    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
+                       MPU_DEFAULTCONFIG);
 }
-#endif

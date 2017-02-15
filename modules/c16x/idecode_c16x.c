@@ -1,5 +1,5 @@
-#include <instructions_c16x.h>
-#include <idecode_c16x.h>
+#include "c16x/instructions_c16x.h"
+#include "c16x/idecode_c16x.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
