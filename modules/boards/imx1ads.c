@@ -125,7 +125,6 @@ typedef struct board_s {
 //==============================================================================
 static void create_signal_links(void);
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -207,7 +206,6 @@ static Device_Board_t *create(void) {
     ArmCoprocessor *copro;
     BusDevice *dev;
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
     board->mpu = Device_CreateMPU("ARM9");
@@ -251,10 +249,6 @@ static Device_Board_t *create(void) {
 
     create_signal_links();
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

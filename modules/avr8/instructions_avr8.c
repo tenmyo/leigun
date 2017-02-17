@@ -270,6 +270,7 @@ avr8_adc(void)
 	R = Rd + Rr + C;
 	AVR8_WriteReg(R, rd);
 	add8_flags(Rd, Rr, R);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -292,6 +293,7 @@ avr8_add(void)
 	R = Rd + Rr;
 	AVR8_WriteReg(R, rd);
 	add8_flags(Rd, Rr, R);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -320,6 +322,7 @@ avr8_adiw(void)
 	}
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -347,6 +350,7 @@ avr8_and(void)
 	sreg |= flg_zero(R);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -372,6 +376,7 @@ avr8_andi(void)
 	sreg |= flg_zero(R);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -399,6 +404,7 @@ avr8_asr(void)
 	sreg |= ((sreg << 1) ^ (sreg << 3)) & FLG_V;
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -419,6 +425,7 @@ avr8_bclr(void)
 	if (s == 7) {
 		AVR8_UpdateCpuSignals();
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -443,6 +450,7 @@ avr8_bld(void)
 		Rd &= ~(1 << b);
 	}
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -463,8 +471,10 @@ avr8_brbc(void)
 	/* Sign extend from signed 7 to signed 8 Bit */
 	if (!(sreg & (1 << s))) {
 		SET_REG_PC(GET_REG_PC + k);
+		GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 		CycleCounter += 2;
 	} else {
+		GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 		CycleCounter += 1;
 	}
 }
@@ -486,8 +496,10 @@ avr8_brbs(void)
 	/* Sign extend from signed 7 to signed 8 Bit */
 	if ((sreg & (1 << s))) {
 		SET_REG_PC(GET_REG_PC + k);
+		GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 		CycleCounter += 2;
 	} else {
+		GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 		CycleCounter += 1;
 	}
 }
@@ -496,6 +508,7 @@ void
 avr8_break(void)
 {
 	fprintf(stderr, "avr8_break not implemented\n");
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 	AVR8_Break();
 }
@@ -528,6 +541,7 @@ avr8_bset(void)
 		sreg |= (1 << s);
 		SET_SREG(sreg);
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -553,6 +567,7 @@ avr8_bst(void)
 		sreg &= ~FLG_T;
 	}
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -579,6 +594,7 @@ avr8_call(void)
 	AVR8_WriteMem8((nia >> 8) & 0xff, sp--);
 	SET_REG_SP(sp);
 	SET_REG_PC(k);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 }
 
@@ -596,10 +612,12 @@ avr8_call_24(void)
 	AVR8_WriteMem8(nia & 0xff, sp--);
 	AVR8_WriteMem8((nia >> 8) & 0xff, sp--);
 	AVR8_WriteMem8((nia >> 16) & 0xff, sp--);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 	SET_REG_SP(sp);
 //      fprintf(stderr,"Call %04x at %04x\n",k << 1,GET_REG_PC << 1);
 	SET_REG_PC(k);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 }
 
@@ -619,6 +637,7 @@ avr8_cbi(void)
 	uint8_t ioval = AVR8_ReadIO8(A);
 	ioval &= ~(1 << b);
 	AVR8_WriteIO8(ioval, A);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -643,6 +662,7 @@ avr8_com(void)
 	sreg |= flg_zero(Rd);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -665,6 +685,7 @@ avr8_cp(void)
 	R = Rd - Rr;
 	sub8_flags(Rd, Rr, R);
 	SET_SREG((GET_SREG & ~FLG_Z) | flg_zero(R));
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -692,6 +713,7 @@ avr8_cpc(void)
 	if (R != 0) {
 		SET_SREG(GET_SREG & ~FLG_Z);
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -713,6 +735,7 @@ avr8_cpi(void)
 	R = Rd - K;
 	sub8_flags(Rd, K, R);
 	SET_SREG((GET_SREG & ~FLG_Z) | flg_zero(R));
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -733,6 +756,7 @@ avr8_cpse(void)
 	if (Rd == Rr) {
 		AVR8_SkipInstruction();
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -761,6 +785,7 @@ avr8_dec(void)
 	sreg |= flg_zero(R);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -788,6 +813,7 @@ avr8_eicall(void)
 	AVR8_WriteMem8((pc >> 16) & 0xff, sp--);
 	SET_REG_SP(sp);
 	SET_REG_PC(addr);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 }
 
@@ -808,6 +834,7 @@ avr8_eijmp(void)
 	eind = AVR8_ReadMem8(IOA_EIND);
 	addr = (eind << 16) | z;
 	SET_REG_PC(addr);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -856,6 +883,7 @@ avr8_elpm2(void)
 	addr = (rampz << 16) | z;
 	R = AVR8_ReadAppMem8(addr);
 	AVR8_WriteReg(R, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -886,6 +914,7 @@ avr8_elpm3(void)
 	z = addr & 0xffff;
 	RAMPZ = rampz;
 	AVR8_WriteReg16(z, NR_REG_Z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -914,6 +943,7 @@ avr8_eor(void)
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
 	AVR8_WriteReg(R, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -946,6 +976,7 @@ avr8_fmul(void)
 	SET_SREG(sreg);
 	AVR8_WriteReg(R >> 8, 1);
 	AVR8_WriteReg(R & 0xff, 0);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -979,6 +1010,7 @@ avr8_fmuls(void)
 	SET_SREG(sreg);
 	AVR8_WriteReg(R >> 8, 1);
 	AVR8_WriteReg(R & 0xff, 0);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1011,6 +1043,7 @@ avr8_fmulsu(void)
 	SET_SREG(sreg);
 	AVR8_WriteReg(R >> 8, 1);
 	AVR8_WriteReg(R & 0xff, 0);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1033,6 +1066,7 @@ avr8_icall(void)
 	AVR8_WriteMem8((pc >> 8) & 0xff, sp--);
 	SET_REG_SP(sp);
 	SET_REG_PC(z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1046,9 +1080,11 @@ avr8_icall_24(void)
 	AVR8_WriteMem8(pc & 0xff, sp--);
 	AVR8_WriteMem8((pc >> 8) & 0xff, sp--);
 	AVR8_WriteMem8((pc >> 16) & 0xff, sp--);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 	SET_REG_SP(sp);
 	SET_REG_PC(z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 }
 
@@ -1066,6 +1102,7 @@ avr8_ijmp(void)
 	uint16_t z;
 	z = AVR8_ReadReg16(NR_REG_Z);
 	SET_REG_PC(z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1084,6 +1121,7 @@ avr8_in(void)
 	int rd = (icode >> 4) & 0x1f;
 	uint8_t in = AVR8_ReadIO8(a);
 	AVR8_WriteReg(in, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1113,6 +1151,7 @@ avr8_inc(void)
 	sreg |= flg_zero(result);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1129,6 +1168,7 @@ avr8_jmp(void)
 {
 	uint16_t k = AVR8_ReadAppMem(GET_REG_PC);
 	SET_REG_PC(k);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1140,6 +1180,7 @@ avr8_jmp_24(void)
 	uint32_t k;
 	k = icode2 | (((icode1 & 1) | ((icode1 >> 3) & 0x3e)) << 16);
 	SET_REG_PC(k);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1161,6 +1202,7 @@ avr8_ld1(void)
 	uint16_t x = AVR8_ReadReg16(NR_REG_X);
 	Rd = AVR8_ReadMem8(x);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1184,6 +1226,7 @@ avr8_ld2(void)
 	AVR8_WriteReg(Rd, rd);
 	x++;
 	AVR8_WriteReg16(x, NR_REG_X);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1205,6 +1248,7 @@ avr8_ld3(void)
 	AVR8_WriteReg16(x, NR_REG_X);
 	Rd = AVR8_ReadMem8(x);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1227,6 +1271,7 @@ avr8_ldy2(void)
 	AVR8_WriteReg(Rd, rd);
 	y++;
 	AVR8_WriteReg16(y, NR_REG_Y);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1250,6 +1295,7 @@ avr8_ldy3(void)
 	AVR8_WriteReg16(y, NR_REG_Y);
 	Rd = AVR8_ReadMem8(y);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1274,6 +1320,7 @@ avr8_ldy4(void)
 	addr = (y + q) & 0xffff;
 	Rd = AVR8_ReadMem8(addr);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1296,6 +1343,7 @@ avr8_ldz2(void)
 	AVR8_WriteReg(Rd, rd);
 	z = z + 1;
 	AVR8_WriteReg16(z, NR_REG_Z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1318,6 +1366,7 @@ avr8_ldz3(void)
 	AVR8_WriteReg16(z, NR_REG_Z);
 	Rd = AVR8_ReadMem8(z);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1342,6 +1391,7 @@ avr8_ldz4(void)
 	addr = (z + q) & 0xffff;
 	Rd = AVR8_ReadMem8(addr);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1359,6 +1409,7 @@ avr8_ldi(void)
 	uint8_t K = (icode & 0xf) | ((icode >> 4) & 0xf0);
 	int rd = ((icode >> 4) & 0xf) | 0x10;
 	AVR8_WriteReg(K, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1381,6 +1432,7 @@ avr8_lds(void)
 	SET_REG_PC(GET_REG_PC + 1);
 	Rd = AVR8_ReadMem8(addr);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1399,6 +1451,7 @@ avr8_lpm1(void)
 	addr = AVR8_ReadReg16(NR_REG_Z);
 	pm = AVR8_ReadAppMem8(addr);
 	AVR8_WriteReg(pm, 0);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1412,6 +1465,7 @@ avr8_lpm1_24(void)
 	addr |= (rampz << 16);
 	pm = AVR8_ReadAppMem8(addr);
 	AVR8_WriteReg(pm, 0);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1434,6 +1488,7 @@ avr8_lpm2(void)
 	addr = AVR8_ReadReg16(NR_REG_Z);
 	pm = AVR8_ReadAppMem8(addr);
 	AVR8_WriteReg(pm, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 	//fprintf(stderr,"LPM2 %02x from %04x at %04x\n",pm,addr,GET_REG_PC << 1);
 }
@@ -1450,6 +1505,7 @@ avr8_lpm2_24(void)
 	addr |= (rampz << 16);
 	pm = AVR8_ReadAppMem8(addr);
 	AVR8_WriteReg(pm, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 	//fprintf(stderr,"LPM2 %02x from %04x at %04x\n",pm,addr,GET_REG_PC << 1);
 }
@@ -1474,6 +1530,7 @@ avr8_lpm3(void)
 	AVR8_WriteReg(pm, rd);
 	z++;
 	AVR8_WriteReg16(z, NR_REG_Z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1492,6 +1549,7 @@ avr8_lpm3_24(void)
 	AVR8_WriteReg(pm, rd);
 	addr = addr + 1;	/* No effect on RAMPZ ! */
 	AVR8_WriteReg16(addr & 0xffff, NR_REG_Z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 }
 
@@ -1523,6 +1581,7 @@ avr8_lsr(void)
 		sreg |= FLG_Z;
 	}
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1544,6 +1603,7 @@ avr8_mov(void)
 	rr = (icode & 0xf) | ((icode >> 5) & 0x10);
 	Rr = AVR8_ReadReg(rr);
 	AVR8_WriteReg(Rr, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1566,6 +1626,7 @@ avr8_movw(void)
 	AVR8_WriteReg(Rr, rd + 1);
 	Rr = AVR8_ReadReg(rr);
 	AVR8_WriteReg(Rr, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1599,6 +1660,7 @@ avr8_mul(void)
 		sreg |= FLG_Z;
 	}
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1631,6 +1693,7 @@ avr8_muls(void)
 		sreg |= FLG_Z;
 	}
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1665,6 +1728,7 @@ avr8_mulsu(void)
 		sreg |= FLG_Z;
 	}
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1686,6 +1750,7 @@ avr8_neg(void)
 	AVR8_WriteReg(result, rd);
 	sub8_flags(0, Rd, result);
 	SET_SREG((GET_SREG & ~FLG_Z) | flg_zero(result));
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1700,6 +1765,7 @@ void
 avr8_nop(void)
 {
 	/* Do nothing */
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1727,6 +1793,7 @@ avr8_or(void)
 	sreg |= flg_zero(R);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1753,6 +1820,7 @@ avr8_ori(void)
 	sreg |= flg_zero(R);
 	sreg |= flg_sign(sreg);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -1771,6 +1839,7 @@ avr8_out(void)
 	int addr = (icode & 0xf) | ((icode >> 5) & 0x30);
 	uint8_t Rr = AVR8_ReadReg(rr);
 	AVR8_WriteIO8(Rr, addr);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 	//fprintf(stderr,"avr8_out: icode %04x at %04x: reg %02x, value %02x\n",icode,GET_REG_PC << 1,addr+0x20,Rr);
 }
@@ -1794,6 +1863,7 @@ avr8_pop(void)
 	Rd = AVR8_ReadMem8(sp);
 	AVR8_WriteReg(Rd, rd);
 	SET_REG_SP(sp);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1816,6 +1886,7 @@ avr8_push(void)
 	AVR8_WriteMem8(Rd, sp);
 	sp--;
 	SET_REG_SP(sp);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -1841,6 +1912,7 @@ avr8_rcall(void)
 	}
 	AVR8_WriteMem8(pc & 0xff, sp--);
 	AVR8_WriteMem8(pc >> 8, sp--);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 3);
 	CycleCounter += 3;
 	pc += k;
 	SET_REG_PC(pc);
@@ -1863,6 +1935,7 @@ avr8_rcall_24(void)
 	AVR8_WriteMem8(pc & 0xff, sp--);
 	AVR8_WriteMem8((pc >> 8) & 0xff, sp--);
 	AVR8_WriteMem8((pc >> 16) & 0xff, sp--);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 	pc += k;
 	SET_REG_PC(pc);
@@ -1885,6 +1958,7 @@ avr8_ret(void)
 	pc |= AVR8_ReadMem8(++sp);
 	SET_REG_SP(sp);
 	SET_REG_PC(pc);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 }
 
@@ -1898,6 +1972,7 @@ avr8_ret_24(void)
 	pc |= AVR8_ReadMem8(++sp);
 	SET_REG_SP(sp);
 	SET_REG_PC(pc);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 5);
 	CycleCounter += 5;
 }
 
@@ -1927,6 +2002,7 @@ avr8_reti(void)
 		gavr8.avrReti(gavr8.avrIrqData);
 	}
 	AVR8_UpdateCpuSignals();
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 }
 
@@ -1944,6 +2020,7 @@ avr8_reti_24(void)
 	SET_REG_PC(pc);
 	SET_SREG(sreg);
 	AVR8_UpdateCpuSignals();
+	GlobalClock_ConsumeCycle(gavr8.lclk, 5);
 	CycleCounter += 5;
 }
 
@@ -1962,6 +2039,7 @@ avr8_rjmp(void)
 	uint16_t pc = GET_REG_PC;
 	pc += k;
 	SET_REG_PC(pc);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2000,6 +2078,7 @@ avr8_ror(void)
 	sreg |= flg_sign(sreg);
 	AVR8_WriteReg(R, rd);
 	SET_SREG(sreg);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2029,6 +2108,7 @@ avr8_sbc(void)
 	if (R != 0) {
 		SET_SREG(GET_SREG & ~FLG_Z);
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2054,6 +2134,7 @@ avr8_sbci(void)
 	if (R != 0) {
 		SET_SREG(GET_SREG & ~FLG_Z);
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2074,6 +2155,7 @@ avr8_sbi(void)
 	val = AVR8_ReadIO8(a);
 	val |= (1 << bit);
 	AVR8_WriteIO8(val, a);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2094,6 +2176,7 @@ avr8_sbic(void)
 	if (!(val & (1 << bit))) {
 		AVR8_SkipInstruction();
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2114,6 +2197,7 @@ avr8_sbis(void)
 	if (val & (1 << bit)) {
 		AVR8_SkipInstruction();
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2140,6 +2224,7 @@ avr8_sbiw(void)
 	} else {
 		SET_SREG(GET_SREG & ~FLG_Z);
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2160,6 +2245,7 @@ avr8_sbrc(void)
 	if (!(Rr & (1 << bit))) {
 		AVR8_SkipInstruction();
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2181,12 +2267,14 @@ avr8_sbrs(void)
 	if (Rr & (1 << bit)) {
 		AVR8_SkipInstruction();
 	}
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
 void
 avr8_sleep(void)
 {
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 	fprintf(stderr, "avr8_sleep not implemented\n");
 }
@@ -2194,6 +2282,7 @@ avr8_sleep(void)
 void
 avr8_spm(void)
 {
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 	fprintf(stderr, "avr8_spm not implemented\n");
 }
@@ -2216,6 +2305,7 @@ avr8_st1(void)
 	Rr = AVR8_ReadReg(rr);
 	x = AVR8_ReadReg16(NR_REG_X);
 	AVR8_WriteMem8(Rr, x);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2240,6 +2330,7 @@ avr8_st2(void)
 	AVR8_WriteMem8(Rr, x);
 	x++;
 	AVR8_WriteReg16(x, NR_REG_X);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2262,6 +2353,7 @@ avr8_st3(void)
 	x--;
 	AVR8_WriteReg16(x, NR_REG_X);
 	AVR8_WriteMem8(Rr, x);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2285,6 +2377,7 @@ avr8_sty2(void)
 	AVR8_WriteMem8(Rr, y);
 	y++;
 	AVR8_WriteReg16(y, NR_REG_Y);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2308,6 +2401,7 @@ avr8_sty3(void)
 	y--;
 	AVR8_WriteReg16(y, NR_REG_Y);
 	AVR8_WriteMem8(Rr, y);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2332,6 +2426,7 @@ avr8_sty4(void)
 	y = AVR8_ReadReg16(NR_REG_Y);
 	addr = (y + q);
 	AVR8_WriteMem8(Rr, addr);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2356,6 +2451,7 @@ avr8_stz2(void)
 	AVR8_WriteMem8(Rr, z);
 	z++;
 	AVR8_WriteReg16(z, NR_REG_Z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2379,6 +2475,7 @@ avr8_stz3(void)
 	z--;
 	AVR8_WriteReg16(z, NR_REG_Z);
 	AVR8_WriteMem8(Rr, z);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2407,6 +2504,7 @@ avr8_stz4(void)
 	   addr |= rampz << 16;
 	 */
 	AVR8_WriteMem8(Rr, addr);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2426,6 +2524,7 @@ avr8_sts(void)
 	SET_REG_PC(GET_REG_PC + 1);
 	Rr = AVR8_ReadReg(rr);
 	AVR8_WriteMem8(Rr, k);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 2);
 	CycleCounter += 2;
 }
 
@@ -2448,6 +2547,7 @@ avr8_sub(void)
 	AVR8_WriteReg(R, rd);
 	sub8_flags(Rd, Rr, R);
 	SET_SREG((GET_SREG & ~FLG_Z) | flg_zero(R));
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2470,6 +2570,7 @@ avr8_subi(void)
 	AVR8_WriteReg(R, rd);
 	sub8_flags(Rd, k, R);
 	SET_SREG((GET_SREG & ~FLG_Z) | flg_zero(R));
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2481,6 +2582,7 @@ avr8_swap(void)
 	uint8_t Rd = AVR8_ReadReg(rd);
 	Rd = ((Rd & 0xf) << 4) | ((Rd & 0xf0) >> 4);
 	AVR8_WriteReg(Rd, rd);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 
@@ -2489,6 +2591,7 @@ avr8_wdr(void)
 {
 	SigNode_Set(gavr8.wdResetNode, SIG_LOW);
 	SigNode_Set(gavr8.wdResetNode, SIG_HIGH);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 	CycleCounter += 1;
 }
 

@@ -88,7 +88,6 @@ typedef struct board_s {
 //= Function declarations(static)
 //==============================================================================
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -97,7 +96,6 @@ static int run(Device_Board_t *board);
 static Device_Board_t *create(void) {
     //      ArmCoprocessor *copro;
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
     BusDevice *dev, *flash, *efc;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
@@ -116,10 +114,6 @@ static Device_Board_t *create(void) {
                        MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

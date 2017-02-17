@@ -63,12 +63,12 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "avr8/avr8_cpu.h"
+#include "avr8_cpu.h"
 
 // Local/Private Headers
-#include "avr8/avr8_io.h"
-#include "avr8/idecode_avr8.h"
-#include "avr8/instructions_avr8.h"
+#include "avr8_io.h"
+#include "idecode_avr8.h"
+#include "instructions_avr8.h"
 
 // Leigun Core Headers
 #include "compiler_extensions.h"
@@ -81,6 +81,7 @@
 #include "sgstring.h"
 #include "signode.h"
 #include "core/device.h"
+#include "core/globalclock.h"
 
 // External headers
 
@@ -268,7 +269,7 @@ static void AVR8_SignalLevelConflict(const char *msg);
 static void AVR8_Reti(void *eventData);
 
 static Device_MPU_t *create(void);
-static int run(Device_MPU_t *dev);
+static void run(GlobalClock_LocalClock_t *clk, void *data);
 
 
 //==============================================================================
@@ -515,12 +516,14 @@ AVR8_Interrupt(void *irqData)
 	AVR8_WriteMem8((pc >> 8) & 0xff, sp--);
 	if (gavr8.pc24bit) {
 		AVR8_WriteMem8((pc >> 16) & 0xff, sp--);
+		GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 		CycleCounter += 1;
 	}
 	sreg &= ~FLG_I;
 	SET_SREG(sreg);		// SET SREG should be a proc with influence on cpu_signals
 	AVR8_UpdateCpuSignals();
 	SET_REG_SP(sp);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 	SET_REG_PC(irqvect << 1);
 }
@@ -720,9 +723,8 @@ create(void)
 	const char *instancename = "avr";
 	int nr_variants = sizeof(avr8_variants) / sizeof(AVR8_Variant);
 	int i;
-    Device_MPU_t *dev = malloc(sizeof(*dev));
-    dev->run = &run;
-    dev->data = avr;
+	Device_MPU_t *dev = malloc(sizeof(*dev));
+	dev->data = avr;
 	variantname = Config_ReadVar(instancename, "variant");
 	if (!variantname) {
 		fprintf(stderr, "No CPU variant selected\n");
@@ -802,6 +804,7 @@ create(void)
     }
 	AVR8_InitInstructions(avr);
 	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
+	GlobalClock_Registor(&run, dev, cpu_clock);
 	CycleTimers_Init(instancename, cpu_clock);
 	for (i = 0; i < 32; i++) {
 		AVR8_RegisterIOHandler(i, avr8_read_reg, avr8_write_reg, avr);
@@ -833,7 +836,7 @@ create(void)
 	avr->dbgops.get_bkpt_ins = debugger_get_bkpt_ins;
 	avr->debugger = Debugger_New(&avr->dbgops, avr);
 #endif
-    return dev;
+	return dev;
 }
 
 /*
@@ -841,12 +844,14 @@ create(void)
  * AVR8 CPU main loop
  *******************************************************************
  */
-static int
-run(Device_MPU_t *dev)
+static void
+run(GlobalClock_LocalClock_t *clk, void *data)
 {
+	Device_MPU_t *dev = data;
 	AVR8_Cpu *avr = &gavr8;
 	uint32_t addr = 0;
 	AVR8_InstructionProc *iproc;
+	avr->lclk = clk;
 	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
 		addr = 0;
 	}
@@ -861,7 +866,7 @@ run(Device_MPU_t *dev)
 		sleep(1);
 	}
 #endif
-  while (1) {
+	while (1) {
 		CheckSignals();
 		CycleTimers_Check();
 		ICODE = AVR8_ReadAppMem(GET_REG_PC);
@@ -870,7 +875,6 @@ run(Device_MPU_t *dev)
 		iproc = AVR8_InstructionProcFind(ICODE);
 		iproc();
 	}
-	return 0;
 }
 
 

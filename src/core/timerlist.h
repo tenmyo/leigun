@@ -1,4 +1,4 @@
-//===-- core/device.h - Leigun Device Management Facilities -------*- C -*-===//
+//===-- core/timerlist.h ------------------------------------------*- C -*-===//
 //
 //              The Leigun Embedded System Simulator Platform
 //
@@ -17,7 +17,6 @@
 //===----------------------------------------------------------------------===//
 ///
 /// @file
-/// This file contains the declaration of device management facilities.
 ///
 //===----------------------------------------------------------------------===//
 #pragma once
@@ -32,6 +31,7 @@ extern "C" {
 // External headers
 
 // System headers
+#include <stdint.h> // for uint64_t
 
 
 //==============================================================================
@@ -42,21 +42,8 @@ extern "C" {
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Device_Board_s Device_Board_t;
-typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
-typedef int (*Device_RunBoard_cb)(Device_Board_t *dev);
-/// Device_Board_t is board instance data.
-struct Device_Board_s {
-    void *data;
-};
-
-typedef struct Device_MPU_s Device_MPU_t;
-typedef Device_MPU_t *(*Device_CreateMPU_cb)(void);
-typedef int (*Device_RunMPU_cb)(Device_MPU_t *dev);
-/// Device_MPU_t is MPU instance data.
-struct Device_MPU_s {
-    void *data;
-};
+typedef void (*TimerList_cb)(void *data);
+typedef struct TimerList_s TimerList_t;
 
 
 //==============================================================================
@@ -72,21 +59,10 @@ struct Device_MPU_s {
 //==============================================================================
 //= Functions
 //==============================================================================
-int Device_Init(void);
-
-int Device_RegisterBoard(const char *name, const char *description,
-                         Device_CreateBoard_cb create,
-                         const char *defaultconfig);
-int Device_UnregisterBoard(const char *name);
-Device_Board_t *Device_CreateBoard(const char *name);
-void Device_DumpBoards(void);
-
-int Device_RegisterMPU(const char *name, const char *description,
-                       Device_CreateMPU_cb create, const char *defaultconfig);
-int Device_UnregisterMPU(const char *name);
-Device_MPU_t *Device_CreateMPU(const char *name);
-void Device_DumpMPUs(void);
-
+TimerList_t *TimerList_New(void);
+int TimerList_Insert(TimerList_t *l, uint64_t cnt, TimerList_cb cb, void *data);
+void TimerList_Remove(TimerList_t *l, TimerList_cb cb, void *data);
+void TimerList_Fire(TimerList_t *l, uint64_t inc);
 
 #ifdef __cplusplus
 }

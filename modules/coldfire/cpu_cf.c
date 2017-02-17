@@ -63,18 +63,19 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "coldfire/cpu_cf.h"
+#include "cpu_cf.h"
 
 // Local/Private Headers
-#include "coldfire/idecode_cf.h"
-#include "coldfire/instructions_cf.h"
-#include "coldfire/mem_cf.h"
+#include "idecode_cf.h"
+#include "instructions_cf.h"
+#include "mem_cf.h"
 
 // Leigun Core Headers
 #include "configfile.h"
 #include "cycletimer.h"
 #include "initializer.h"
 #include "core/device.h"
+#include "core/globalclock.h"
 
 // External headers
 
@@ -112,7 +113,7 @@ static inline void CheckSignals(void);
 static void dump_instruction(void);
 
 static Device_MPU_t *create(void);
-static int run(Device_MPU_t *dev);
+static void run(GlobalClock_LocalClock_t *clk, void *data);
 
 
 //==============================================================================
@@ -143,14 +144,14 @@ create(void)
 {
 	int32_t cpu_clock = 66000000;
 	const char *instancename = "coldfire";
-    Device_MPU_t *dev = malloc(sizeof(*dev));
-    dev->run = &run;
-    dev->data = &g_CFCpu;
+	Device_MPU_t *dev = malloc(sizeof(*dev));
+	dev->data = &g_CFCpu;
 	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
 	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
 	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");
 	CF_IDecoderNew();
 	cf_init_condition_tab();
+	GlobalClock_Registor(&run, dev, cpu_clock);
 	CycleTimers_Init(instancename, cpu_clock);
 	fprintf(stderr, "Initialized Coldfire CPU with %d HZ\n", cpu_clock);
 	CF_SetRegPC(0);
@@ -160,9 +161,10 @@ create(void)
 	return dev;
 }
 
-static int
-run(Device_MPU_t *dev)
+static void
+run(GlobalClock_LocalClock_t *clk, void *data)
 {
+	Device_MPU_t *dev = data;
 	InstructionProc *iproc;
 	uint32_t pc, sp;
 	sp = CF_MemRead32(0);
@@ -177,11 +179,11 @@ run(Device_MPU_t *dev)
 		dump_instruction();
 		CF_SetRegPC(pc + 2);
 		iproc();
+		GlobalClock_ConsumeCycle(clk, 2);
 		CycleCounter += 2;	/* Should be moved to iprocs */
 		CycleTimers_Check();
 		CheckSignals();
 	}
-	return 0;
 }
 
 

@@ -36,7 +36,6 @@
 #include "avr8/atm644_twi.h"
 #include "avr8/atm644_usart.h"
 #include "avr8/avr8_adc.h"
-#include "avr8/avr8_cpu.h"
 #include "avr8/avr8_eeprom.h"
 #include "avr8/avr8_gpio.h"
 #include "avr8/avr8_port.h"
@@ -106,7 +105,6 @@ typedef struct board_s {
 //==============================================================================
 static void link_signals(board_t *box);
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -254,7 +252,6 @@ static Device_Board_t *create(void) {
         .addrUDR = 6,
     };
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
     FbDisplay_New("display0", &board->display, &board->keyboard, NULL,
                   &board->sounddevice);
     if (!board->keyboard) {
@@ -305,10 +302,6 @@ static Device_Board_t *create(void) {
 
     link_signals(board);
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

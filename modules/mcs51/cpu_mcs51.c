@@ -25,11 +25,11 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "mcs51/cpu_mcs51.h"
+#include "cpu_mcs51.h"
 
 // Local/Private Headers
-#include "mcs51/instructions_mcs51.h"
-#include "mcs51/idecode_mcs51.h"
+#include "instructions_mcs51.h"
+#include "idecode_mcs51.h"
 
 // Leigun Core Headers
 #include "configfile.h"
@@ -40,6 +40,7 @@
 #include "sgstring.h"
 #include "signode.h"
 #include "core/device.h"
+#include "core/globalclock.h"
 
 // External headers
 
@@ -109,7 +110,7 @@ static uint8_t dph_read(void *eventData, uint8_t addr);
 static void dph_write(void *eventData, uint8_t addr, uint8_t value);
 
 static Device_MPU_t *create(void);
-static int run(Device_MPU_t *dev);
+static void run(GlobalClock_LocalClock_t *clk, void *data);
 
 
 //==============================================================================
@@ -311,9 +312,8 @@ create(void)
 	uint32_t cpu_clock = 1000000;
 	const char *instancename = "mcs51";
 	uint32_t cycle_mult = 12;
-    Device_MPU_t *dev = malloc(sizeof(*dev));
-    dev->run = &run;
-    dev->data = mcs51;
+	Device_MPU_t *dev = malloc(sizeof(*dev));
+	dev->data = mcs51;
 	MCS51_SetPSW(0);
 	SET_REG_PC(0);
 	Config_ReadUInt32(&cycle_mult,instancename, "cycle_mult");
@@ -342,6 +342,7 @@ create(void)
 	mcs51->approm = DiskImage_Mmap(mcs51->flash_di);
 	Loader_RegisterBus("bus", load_to_bus, mcs51);
 	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
+	GlobalClock_Registor(&run, dev, cpu_clock);
 	CycleTimers_Init(instancename, cpu_clock);
 	mcs51->throttle = Throttle_New(instancename);
 	MCS51_RegisterSFR(SFR_REG_ACC, acc_read, NULL, acc_write, mcs51);
@@ -364,9 +365,10 @@ create(void)
 }
 
 
-static int
-run(Device_MPU_t *dev)
+static void
+run(GlobalClock_LocalClock_t *clk, void *data)
 {
+	Device_MPU_t *dev = data;
 	uint32_t addr = 0;
 	MCS51_Instruction *instr;
 	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
@@ -383,12 +385,12 @@ run(Device_MPU_t *dev)
 		SET_REG_PC(GET_REG_PC + 1);
 		instr = MCS51_InstructionFind(ICODE);
 		instr->iproc();
+		GlobalClock_ConsumeCycle(clk, 2);
 		/* meassurement gave 422566543/268435456*12 = 18.890 */
 		CycleCounter += instr->cycles;
 		CycleTimers_Check();
 		CheckSignals();
 	}
-    return 0;
 }
 
 

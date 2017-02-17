@@ -38,7 +38,6 @@
 
 // Local/Private Headers
 #include "amdflash.h"
-#include "coldfire/cpu_cf.h"
 #include "coldfire/mcf5282_csm.h"
 #include "coldfire/mcf5282_scm.h"
 
@@ -92,7 +91,6 @@ static void create_clock_links(void);
 static void create_signal_links(void);
 static void create_i2c_devices(void);
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -117,7 +115,6 @@ static Device_Board_t *create(void) {
     dev = AMDFlashBank_New("flash0");
     MCF5282Csm_RegisterDevice(scmcsm, dev, CSM_CS0);
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
     board->mpu = Device_CreateMPU("coldfire");
 
 // dev = CFM_New("cfm");
@@ -136,10 +133,6 @@ static Device_Board_t *create(void) {
     create_signal_links();
     create_clock_links();
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

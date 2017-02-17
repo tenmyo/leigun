@@ -1,4 +1,4 @@
-//===-- core/device.h - Leigun Device Management Facilities -------*- C -*-===//
+//===-- core/globalclock.h ----------------------------------------*- C -*-===//
 //
 //              The Leigun Embedded System Simulator Platform
 //
@@ -17,7 +17,6 @@
 //===----------------------------------------------------------------------===//
 ///
 /// @file
-/// This file contains the declaration of device management facilities.
 ///
 //===----------------------------------------------------------------------===//
 #pragma once
@@ -32,6 +31,7 @@ extern "C" {
 // External headers
 
 // System headers
+#include <stdint.h>
 
 
 //==============================================================================
@@ -42,21 +42,8 @@ extern "C" {
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Device_Board_s Device_Board_t;
-typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
-typedef int (*Device_RunBoard_cb)(Device_Board_t *dev);
-/// Device_Board_t is board instance data.
-struct Device_Board_s {
-    void *data;
-};
-
-typedef struct Device_MPU_s Device_MPU_t;
-typedef Device_MPU_t *(*Device_CreateMPU_cb)(void);
-typedef int (*Device_RunMPU_cb)(Device_MPU_t *dev);
-/// Device_MPU_t is MPU instance data.
-struct Device_MPU_s {
-    void *data;
-};
+typedef struct GlobalClock_LocalClock_s GlobalClock_LocalClock_t;
+typedef void (*GlobalClock_Proc_cb)(GlobalClock_LocalClock_t *clk, void *data);
 
 
 //==============================================================================
@@ -72,21 +59,12 @@ struct Device_MPU_s {
 //==============================================================================
 //= Functions
 //==============================================================================
-int Device_Init(void);
+int GlobalClock_Init(uint32_t period_ms);
+int GlobalClock_Start(void);
 
-int Device_RegisterBoard(const char *name, const char *description,
-                         Device_CreateBoard_cb create,
-                         const char *defaultconfig);
-int Device_UnregisterBoard(const char *name);
-Device_Board_t *Device_CreateBoard(const char *name);
-void Device_DumpBoards(void);
-
-int Device_RegisterMPU(const char *name, const char *description,
-                       Device_CreateMPU_cb create, const char *defaultconfig);
-int Device_UnregisterMPU(const char *name);
-Device_MPU_t *Device_CreateMPU(const char *name);
-void Device_DumpMPUs(void);
-
+int GlobalClock_Registor(GlobalClock_Proc_cb proc, void *data, uint64_t hz);
+void GlobalClock_ChangeFrequency(GlobalClock_LocalClock_t *clk, uint64_t hz);
+void GlobalClock_ConsumeCycle(GlobalClock_LocalClock_t *clk, uint32_t cnt);
 
 #ifdef __cplusplus
 }

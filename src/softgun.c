@@ -63,6 +63,7 @@
 #include "core/byteorder.h"
 #include "core/device.h"
 #include "core/exithandler.h"
+#include "core/globalclock.h"
 #include "core/lib.h"
 #include "core/logging.h"
 
@@ -297,6 +298,10 @@ main(int argc, char *argv[])
 		LOG_Error("MAIN", "Device_Init failed.");
 		exit(1);
 	}
+	if (GlobalClock_Init(2000) < 0) {
+		LOG_Error("MAIN", "GlobalClock_Init failed.");
+		exit(1);
+	}
 	if (Lib_Init() < 0) {
 		LOG_Error("MAIN", "LIB_Init failed.");
 		exit(1);
@@ -343,6 +348,9 @@ main(int argc, char *argv[])
 #ifdef __unix
 	Senseless_Init();
 #endif
-	board->run(board);
+	if (GlobalClock_Start() < 0) {
+		LOG_Error("MAIN", "GlobalClock_Start failed.");
+		exit(1);
+	}
 	exit(0);
 }

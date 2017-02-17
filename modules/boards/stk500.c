@@ -27,7 +27,6 @@
 // Main Module Header
 
 // Local/Private Headers
-#include "avr8/avr8_cpu.h"
 
 // Leigun Core Headers
 #include "core/device.h"
@@ -36,6 +35,7 @@
 // External headers
 
 // System headers
+#include <stdlib.h> // for malloc
 
 
 //==============================================================================
@@ -66,7 +66,6 @@ typedef struct board_s {
 //= Function declarations(static)
 //==============================================================================
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -74,13 +73,8 @@ static int run(Device_Board_t *board);
 //==============================================================================
 static Device_Board_t *create(void) {
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
     board->mpu = Device_CreateMPU("AVR8");
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 
