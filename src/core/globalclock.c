@@ -80,7 +80,8 @@ static struct {
 //==============================================================================
 static void GlobalClock_thread(void *arg);
 static void GlobalClock_createThread(GlobalClock_LocalClock_t *clk);
-static void GlobalClock_setFrequency(GlobalClock_LocalClock_t *clk, uint64_t hz);
+static void GlobalClock_setFrequency(GlobalClock_LocalClock_t *clk,
+                                     uint64_t hz);
 
 //==============================================================================
 //= Function definitions(static)
@@ -95,7 +96,8 @@ static void GlobalClock_createThread(GlobalClock_LocalClock_t *clk) {
 }
 
 
-static void GlobalClock_setFrequency(GlobalClock_LocalClock_t *clk, uint64_t hz) {
+static void GlobalClock_setFrequency(GlobalClock_LocalClock_t *clk,
+                                     uint64_t hz) {
     clk->hz = hz;
     clk->period_cnt = (hz * GlobalClock_clock.period_ms) / 1000;
     clk->period_cnt_reminder = (hz * GlobalClock_clock.period_ms) % 1000;
@@ -135,7 +137,8 @@ int GlobalClock_Start(void) {
         goto END;
     }
     GlobalClock_clock.running = true;
-    err =  uv_barrier_init(&GlobalClock_clock.barrier, GlobalClock_clock.list_num + 1);
+    err = uv_barrier_init(&GlobalClock_clock.barrier,
+                          GlobalClock_clock.list_num + 1);
     if (err < 0) {
         LOG_Error(MOD_NAME, "uv_barrier_init failed. %s %s", uv_err_name(err),
                   uv_strerror(err));
@@ -148,9 +151,9 @@ int GlobalClock_Start(void) {
     prev = uv_hrtime();
     for (;;) {
         uv_barrier_wait(&GlobalClock_clock.barrier);
-        //uv_barrier_init(&GlobalClock_clock.barrier, GlobalClock_clock.list_num + 1);
         now = uv_hrtime();
-        LOG_Debug(MOD_NAME, "exp[ms]: %" PRId32 "\treal[ms]: %.3lf", GlobalClock_clock.period_ms, (now-prev) * 1e-6);
+        LOG_Debug(MOD_NAME, "exp[ms]: %" PRId32 "\treal[ms]: %.3lf",
+                  GlobalClock_clock.period_ms, (now - prev) * 1e-6);
         prev = now;
     }
 END:
@@ -186,7 +189,8 @@ void GlobalClock_ChangeFrequency(GlobalClock_LocalClock_t *clk, uint64_t hz) {
     if (clk->hz == hz) {
         return;
     }
-    LOG_Info(MOD_NAME, "Change clock frequency %" PRId64 "->%" PRId64, clk->hz, hz);
+    LOG_Info(MOD_NAME, "Change clock frequency %" PRId64 "->%" PRId64, clk->hz,
+             hz);
     clk->rest_cnt = (clk->rest_cnt * hz) / clk->hz;
     GlobalClock_setFrequency(clk, hz);
     return;
@@ -200,7 +204,8 @@ void GlobalClock_ConsumeCycle(GlobalClock_LocalClock_t *clk, uint32_t cnt) {
         clk->rest_cnt += clk->period_cnt;
         clk->rest_fraction += clk->period_cnt_reminder;
         if (clk->rest_fraction >= 1000) {
-            LOG_Verbose(MOD_NAME, "Add fraction %08zX:%p", (uintptr_t)clk->proc, clk->data);
+            LOG_Verbose(MOD_NAME, "Add fraction %08zX:%p", (uintptr_t)clk->proc,
+                        clk->data);
             clk->rest_cnt++;
             clk->rest_fraction -= 1000;
         }
