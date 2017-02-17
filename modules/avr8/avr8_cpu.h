@@ -17,6 +17,7 @@
 #include "debugger.h"
 #endif
 #include "throttle.h"
+#include "core/globalclock.h"
 
 #define FLG_C	(1<<0)
 #define	FLG_C_SH	(0)
@@ -121,6 +122,7 @@ typedef struct AVR8_Cpu {
 	void (*avrAckIrq) (void *);
 	void (*avrReti) (void *);
 	void *avrIrqData;
+	GlobalClock_LocalClock_t *lclk;
 } AVR8_Cpu;
 
 void AVR8_DumpPcBuf(void);
@@ -258,6 +260,7 @@ AVR8_SkipInstruction(void)
 	ICODE = AVR8_ReadAppMem(GET_REG_PC);
 	instr = AVR8_InstructionFind(ICODE);
 	SET_REG_PC(GET_REG_PC + instr->length);
+	GlobalClock_ConsumeCycle(gavr8.lclk, instr->length);
 	CycleCounter += instr->length;
 }
 

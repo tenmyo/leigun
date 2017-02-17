@@ -47,7 +47,6 @@ typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
 typedef int (*Device_RunBoard_cb)(Device_Board_t *dev);
 /// Device_Board_t is board instance data.
 struct Device_Board_s {
-    Device_RunBoard_cb run;
     void *data;
 };
 
@@ -56,7 +55,6 @@ typedef Device_MPU_t *(*Device_CreateMPU_cb)(void);
 typedef int (*Device_RunMPU_cb)(Device_MPU_t *dev);
 /// Device_MPU_t is MPU instance data.
 struct Device_MPU_s {
-    Device_RunMPU_cb run;
     void *data;
 };
 

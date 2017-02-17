@@ -10,6 +10,7 @@
 #include <debugger.h>
 #include "signode.h"
 #include "cycletimer.h"
+#include "core/globalclock.h"
 /*
  * ------------------------------------------------------
  * ARM9_RegPointerSet
@@ -164,6 +165,7 @@ typedef struct ARM9 {
 	int64_t cycles_ahead;	/* Number of cycles ahead of real cpu */
 
 	uint32_t cpuArchitecture;
+	GlobalClock_LocalClock_t *clk;
 } ARM9;
 
 #define ARCH_ARMV5		(0)

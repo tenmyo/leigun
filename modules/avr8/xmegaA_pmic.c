@@ -167,6 +167,7 @@ Pmic_Interrupt(void *irqData)
 	AVR8_WriteMem8((pc >> 8) & 0xff, sp--);
 	if (gavr8.pc24bit) {
 		AVR8_WriteMem8((pc >> 16) & 0xff, sp--);
+		GlobalClock_ConsumeCycle(gavr8.lclk, 1);
 		CycleCounter += 1;
 	}
 	/* XMega does not clear Interrupt flag ! */
@@ -191,6 +192,7 @@ Pmic_Interrupt(void *irqData)
 	/* Search for higher level ints and evenutally unpost irq signal to cpu */
 	Pmic_SearchForInt(pmic);
 	SET_REG_SP(sp);
+	GlobalClock_ConsumeCycle(gavr8.lclk, 4);
 	CycleCounter += 4;
 	SET_REG_PC((irq->irqvect_no) << 1);
 }

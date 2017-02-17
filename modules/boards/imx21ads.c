@@ -143,7 +143,6 @@ typedef struct board_s {
 static void create_clock_links(void);
 static void create_signal_links(void);
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -275,7 +274,6 @@ static Device_Board_t *create(void) {
     Keyboard *keyboard;
     UsbDevice *usbdev;
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
 
     Bus_Init(MMU_InvalidateTlb, 1 * 1024);
     board->mpu = Device_CreateMPU("ARM9");
@@ -411,10 +409,6 @@ static Device_Board_t *create(void) {
     create_signal_links();
     create_clock_links();
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 

@@ -1378,6 +1378,7 @@ armv5_lsm()
 				__LINE__);
 		}
 	}
+	GlobalClock_ConsumeCycle(gcpu.clk, (ones << 1));
 	CycleCounter += (ones << 1);
 	dbgprintf("Done LSM addr %08x L %d\n", start_address, L ? 1 : 0);
 }

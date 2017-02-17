@@ -62,13 +62,13 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "arm/arm9cpu.h"
+#include "arm9cpu.h"
 
 // Local/Private Headers
-#include "arm/idecode_arm.h"
-#include "arm/instructions_arm.h"
-#include "arm/mmu_arm9.h"
-#include "arm/thumb_decode.h"
+#include "idecode_arm.h"
+#include "instructions_arm.h"
+#include "mmu_arm9.h"
+#include "thumb_decode.h"
 
 // Leigun Core Headers
 #include "bus.h"
@@ -78,6 +78,7 @@
 #include "initializer.h"
 #include "xy_tree.h"
 #include "core/device.h"
+#include "core/globalclock.h"
 
 // External headers
 
@@ -159,7 +160,7 @@ static void Thumb_Loop(void);
 static void ARM9_Loop32(void);
 
 static Device_MPU_t *create(void);
-static int run(Device_MPU_t *dev);
+static void run(GlobalClock_LocalClock_t *clk, void *data);
 
 
 //==============================================================================
@@ -810,6 +811,7 @@ Thumb_Loop(void)
 	//fprintf(stderr,"Entering Thumb loop\n");
 	setjmp(gcpu.abort_jump);
 	while (1) {
+		GlobalClock_ConsumeCycle(gcpu.clk, 2);
 		CycleCounter += 2;
 		CheckSignals();
 		ICODE = MMU_IFetch16(ARM_NIA);
@@ -838,6 +840,7 @@ ARM9_Loop32(void)
 		fprintf(stdout, "CIA %08x\n", ARM_GET_CIA);
 #endif
 		CheckSignals();
+		GlobalClock_ConsumeCycle(gcpu.clk, 6);
 		CycleCounter += 6;
 		ICODE = MMU_IFetch(ARM_NIA);
 		ARM_NIA += 4;
@@ -881,10 +884,9 @@ create(void)
 	int i;
 	const char *instancename = "arm";
 	ARM9 *arm = &gcpu;
-    Device_MPU_t *dev;
-    dev = malloc(sizeof(*dev));
-    dev->run = &run;
-    dev->data = arm;
+	Device_MPU_t *dev;
+	dev = malloc(sizeof(*dev));
+	dev->data = arm;
 	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
 	fprintf(stderr, "Creating ARM9 CPU with clock %d HZ\n", cpu_clock);
 	memset(arm, 0, sizeof(ARM9));
@@ -893,6 +895,7 @@ create(void)
 	InitInstructions();
 	ThumbDecoder_New();
 	SET_REG_CPSR(MODE_SVC | FLAG_F | FLAG_I);
+	GlobalClock_Registor(&run, dev, cpu_clock);
 	CycleTimers_Init(instancename, cpu_clock);
 	CycleTimer_Add(&htimer, 285000000, hello_proc, NULL);
 	arm->irqNode = SigNode_New("%s.irq", instancename);
@@ -926,9 +929,10 @@ create(void)
 	return dev;
 }
 
-static int
-run(Device_MPU_t *dev)
+static void
+run(GlobalClock_LocalClock_t *clk, void *data)
 {
+	Device_MPU_t *dev = data;
 	uint32_t addr = 0;
 	uint32_t dbgwait;
 	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
@@ -965,7 +969,6 @@ run(Device_MPU_t *dev)
 			}
 		}
 	}
-	return 0;
 }
 
 

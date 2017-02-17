@@ -128,7 +128,6 @@ typedef struct board_s {
 //= Function declarations(static)
 //==============================================================================
 static Device_Board_t *create(void);
-static int run(Device_Board_t *board);
 
 
 //==============================================================================
@@ -149,7 +148,6 @@ static Device_Board_t *create(void) {
     PHY_Device *phy;
     PCI_Function *bridge;
     board_t *board = malloc(sizeof(*board));
-    board->board.run = &run;
     board->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
     ARM9_RegisterCoprocessor(copro, 15);
@@ -247,10 +245,6 @@ static Device_Board_t *create(void) {
     SigName_Link("flash1.big_endian", "memco.big_endian");
 
     return &board->board;
-}
-
-static int run(Device_Board_t *board) {
-    return ((board_t *)board)->mpu->run(((board_t *)board)->mpu);
 }
 
 
