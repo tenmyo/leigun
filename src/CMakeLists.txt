@@ -57,6 +57,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     core/asyncmanager.c
     core/device.c
     core/exithandler.c
+    core/globalclock.c
     core/lib.c
     core/logging.c
     core/str.c
