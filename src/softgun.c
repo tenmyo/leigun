@@ -294,10 +294,6 @@ main(int argc, char *argv[])
 		LOG_Error("MAIN", "AsyncManager_Init failed.");
 		exit(1);
 	}
-	if (Device_Init() < 0) {
-		LOG_Error("MAIN", "Device_Init failed.");
-		exit(1);
-	}
 	if (GlobalClock_Init(2000) < 0) {
 		LOG_Error("MAIN", "GlobalClock_Init failed.");
 		exit(1);
@@ -337,7 +333,6 @@ main(int argc, char *argv[])
 	board = Device_CreateBoard(boardname);
 	if (!board) {
 		LOG_Error("MAIN", "Board(%s) Not Found", boardname);
-		Device_DumpBoards();
 		exit(1);
 	}
 	LoadChain_Resolve();

@@ -47,36 +47,32 @@
 // System headers
 #include "bus.h"
 #include "core/device.h"
-#include "initializer.h"
 #include "sram.h"
 
 
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "AT91SAM7A3_EK";
-static const char *BOARD_DESCRIPTION = "Atmel SAM7A3 Evaluation Kit";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "start_address: 0\n"
-                                         "\n"
-                                         "[iram]\n"
-                                         "size: 32k\n"
-                                         "\n"
-                                         "[loader]\n"
-                                         "load_address: 0x0\n"
-                                         "\n"
-                                         "[iflash]\n"
-                                         "size: 256k\n"
-                                         "\n";
+#define BOARD_NAME "AT91SAM7A3_EK"
+#define BOARD_DESCRIPTION "Atmel SAM7A3 Evaluation Kit"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "start_address: 0\n"                                                       \
+    "\n"                                                                       \
+    "[iram]\n"                                                                 \
+    "size: 32k\n"                                                              \
+    "\n"                                                                       \
+    "[loader]\n"                                                               \
+    "load_address: 0x0\n"                                                      \
+    "\n"                                                                       \
+    "[iflash]\n"                                                               \
+    "size: 256k\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -95,11 +91,13 @@ static Device_Board_t *create(void);
 //==============================================================================
 static Device_Board_t *create(void) {
     //      ArmCoprocessor *copro;
-    board_t *board = malloc(sizeof(*board));
     BusDevice *dev, *flash, *efc;
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    board->mpu = Device_CreateMPU("ARM9");
+    self->mpu = Device_CreateMPU("ARM9");
     dev = SRam_New("iram");
     Mem_AreaAddMapping(dev, 0x00200000, 1024 * 1024,
                        MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
@@ -113,14 +111,12 @@ static Device_Board_t *create(void) {
     Mem_AreaAddMapping(flash, 0x00100000, 1024 * 1024,
                        MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

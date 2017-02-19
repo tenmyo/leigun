@@ -86,7 +86,6 @@
 #include "clock.h"
 #include "core/device.h"
 #include "dram.h"
-#include "initializer.h"
 #include "signode.h"
 #include "sram.h"
 
@@ -98,31 +97,28 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "UNC90";
-static const char *BOARD_DESCRIPTION = "FS-Forth UNC90";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "start_address: 0x00000000\n"
-                                         "cpu_clock: 158515200\n"
-                                         "\n"
-                                         "[flash0]\n"
-                                         "type: AM29LV128ML\n"
-                                         "chips: 1\n"
-                                         "\n"
-                                         "[dram0]\n"
-                                         "size: 32M\n"
-                                         "\n"
-                                         "[sram0]\n"
-                                         "size: 16k\n"
-                                         "\n";
+#define BOARD_NAME "UNC90"
+#define BOARD_DESCRIPTION "FS-Forth UNC90"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "start_address: 0x00000000\n"                                              \
+    "cpu_clock: 158515200\n"                                                   \
+    "\n"                                                                       \
+    "[flash0]\n"                                                               \
+    "type: AM29LV128ML\n"                                                      \
+    "chips: 1\n"                                                               \
+    "\n"                                                                       \
+    "[dram0]\n"                                                                \
+    "size: 32M\n"                                                              \
+    "\n"                                                                       \
+    "[sram0]\n"                                                                \
+    "size: 16k\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -255,10 +251,12 @@ static Device_Board_t *create(void) {
     BusDevice *mc;
     BusDevice *dram0 = NULL;
     PHY_Device *phy;
-    board_t *board = malloc(sizeof(*board));
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    board->mpu = Device_CreateMPU("ARM9");
+    self->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM920T);
     ARM9_RegisterCoprocessor(copro, 15);
 
@@ -347,14 +345,12 @@ static Device_Board_t *create(void) {
     create_i2c_devices();
     create_signal_links();
     create_clock_links();
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

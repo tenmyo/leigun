@@ -84,7 +84,6 @@
 #include "core/device.h"
 #include "fbdisplay.h"
 #include "i2c_serdes.h"
-#include "initializer.h"
 #include "mmcdev.h"
 #include "sgstring.h"
 #include "signode.h"
@@ -97,30 +96,29 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "ETH-M32";
-static const char *BOARD_DESCRIPTION = "ETH-M32";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "cpu_clock: 16000000\n"
-                                         "\n"
-                                         "[lcd0]\n"
-                                         "rows: 2\n"
-                                         "cols: 16\n"
-                                         "colorset: 1\n"
-                                         "backend: rfbserver\n"
-                                         "host: 127.0.0.1\n"
-                                         "port: 5903\n"
-                                         "width: 310\n"
-                                         "height: 75\n"
-                                         "startupdelay: 0\n"
-                                         "exit_on_close: 1\n"
-                                         "\n";
+#define BOARD_NAME "ETH-M32"
+#define BOARD_DESCRIPTION "ETH-M32"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "cpu_clock: 16000000\n"                                                    \
+    "\n"                                                                       \
+    "[lcd0]\n"                                                                 \
+    "rows: 2\n"                                                                \
+    "cols: 16\n"                                                               \
+    "colorset: 1\n"                                                            \
+    "backend: rfbserver\n"                                                     \
+    "host: 127.0.0.1\n"                                                        \
+    "port: 5903\n"                                                             \
+    "width: 310\n"                                                             \
+    "height: 75\n"                                                             \
+    "startupdelay: 0\n"                                                        \
+    "exit_on_close: 1\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
 typedef struct board_s {
-    Device_Board_t board;
     Device_MPU_t *mpu;
     AVR8_Adc *adc;
     FbDisplay *display;
@@ -128,8 +126,6 @@ typedef struct board_s {
     MMCDev *mmcard;
     SD_Spi *sdspi;
 } board_t;
-typedef struct EthM32 {
-} EthM32;
 
 
 //==============================================================================
@@ -324,20 +320,22 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    board_t *board = malloc(sizeof(*board));
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
 
-    FbDisplay_New("lcd0", &board->display, &board->keyboard, NULL, NULL);
-    if (!board->display) {
+    FbDisplay_New("lcd0", &self->display, &self->keyboard, NULL, NULL);
+    if (!self->display) {
         fprintf(stderr, "LCD creation failed\n");
     }
 
-    // FbDisplay_New("display0",&board->display,&board->keyboard,NULL,NULL);
-    // if(!board->keyboard) {
+    // FbDisplay_New("display0",&self->display,&self->keyboard,NULL,NULL);
+    // if(!self->keyboard) {
     //       fprintf(stderr,"Keyboard creation failed\n");
     //       sleep(3);
     //}
 
-    board->mpu = Device_CreateMPU("AVR8");
+    self->mpu = Device_CreateMPU("AVR8");
     usartRegMap.addrBase = 0xc0;
     ATM644_UsartNew("usart0", &usartRegMap);
     usartRegMap.addrBase = 0xc8;
@@ -353,37 +351,35 @@ static Device_Board_t *create(void) {
     AVR8_PortNew("portC", 6 + 0x20, 0x6d);
     AVR8_PortNew("portD", 9 + 0x20, 0x73);
 
-    board->adc = AVR8_AdcNew("adc", 0x78);
+    self->adc = AVR8_AdcNew("adc", 0x78);
     ATM644_SRNew("sr");
 
     AVR8_GpioNew("gpior0", 0x3e);
     AVR8_GpioNew("gpior1", 0x4a);
     AVR8_GpioNew("gpior2", 0x4b);
 
-    board->mmcard = MMCard_New("card0");
-    if (board->mmcard) {
-        board->sdspi = SDSpi_New("sdspi0", board->mmcard);
+    self->mmcard = MMCard_New("card0");
+    if (self->mmcard) {
+        self->sdspi = SDSpi_New("sdspi0", self->mmcard);
     }
-    if (board->sdspi) {
-        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, board->sdspi);
+    if (self->sdspi) {
+        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, self->sdspi);
     } else {
         ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
     }
     ATM644_ExtIntNew("extint");
     Enc28j60_New("enc28j60");
-    if (board->display) {
-        HD44780_LcdNew("lcd0", board->display);
+    if (self->display) {
+        HD44780_LcdNew("lcd0", self->display);
     }
     create_i2c_devices();
-    link_signals(board);
-    return &board->board;
+    link_signals(self);
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

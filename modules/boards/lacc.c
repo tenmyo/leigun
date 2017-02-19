@@ -92,7 +92,6 @@
 #include "core/logging.h"
 #include "dram.h"
 #include "i2c_serdes.h"
-#include "initializer.h"
 #include "signode.h"
 
 // External headers
@@ -103,32 +102,29 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "LACC";
-static const char *BOARD_DESCRIPTION = "Lightmaze NS9750 ARM Controller Card";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "start_address: 0\n"
-                                         "[dram0]\n"
-                                         "size: 32M\n"
-                                         "\n"
-                                         "[loader]\n"
-                                         "load_address: 0x50000000\n"
-                                         "\n"
-                                         "[dram1]\n"
-                                         "size: 32M\n"
-                                         "\n"
-                                         "[flash1]\n"
-                                         "type: AM29LV256ML\n"
-                                         "chips: 1\n"
-                                         "\n";
+#define BOARD_NAME "LACC"
+#define BOARD_DESCRIPTION "Lightmaze NS9750 ARM Controller Card"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "start_address: 0\n"                                                       \
+    "[dram0]\n"                                                                \
+    "size: 32M\n"                                                              \
+    "\n"                                                                       \
+    "[loader]\n"                                                               \
+    "load_address: 0x50000000\n"                                               \
+    "\n"                                                                       \
+    "[dram1]\n"                                                                \
+    "size: 32M\n"                                                              \
+    "\n"                                                                       \
+    "[flash1]\n"                                                               \
+    "type: AM29LV256ML\n"                                                      \
+    "chips: 1\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -299,10 +295,12 @@ static Device_Board_t *create(void) {
     BBusDMACtrl *bbdma;
     PHY_Device *phy;
     PCI_Function *bridge;
-    board_t *board = malloc(sizeof(*board));
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    board->mpu = Device_CreateMPU("ARM9");
+    self->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
     ARM9_RegisterCoprocessor(copro, 15);
 
@@ -375,14 +373,12 @@ static Device_Board_t *create(void) {
 
     create_i2c_devices();
     create_signal_links();
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

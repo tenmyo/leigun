@@ -80,7 +80,6 @@
 #include "core/device.h"
 #include "core/logging.h"
 #include "i2c_serdes.h"
-#include "initializer.h"
 #include "signode.h"
 #include "sram.h"
 
@@ -93,40 +92,37 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "ARMee";
-static const char *BOARD_DESCRIPTION = "Elektor ARMee Board";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "start_address: 0\n"
-                                         "cpu_clock: 58982400\n"
-                                         "oscillator: 14745600\n"
-                                         "\n"
-                                         "[iram]\n"
-                                         "size: 64k\n"
-                                         "\n"
-                                         "[lcd0]\n"
-                                         "backend: rfbserver\n"
-                                         "host: 127.0.0.1\n"
-                                         "port: 5901\n"
-                                         "width: 310\n"
-                                         "height: 75\n"
-                                         "start: vncviewer localhost:5901\n"
-                                         "exit_on_close: 1\n"
-                                         "\n"
-                                         "[loader]\n"
-                                         "load_address: 0x0\n"
-                                         "\n"
-                                         "[iflash]\n"
-                                         "size: 128k\n"
-                                         "\n";
+#define BOARD_NAME "ARMee"
+#define BOARD_DESCRIPTION "Elektor ARMee Board"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "start_address: 0\n"                                                       \
+    "cpu_clock: 58982400\n"                                                    \
+    "oscillator: 14745600\n"                                                   \
+    "\n"                                                                       \
+    "[iram]\n"                                                                 \
+    "size: 64k\n"                                                              \
+    "\n"                                                                       \
+    "[lcd0]\n"                                                                 \
+    "backend: rfbserver\n"                                                     \
+    "host: 127.0.0.1\n"                                                        \
+    "port: 5901\n"                                                             \
+    "width: 310\n"                                                             \
+    "height: 75\n"                                                             \
+    "start: vncviewer localhost:5901\n"                                        \
+    "exit_on_close: 1\n"                                                       \
+    "\n"                                                                       \
+    "[loader]\n"                                                               \
+    "load_address: 0x0\n"                                                      \
+    "\n"                                                                       \
+    "[iflash]\n"                                                               \
+    "size: 128k\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -185,7 +181,9 @@ static Device_Board_t *create(void) {
     BusDevice *dev;
     FbDisplay *display = NULL;
     Keyboard *keyboard = NULL;
-    board_t *board = malloc(sizeof(*board));
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
 
     FbDisplay_New("lcd0", &display, &keyboard, NULL, NULL);
     if (!display) {
@@ -194,7 +192,7 @@ static Device_Board_t *create(void) {
     }
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    board->mpu = Device_CreateMPU("ARM9");
+    self->mpu = Device_CreateMPU("ARM9");
     /* Copro is created but not registered (1:1 translation is bootup default)
      */
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
@@ -237,14 +235,12 @@ static Device_Board_t *create(void) {
 
     create_signal_links();
     create_clock_links();
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

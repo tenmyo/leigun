@@ -30,7 +30,6 @@
 
 // Leigun Core Headers
 #include "core/device.h"
-#include "initializer.h"
 
 // External headers
 
@@ -41,20 +40,17 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "STK500";
-static const char *BOARD_DESCRIPTION = "STK500 AVR8 development Board";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "cpu_clock: 20000000\n"
-                                         "\n";
+#define BOARD_NAME "STK500"
+#define BOARD_DESCRIPTION "STK500 AVR8 development Board"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "cpu_clock: 20000000\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -72,16 +68,16 @@ static Device_Board_t *create(void);
 //= Function definitions(static)
 //==============================================================================
 static Device_Board_t *create(void) {
-    board_t *board = malloc(sizeof(*board));
-    board->mpu = Device_CreateMPU("AVR8");
-    return &board->board;
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
+    self->mpu = Device_CreateMPU("AVR8");
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

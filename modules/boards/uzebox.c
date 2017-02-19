@@ -53,7 +53,6 @@
 #include "core/logging.h"
 #include "dram.h"
 #include "fbdisplay.h"
-#include "initializer.h"
 #include "keyboard.h"
 #include "rfbserver.h"
 #include "sgstring.h"
@@ -71,20 +70,17 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "Uzebox";
-static const char *BOARD_DESCRIPTION = "Uzebox";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "cpu_clock: 28618180\n"
-                                         "\n";
+#define BOARD_NAME "Uzebox"
+#define BOARD_DESCRIPTION "Uzebox"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "cpu_clock: 28618180\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Uzebox {
-} Uzebox;
 typedef struct board_s {
-    Device_Board_t board;
     Device_MPU_t *mpu;
     AVR8_Adc *adc;
     FbDisplay *display;
@@ -251,14 +247,16 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    board_t *board = malloc(sizeof(*board));
-    FbDisplay_New("display0", &board->display, &board->keyboard, NULL,
-                  &board->sounddevice);
-    if (!board->keyboard) {
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
+    FbDisplay_New("display0", &self->display, &self->keyboard, NULL,
+                  &self->sounddevice);
+    if (!self->keyboard) {
         LOG_Warn(BOARD_NAME, "Keyboard creation failed");
     }
 
-    board->mpu = Device_CreateMPU("AVR8");
+    self->mpu = Device_CreateMPU("AVR8");
     usartRegMap.addrBase = 0xc0;
     ATM644_UsartNew("usart0", &usartRegMap);
     usartRegMap.addrBase = 0xc8;
@@ -266,49 +264,47 @@ static Device_Board_t *create(void) {
     AVR8_EEPromNew("eeprom", "3f4041", 2048);
     ATM644_Timer02New("timer0", 0x44, 0);
     ATM644_Timer1New("timer1");
-    if (board->sounddevice == NULL) {
-        board->sounddevice = SoundDevice_New("sound0");
+    if (self->sounddevice == NULL) {
+        self->sounddevice = SoundDevice_New("sound0");
     }
     /* ATM644_Timer02New("timer2",0xb0,2); */
-    Uze_Timer2New("timer2", board->sounddevice);
+    Uze_Timer2New("timer2", self->sounddevice);
     ATM644_TwiNew("twi");
 
     AVR8_PortNew("portA", 0 + 0x20, 0x6b);
     AVR8_PortNew("portB", 3 + 0x20, 0x6c);
     /* AVR8_PortNew("portC",6 + 0x20); */
-    Uze_VidPortNew("portC", 6 + 0x20, board->display);
+    Uze_VidPortNew("portC", 6 + 0x20, self->display);
     AVR8_PortNew("portD", 9 + 0x20, 0x73);
 
-    board->adc = AVR8_AdcNew("adc", 0x78);
+    self->adc = AVR8_AdcNew("adc", 0x78);
     ATM644_SRNew("sr");
 
     AVR8_GpioNew("gpior0", 0x3e);
     AVR8_GpioNew("gpior1", 0x4a);
     AVR8_GpioNew("gpior2", 0x4b);
 
-    board->mmcard = MMCard_New("card0");
-    if (board->mmcard) {
-        board->sdspi = SDSpi_New("sdspi0", board->mmcard);
+    self->mmcard = MMCard_New("card0");
+    if (self->mmcard) {
+        self->sdspi = SDSpi_New("sdspi0", self->mmcard);
     }
-    if (board->sdspi) {
-        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, board->sdspi);
+    if (self->sdspi) {
+        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, self->sdspi);
     } else {
         ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
     }
     ATM644_ExtIntNew("extint");
 
-    Uze_SnesNew("snes0", board->keyboard);
-    Uze_SnesNew("snes1", board->keyboard);
+    Uze_SnesNew("snes0", self->keyboard);
+    Uze_SnesNew("snes1", self->keyboard);
 
-    link_signals(board);
-    return &board->board;
+    link_signals(self);
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

@@ -90,7 +90,6 @@
 #include "core/device.h"
 #include "dram.h"
 #include "fbdisplay.h"
-#include "initializer.h"
 #include "mmcdev.h"
 #include "rfbserver.h"
 #include "signode.h"
@@ -105,31 +104,28 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "iMX21ADS";
-static const char *BOARD_DESCRIPTION = "iMX21ADS";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "start_address: 0xc8000000\n"
-                                         "cpu_clock: 266000000\n"
-                                         "\n"
-                                         "[dram0]\n"
-                                         "size: 64M\n"
-                                         "\n"
-                                         "[flash0]\n"
-                                         "type: AM29BDS128H\n"
-                                         "chips: 2\n"
-                                         "\n"
-                                         "[vram]\n"
-                                         "size: 6k\n"
-                                         "\n";
+#define BOARD_NAME "iMX21ADS"
+#define BOARD_DESCRIPTION "iMX21ADS"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "start_address: 0xc8000000\n"                                              \
+    "cpu_clock: 266000000\n"                                                   \
+    "\n"                                                                       \
+    "[dram0]\n"                                                                \
+    "size: 64M\n"                                                              \
+    "\n"                                                                       \
+    "[flash0]\n"                                                               \
+    "type: AM29BDS128H\n"                                                      \
+    "chips: 2\n"                                                               \
+    "\n"                                                                       \
+    "[vram]\n"                                                                 \
+    "size: 6k\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -273,10 +269,12 @@ static Device_Board_t *create(void) {
     FbDisplay *display;
     Keyboard *keyboard;
     UsbDevice *usbdev;
-    board_t *board = malloc(sizeof(*board));
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
 
     Bus_Init(MMU_InvalidateTlb, 1 * 1024);
-    board->mpu = Device_CreateMPU("ARM9");
+    self->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_IMX21);
     ARM9_RegisterCoprocessor(copro, 15);
 
@@ -408,14 +406,12 @@ static Device_Board_t *create(void) {
 
     create_signal_links();
     create_clock_links();
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

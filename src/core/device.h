@@ -28,35 +28,52 @@ extern "C" {
 //= Dependencies
 //==============================================================================
 // Local/Private Headers
+#include "core/list.h"
+#include "initializer.h"
 
 // External headers
 
 // System headers
+#include <stdint.h>
 
 
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
+typedef enum Device_DrvKind_e {
+    DK_BOARD,         /// Board composed of multiple processors, devices.
+    DK_MPU,           /// Processor drived by program.
+    //    DK_OTHER,               /// Other peripherals.
+} Device_DrvKind_t;
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Device_Board_s Device_Board_t;
-typedef Device_Board_t *(*Device_CreateBoard_cb)(void);
-typedef int (*Device_RunBoard_cb)(Device_Board_t *dev);
 /// Device_Board_t is board instance data.
-struct Device_Board_s {
-    void *data;
-};
+typedef struct Device_Board_s { void *self; } Device_Board_t;
 
-typedef struct Device_MPU_s Device_MPU_t;
-typedef Device_MPU_t *(*Device_CreateMPU_cb)(void);
-typedef int (*Device_RunMPU_cb)(Device_MPU_t *dev);
 /// Device_MPU_t is MPU instance data.
-struct Device_MPU_s {
-    void *data;
-};
+typedef struct Device_MPU_s { void *self; } Device_MPU_t;
+
+typedef struct Device_DrvBase_s {
+    List_Element_t liste;
+    Device_DrvKind_t kind;
+    const char *name;
+    const char *description;
+} Device_DrvBase_t;
+
+typedef struct Device_DrvBoard_s {
+    Device_DrvBase_t base;
+    const char *defaultconfig;
+    Device_Board_t *(*create)(void);
+} Device_DrvBoard_t;
+
+typedef struct Device_DrvMPU_s {
+    Device_DrvBase_t base;
+    const char *defaultconfig;
+    Device_MPU_t *(*create)(void);
+} Device_DrvMPU_t;
 
 
 //==============================================================================
@@ -67,25 +84,37 @@ struct Device_MPU_s {
 //==============================================================================
 //= Macros
 //==============================================================================
+#define DEVICE_REGISTER_BOARD(name_, description_, create_, defaultconfig_)    \
+    static Device_DrvBoard_t Device_boardDrv_##name_ = {                       \
+        .base.kind = DK_BOARD,                                                 \
+        .base.name = (name_),                                                  \
+        .base.description = (description_),                                    \
+        .defaultconfig = (defaultconfig_),                                     \
+        .create = (create_)};                                                  \
+    INITIALIZER(Device_boardDrvRegister_##name_) {                             \
+        Device_Register(&Device_boardDrv_##name_.base);                        \
+    }
+
+#define DEVICE_REGISTER_MPU(name_, description_, create_, defaultconfig_)      \
+    static Device_DrvMPU_t Device_mpuDrv_##name_ = {                           \
+        .base.kind = DK_MPU,                                                   \
+        .base.name = (name_),                                                  \
+        .base.description = (description_),                                    \
+        .defaultconfig = (defaultconfig_),                                     \
+        .create = (create_)};                                                  \
+    INITIALIZER(Device_mpuRegister_##name_) {                                  \
+        Device_Register(&Device_mpuDrv_##name_.base);                          \
+    }
 
 
 //==============================================================================
 //= Functions
 //==============================================================================
-int Device_Init(void);
+void Device_Register(Device_DrvBase_t *drv);
 
-int Device_RegisterBoard(const char *name, const char *description,
-                         Device_CreateBoard_cb create,
-                         const char *defaultconfig);
-int Device_UnregisterBoard(const char *name);
 Device_Board_t *Device_CreateBoard(const char *name);
-void Device_DumpBoards(void);
 
-int Device_RegisterMPU(const char *name, const char *description,
-                       Device_CreateMPU_cb create, const char *defaultconfig);
-int Device_UnregisterMPU(const char *name);
 Device_MPU_t *Device_CreateMPU(const char *name);
-void Device_DumpMPUs(void);
 
 
 #ifdef __cplusplus

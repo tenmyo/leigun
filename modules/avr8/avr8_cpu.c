@@ -76,7 +76,6 @@
 #include "cycletimer.h"
 #include "cycletimer.h"
 #include "diskimage.h"
-#include "initializer.h"
 #include "loader.h"
 #include "sgstring.h"
 #include "signode.h"
@@ -97,13 +96,13 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *MPU_NAME = "AVR8";
-static const char *MPU_DESCRIPTION = "The Atmel AVR 8 Bit CPU Core";
-static const char *MPU_DEFAULTCONFIG = "[global]\n"
-                                       "cpu_clock: 20000000\n"
-                                       "imagedir: .\n"
-                                       "start_address: 0\n"
-                                       "\n";
+#define MPU_NAME "AVR8"
+#define MPU_DESCRIPTION "The Atmel AVR 8 Bit CPU Core"
+#define MPU_DEFAULTCONFIG  \
+    "[global]\n" \
+    "cpu_clock: 20000000\n" \
+    "imagedir: .\n" \
+    "start_address: 0\n"
 
 
 /* These are stolen from gdb */
@@ -724,7 +723,7 @@ create(void)
 	int nr_variants = sizeof(avr8_variants) / sizeof(AVR8_Variant);
 	int i;
 	Device_MPU_t *dev = malloc(sizeof(*dev));
-	dev->data = avr;
+	dev->self = avr;
 	variantname = Config_ReadVar(instancename, "variant");
 	if (!variantname) {
 		fprintf(stderr, "No CPU variant selected\n");
@@ -956,7 +955,5 @@ AVR8_RegisterIntco(void (*ackProc) (void *), void (*retiProc) (void *), void *ev
 
 }
 
-INITIALIZER(init) {
-    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
-                       MPU_DEFAULTCONFIG);
-}
+
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);

@@ -75,7 +75,6 @@
 #include "configfile.h"
 #include "coprocessor.h"
 #include "cycletimer.h"
-#include "initializer.h"
 #include "xy_tree.h"
 #include "core/device.h"
 #include "core/globalclock.h"
@@ -102,13 +101,14 @@
 //= Constants(also Enumerations)
 //==============================================================================
 #define VERBOSE 0
-static const char *MPU_NAME = "ARM9";
-static const char *MPU_DESCRIPTION = "ARM9";
-static const char *MPU_DEFAULTCONFIG = "[global]\n"
-                                       "cpu_clock: 200000000\n"
-                                       "start_address: 0\n"
-                                       "dbgwait: 0\n"
-                                       "\n";
+#define MPU_NAME "ARM9"
+#define MPU_DESCRIPTION "ARM9"
+#define MPU_DEFAULTCONFIG \
+    "[global]\n" \
+    "cpu_clock: 200000000\n" \
+    "start_address: 0\n" \
+    "dbgwait: 0\n" \
+    "\n"
 
 
 //==============================================================================
@@ -886,7 +886,7 @@ create(void)
 	ARM9 *arm = &gcpu;
 	Device_MPU_t *dev;
 	dev = malloc(sizeof(*dev));
-	dev->data = arm;
+	dev->self = arm;
 	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
 	fprintf(stderr, "Creating ARM9 CPU with clock %d HZ\n", cpu_clock);
 	memset(arm, 0, sizeof(ARM9));
@@ -1064,7 +1064,5 @@ ARM_Exception(ARM_ExceptionID exception, int nia_offset)
 	ARM_SET_NIA(new_pc);
 }
 
-INITIALIZER(init) {
-    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
-                       MPU_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);
+

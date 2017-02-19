@@ -73,7 +73,6 @@
 // Leigun Core Headers
 #include "configfile.h"
 #include "cycletimer.h"
-#include "initializer.h"
 #include "core/device.h"
 #include "core/globalclock.h"
 
@@ -88,11 +87,11 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *MPU_NAME = "coldfire";
-static const char *MPU_DESCRIPTION = "Coldfire CPU";
-static const char *MPU_DEFAULTCONFIG = "[global]\n"
-                                       "cpu_clock: 66000000\n"
-                                       "\n";
+#define MPU_NAME "coldfire"
+#define MPU_DESCRIPTION "Coldfire CPU"
+#define MPU_DEFAULTCONFIG \
+    "[global]\n" \
+    "cpu_clock: 66000000\n"
 
 
 //==============================================================================
@@ -145,7 +144,7 @@ create(void)
 	int32_t cpu_clock = 66000000;
 	const char *instancename = "coldfire";
 	Device_MPU_t *dev = malloc(sizeof(*dev));
-	dev->data = &g_CFCpu;
+	dev->self = &g_CFCpu;
 	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
 	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
 	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");
@@ -391,9 +390,5 @@ CF_Interrupt(uint32_t vecnum, uint8_t fault_status, int priority)
 	Push4(formvec);
 }
 
-
-INITIALIZER(init) {
-    Device_RegisterMPU(MPU_NAME, MPU_DESCRIPTION, &create,
-                       MPU_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);
 

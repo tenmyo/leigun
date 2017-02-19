@@ -44,7 +44,6 @@
 // Leigun Core Headers
 #include "bus.h"
 #include "core/device.h"
-#include "initializer.h"
 #include "sram.h"
 
 // External headers
@@ -55,28 +54,25 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "M5282LITE";
-static const char *BOARD_DESCRIPTION = "M5282LITE";
-static const char *BOARD_DEFAULTCONFIG = "[global]\n"
-                                         "start_address: 0x00000000\n"
-                                         "cpu_clock: 66000000\n"
-                                         "\n"
-                                         "[sram0]\n"
-                                         "size: 64k"
-                                         "\n"
-                                         "[flash0]\n"
-                                         "type: AM29LV160BB\n"
-                                         "chips: 1\n"
-                                         "\n";
+#define BOARD_NAME "M5282LITE"
+#define BOARD_DESCRIPTION "M5282LITE"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[global]\n"                                                               \
+    "start_address: 0x00000000\n"                                              \
+    "cpu_clock: 66000000\n"                                                    \
+    "\n"                                                                       \
+    "[sram0]\n"                                                                \
+    "size: 64k"                                                                \
+    "\n"                                                                       \
+    "[flash0]\n"                                                               \
+    "type: AM29LV160BB\n"                                                      \
+    "chips: 1\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -114,8 +110,10 @@ static Device_Board_t *create(void) {
     scmcsm = MCF5282_ScmCsmNew("scmcsm");
     dev = AMDFlashBank_New("flash0");
     MCF5282Csm_RegisterDevice(scmcsm, dev, CSM_CS0);
-    board_t *board = malloc(sizeof(*board));
-    board->mpu = Device_CreateMPU("coldfire");
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
+    self->mpu = Device_CreateMPU("coldfire");
 
 // dev = CFM_New("cfm");
 #if 0
@@ -132,14 +130,12 @@ static Device_Board_t *create(void) {
     create_i2c_devices();
     create_signal_links();
     create_clock_links();
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);

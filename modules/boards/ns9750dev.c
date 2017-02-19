@@ -85,7 +85,6 @@
 #include "core/device.h"
 #include "core/logging.h"
 #include "dram.h"
-#include "initializer.h"
 #include "signode.h"
 
 // External headers
@@ -96,27 +95,24 @@
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *BOARD_NAME = "NS9750DEV";
-static const char *BOARD_DESCRIPTION = "Netsilicon NS9750 development Board";
-static const char *BOARD_DEFAULTCONFIG = "[loader]\n"
-                                         "load_address: 0x50000000\n"
-                                         "\n"
-                                         "[dram0]\n"
-                                         "size: 16M\n"
-                                         "\n"
-                                         "[flash1]\n"
-                                         "type: M29W320DB\n"
-                                         "chips: 2\n"
-                                         "\n";
+#define BOARD_NAME "NS9750DEV"
+#define BOARD_DESCRIPTION "Netsilicon NS9750 development Board"
+#define BOARD_DEFAULTCONFIG                                                    \
+    "[loader]\n"                                                               \
+    "load_address: 0x50000000\n"                                               \
+    "\n"                                                                       \
+    "[dram0]\n"                                                                \
+    "size: 16M\n"                                                              \
+    "\n"                                                                       \
+    "[flash1]\n"                                                               \
+    "type: M29W320DB\n"                                                        \
+    "chips: 2\n"
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s {
-    Device_Board_t board;
-    Device_MPU_t *mpu;
-} board_t;
+typedef struct board_s { Device_MPU_t *mpu; } board_t;
 
 
 //==============================================================================
@@ -147,8 +143,10 @@ static Device_Board_t *create(void) {
     NS9750_MemController *memco;
     PHY_Device *phy;
     PCI_Function *bridge;
-    board_t *board = malloc(sizeof(*board));
-    board->mpu = Device_CreateMPU("ARM9");
+    Device_Board_t *board = malloc(sizeof(*board));
+    board_t *self = malloc(sizeof(*self));
+    board->self = self;
+    self->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
     ARM9_RegisterCoprocessor(copro, 15);
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
@@ -244,14 +242,12 @@ static Device_Board_t *create(void) {
     SigName_Link("mmu.endian", "ns9750_pci.cpu_endian");
     SigName_Link("flash1.big_endian", "memco.big_endian");
 
-    return &board->board;
+    return board;
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-INITIALIZER(init) {
-    Device_RegisterBoard(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                         BOARD_DEFAULTCONFIG);
-}
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
+                      BOARD_DEFAULTCONFIG);
