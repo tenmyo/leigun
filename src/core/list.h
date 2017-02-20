@@ -107,6 +107,20 @@ static inline void List_Map(List_t *l, List_Proc_cb proc) {
 }
 
 /// @attention DO NOT CHANGE LIST in proc(e.g. Push, Pop...)
+static inline void List_FilterMap(List_t *l, List_Compare_cb comparator,
+                                  const List_Element_t *operand,
+                                  List_Proc_cb proc) {
+    List_Element_t *cur;
+    List_Element_t *next;
+    for (cur = l->head; cur; cur = next) {
+        next = cur->next;
+        if (comparator(operand, cur) == 0) {
+            proc(cur);
+        }
+    }
+}
+
+/// @attention DO NOT CHANGE LIST in proc(e.g. Push, Pop...)
 static inline void List_PopEach(List_t *l, List_Proc_cb proc) {
     List_Map(l, proc);
     List_Init(l);

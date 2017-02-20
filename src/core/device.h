@@ -30,6 +30,7 @@ extern "C" {
 // Local/Private Headers
 #include "core/list.h"
 #include "initializer.h"
+#include "signode.h"
 
 // External headers
 
@@ -43,18 +44,47 @@ extern "C" {
 typedef enum Device_DrvKind_e {
     DK_BOARD,         /// Board composed of multiple processors, devices.
     DK_MPU,           /// Processor drived by program.
-    //    DK_OTHER,               /// Other peripherals.
+    DK_MEMORY_MAPPED, /// Memory mapped peripherals.
+    DK_BUS,           /// Memory mapped peripherals.
+    // DK_OTHER,               /// Other peripherals.
 } Device_DrvKind_t;
+
+typedef enum Device_OptReq_e {
+    OR_SIZE,
+} Device_OptReq_t;
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-/// Device_Board_t is board instance data.
-typedef struct Device_Board_s { void *self; } Device_Board_t;
 
-/// Device_MPU_t is MPU instance data.
-typedef struct Device_MPU_s { void *self; } Device_MPU_t;
+// Device Instances
+typedef struct Device_Base_s {
+    void *self;
+    int (*prepare)(void *self);
+    int (*release)(void *self);
+    int (*set_opt)(void *self, Device_OptReq_t req, const void *optval, size_t optlen);
+    int (*get_opt)(void *self, Device_OptReq_t req, void *optval, size_t *optlen);
+    SigNode *(*get_signode)(void *self, const char *name);
+} Device_Base_t;
+
+typedef struct Device_Board_s { Device_Base_t base; } Device_Board_t;
+
+typedef struct Device_MPU_s { Device_Base_t base; } Device_MPU_t;
+
+typedef struct Device_MemMapped_s {
+    Device_Base_t base;
+    int (*map32)(void *self, uint32_t addr, size_t length, int prot,
+                 size_t offset);
+    int (*unmap32)(void *self, uint32_t addr, size_t length);
+} Device_MemMapped_t;
+
+typedef struct Device_Bus_s {
+    Device_Base_t base;
+} Device_Bus_t;
+
+
+// Device Drivers
 
 typedef struct Device_DrvBase_s {
     List_Element_t liste;
@@ -74,6 +104,11 @@ typedef struct Device_DrvMPU_s {
     const char *defaultconfig;
     Device_MPU_t *(*create)(void);
 } Device_DrvMPU_t;
+
+typedef struct Device_DrvMemMapped_s {
+    Device_DrvBase_t base;
+    Device_MemMapped_t *(*create)(const char *name);
+} Device_DrvMemMapped_t;
 
 
 //==============================================================================
@@ -104,6 +139,16 @@ typedef struct Device_DrvMPU_s {
         .create = (create_)};                                                  \
     INITIALIZER(Device_mpuRegister_##name_) {                                  \
         Device_Register(&Device_mpuDrv_##name_.base);                          \
+    }
+
+#define DEVICE_REGISTER_MEMMAPPED(name_, description_, create_)                \
+    static Device_DrvMemMapped_t Device_memMappedDrv_##name_ = {               \
+        .base.kind = DK_MEMORY_MAPPED,                                         \
+        .base.name = (name_),                                                  \
+        .base.description = (description_),                                    \
+        .create = (create_)};                                                  \
+    INITIALIZER(Device_memMappedDrvRegister_##name_) {                         \
+        Device_Register(&Device_memMappedDrv_##name_.base);                    \
     }
 
 

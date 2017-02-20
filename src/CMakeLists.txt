@@ -53,6 +53,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     xy_tree.c
     
     version.c
+    
     core/asyncmanager.c
     core/device.c
     core/exithandler.c
@@ -61,6 +62,8 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     core/logging.c
     core/str.c
     core/timerlist.c
+    
+    memmapped/sram.c
     )
 
 
