@@ -722,8 +722,8 @@ create(void)
 	const char *instancename = "avr";
 	int nr_variants = sizeof(avr8_variants) / sizeof(AVR8_Variant);
 	int i;
-	Device_MPU_t *dev = malloc(sizeof(*dev));
-	dev->self = avr;
+	Device_MPU_t *dev = calloc(1, sizeof(*dev));
+	dev->base.self = avr;
 	variantname = Config_ReadVar(instancename, "variant");
 	if (!variantname) {
 		fprintf(stderr, "No CPU variant selected\n");

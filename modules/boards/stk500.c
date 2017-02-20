@@ -50,7 +50,10 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s { Device_MPU_t *mpu; } board_t;
+typedef struct board_s {
+    Device_Board_t base;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -68,11 +71,10 @@ static Device_Board_t *create(void);
 //= Function definitions(static)
 //==============================================================================
 static Device_Board_t *create(void) {
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
-    self->mpu = Device_CreateMPU("AVR8");
-    return board;
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
+    board->mpu = Device_CreateMPU("AVR8");
+    return &board->base;
 }
 
 

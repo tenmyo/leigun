@@ -119,6 +119,7 @@
 //= Types
 //==============================================================================
 typedef struct board_s {
+    Device_Board_t base;
     Device_MPU_t *mpu;
     AVR8_Adc *adc;
     FbDisplay *display;
@@ -320,22 +321,21 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
 
-    FbDisplay_New("lcd0", &self->display, &self->keyboard, NULL, NULL);
-    if (!self->display) {
+    FbDisplay_New("lcd0", &board->display, &board->keyboard, NULL, NULL);
+    if (!board->display) {
         fprintf(stderr, "LCD creation failed\n");
     }
 
-    // FbDisplay_New("display0",&self->display,&self->keyboard,NULL,NULL);
-    // if(!self->keyboard) {
+    // FbDisplay_New("display0",&board->display,&board->keyboard,NULL,NULL);
+    // if(!board->keyboard) {
     //       fprintf(stderr,"Keyboard creation failed\n");
     //       sleep(3);
     //}
 
-    self->mpu = Device_CreateMPU("AVR8");
+    board->mpu = Device_CreateMPU("AVR8");
     usartRegMap.addrBase = 0xc0;
     ATM644_UsartNew("usart0", &usartRegMap);
     usartRegMap.addrBase = 0xc8;
@@ -351,30 +351,30 @@ static Device_Board_t *create(void) {
     AVR8_PortNew("portC", 6 + 0x20, 0x6d);
     AVR8_PortNew("portD", 9 + 0x20, 0x73);
 
-    self->adc = AVR8_AdcNew("adc", 0x78);
+    board->adc = AVR8_AdcNew("adc", 0x78);
     ATM644_SRNew("sr");
 
     AVR8_GpioNew("gpior0", 0x3e);
     AVR8_GpioNew("gpior1", 0x4a);
     AVR8_GpioNew("gpior2", 0x4b);
 
-    self->mmcard = MMCard_New("card0");
-    if (self->mmcard) {
-        self->sdspi = SDSpi_New("sdspi0", self->mmcard);
+    board->mmcard = MMCard_New("card0");
+    if (board->mmcard) {
+        board->sdspi = SDSpi_New("sdspi0", board->mmcard);
     }
-    if (self->sdspi) {
-        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, self->sdspi);
+    if (board->sdspi) {
+        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, board->sdspi);
     } else {
         ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
     }
     ATM644_ExtIntNew("extint");
     Enc28j60_New("enc28j60");
-    if (self->display) {
-        HD44780_LcdNew("lcd0", self->display);
+    if (board->display) {
+        HD44780_LcdNew("lcd0", board->display);
     }
     create_i2c_devices();
-    link_signals(self);
-    return board;
+    link_signals(board);
+    return &board->base;
 }
 
 

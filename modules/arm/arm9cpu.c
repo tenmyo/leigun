@@ -885,8 +885,8 @@ create(void)
 	const char *instancename = "arm";
 	ARM9 *arm = &gcpu;
 	Device_MPU_t *dev;
-	dev = malloc(sizeof(*dev));
-	dev->self = arm;
+	dev = calloc(1, sizeof(*dev));
+	dev->base.self = arm;
 	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
 	fprintf(stderr, "Creating ARM9 CPU with clock %d HZ\n", cpu_clock);
 	memset(arm, 0, sizeof(ARM9));

@@ -72,7 +72,10 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s { Device_MPU_t *mpu; } board_t;
+typedef struct board_s {
+    Device_Board_t base;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -92,12 +95,11 @@ static Device_Board_t *create(void);
 static Device_Board_t *create(void) {
     //      ArmCoprocessor *copro;
     BusDevice *dev, *flash, *efc;
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    self->mpu = Device_CreateMPU("ARM9");
+    board->mpu = Device_CreateMPU("ARM9");
     dev = SRam_New("iram");
     Mem_AreaAddMapping(dev, 0x00200000, 1024 * 1024,
                        MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
@@ -111,7 +113,7 @@ static Device_Board_t *create(void) {
     Mem_AreaAddMapping(flash, 0x00100000, 1024 * 1024,
                        MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
-    return board;
+    return &board->base;
 }
 
 

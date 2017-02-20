@@ -312,8 +312,8 @@ create(void)
 	uint32_t cpu_clock = 1000000;
 	const char *instancename = "mcs51";
 	uint32_t cycle_mult = 12;
-	Device_MPU_t *dev = malloc(sizeof(*dev));
-	dev->self = mcs51;
+	Device_MPU_t *dev = calloc(1, sizeof(*dev));
+	dev->base.self = mcs51;
 	MCS51_SetPSW(0);
 	SET_REG_PC(0);
 	Config_ReadUInt32(&cycle_mult,instancename, "cycle_mult");

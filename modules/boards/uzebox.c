@@ -81,6 +81,7 @@
 //= Types
 //==============================================================================
 typedef struct board_s {
+    Device_Board_t base;
     Device_MPU_t *mpu;
     AVR8_Adc *adc;
     FbDisplay *display;
@@ -247,16 +248,15 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
-    FbDisplay_New("display0", &self->display, &self->keyboard, NULL,
-                  &self->sounddevice);
-    if (!self->keyboard) {
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
+    FbDisplay_New("display0", &board->display, &board->keyboard, NULL,
+                  &board->sounddevice);
+    if (!board->keyboard) {
         LOG_Warn(BOARD_NAME, "Keyboard creation failed");
     }
 
-    self->mpu = Device_CreateMPU("AVR8");
+    board->mpu = Device_CreateMPU("AVR8");
     usartRegMap.addrBase = 0xc0;
     ATM644_UsartNew("usart0", &usartRegMap);
     usartRegMap.addrBase = 0xc8;
@@ -264,42 +264,42 @@ static Device_Board_t *create(void) {
     AVR8_EEPromNew("eeprom", "3f4041", 2048);
     ATM644_Timer02New("timer0", 0x44, 0);
     ATM644_Timer1New("timer1");
-    if (self->sounddevice == NULL) {
-        self->sounddevice = SoundDevice_New("sound0");
+    if (board->sounddevice == NULL) {
+        board->sounddevice = SoundDevice_New("sound0");
     }
     /* ATM644_Timer02New("timer2",0xb0,2); */
-    Uze_Timer2New("timer2", self->sounddevice);
+    Uze_Timer2New("timer2", board->sounddevice);
     ATM644_TwiNew("twi");
 
     AVR8_PortNew("portA", 0 + 0x20, 0x6b);
     AVR8_PortNew("portB", 3 + 0x20, 0x6c);
     /* AVR8_PortNew("portC",6 + 0x20); */
-    Uze_VidPortNew("portC", 6 + 0x20, self->display);
+    Uze_VidPortNew("portC", 6 + 0x20, board->display);
     AVR8_PortNew("portD", 9 + 0x20, 0x73);
 
-    self->adc = AVR8_AdcNew("adc", 0x78);
+    board->adc = AVR8_AdcNew("adc", 0x78);
     ATM644_SRNew("sr");
 
     AVR8_GpioNew("gpior0", 0x3e);
     AVR8_GpioNew("gpior1", 0x4a);
     AVR8_GpioNew("gpior2", 0x4b);
 
-    self->mmcard = MMCard_New("card0");
-    if (self->mmcard) {
-        self->sdspi = SDSpi_New("sdspi0", self->mmcard);
+    board->mmcard = MMCard_New("card0");
+    if (board->mmcard) {
+        board->sdspi = SDSpi_New("sdspi0", board->mmcard);
     }
-    if (self->sdspi) {
-        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, self->sdspi);
+    if (board->sdspi) {
+        ATM644_SpiNew("spi0", 0x4c, SDSpi_ByteExchange, board->sdspi);
     } else {
         ATM644_SpiNew("spi0", 0x4c, NULL, NULL);
     }
     ATM644_ExtIntNew("extint");
 
-    Uze_SnesNew("snes0", self->keyboard);
-    Uze_SnesNew("snes1", self->keyboard);
+    Uze_SnesNew("snes0", board->keyboard);
+    Uze_SnesNew("snes1", board->keyboard);
 
-    link_signals(self);
-    return board;
+    link_signals(board);
+    return &board->base;
 }
 
 

@@ -143,8 +143,8 @@ create(void)
 {
 	int32_t cpu_clock = 66000000;
 	const char *instancename = "coldfire";
-	Device_MPU_t *dev = malloc(sizeof(*dev));
-	dev->self = &g_CFCpu;
+	Device_MPU_t *dev = calloc(1, sizeof(*dev));
+	dev->base.self = &g_CFCpu;
 	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
 	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
 	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");

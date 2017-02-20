@@ -112,7 +112,10 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s { Device_MPU_t *mpu; } board_t;
+typedef struct board_s {
+    Device_Board_t base;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -143,10 +146,9 @@ static Device_Board_t *create(void) {
     NS9750_MemController *memco;
     PHY_Device *phy;
     PCI_Function *bridge;
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
-    self->mpu = Device_CreateMPU("ARM9");
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
+    board->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
     ARM9_RegisterCoprocessor(copro, 15);
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
@@ -242,7 +244,7 @@ static Device_Board_t *create(void) {
     SigName_Link("mmu.endian", "ns9750_pci.cpu_endian");
     SigName_Link("flash1.big_endian", "memco.big_endian");
 
-    return board;
+    return &board->base;
 }
 
 

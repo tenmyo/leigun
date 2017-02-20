@@ -108,7 +108,10 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s { Device_MPU_t *mpu; } board_t;
+typedef struct board_s {
+    Device_Board_t base;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -201,12 +204,11 @@ static void create_signal_links(void) {
 static Device_Board_t *create(void) {
     ArmCoprocessor *copro;
     BusDevice *dev;
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    self->mpu = Device_CreateMPU("ARM9");
+    board->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM920T);
     ARM9_RegisterCoprocessor(copro, 15);
 
@@ -246,7 +248,7 @@ static Device_Board_t *create(void) {
                        MEM_FLAG_WRITABLE | MEM_FLAG_READABLE);
 
     create_signal_links();
-    return board;
+    return &board->base;
 }
 
 

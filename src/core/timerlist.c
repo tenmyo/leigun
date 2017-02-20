@@ -102,7 +102,7 @@ static int TimerList_compare(TimerList_Element_t *e, TimerList_Element_t *cur) {
 ///
 //===----------------------------------------------------------------------===//
 TimerList_t *TimerList_New(void) {
-    TimerList_t *l = malloc(sizeof(*l));
+    TimerList_t *l = calloc(1, sizeof(*l));
     if (l) {
         List_Init(&l->list);
         uv_mutex_init(&l->list_mutex);
@@ -116,7 +116,7 @@ TimerList_t *TimerList_New(void) {
 //===----------------------------------------------------------------------===//
 int TimerList_Insert(TimerList_t *l, uint64_t cnt, TimerList_cb cb,
                      void *data) {
-    TimerList_Element_t *e = malloc(sizeof(*e));
+    TimerList_Element_t *e = calloc(1, sizeof(*e));
     if (!e) {
         return UV_EAI_MEMORY;
     }

@@ -270,7 +270,7 @@ static AsyncManager g_singleton;
 // -----------------------------------------------------
 static struct req_data *new_req_data(enum req_type reqno) {
     int ret;
-    struct req_data *req = malloc(sizeof(*req));
+    struct req_data *req = calloc(1, sizeof(*req));
     ret = (req) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return NULL);
     req->type = reqno;
@@ -291,7 +291,7 @@ REQ_ALLOCED:
 
 static struct sreq_data *new_sreq_data(enum sreq_type reqno) {
     int ret;
-    struct sreq_data *req = malloc(sizeof(*req));
+    struct sreq_data *req = calloc(1, sizeof(*req));
     ret = (req) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return NULL);
     req->type = reqno;
@@ -428,7 +428,7 @@ static void on_connection(uv_stream_t *server, int status) {
 
     LOG_Info("AM", "%s", __func__);
     UV_ERRCHECK(err, goto EMIT);
-    client = malloc(sizeof(*client));
+    client = calloc(1, sizeof(*client));
     err = (client) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(err, goto EMIT);
     err = uv_tcp_init(server->loop, &client->uv.tcp);
@@ -569,7 +569,7 @@ static int read_stop(StreamHandle_t *handle) {
 
 static int poll_init(int *fd, PollHandle_t **handle) {
     int ret;
-    PollHandle_t *p = malloc(sizeof(*p));
+    PollHandle_t *p = calloc(1, sizeof(*p));
     *handle = NULL;
     ret = (p) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return ret);
@@ -681,7 +681,7 @@ int AsyncManager_Close(Handle_t *handle, AsyncManager_close_cb close_cb,
     int ret;
     LOG_Info("AM", "%s(%p)", __func__, handle);
     // create close request
-    struct close_req_t *cr = malloc(sizeof(*cr));
+    struct close_req_t *cr = calloc(1, sizeof(*cr));
     ret = (cr) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return ret);
     cr->handle = handle;
@@ -717,7 +717,7 @@ int AsyncManager_Write(StreamHandle_t *handle, const void *base,
     LOG_Debug("AM", "%s(handle:%p, base:%p, len:%d)", __func__, handle, base,
               len);
     // create write request
-    struct write_req_t *wr = malloc(sizeof(*wr));
+    struct write_req_t *wr = calloc(1, sizeof(*wr));
     ret = (wr) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return ret);
     wr->stream = handle;
@@ -742,7 +742,7 @@ int AsyncManager_WriteSync(StreamHandle_t *handle, const void *base,
     LOG_Debug("AM", "%s(handle:%p, base:%p, len:%d)", __func__, handle, base,
               len);
     // create write request
-    struct write_req_t *wr = malloc(sizeof(*wr));
+    struct write_req_t *wr = calloc(1, sizeof(*wr));
     ret = (wr) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(ret, return ret);
     wr->stream = handle;
@@ -797,7 +797,7 @@ int AsyncManager_InitTcpServer(const char *ip, int port, int backlog,
                                void *clientdata) {
     int err;
     LOG_Info("AM", "%s(ip:%s, port:%d)", __func__, ip, port);
-    TcpServerStreamHandle_t *svr = malloc(sizeof(*svr));
+    TcpServerStreamHandle_t *svr = calloc(1, sizeof(*svr));
     err = (svr) ? 0 : UV_EAI_MEMORY;
     UV_ERRCHECK(err, return err);
     err = uv_ip4_addr(ip, port, &svr->addr);

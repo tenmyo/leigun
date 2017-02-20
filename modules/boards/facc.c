@@ -117,7 +117,10 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s { Device_MPU_t *mpu; } board_t;
+typedef struct board_s {
+    Device_Board_t base;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -209,12 +212,11 @@ static Device_Board_t *create(void) {
     NS9750_MemController *memco;
     ArmCoprocessor *copro;
     PHY_Device *phy;
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
 
     Bus_Init(MMU_InvalidateTlb, 4 * 1024);
-    self->mpu = Device_CreateMPU("ARM9");
+    board->mpu = Device_CreateMPU("ARM9");
     copro = MMU9_Create("mmu", BYTE_ORDER_LITTLE, MMU_ARM926EJS | MMUV_NS9750);
     ARM9_RegisterCoprocessor(copro, 15);
     bbus = NS9xxx_BBusNew("NS9360", "bbus");
@@ -280,7 +282,7 @@ static Device_Board_t *create(void) {
 
     create_i2c_devices();
     create_signal_links();
-    return board;
+    return &board->base;
 }
 
 

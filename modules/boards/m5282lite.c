@@ -72,7 +72,10 @@
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct board_s { Device_MPU_t *mpu; } board_t;
+typedef struct board_s {
+    Device_Board_t base;
+    Device_MPU_t *mpu;
+} board_t;
 
 
 //==============================================================================
@@ -110,10 +113,9 @@ static Device_Board_t *create(void) {
     scmcsm = MCF5282_ScmCsmNew("scmcsm");
     dev = AMDFlashBank_New("flash0");
     MCF5282Csm_RegisterDevice(scmcsm, dev, CSM_CS0);
-    Device_Board_t *board = malloc(sizeof(*board));
-    board_t *self = malloc(sizeof(*self));
-    board->self = self;
-    self->mpu = Device_CreateMPU("coldfire");
+    board_t *board = calloc(1, sizeof(*board));
+    board->base.base.self = board;
+    board->mpu = Device_CreateMPU("coldfire");
 
 // dev = CFM_New("cfm");
 #if 0
@@ -130,7 +132,7 @@ static Device_Board_t *create(void) {
     create_i2c_devices();
     create_signal_links();
     create_clock_links();
-    return board;
+    return &board->base;
 }
 
 

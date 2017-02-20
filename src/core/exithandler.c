@@ -252,7 +252,7 @@ ERR_LOOP:
 //===----------------------------------------------------------------------===//
 int ExitHandler_Register(ExitHandler_Callback_cb proc, void *data) {
     LOG_Debug(MOD_NAME, "Register %08zX:%p", (uintptr_t)proc, data);
-    ExitHandler_t *handler = malloc(sizeof(*handler));
+    ExitHandler_t *handler = calloc(1, sizeof(*handler));
     if (!handler) {
         LOG_Error(MOD_NAME, "malloc failed %s", strerror(errno));
         return UV_EAI_MEMORY;
