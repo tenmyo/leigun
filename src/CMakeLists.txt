@@ -34,7 +34,6 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     nullsound.c
     relais.c
     rfbserver.c
-    rom.c
     rtc.c
 #    sdldisplay.c
     senseless.c
