@@ -933,8 +933,10 @@ static void
 run(GlobalClock_LocalClock_t *clk, void *data)
 {
 	Device_MPU_t *dev = data;
+	ARM9 *arm = dev->base.self;
 	uint32_t addr = 0;
 	uint32_t dbgwait;
+	arm->clk = clk;
 	if (Config_ReadUInt32(&addr, "global", "start_address") < 0) {
 		addr = 0;
 	}
