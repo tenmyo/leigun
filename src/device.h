@@ -28,7 +28,7 @@ extern "C" {
 //= Dependencies
 //==============================================================================
 // Local/Private Headers
-#include "core/list.h"
+#include "list.h"
 #include "initializer.h"
 #include "signode.h"
 

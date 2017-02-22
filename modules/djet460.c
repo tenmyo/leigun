@@ -87,7 +87,7 @@
 #include <cycletimer.h>
 #include "printer/dj460interp.h"
 #include <signode.h>
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 #if 0
 #define dbgprintf(...) fprintf(stderr,__VA_ARGS__)

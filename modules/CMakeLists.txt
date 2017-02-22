@@ -21,6 +21,7 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Includes
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/../src")
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/../src/softgun")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/controllers/at91")
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/controllers/imx21")
@@ -48,7 +49,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC leigun)
 # ENABLE WARNINGS
 TARGET_COMPILE_OPTIONS(
   ${PROJECT_NAME} PRIVATE
-  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
+#  "$<$<C_COMPILER_ID:Clang>:-Wall;-Weverything>"
   "$<$<C_COMPILER_ID:GNU>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Wformat=2;-Winit-self;-Wlogical-op;-Wmissing-declarations;-Wmissing-include-dirs;-Wredundant-decls;-Wshadow;-Wsign-conversion;-Wstrict-overflow=5;-Wswitch-default;-Wundef>"
   "$<$<C_COMPILER_ID:MSVC>:/W4>"
   )

@@ -56,7 +56,7 @@
 #include "m93c46.h"
 #include "sgstring.h"
 
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 #define IO_RXTXDATA0(base)	((base) + 0x00)
 #define IO_RXTXDATA1(base)	((base) + 0x02)

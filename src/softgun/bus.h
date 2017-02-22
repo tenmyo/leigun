@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <compiler_extensions.h>
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 /*
  * ----------------------------------------------------

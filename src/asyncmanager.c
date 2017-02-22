@@ -26,11 +26,11 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 // Local/Private Headers
-#include "core/exithandler.h"
-#include "core/logging.h"
+#include "exithandler.h"
+#include "logging.h"
 
 // External headers
 #include <uv.h>

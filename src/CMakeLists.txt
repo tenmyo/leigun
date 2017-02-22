@@ -8,62 +8,62 @@ PROJECT(leigun
 ## Add the project files
 # source files
 ADD_EXECUTABLE(${PROJECT_NAME}
-    softgun.c
+    softgun/softgun.c
     
-    alsasound.c
-    bus.c
+    softgun/alsasound.c
+    softgun/bus.c
 #    bus64.c
-    clock.c
-    configfile.c
-    crc16.c
-    crc32.c
-    crc8.c
-    cycletimer.c
-    debugvars.c
-    diskimage.c
-    dram.c
-    elfloader.c
-    fbdisplay.c
-    filesystem.c
-    hello_world.c
-    i2c_serdes.c
-    ihex.c
-    keyboard.c
-    loader.c
-    logical.c
-    mouse.c
-    nand.c
-    nullsound.c
-    relais.c
-    rfbserver.c
-    rtc.c
-#    sdldisplay.c
-    senseless.c
-    serial.c
-    sglib.c
-    sgstring.c
-    signode.c
-    sound.c
-    spidevice.c
-    sram.c
-    srec.c
-    strhash.c
-    throttle.c
-    usbdevice.c
-    usbstdrq.c
-    xy_hash.c
-    xy_tree.c
+    softgun/clock.c
+    softgun/configfile.c
+    softgun/crc16.c
+    softgun/crc32.c
+    softgun/crc8.c
+    softgun/cycletimer.c
+    softgun/debugvars.c
+    softgun/diskimage.c
+    softgun/dram.c
+    softgun/elfloader.c
+    softgun/fbdisplay.c
+    softgun/filesystem.c
+    softgun/hello_world.c
+    softgun/i2c_serdes.c
+    softgun/ihex.c
+    softgun/keyboard.c
+    softgun/loader.c
+    softgun/logical.c
+    softgun/mouse.c
+    softgun/nand.c
+    softgun/nullsound.c
+    softgun/relais.c
+    softgun/rfbserver.c
+    softgun/rtc.c
+#    softgun/sdldisplay.c
+    softgun/senseless.c
+    softgun/serial.c
+    softgun/sglib.c
+    softgun/sgstring.c
+    softgun/signode.c
+    softgun/sound.c
+    softgun/spidevice.c
+    softgun/sram.c
+    softgun/srec.c
+    softgun/strhash.c
+    softgun/throttle.c
+    softgun/usbdevice.c
+    softgun/usbstdrq.c
+    softgun/xy_hash.c
+    softgun/xy_tree.c
     
     version.c
     
-    core/asyncmanager.c
-    core/device.c
-    core/exithandler.c
-    core/globalclock.c
-    core/lib.c
-    core/logging.c
-    core/str.c
-    core/timerlist.c
+    asyncmanager.c
+    device.c
+    exithandler.c
+    globalclock.c
+    lib.c
+    logging.c
+    str.c
+    timerlist.c
     
     memmapped/sram.c
     )
@@ -89,6 +89,7 @@ TARGET_COMPILE_FEATURES(${PROJECT_NAME} PUBLIC c_variadic_macros)
 
 # Automatically add the current source- and build directories to the include path.
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/softgun")
 
 FIND_PACKAGE(PkgConfig)
 

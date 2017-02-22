@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 typedef struct PtmxIface PtmxIface;
 typedef void PtmxDataSinkProc(void *evData, uint8_t * buf, int cnt);
 PtmxIface *PtmxIface_New(const char *linkname);

@@ -59,13 +59,13 @@
 #  include "senseless.h"
 #endif
 
-#include "core/asyncmanager.h"
-#include "core/byteorder.h"
-#include "core/device.h"
-#include "core/exithandler.h"
-#include "core/globalclock.h"
-#include "core/lib.h"
-#include "core/logging.h"
+#include "asyncmanager.h"
+#include "byteorder.h"
+#include "device.h"
+#include "exithandler.h"
+#include "globalclock.h"
+#include "lib.h"
+#include "logging.h"
 
 typedef struct LoadChainEntry {
 	struct LoadChainEntry *next;

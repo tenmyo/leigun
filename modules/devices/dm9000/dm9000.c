@@ -57,7 +57,7 @@
 #include "m93c46.h"
 #include "sgstring.h"
 #include "signode.h"
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 #include "initializer.h"
 
 

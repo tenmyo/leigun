@@ -44,7 +44,7 @@
 #include "bus.h"
 #include "signode.h"
 #include "sgstring.h"
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }

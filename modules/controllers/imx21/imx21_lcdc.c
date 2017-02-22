@@ -52,7 +52,7 @@
 #include "clock.h"
 #include "sgstring.h"
 
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }

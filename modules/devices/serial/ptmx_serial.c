@@ -53,8 +53,8 @@
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sglib.h"
-#include "core/asyncmanager.h"
-#include "core/exithandler.h"
+#include "asyncmanager.h"
+#include "exithandler.h"
 
 
 #define RXBUF_SIZE 128

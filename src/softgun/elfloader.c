@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 /* 32-bit ELF base types. */
 typedef uint32_t Elf32_Addr;

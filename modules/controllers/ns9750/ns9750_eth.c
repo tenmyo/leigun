@@ -58,8 +58,8 @@
 #include "linux-tap.h"
 #include "ns9750_timer.h"
 
-#include "core/asyncmanager.h"
-#include "core/byteorder.h"
+#include "asyncmanager.h"
+#include "byteorder.h"
 
 
 #if 0

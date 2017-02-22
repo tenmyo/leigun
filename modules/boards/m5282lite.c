@@ -43,7 +43,7 @@
 
 // Leigun Core Headers
 #include "bus.h"
-#include "core/device.h"
+#include "device.h"
 #include "sram.h"
 
 // External headers

@@ -26,13 +26,13 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "core/lib.h"
+#include "lib.h"
 
 // Local/Private Headers
-#include "core/exithandler.h"
-#include "core/list.h"
-#include "core/logging.h"
-#include "core/str.h"
+#include "exithandler.h"
+#include "list.h"
+#include "logging.h"
+#include "str.h"
 
 // External headers
 #include <uv.h>

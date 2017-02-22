@@ -58,7 +58,7 @@
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sglib.h"
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }

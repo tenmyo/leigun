@@ -81,7 +81,7 @@
 // Leigun Core Headers
 #include "bus.h"
 #include "clock.h"
-#include "core/device.h"
+#include "device.h"
 #include "fbdisplay.h"
 #include "i2c_serdes.h"
 #include "mmcdev.h"

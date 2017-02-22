@@ -63,7 +63,7 @@
 #include "linux-tap.h"
 #include "cycletimer.h"
 #include "sgstring.h"
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 
 #if 0

@@ -47,7 +47,7 @@
 #include "cycletimer.h"
 #include "configfile.h"
 #include "sgstring.h"
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 #define RX_FIFO_SIZE		(16)
 #define RX_FIFO_WP(contr)	((contr)->rx_fifo_wp % RX_FIFO_SIZE)

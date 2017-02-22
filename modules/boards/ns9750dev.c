@@ -82,8 +82,8 @@
 
 // Leigun Core Headers
 #include "bus.h"
-#include "core/device.h"
-#include "core/logging.h"
+#include "device.h"
+#include "logging.h"
 #include "dram.h"
 #include "signode.h"
 

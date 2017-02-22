@@ -25,11 +25,11 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "core/exithandler.h"
+#include "exithandler.h"
 
 // Local/Private Headers
-#include "core/list.h"
-#include "core/logging.h"
+#include "list.h"
+#include "logging.h"
 
 // External headers
 #include <uv.h> // for mutex

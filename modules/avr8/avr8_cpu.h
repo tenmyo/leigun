@@ -12,12 +12,12 @@
 #include "avr8/idecode_avr8.h"
 #include "cycletimer.h"
 #include "clock.h"
-#include "core/byteorder.h"
+#include "byteorder.h"
 #ifndef NO_DEBUGGER
 #include "debugger.h"
 #endif
 #include "throttle.h"
-#include "core/globalclock.h"
+#include "globalclock.h"
 
 #define FLG_C	(1<<0)
 #define	FLG_C_SH	(0)

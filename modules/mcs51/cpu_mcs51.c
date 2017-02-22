@@ -38,8 +38,8 @@
 #include "loader.h"
 #include "sgstring.h"
 #include "signode.h"
-#include "core/device.h"
-#include "core/globalclock.h"
+#include "device.h"
+#include "globalclock.h"
 
 // External headers
 

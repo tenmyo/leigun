@@ -76,8 +76,8 @@
 #include "coprocessor.h"
 #include "cycletimer.h"
 #include "xy_tree.h"
-#include "core/device.h"
-#include "core/globalclock.h"
+#include "device.h"
+#include "globalclock.h"
 
 // External headers
 

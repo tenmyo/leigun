@@ -53,7 +53,7 @@
 #include "crc32.h"
 #include "linux-tap.h"
 
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 
 #if 0

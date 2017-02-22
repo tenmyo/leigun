@@ -57,7 +57,7 @@
 #include "sgstring.h"
 #include "serial.h"
 #include "bus.h"
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 #if 0
 #define dbgprintf(...) { fprintf(stderr,__VA_ARGS__); }

@@ -24,11 +24,11 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "core/globalclock.h"
+#include "globalclock.h"
 
 // Local/Private Headers
-#include "core/list.h"
-#include "core/logging.h"
+#include "list.h"
+#include "logging.h"
 
 // External headers
 #include <uv.h> // for mutex

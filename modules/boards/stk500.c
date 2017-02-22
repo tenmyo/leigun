@@ -29,7 +29,7 @@
 // Local/Private Headers
 
 // Leigun Core Headers
-#include "core/device.h"
+#include "device.h"
 
 // External headers
 

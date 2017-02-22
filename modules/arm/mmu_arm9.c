@@ -47,7 +47,7 @@
 #include "compiler_extensions.h"
 #include "sgstring.h"
 
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 typedef void McrProc(void *clientData, uint32_t icode, uint32_t value);
 typedef uint32_t MrcProc(void *clientData, uint32_t icode);

@@ -54,13 +54,13 @@
 #endif
 
 // include user header
-#include "core/byteorder.h"
+#include "byteorder.h"
 #include "configfile.h"
 #include "fbdisplay.h"
 #include "sgstring.h"
 #include "sglib.h"
 
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 #ifndef NO_KEYBOARD
 #include "keyboard.h"

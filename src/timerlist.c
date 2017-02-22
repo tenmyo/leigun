@@ -1,4 +1,4 @@
-//===-- core/device.c - Leigun Device Management Facilities -------*- C -*-===//
+//===-- core/timerlist.h ------------------------------------------*- C -*-===//
 //
 //              The Leigun Embedded System Simulator Platform
 //
@@ -17,7 +17,6 @@
 //===----------------------------------------------------------------------===//
 ///
 /// @file
-/// This file contains the definitions of device management facilities.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -25,122 +24,146 @@
 //= Dependencies
 //==============================================================================
 // Main Module Header
-#include "core/device.h"
+#include "timerlist.h"
 
 // Local/Private Headers
-#include "configfile.h"
-#include "core/exithandler.h"
-#include "core/list.h"
-#include "core/logging.h"
+#include "list.h"
 
 // External headers
 #include <uv.h>
 
 // System headers
-#include <stdlib.h>
-#include <string.h>
+#include <stdlib.h> // for malloc
 
 
 //==============================================================================
 //= Constants(also Enumerations)
 //==============================================================================
-static const char *MOD_NAME = "Device";
 
 
 //==============================================================================
 //= Types
 //==============================================================================
-typedef struct Devices_s { List_t devices; } Devices_t;
+typedef struct TimerList_Element_s {
+    List_Element_t liste;
+    uint64_t cnt;
+    TimerList_cb cb;
+    void *data;
+} TimerList_Element_t;
 
-
-//==============================================================================
-//= Variables
-//==============================================================================
-static Devices_t Device_devices;
+struct TimerList_s {
+    List_t list;
+    uv_mutex_t list_mutex;
+};
 
 
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
-static int Device_compare(const Device_DrvBase_t *a, const Device_DrvBase_t *b);
+static int TimerList_insert(TimerList_Element_t *e, TimerList_Element_t *cur);
+
+
+//==============================================================================
+//= Variables
+//==============================================================================d
 
 
 //==============================================================================
 //= Function definitions(static)
 //==============================================================================
 //===----------------------------------------------------------------------===//
-/// Compare device.
+///
 //===----------------------------------------------------------------------===//
-static int Device_compare(const Device_DrvBase_t *a, const Device_DrvBase_t *b) {
-    return !(a->kind == b->kind) || strcmp(a->name, b->name);
+static int TimerList_insert(TimerList_Element_t *e, TimerList_Element_t *cur) {
+    if (!cur) {
+        return -1;
+    }
+    if (e->cnt < cur->cnt) {
+        cur->cnt -= e->cnt;
+        return -1;
+    }
+    e->cnt -= cur->cnt;
+    return 1;
+}
+
+//===----------------------------------------------------------------------===//
+///
+//===----------------------------------------------------------------------===//
+static int TimerList_compare(TimerList_Element_t *e, TimerList_Element_t *cur) {
+    return ((e->cb == cur->cb) && (e->data == cur->data));
 }
 
 
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
+
 //===----------------------------------------------------------------------===//
-/// Register device driver. called from DEVICE_REGISTER_xxx.
 ///
-/// @param[in]      drv     driver
 //===----------------------------------------------------------------------===//
-void Device_Register(Device_DrvBase_t *drv) {
-    LOG_Info(MOD_NAME, "Register [%d] %s", drv->kind, drv->name);
-    List_InitElement(&drv->liste);
-    if (List_Find(&Device_devices.devices, (List_Compare_cb)&Device_compare,
-                  &drv->liste)) {
-        LOG_Warn(MOD_NAME, "Board %s already registered", drv->name);
-        return;
+TimerList_t *TimerList_New(void) {
+    TimerList_t *l = calloc(1, sizeof(*l));
+    if (l) {
+        List_Init(&l->list);
+        uv_mutex_init(&l->list_mutex);
     }
-    List_Push(&Device_devices.devices, &drv->liste);
+    return l;
 }
 
 
 //===----------------------------------------------------------------------===//
-/// Create board.
 ///
-/// @param[in]      name        board name
-///
-/// @attention if not registered, it's not an error.
-///
-/// @return created board. NULL if error
 //===----------------------------------------------------------------------===//
-Device_Board_t *Device_CreateBoard(const char *name) {
-    LOG_Info(MOD_NAME, "Create board %s", name);
-    const Device_DrvBase_t device = {.kind = DK_BOARD, .name = name};
-    Device_DrvBoard_t *result;
-    result = List_Find(&Device_devices.devices, (List_Compare_cb)&Device_compare,
-                       &device.liste);
-    if (!result) {
-        LOG_Warn(MOD_NAME, "Board %s not found", name);
-        return NULL;
+int TimerList_Insert(TimerList_t *l, uint64_t cnt, TimerList_cb cb,
+                     void *data) {
+    TimerList_Element_t *e = calloc(1, sizeof(*e));
+    if (!e) {
+        return UV_EAI_MEMORY;
     }
-    LOG_Info(MOD_NAME, "defaultconfig %s", result->defaultconfig);
-    Config_AddString(result->defaultconfig);
-    return result->create();
+    List_InitElement(&e->liste);
+    e->cnt = cnt;
+    e->cb = cb;
+    e->data = data;
+    uv_mutex_lock(&l->list_mutex);
+    List_Insert(&l->list, (List_Insert_cb)&TimerList_insert, &e->liste);
+    uv_mutex_unlock(&l->list_mutex);
+    return 0;
 }
 
 
 //===----------------------------------------------------------------------===//
-/// Create MPU.
 ///
-/// @param[in]      name        name
-///
-/// @attention if not registered, it's not an error.
-///
-/// @return created MPU. NULL if error
 //===----------------------------------------------------------------------===//
-Device_MPU_t *Device_CreateMPU(const char *name) {
-    LOG_Info(MOD_NAME, "Create MPU %s", name);
-    const Device_DrvBase_t device = {.kind = DK_MPU, .name = name};
-    Device_DrvMPU_t *result;
-    result = List_Find(&Device_devices.devices, (List_Compare_cb)&Device_compare,
-                       &device.liste);
-    if (!result) {
-        LOG_Warn(MOD_NAME, "MPU %s not found", name);
-        return NULL;
+void TimerList_Remove(TimerList_t *l, TimerList_cb cb, void *data) {
+    TimerList_Element_t e = {.cb = cb, .data = data};
+    TimerList_Element_t *cur;
+    uv_mutex_lock(&l->list_mutex);
+    cur = List_PopBy(&l->list, (List_Compare_cb)&TimerList_compare, &e.liste);
+    uv_mutex_unlock(&l->list_mutex);
+    free(cur);
+}
+
+
+//===----------------------------------------------------------------------===//
+///
+//===----------------------------------------------------------------------===//
+void TimerList_Fire(TimerList_t *l, uint64_t inc) {
+    TimerList_Element_t e = {.cnt = inc};
+    TimerList_Element_t *cur;
+    int ret;
+    for (;;) {
+        uv_mutex_lock(&l->list_mutex);
+        cur = List_Head(&l->list);
+        ret = TimerList_insert(&e, cur);
+        if (ret < 0) {
+            uv_mutex_unlock(&l->list_mutex);
+            break;
+        }
+        List_Pop(&l->list);
+        uv_mutex_unlock(&l->list_mutex);
+        if (cur->cb) {
+            cur->cb(cur->data);
+        }
+        free(cur);
     }
-    LOG_Info(MOD_NAME, "defaultconfig %s", result->defaultconfig);
-    Config_AddString(result->defaultconfig);
-    return result->create();
 }

@@ -55,7 +55,7 @@
 #include "crc32.h"
 #include "signode.h"
 #include "sgstring.h"
-#include "core/asyncmanager.h"
+#include "asyncmanager.h"
 
 
 #define DROP 0

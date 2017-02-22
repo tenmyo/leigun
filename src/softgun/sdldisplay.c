@@ -4,7 +4,7 @@
 #include "fbdisplay.h"
 #include "keyboard.h"
 #include "configfile.h"
-#include "core/byteorder.h"
+#include "byteorder.h"
 #include "cycletimer.h"
 
 #define write16(addr,value) (*(uint16_t*)(addr) = (value))

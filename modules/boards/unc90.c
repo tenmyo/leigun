@@ -84,7 +84,7 @@
 // Leigun Core Headers
 #include "bus.h"
 #include "clock.h"
-#include "core/device.h"
+#include "device.h"
 #include "dram.h"
 #include "signode.h"
 #include "sram.h"

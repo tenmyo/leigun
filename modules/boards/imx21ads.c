@@ -87,7 +87,7 @@
 
 // Leigun Core Headers
 #include "bus.h"
-#include "core/device.h"
+#include "device.h"
 #include "dram.h"
 #include "fbdisplay.h"
 #include "mmcdev.h"

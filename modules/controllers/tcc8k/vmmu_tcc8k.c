@@ -5,7 +5,7 @@
 #include "sgstring.h"
 #include "compiler_extensions.h"
 #include "vmmu_tcc8k.h"
-#include "core/byteorder.h"
+#include "byteorder.h"
 
 #define	REG_REGION(base,region)	((base) + ((region) << 2))
 #define		REGION_SA_MSK 	(0xfff << 20)

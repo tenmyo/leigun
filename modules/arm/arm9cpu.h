@@ -10,7 +10,7 @@
 #include <debugger.h>
 #include "signode.h"
 #include "cycletimer.h"
-#include "core/globalclock.h"
+#include "globalclock.h"
 /*
  * ------------------------------------------------------
  * ARM9_RegPointerSet
