@@ -1,2 +1,2 @@
-#include <version.h>
-const char *softgun_version = "softgun-" VERSION;
+#include "version.h"
+const char *leigun_version = "leigun-" VERSION;
