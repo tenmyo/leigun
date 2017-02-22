@@ -30,6 +30,7 @@
 
 // Local/Private Headers
 #include "exithandler.h"
+#include "leigun.h"
 #include "list.h"
 #include "logging.h"
 #include "str.h"
@@ -162,7 +163,7 @@ int Lib_Init(void) {
             continue;
         }
         LOG_Info("Lib", "Load %s", path);
-        lib = calloc(1, sizeof(*lib));
+        lib = LEIGUN_NEW(lib);
         err = uv_dlopen(path, &lib->lib);
         if (err < 0) {
             LOG_Warn("Lib", "dlopen(%s) failed. %s", path,

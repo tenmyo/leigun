@@ -27,6 +27,7 @@
 #include "globalclock.h"
 
 // Local/Private Headers
+#include "leigun.h"
 #include "list.h"
 #include "logging.h"
 
@@ -167,7 +168,7 @@ int GlobalClock_Registor(GlobalClock_Proc_cb proc, void *data, uint64_t hz) {
         LOG_Error(MOD_NAME, "GlobalClock alreay running");
         return UV_EALREADY;
     }
-    GlobalClock_LocalClock_t *clk = calloc(1, sizeof(*clk));
+    GlobalClock_LocalClock_t *clk = LEIGUN_NEW(clk);
     if (!clk) {
         LOG_Error(MOD_NAME, "malloc failed %s", strerror(errno));
         return UV_EAI_MEMORY;

@@ -19,40 +19,6 @@
 /// @file
 ///
 //===----------------------------------------------------------------------===//
-// clang-format off
-/*
- **************************************************************************************************
- * SRAM Emulation
- *
- * Copyright 2004 Jochen Karrer. All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are
- * permitted provided that the following conditions are met:
- * 
- *   1. Redistributions of source code must retain the above copyright notice, this list of
- *       conditions and the following disclaimer.
- * 
- *   2. Redistributions in binary form must reproduce the above copyright notice, this list
- *       of conditions and the following disclaimer in the documentation and/or other materials
- *       provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY Jochen Karrer ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * The views and conclusions contained in the software and documentation are those of the
- * authors and should not be interpreted as representing official policies, either expressed
- * or implied, of Jochen Karrer.
- *
- *************************************************************************************************
- */
-// clang-format on
 
 //==============================================================================
 //= Dependencies
@@ -62,6 +28,7 @@
 // Local/Private Headers
 #include "bus.h"
 #include "device.h"
+#include "leigun.h"
 #include "logging.h"
 
 // External headers
@@ -114,7 +81,7 @@ Device_MemMapped_t *SRAM_create(const char *name);
 static int SRAM_prepare(void *self) {
     SRAM_t *dev = self;
     LOG_Debug(DEVICE_NAME, "prepare(%s, %zd)", dev->name, dev->size);
-    dev->host_mem = malloc(dev->size);
+    dev->host_mem = LEIGUN_NEW_BUF(dev->size);
     if (!dev->host_mem) {
         LOG_Error(DEVICE_NAME, "malloc failed %s", strerror(errno));
         return UV_EAI_MEMORY;
@@ -198,7 +165,7 @@ static SigNode *SRAM_getSignode(void *self, const char *name) {
 
 Device_MemMapped_t *SRAM_create(const char *name) {
     LOG_Info(DEVICE_NAME, "create(%s)", name);
-    SRAM_t *dev = calloc(1, sizeof(*dev));
+    SRAM_t *dev = LEIGUN_NEW(dev);
     dev->mmd = (Device_MemMapped_t){
         .base.self = dev,
         .base.prepare = &SRAM_prepare,
