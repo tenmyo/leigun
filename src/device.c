@@ -71,7 +71,8 @@ static int Device_compare(const Device_DrvBase_t *a, const Device_DrvBase_t *b);
 //===----------------------------------------------------------------------===//
 /// Compare device.
 //===----------------------------------------------------------------------===//
-static int Device_compare(const Device_DrvBase_t *a, const Device_DrvBase_t *b) {
+static int Device_compare(const Device_DrvBase_t *a,
+                          const Device_DrvBase_t *b) {
     return !(a->kind == b->kind) || strcmp(a->name, b->name);
 }
 
@@ -109,8 +110,8 @@ Device_Board_t *Device_CreateBoard(const char *name) {
     LOG_Info(MOD_NAME, "Create board %s", name);
     const Device_DrvBase_t device = {.kind = DK_BOARD, .name = name};
     Device_DrvBoard_t *result;
-    result = List_Find(&Device_devices.devices, (List_Compare_cb)&Device_compare,
-                       &device.liste);
+    result = List_Find(&Device_devices.devices,
+                       (List_Compare_cb)&Device_compare, &device.liste);
     if (!result) {
         LOG_Warn(MOD_NAME, "Board %s not found", name);
         return NULL;
@@ -134,8 +135,8 @@ Device_MPU_t *Device_CreateMPU(const char *name) {
     LOG_Info(MOD_NAME, "Create MPU %s", name);
     const Device_DrvBase_t device = {.kind = DK_MPU, .name = name};
     Device_DrvMPU_t *result;
-    result = List_Find(&Device_devices.devices, (List_Compare_cb)&Device_compare,
-                       &device.liste);
+    result = List_Find(&Device_devices.devices,
+                       (List_Compare_cb)&Device_compare, &device.liste);
     if (!result) {
         LOG_Warn(MOD_NAME, "MPU %s not found", name);
         return NULL;

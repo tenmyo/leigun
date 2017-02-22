@@ -28,8 +28,8 @@ extern "C" {
 //= Dependencies
 //==============================================================================
 // Local/Private Headers
-#include "list.h"
 #include "initializer.h"
+#include "list.h"
 #include "signode.h"
 
 // External headers
@@ -63,8 +63,10 @@ typedef struct Device_Base_s {
     void *self;
     int (*prepare)(void *self);
     int (*release)(void *self);
-    int (*set_opt)(void *self, Device_OptReq_t req, const void *optval, size_t optlen);
-    int (*get_opt)(void *self, Device_OptReq_t req, void *optval, size_t *optlen);
+    int (*set_opt)(void *self, Device_OptReq_t req, const void *optval,
+                   size_t optlen);
+    int (*get_opt)(void *self, Device_OptReq_t req, void *optval,
+                   size_t *optlen);
     SigNode *(*get_signode)(void *self, const char *name);
 } Device_Base_t;
 
@@ -79,9 +81,7 @@ typedef struct Device_MemMapped_s {
     int (*unmap32)(void *self, uint32_t addr, size_t length);
 } Device_MemMapped_t;
 
-typedef struct Device_Bus_s {
-    Device_Base_t base;
-} Device_Bus_t;
+typedef struct Device_Bus_s { Device_Base_t base; } Device_Bus_t;
 
 
 // Device Drivers

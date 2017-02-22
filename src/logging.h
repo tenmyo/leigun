@@ -65,7 +65,7 @@ extern int LOG_level;
 //==============================================================================
 #define LOG_Log(level, pri, tag, ...)                                          \
     do {                                                                       \
-        if (LOG_level <= level) {                                              \
+        if (LOG_level <= (level)) {                                            \
             fprintf(stderr, "[%-5s]\t%s\t", pri, tag);                         \
             fprintf(stderr, __VA_ARGS__);                                      \
             fprintf(stderr, "\n");                                             \

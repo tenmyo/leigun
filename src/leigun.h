@@ -52,7 +52,7 @@ extern "C" {
 //==============================================================================
 //= Macros
 //==============================================================================
-#define LEIGUN_NEW(ptr) calloc(1, sizeof(*ptr))
+#define LEIGUN_NEW(ptr) calloc(1, sizeof(*(ptr)))
 #define LEIGUN_NEW_ARRAY(num, type) calloc(num, sizeof(type))
 #define LEIGUN_NEW_BUF(size) calloc(1, size)
 

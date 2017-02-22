@@ -67,10 +67,13 @@ typedef struct SRAM_s {
 //==============================================================================
 static int SRAM_prepare(void *self);
 static int SRAM_release(void *self);
-static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot, size_t offset);
+static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot,
+                      size_t offset);
 static int SRAM_unmap32(void *self, uint32_t addr, size_t length);
-static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval, size_t optlen);
-static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval, size_t *optlen);
+static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval,
+                       size_t optlen);
+static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval,
+                       size_t *optlen);
 static SigNode *SRAM_getSignode(void *self, const char *name);
 
 Device_MemMapped_t *SRAM_create(const char *name);
@@ -100,7 +103,8 @@ static int SRAM_release(void *self) {
 }
 
 
-static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot, size_t offset) {
+static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot,
+                      size_t offset) {
     SRAM_t *dev = self;
     LOG_Debug(DEVICE_NAME, "map32(%s)", dev->name);
     Mem_MapRange(addr, dev->host_mem, dev->size, length, prot);
@@ -116,7 +120,8 @@ static int SRAM_unmap32(void *self, uint32_t addr, size_t length) {
 }
 
 
-static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval, size_t optlen) {
+static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval,
+                       size_t optlen) {
     int ret;
     SRAM_t *dev = self;
     switch (req) {
@@ -136,7 +141,8 @@ static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval, size
 }
 
 
-static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval, size_t *optlen) {
+static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval,
+                       size_t *optlen) {
     int ret;
     SRAM_t *dev = self;
     switch (req) {

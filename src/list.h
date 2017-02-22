@@ -145,8 +145,7 @@ static inline void *List_Find(List_t *l, List_Compare_cb comparator,
                               const List_Element_t *operand) {
     List_Element_t *cur;
     List_Element_t *next;
-    List_Element_t **prev_next = &l->head;
-    for (cur = *prev_next; cur; prev_next = &cur->next, cur = next) {
+    for (cur = l->head; cur; cur = next) {
         next = cur->next;
         if (comparator(operand, cur) == 0) {
             break;

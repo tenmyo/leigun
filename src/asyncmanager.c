@@ -29,8 +29,8 @@
 #include "asyncmanager.h"
 
 // Local/Private Headers
-#include "leigun.h"
 #include "exithandler.h"
+#include "leigun.h"
 #include "logging.h"
 
 // External headers
