@@ -29,7 +29,8 @@
 // Local/Private Headers
 
 // Leigun Core Headers
-#include "device.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
 
 // External headers
 
@@ -71,8 +72,8 @@ static Device_Board_t *create(void);
 //= Function definitions(static)
 //==============================================================================
 static Device_Board_t *create(void) {
-    board_t *board = calloc(1, sizeof(*board));
-    board->base.base.self = board;
+    board_t *board = LEIGUN_NEW(board);
+    board->base.self = board;
     board->mpu = Device_CreateMPU("AVR8");
     return &board->base;
 }
@@ -81,5 +82,5 @@ static Device_Board_t *create(void) {
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                      BOARD_DEFAULTCONFIG);
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, NULL, NULL, NULL, NULL,
+                      NULL, &create, BOARD_DEFAULTCONFIG);

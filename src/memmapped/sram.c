@@ -69,14 +69,14 @@ static int SRAM_prepare(void *self);
 static int SRAM_release(void *self);
 static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot,
                       size_t offset);
-static int SRAM_unmap32(void *self, uint32_t addr, size_t length);
 static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval,
                        size_t optlen);
 static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval,
                        size_t *optlen);
-static SigNode *SRAM_getSignode(void *self, const char *name);
 
-Device_MemMapped_t *SRAM_create(const char *name);
+static Device_MemMapped_t *SRAM_create(const Device_DrvMemMapped_t *drv,
+                                       const char *name);
+
 
 //==============================================================================
 //= Function definitions(static)
@@ -108,14 +108,6 @@ static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot,
     SRAM_t *dev = self;
     LOG_Debug(DEVICE_NAME, "map32(%s)", dev->name);
     Mem_MapRange(addr, dev->host_mem, dev->size, length, prot);
-    return 0;
-}
-
-
-static int SRAM_unmap32(void *self, uint32_t addr, size_t length) {
-    SRAM_t *dev = self;
-    LOG_Debug(DEVICE_NAME, "unmap32(%s)", dev->name);
-    Mem_UnMapRange(addr, length);
     return 0;
 }
 
@@ -164,25 +156,12 @@ static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval,
 }
 
 
-static SigNode *SRAM_getSignode(void *self, const char *name) {
-    return NULL;
-}
-
-
-Device_MemMapped_t *SRAM_create(const char *name) {
+static Device_MemMapped_t *SRAM_create(const Device_DrvMemMapped_t *drv,
+                                       const char *name) {
     LOG_Info(DEVICE_NAME, "create(%s)", name);
     SRAM_t *dev = LEIGUN_NEW(dev);
-    dev->mmd = (Device_MemMapped_t){
-        .base.self = dev,
-        .base.prepare = &SRAM_prepare,
-        .base.release = &SRAM_release,
-        .base.set_opt = &SRAM_setOpt,
-        .base.get_opt = &SRAM_getOpt,
-        .base.get_signode = &SRAM_getSignode,
-        .map32 = &SRAM_map32,
-        .unmap32 = &SRAM_unmap32,
-    };
-    dev->name = strdup(name);
+    dev->mmd.self = dev;
+    dev->mmd.drv = drv;
     dev->size = 0;
     dev->host_mem = NULL;
     return &dev->mmd;
@@ -192,4 +171,6 @@ Device_MemMapped_t *SRAM_create(const char *name) {
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-DEVICE_REGISTER_MEMMAPPED(DEVICE_NAME, DEVICE_DESCRIPTION, &SRAM_create)
+DEVICE_REGISTER_MEMMAPPED(DEVICE_NAME, DEVICE_DESCRIPTION, &SRAM_prepare,
+                          &SRAM_release, &SRAM_setOpt, &SRAM_getOpt, NULL,
+                          &SRAM_create, &SRAM_map32)

@@ -145,3 +145,30 @@ Device_MPU_t *Device_CreateMPU(const char *name) {
     Config_AddString(result->defaultconfig);
     return result->create();
 }
+
+
+int Device_DefaultPrepare(void *dev) {
+    return 0;
+}
+
+
+int Device_DefaultRelease(void *dev) {
+    return 0;
+}
+
+
+int Device_DefaultSetOpt(void *dev, Device_OptReq_t req, const void *optval,
+                         size_t optlen) {
+    return UV_EINVAL;
+}
+
+
+int Device_DefaultGetOpt(void *dev, Device_OptReq_t req, void *optval,
+                         size_t *optlen) {
+    return UV_EINVAL;
+}
+
+
+SigNode *Device_DefaultGetSignode(void *dev, const char *name) {
+    return NULL;
+}

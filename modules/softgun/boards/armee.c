@@ -77,11 +77,12 @@
 #include "bus.h"
 #include "clock.h"
 #include "configfile.h"
-#include "device.h"
 #include "logging.h"
 #include "i2c_serdes.h"
 #include "signode.h"
 #include "sram.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
 
 // External headers
 
@@ -184,8 +185,8 @@ static Device_Board_t *create(void) {
     BusDevice *dev;
     FbDisplay *display = NULL;
     Keyboard *keyboard = NULL;
-    board_t *board = calloc(1, sizeof(*board));
-    board->base.base.self = board;
+    board_t *board = LEIGUN_NEW(board);
+    board->base.self = board;
 
     FbDisplay_New("lcd0", &display, &keyboard, NULL, NULL);
     if (!display) {
@@ -244,5 +245,5 @@ static Device_Board_t *create(void) {
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                      BOARD_DEFAULTCONFIG);
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, NULL, NULL, NULL, NULL,
+                      NULL, &create, BOARD_DEFAULTCONFIG);

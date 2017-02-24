@@ -76,8 +76,9 @@
 #include "coprocessor.h"
 #include "cycletimer.h"
 #include "xy_tree.h"
-#include "device.h"
-#include "globalclock.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
+#include "leigun/globalclock.h"
 
 // External headers
 
@@ -884,9 +885,8 @@ create(void)
 	int i;
 	const char *instancename = "arm";
 	ARM9 *arm = &gcpu;
-	Device_MPU_t *dev;
-	dev = calloc(1, sizeof(*dev));
-	dev->base.self = arm;
+	Device_MPU_t *dev = LEIGUN_NEW(dev);
+	dev->self = arm;
 	Config_ReadUInt32(&cpu_clock, "global", "cpu_clock");
 	fprintf(stderr, "Creating ARM9 CPU with clock %d HZ\n", cpu_clock);
 	memset(arm, 0, sizeof(ARM9));
@@ -932,8 +932,7 @@ create(void)
 static void
 run(GlobalClock_LocalClock_t *clk, void *data)
 {
-	Device_MPU_t *dev = data;
-	ARM9 *arm = dev->base.self;
+	ARM9 *arm = ((Device_MPU_t *)data)->self;
 	uint32_t addr = 0;
 	uint32_t dbgwait;
 	arm->clk = clk;
@@ -1066,5 +1065,6 @@ ARM_Exception(ARM_ExceptionID exception, int nia_offset)
 	ARM_SET_NIA(new_pc);
 }
 
-DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, NULL, NULL, NULL, NULL, NULL,
+                    &create, MPU_DEFAULTCONFIG);
 

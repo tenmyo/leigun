@@ -73,8 +73,9 @@
 // Leigun Core Headers
 #include "configfile.h"
 #include "cycletimer.h"
-#include "device.h"
-#include "globalclock.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
+#include "leigun/globalclock.h"
 
 // External headers
 
@@ -143,8 +144,8 @@ create(void)
 {
 	int32_t cpu_clock = 66000000;
 	const char *instancename = "coldfire";
-	Device_MPU_t *dev = calloc(1, sizeof(*dev));
-	dev->base.self = &g_CFCpu;
+	Device_MPU_t *dev = LEIGUN_NEW(dev);
+	dev->self = &g_CFCpu;
 	g_CFCpu.reg_D = &g_CFCpu.reg_GP[0];
 	g_CFCpu.reg_A = &g_CFCpu.reg_GP[8];
 	Config_ReadInt32(&cpu_clock, "global", "cpu_clock");
@@ -390,5 +391,6 @@ CF_Interrupt(uint32_t vecnum, uint8_t fault_status, int priority)
 	Push4(formvec);
 }
 
-DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, NULL, NULL, NULL, NULL, NULL,
+                    &create, MPU_DEFAULTCONFIG);
 

@@ -87,13 +87,14 @@
 
 // Leigun Core Headers
 #include "bus.h"
-#include "device.h"
 #include "dram.h"
 #include "fbdisplay.h"
 #include "mmcdev.h"
 #include "rfbserver.h"
 #include "signode.h"
 #include "sram.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
 
 // External headers
 
@@ -272,8 +273,8 @@ static Device_Board_t *create(void) {
     FbDisplay *display;
     Keyboard *keyboard;
     UsbDevice *usbdev;
-    board_t *board = calloc(1, sizeof(*board));
-    board->base.base.self = board;
+    board_t *board = LEIGUN_NEW(board);
+    board->base.self = board;
 
     Bus_Init(MMU_InvalidateTlb, 1 * 1024);
     board->mpu = Device_CreateMPU("ARM9");
@@ -415,5 +416,5 @@ static Device_Board_t *create(void) {
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                      BOARD_DEFAULTCONFIG);
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, NULL, NULL, NULL, NULL,
+                      NULL, &create, BOARD_DEFAULTCONFIG);

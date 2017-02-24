@@ -38,8 +38,9 @@
 #include "loader.h"
 #include "sgstring.h"
 #include "signode.h"
-#include "device.h"
-#include "globalclock.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
+#include "leigun/globalclock.h"
 
 // External headers
 
@@ -312,8 +313,8 @@ create(void)
 	uint32_t cpu_clock = 1000000;
 	const char *instancename = "mcs51";
 	uint32_t cycle_mult = 12;
-	Device_MPU_t *dev = calloc(1, sizeof(*dev));
-	dev->base.self = mcs51;
+	Device_MPU_t *dev = LEIGUN_NEW(dev);
+	dev->self = mcs51;
 	MCS51_SetPSW(0);
 	SET_REG_PC(0);
 	Config_ReadUInt32(&cycle_mult,instancename, "cycle_mult");
@@ -478,5 +479,6 @@ MCS51_UnmapExmem(MCS51Cpu * mcs51, uint16_t addr, uint32_t size)
 	}
 }
 
-DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, NULL, NULL, NULL, NULL, NULL,
+                    &create, MPU_DEFAULTCONFIG);
 

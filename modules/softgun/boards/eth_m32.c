@@ -81,12 +81,13 @@
 // Leigun Core Headers
 #include "bus.h"
 #include "clock.h"
-#include "device.h"
 #include "fbdisplay.h"
 #include "i2c_serdes.h"
 #include "mmcdev.h"
 #include "sgstring.h"
 #include "signode.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
 
 // External headers
 
@@ -321,8 +322,8 @@ static Device_Board_t *create(void) {
         .addrUBRRH = 5,
         .addrUDR = 6,
     };
-    board_t *board = calloc(1, sizeof(*board));
-    board->base.base.self = board;
+    board_t *board = LEIGUN_NEW(board);
+    board->base.self = board;
 
     FbDisplay_New("lcd0", &board->display, &board->keyboard, NULL, NULL);
     if (!board->display) {
@@ -381,5 +382,5 @@ static Device_Board_t *create(void) {
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                      BOARD_DEFAULTCONFIG);
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, NULL, NULL, NULL, NULL,
+                      NULL, &create, BOARD_DEFAULTCONFIG);

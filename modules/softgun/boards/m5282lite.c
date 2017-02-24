@@ -43,8 +43,9 @@
 
 // Leigun Core Headers
 #include "bus.h"
-#include "device.h"
 #include "sram.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
 
 // External headers
 
@@ -113,8 +114,8 @@ static Device_Board_t *create(void) {
     scmcsm = MCF5282_ScmCsmNew("scmcsm");
     dev = AMDFlashBank_New("flash0");
     MCF5282Csm_RegisterDevice(scmcsm, dev, CSM_CS0);
-    board_t *board = calloc(1, sizeof(*board));
-    board->base.base.self = board;
+    board_t *board = LEIGUN_NEW(board);
+    board->base.self = board;
     board->mpu = Device_CreateMPU("coldfire");
 
 // dev = CFM_New("cfm");
@@ -139,5 +140,5 @@ static Device_Board_t *create(void) {
 //==============================================================================
 //= Function definitions(global)
 //==============================================================================
-DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, &create,
-                      BOARD_DEFAULTCONFIG);
+DEVICE_REGISTER_BOARD(BOARD_NAME, BOARD_DESCRIPTION, NULL, NULL, NULL, NULL,
+                      NULL, &create, BOARD_DEFAULTCONFIG);

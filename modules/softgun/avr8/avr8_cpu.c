@@ -74,13 +74,13 @@
 #include "compiler_extensions.h"
 #include "configfile.h"
 #include "cycletimer.h"
-#include "cycletimer.h"
 #include "diskimage.h"
 #include "loader.h"
 #include "sgstring.h"
 #include "signode.h"
-#include "device.h"
-#include "globalclock.h"
+#include "leigun/leigun.h"
+#include "leigun/device.h"
+#include "leigun/globalclock.h"
 
 // External headers
 
@@ -90,7 +90,6 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include <sys/types.h>
-#include <errno.h>
 
 
 //==============================================================================
@@ -722,8 +721,8 @@ create(void)
 	const char *instancename = "avr";
 	int nr_variants = sizeof(avr8_variants) / sizeof(AVR8_Variant);
 	int i;
-	Device_MPU_t *dev = calloc(1, sizeof(*dev));
-	dev->base.self = avr;
+	Device_MPU_t *dev = LEIGUN_NEW(dev);
+	dev->self = avr;
 	variantname = Config_ReadVar(instancename, "variant");
 	if (!variantname) {
 		fprintf(stderr, "No CPU variant selected\n");
@@ -846,8 +845,7 @@ create(void)
 static void
 run(GlobalClock_LocalClock_t *clk, void *data)
 {
-	Device_MPU_t *dev = data;
-	AVR8_Cpu *avr = &gavr8;
+	AVR8_Cpu *avr = ((Device_MPU_t *)data)->self;
 	uint32_t addr = 0;
 	AVR8_InstructionProc *iproc;
 	avr->lclk = clk;
@@ -956,4 +954,4 @@ AVR8_RegisterIntco(void (*ackProc) (void *), void (*retiProc) (void *), void *ev
 }
 
 
-DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, &create, MPU_DEFAULTCONFIG);
+DEVICE_REGISTER_MPU(MPU_NAME, MPU_DESCRIPTION, NULL, NULL, NULL, NULL, NULL, &create, MPU_DEFAULTCONFIG);
