@@ -1,5 +1,4 @@
-//===-- core/byteorder.h - Byteorder Conversion Macros --------------*- C
-//-*-===//
+//===-- core/byteorder.h - Byteorder Conversion Macros ------------*- C -*-===//
 //
 //              The Leigun Embedded System Simulator Platform
 //
