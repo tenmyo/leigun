@@ -31,6 +31,7 @@ extern "C" {
 // External headers
 
 // System headers
+#include <stdint.h>
 #include <stdlib.h>
 
 
@@ -42,6 +43,9 @@ extern "C" {
 //==============================================================================
 //= Types
 //==============================================================================
+typedef uint16_t Leigun_ByteAddr16_t;
+typedef uint32_t Leigun_ByteAddr32_t;
+typedef uint64_t Leigun_ByteAddr64_t;
 
 
 //==============================================================================

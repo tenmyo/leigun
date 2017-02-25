@@ -29,6 +29,7 @@ extern "C" {
 //==============================================================================
 // Local/Private Headers
 #include "initializer.h"
+#include "leigun.h"
 #include "list.h"
 #include "signode.h"
 
@@ -55,7 +56,6 @@ typedef enum Device_OptReq_e {
 #define DEVICE_PROT_NONE 0
 #define DEVICE_PROT_READ (1 << 0)
 #define DEVICE_PROT_WRITE (1 << 1)
-#define DEVICE_PROT_EXEC (1 << 2)
 
 
 //==============================================================================
@@ -72,8 +72,8 @@ typedef struct Device_MPU_s Device_MPU_t;
 typedef struct Device_DrvMemMapped_s Device_DrvMemMapped_t;
 typedef struct Device_MemMapped_s Device_MemMapped_t;
 
-typedef struct Device_DrvBus_s Device_DrvBus_t;
-typedef struct Device_Bus_s Device_Bus_t;
+typedef struct Device_DrvBus32_s Device_DrvBus32_t;
+typedef struct Device_Bus32_s Device_Bus32_t;
 
 
 // Device Instances
@@ -93,9 +93,13 @@ struct Device_MemMapped_s {
     const Device_DrvMemMapped_t *drv;
 };
 
-struct Device_Bus_s {
+typedef void (*Device_DrvBus32_Error_cb)(Leigun_ByteAddr32_t addr, int op);
+struct Device_Bus32_s {
     void *self;
-    const Device_Bus_t *drv;
+    const Device_DrvBus32_t *drv;
+    int all_addr_bits;
+    int block_bits;
+    Device_DrvBus32_Error_cb error_cb;
 };
 
 
@@ -116,37 +120,49 @@ struct Device_DrvBase_s {
 
 struct Device_DrvBoard_s {
     Device_DrvBase_t base;
+    // For DeviceManager
     const char *defaultconfig;
     Device_Board_t *(*create)(void);
 };
 
 struct Device_DrvMPU_s {
     Device_DrvBase_t base;
+    // For DeviceManager
     const char *defaultconfig;
     Device_MPU_t *(*create)(void);
 };
 
 struct Device_DrvMemMapped_s {
     Device_DrvBase_t base;
+    // For DeviceManager
     Device_MemMapped_t *(*create)(const Device_DrvMemMapped_t *drv,
                                   const char *name);
     // For Bus
-    int (*map32)(void *self, uint32_t addr, size_t length, int prot,
-                 size_t offset);
+    int (*map32)(void *self, Device_Bus32_t *bus, Leigun_ByteAddr32_t addr,
+                 uint32_t length, int prot);
 };
 
-typedef void (*Device_DrvBus32_Error_cb)(uint32_t addr, int op);
 struct Device_DrvBus32_s {
     Device_DrvBase_t base;
-    Device_Bus_t *(*create)(int addr_bits);
-    int (*map)(void *self, Device_DrvMemMapped_t *dev, uint32_t addr,
-               size_t length, int prot);
-    uint8_t (*read8)(uint32_t addr);
-    void (*write8)(uint32_t addr, uint8_t val);
-    uint16_t (*read16)(uint32_t addr);
-    void (*write16)(uint32_t addr, uint16_t val);
-    uint32_t (*read32)(uint32_t addr);
-    void (*write32)(uint32_t addr, uint32_t val);
+    // For DeviceManager
+    Device_Bus32_t *(*create)(const Device_DrvBus32_t *drv, int all_addr_bits,
+                              int block_bits,
+                              Device_DrvBus32_Error_cb error_cb);
+    // For Device
+    int (*map)(void *self, Device_MemMapped_t *mmd, Leigun_ByteAddr32_t addr,
+               uint32_t length, int prot);
+    uint8_t (*read8)(void *self, Leigun_ByteAddr32_t addr);
+    uint16_t (*read16)(void *self, Leigun_ByteAddr32_t addr);
+    uint32_t (*read32)(void *self, Leigun_ByteAddr32_t addr);
+    uint64_t (*read64)(void *self, Leigun_ByteAddr32_t addr);
+    void (*write8)(void *self, Leigun_ByteAddr32_t addr, uint8_t val);
+    void (*write16)(void *self, Leigun_ByteAddr32_t addr, uint16_t val);
+    void (*write32)(void *self, Leigun_ByteAddr32_t addr, uint32_t val);
+    void (*write64)(void *self, Leigun_ByteAddr32_t addr, uint64_t val);
+    // For MemMapped
+    int (*map_mem)(void *self, Leigun_ByteAddr32_t addr, uint32_t length,
+                   int prot, void *mem);
+    void *map_func;
 };
 
 
@@ -161,7 +177,7 @@ struct Device_DrvBus32_s {
 #define DEVICE_REGISTER_BOARD(name_, description_, prepare_, release_,         \
                               set_opt_, get_opt_, get_signode_, create_,       \
                               defaultconfig_)                                  \
-    static Device_DrvBoard_t Device_boardDrv_##name_ = {                       \
+    static Device_DrvBoard_t Device_drvBoard_##name_ = {                       \
         .base.kind = DK_BOARD,                                                 \
         .base.name = (name_),                                                  \
         .base.description = (description_),                                    \
@@ -173,13 +189,13 @@ struct Device_DrvBus32_s {
             (get_signode_) ? (get_signode_) : &Device_DefaultGetSignode,       \
         .defaultconfig = (defaultconfig_),                                     \
         .create = (create_)};                                                  \
-    INITIALIZER(Device_boardDrvRegister_##name_) {                             \
-        Device_Register(&Device_boardDrv_##name_.base);                        \
+    INITIALIZER(Device_registerDrvBoard_##name_) {                             \
+        Device_Register(&Device_drvBoard_##name_.base);                        \
     }
 
 #define DEVICE_REGISTER_MPU(name_, description_, prepare_, release_, set_opt_, \
                             get_opt_, get_signode_, create_, defaultconfig_)   \
-    static Device_DrvMPU_t Device_mpuDrv_##name_ = {                           \
+    static Device_DrvMPU_t Device_drvMPU_##name_ = {                           \
         .base.kind = DK_MPU,                                                   \
         .base.name = (name_),                                                  \
         .base.description = (description_),                                    \
@@ -191,14 +207,14 @@ struct Device_DrvBus32_s {
             (get_signode_) ? (get_signode_) : &Device_DefaultGetSignode,       \
         .defaultconfig = (defaultconfig_),                                     \
         .create = (create_)};                                                  \
-    INITIALIZER(Device_mpuRegister_##name_) {                                  \
-        Device_Register(&Device_mpuDrv_##name_.base);                          \
+    INITIALIZER(Device_registerMPU_##name_) {                                  \
+        Device_Register(&Device_drvMPU_##name_.base);                          \
     }
 
 #define DEVICE_REGISTER_MEMMAPPED(name_, description_, prepare_, release_,     \
                                   set_opt_, get_opt_, get_signode_, create_,   \
                                   map32_)                                      \
-    static Device_DrvMemMapped_t Device_memMappedDrv_##name_ = {               \
+    static Device_DrvMemMapped_t Device_drvMemMapped_##name_ = {               \
         .base.kind = DK_MEMORY_MAPPED,                                         \
         .base.name = (name_),                                                  \
         .base.description = (description_),                                    \
@@ -210,8 +226,39 @@ struct Device_DrvBus32_s {
             (get_signode_) ? (get_signode_) : &Device_DefaultGetSignode,       \
         .create = (create_),                                                   \
         .map32 = (map32_)};                                                    \
-    INITIALIZER(Device_memMappedDrvRegister_##name_) {                         \
-        Device_Register(&Device_memMappedDrv_##name_.base);                    \
+    INITIALIZER(Device_registerMemMappedDrv_##name_) {                         \
+        Device_Register(&Device_drvMemMapped_##name_.base);                    \
+    }
+
+#define DEVICE_REGISTER_BUS32(name_, description_, prepare_, release_,         \
+                              set_opt_, get_opt_, get_signode_, create_, map_, \
+                              read8_, write8_, read16_, write16_, read32_,     \
+                              write32_, read64_, write64_, map_mem_,           \
+                              map_func_)                                       \
+    static Device_DrvBus32_t Device_drvBus32_##name_ = {                       \
+        .base.kind = DK_BUS32,                                                 \
+        .base.name = (name_),                                                  \
+        .base.description = (description_),                                    \
+        .base.prepare = (prepare_) ? (prepare_) : &Device_DefaultPrepare,      \
+        .base.release = (release_) ? (release_) : &Device_DefaultRelease,      \
+        .base.set_opt = (set_opt_) ? (set_opt_) : &Device_DefaultSetOpt,       \
+        .base.get_opt = (get_opt_) ? (get_opt_) : &Device_DefaultGetOpt,       \
+        .base.get_signode =                                                    \
+            (get_signode_) ? (get_signode_) : &Device_DefaultGetSignode,       \
+        .create = (create_),                                                   \
+        .map = (map_),                                                         \
+        .read8 = (read8_),                                                     \
+        .read16 = (read16_),                                                   \
+        .read32 = (read32_),                                                   \
+        .read64 = (read64_),                                                   \
+        .write8 = (write8_),                                                   \
+        .write16 = (write16_),                                                 \
+        .write32 = (write32_),                                                 \
+        .write64 = (write64_),                                                 \
+        .map_mem = (map_mem_),                                                 \
+        .map_func = (map_func_)};                                              \
+    INITIALIZER(Device_registerDrvBus32_##name_) {                             \
+        Device_Register(&Device_drvBus32_##name_.base);                        \
     }
 
 

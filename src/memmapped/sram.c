@@ -65,22 +65,37 @@ typedef struct SRAM_s {
 //==============================================================================
 //= Function declarations(static)
 //==============================================================================
+// For DeviceManager
+static Device_MemMapped_t *SRAM_create(const Device_DrvMemMapped_t *drv,
+                                       const char *name);
 static int SRAM_prepare(void *self);
 static int SRAM_release(void *self);
-static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot,
-                      size_t offset);
 static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval,
                        size_t optlen);
 static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval,
                        size_t *optlen);
 
-static Device_MemMapped_t *SRAM_create(const Device_DrvMemMapped_t *drv,
-                                       const char *name);
+// For Bus
+static int SRAM_map32(void *self, Device_Bus32_t *bus, Leigun_ByteAddr32_t addr,
+                      uint32_t length, int prot);
 
 
 //==============================================================================
 //= Function definitions(static)
 //==============================================================================
+// For DeviceManager
+static Device_MemMapped_t *SRAM_create(const Device_DrvMemMapped_t *drv,
+                                       const char *name) {
+    LOG_Info(DEVICE_NAME, "create(%s)", name);
+    SRAM_t *dev = LEIGUN_NEW(dev);
+    dev->mmd.self = dev;
+    dev->mmd.drv = drv;
+    dev->size = 0;
+    dev->host_mem = NULL;
+    return &dev->mmd;
+}
+
+
 static int SRAM_prepare(void *self) {
     SRAM_t *dev = self;
     LOG_Debug(DEVICE_NAME, "prepare(%s, %zd)", dev->name, dev->size);
@@ -103,15 +118,6 @@ static int SRAM_release(void *self) {
 }
 
 
-static int SRAM_map32(void *self, uint32_t addr, size_t length, int prot,
-                      size_t offset) {
-    SRAM_t *dev = self;
-    LOG_Debug(DEVICE_NAME, "map32(%s)", dev->name);
-    Mem_MapRange(addr, dev->host_mem, dev->size, length, prot);
-    return 0;
-}
-
-
 static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval,
                        size_t optlen) {
     int ret;
@@ -122,7 +128,7 @@ static int SRAM_setOpt(void *self, Device_OptReq_t req, const void *optval,
             ret = UV_EAGAIN;
             break;
         }
-        dev->size = *((size_t *)optval);
+        dev->size = *((const size_t *)optval);
         ret = 0;
         break;
     default:
@@ -156,15 +162,17 @@ static int SRAM_getOpt(void *self, Device_OptReq_t req, void *optval,
 }
 
 
-static Device_MemMapped_t *SRAM_create(const Device_DrvMemMapped_t *drv,
-                                       const char *name) {
-    LOG_Info(DEVICE_NAME, "create(%s)", name);
-    SRAM_t *dev = LEIGUN_NEW(dev);
-    dev->mmd.self = dev;
-    dev->mmd.drv = drv;
-    dev->size = 0;
-    dev->host_mem = NULL;
-    return &dev->mmd;
+// For Bus
+static int SRAM_map32(void *self, Device_Bus32_t *bus, Leigun_ByteAddr32_t addr,
+                      uint32_t length, int prot) {
+    SRAM_t *dev = self;
+    LOG_Debug(DEVICE_NAME, "map32(%s) addr: %d, length: %zd, prot: %d",
+              dev->name, addr, length, prot);
+    if (length > dev->size) {
+        LOG_Error(DEVICE_NAME, "length(%zd) too long %zd", length, dev->size);
+        return UV_E2BIG;
+    }
+    return bus->drv->map_mem(bus->self, addr, length, prot, dev->host_mem);
 }
 
 

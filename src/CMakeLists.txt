@@ -65,6 +65,7 @@ ADD_EXECUTABLE(${PROJECT_NAME}
     str.c
     timerlist.c
     
+    bus32/abstructbus32.c
     memmapped/sram.c
     )
 
