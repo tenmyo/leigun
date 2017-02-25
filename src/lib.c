@@ -131,7 +131,6 @@ int Lib_Init(void) {
     size_t size = sizeof(path);
     int err;
     Lib_listMember_t *lib;
-    void (*initfunc)(void);
 
     List_Init(&Lib_loadedLibs.list);
     err = ExitHandler_Register((ExitHandler_Callback_cb)&Lib_onExit,
@@ -172,18 +171,8 @@ int Lib_Init(void) {
             free(lib);
             continue;
         }
-        LOG_Verbose("Lib", "dlsym(initialize)");
-        err = uv_dlsym(&lib->lib, "initialize", (void **)&initfunc);
-        if (err < 0) {
-            LOG_Warn("Lib", "dlsym(initialize) failed. %s",
-                     uv_dlerror(&lib->lib));
-            uv_dlclose(&lib->lib);
-            free(lib);
-            continue;
-        }
         lib->path = strdup(path);
         List_Push(&Lib_loadedLibs.list, &lib->liste);
-        initfunc();
     }
     fclose(fp);
     return 0;
